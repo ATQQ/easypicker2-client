@@ -1,6 +1,6 @@
 # <h1 align="center">EasyPicker2.0:轻取</h1>
 
-<p align="center">为方便在线文件收取而生</p>
+<p align="center">为提高在线文件收取效率而生</p>
 <p align="center">
  	<a href="https://ep.sugarat.top">
 		<img src="https://img.shields.io/badge/status-updating-success.svg"
@@ -23,9 +23,56 @@
 通常的方式是,通过QQ/微信/邮箱等收取,弊端显而易见,太过于麻烦且不方便整理统计。还占用电脑/手机内存。为了解决这个问题,此项目应运而生。
 
 ## 开发计划
-TODO:
+* [ ] 门户页
+  * 导航
+    * 登录
+    * 注册
+    * 反馈
+    * 产品简介
+  * 外链
+    * 使用手册(VitePress)
+    * Github
+    * 联系作者
+* [ ] 登录
+* [ ] 注册
+* [ ] 忘记密码
+* [ ] 文件管理
+* [ ] 文件上传
+* [ ] 任务管理
+* [ ] 数据看板
+* [ ] 用户管理
+* [ ] 反馈
+* [ ] 反馈处理进度查看
+  
+...未完待续
 ## 本地运行
-TODO:
+<details>
+
+1. clone仓库到本地
+```sh
+git clone https://github.com/ATQQ/easypicker2-client.git
+```
+2. 安装依赖
+```sh
+yarn
+```
+3. 本地启动
+
+```sh
+yarn dev
+```
+
+4. 其它指令
+
+|    名称    | 作用             |
+| :--------: | :--------------- |
+|    dev     | 本地启动服务     |
+|   build    | 生产环境打包     |
+| build:test | 测试环境打包     |
+|   serve    | 预览本地构建产物 |
+|    lint    | 代码格式化       |
+
+</details>
 
 ## 线上地址
 1. 正式环境：https://ep2.sugarat.top
