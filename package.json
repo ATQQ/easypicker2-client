@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
-    "build:test": "vue-tsc --noEmit && vite build --mode test",
+    "build": "vite build",
+    "build:test": "vite build --mode test",
     "serve": "vite preview",
     "lint": "eslint src --fix"
   },
@@ -28,7 +28,6 @@
     "eslint-plugin-vue": "^7.8.0",
     "sass": "^1.32.8",
     "typescript": "^4.1.3",
-    "vite": "^2.1.0",
-    "vue-tsc": "^0.0.8"
+    "vite": "^2.1.0"
   }
 }
