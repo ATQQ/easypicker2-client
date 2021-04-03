@@ -29,7 +29,7 @@ export default defineComponent({
       },
       {
         title: 'GitHub',
-        link: 'https://github.com/ATQQ/easypicker-client',
+        link: 'https://github.com/ATQQ/easypicker2-client',
       },
       {
         title: '联系QQ',

@@ -6,7 +6,9 @@
     "build": "vite build",
     "build:test": "vite build --mode test",
     "serve": "vite preview",
-    "lint": "eslint src --fix"
+    "lint": "eslint src --fix",
+    "compress": "bash ./build/compress.sh",
+    "deploy": "bash ./build/deploy.sh"
   },
   "dependencies": {
     "axios": "^0.21.1",
