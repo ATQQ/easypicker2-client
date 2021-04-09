@@ -15,7 +15,11 @@ const store: Module<State, unknown> = {
   mutations: {
     setToken(state, payload) {
       state.token = payload
-      localStorage.setItem('token', payload)
+      if (payload) {
+        localStorage.setItem('token', payload)
+      } else {
+        localStorage.removeItem('token')
+      }
     },
   },
 }

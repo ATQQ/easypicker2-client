@@ -1,25 +1,140 @@
 <template>
-    <div>
-        <h1>{{title}}</h1>
-        <div>
+  <div>
+    <div class="pc-nav">
+      <div class="nav">
+        <!-- LOGO -->
+        <div class="logo">
+          <router-link to="/">
+            <img src="./../../assets/i/EasyPicker.png" alt="logo" />
+          </router-link>
+        </div>
+        <nav>
+          <div
+            class="nav-item"
+            v-for="(n, idx) in pcNavs"
+            :key="idx"
+            :class="{
+              active: navActiveIdx === idx,
+            }"
+            @click="handleNav(idx)"
+          >
+            {{ n.title }}
+          </div>
+        </nav>
+      </div>
+      <el-popover placement="top" :width="160" v-model:visible="visible">
+        <p>确定退出登录吗？</p>
+        <div style="text-align: right; margin: 0">
+          <el-button size="mini" type="text" @click="visible = false"
+            >取消</el-button
+          >
+          <el-button type="primary" size="mini" @click="logout"
+            >确定</el-button
+          >
+        </div>
+        <template #reference>
+          <span class="exit">
+            退出
+            <i class="el-icon-error"> </i>
+          </span>
+        </template>
+      </el-popover>
+    </div>
+    <!-- <div>
           <router-link to="tasks">任务管理</router-link>
           <router-link to="files">文件管理</router-link>
-        </div>
-        <router-view></router-view>
-    </div>
+        </div> -->
+    <router-view></router-view>
+  </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import {
+  defineComponent, onMounted, reactive, ref,
+} from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 
 export default defineComponent({
   setup() {
-    const title = ref('标题')
+    const $router = useRouter()
+    const $store = useStore()
+    const pcNavs = reactive([
+      {
+        title: '文件管理',
+        path: '/dashboard/files',
+      },
+      {
+        title: '任务管理',
+        path: '/dashboard/tasks',
+      },
+    ])
+    const navActiveIdx = ref(0)
+    const handleNav = (idx: number) => {
+      if (idx !== navActiveIdx.value) {
+        $router.push({
+          path: pcNavs[idx].path,
+        })
+        navActiveIdx.value = idx
+      }
+    }
+
+    onMounted(() => {
+      const $route = useRoute()
+      navActiveIdx.value = pcNavs.findIndex((v) => v.path === $route.path)
+    })
+
+    const visible = ref(false)
+    const logout = () => {
+      $store.commit('user/setToken', null)
+      $router.replace({
+        name: 'home',
+      })
+    }
     return {
-      title,
+      pcNavs,
+      navActiveIdx,
+      handleNav,
+      visible,
+      logout,
     }
   },
 })
 </script>
-<style scoped>
-
+<style scoped lang="scss">
+.pc-nav {
+  display: flex;
+  padding: 10px;
+  justify-content: space-between;
+  align-items: center;
+  .exit {
+    cursor: pointer;
+  }
+  .nav {
+    display: flex;
+    nav {
+      display: flex;
+      align-items: center;
+      .nav-item {
+        font-size: 1rem;
+        color: #595959;
+        padding: 10px;
+        cursor: pointer;
+        &.active {
+          color: #409eff !important;
+          font-weight: 600;
+        }
+      }
+    }
+    .exit {
+      color: #595959;
+    }
+  }
+  .logo {
+    width: 180px;
+    margin: 0 10px;
+    img {
+      height: 40px;
+    }
+  }
+}
 </style>

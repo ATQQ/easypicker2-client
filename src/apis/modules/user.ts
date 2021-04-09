@@ -1,8 +1,5 @@
 import ajax from '../ajax'
-/**
- * 获取验证码
- * @param mobile 手机号
- */
+
 function register(account:string, pwd:string, bindPhone = false, options?:any) {
   return ajax.post<any, BaseResponse>('user/register', {
     account,
