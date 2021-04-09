@@ -43,7 +43,10 @@ instance.interceptors.response.use((v) => {
     return v.data
   }
   if (v.status === 200) {
-    return v.data
+    if (v.data.code === 0) {
+      return v.data
+    }
+    return Promise.reject(v.data)
   }
   // alert(v.statusText, '网络错误')
   return Promise.reject(v)

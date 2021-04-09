@@ -6,7 +6,13 @@ const Login = () => import('@/pages/login/index.vue')
 const Register = () => import('@/pages/register/index.vue')
 const About = () => import('@/pages/about/index.vue')
 const Feedback = () => import('@/pages/feedback/index.vue')
+const Dashboard = () => import('@/pages/dashboard/index.vue')
+const Files = () => import('@/pages/dashboard/files/index.vue')
+const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
 
+const requireLogin = {
+  requireLogin: false,
+}
 const routes: RouteRecordRaw[] = [
   // 404
   { path: '/:pathMatch(.*)*', name: '404', component: NotFind },
@@ -15,20 +21,27 @@ const routes: RouteRecordRaw[] = [
   { path: '/register', name: 'register', component: Register },
   { path: '/about', name: 'about', component: About },
   { path: '/feedback', name: 'feedback', component: Feedback },
+  {
+    path: '/dashboard',
+    name: 'dashboard',
+    component: Dashboard,
+    redirect: {
+      name: 'tasks',
+    },
+    children: [
+      {
+        name: 'files',
+        path: 'files',
+        component: Files,
+        meta: requireLogin,
+      },
+      {
+        name: 'tasks',
+        path: 'tasks',
+        component: Tasks,
+        meta: requireLogin,
+      },
+    ],
+  },
 ]
-// children: [
-// { path: 'login', component: Login, name: 'login' },
-// { path: 'about', component: About, name: 'about' },
-// { path: 'axios', component: Axios, name: 'axios' },
-// { path: 'element', component: Element, name: 'element' },
-// {
-//   path: 'dynamic/:id',
-//   component: Dynamic,
-//   meta: {
-//     requireLogin: false,
-//     isAdmin: true,
-//   },
-//   name: 'dynamic',
-// },
-// ],
 export default routes
