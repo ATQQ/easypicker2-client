@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="dashboard">
     <div class="pc-nav">
       <div class="nav">
         <!-- LOGO -->
@@ -101,7 +101,11 @@ export default defineComponent({
 })
 </script>
 <style scoped lang="scss">
+.dashboard{
+  background-color: #fafafa;
+}
 .pc-nav {
+  background-color: #fff;
   display: flex;
   padding: 10px;
   justify-content: space-between;
