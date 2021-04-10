@@ -14,6 +14,7 @@
           @edit="editBaseInfo"
           @delete="deleteTask"
           @share="shareTask"
+          @more="editMore"
           v-for="item in filterTasks"
           :key="item.key"
           :item="item"
@@ -49,14 +50,10 @@
       <div>
         <el-input disabled placeholder="生成的链接" v-model="shareTaskLink">
           <template #prepend>
-            <el-button type="primary" @click="createShortLink">
-              生成短链
-            </el-button>
+            <el-button type="primary" @click="createShortLink">生成短链</el-button>
           </template>
           <template #append>
-            <el-button type="primary" @click="copyLink">
-              复制
-            </el-button>
+            <el-button type="primary" @click="copyLink">复制</el-button>
           </template>
         </el-input>
       </div>
@@ -70,6 +67,35 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 附加属性编辑弹窗 -->
+    <el-dialog title="更多设置" v-model="showTaskInfoPanel" center>
+      <div>
+        <el-tabs v-model="activeInfo">
+          <el-tab-pane label="截止日期" name="ddl">
+            <!-- <div v-if="!taskInfo.ddl" class="tc">
+              没有设置截止日期
+            </div>-->
+            <div class="tc">
+              <el-date-picker
+                :editable="false"
+                v-model="newDate"
+                type="datetime"
+                placeholder="点击设置新截止日期"
+                @blur="updateDDL"
+                :default-time="taskInfo.ddl"
+              ></el-date-picker>
+              <el-button @click="closeDDL">关闭</el-button>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="showTaskInfoPanel = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts">
@@ -80,6 +106,7 @@ import {
 import { useStore } from 'vuex'
 import QrCode from '@components/QrCode.vue'
 import { copyRes, getShortUrl } from '@/utils/stringUtil'
+import { TaskApi } from '@/apis'
 import CategoryPanel from './components/CategoryPanel.vue'
 import CreateTask from './components/CreateTask.vue'
 import TaskInfo from './components/TaskInfo.vue'
@@ -141,7 +168,7 @@ export default defineComponent({
     // 生成分享链接
     const shareTaskLink = ref('')
     const showLinkModal = ref(false)
-    const shareTask = (k:string) => {
+    const shareTask = (k: string) => {
       shareTaskLink.value = 'default'
       const { origin } = window.location
       shareTaskLink.value = `${origin}/task/${k}`
@@ -155,6 +182,49 @@ export default defineComponent({
     }
     const copyLink = () => {
       copyRes(shareTaskLink.value)
+    }
+
+    // 附加属性编辑
+    const taskInfo = reactive<TaskInfo>({})
+    const showTaskInfoPanel = ref(false)
+    const activeInfo = ref('ddl')
+    const activeTask: any = reactive({})
+    // 日期控件选择的值
+    const newDate = ref()
+    const editMore = (item: any) => {
+      Object.assign(activeTask, item)
+      TaskApi.getTaskMoreInfo(item.key).then((res) => {
+        newDate.value = null
+        Object.assign(taskInfo, res.data)
+        if (taskInfo.ddl) {
+          newDate.value = new Date(taskInfo.ddl as string)
+        }
+        showTaskInfoPanel.value = true
+      })
+    }
+    const updateTaskInfo = (options: any) => {
+      if (activeTask?.key) {
+        TaskApi
+          .updateTaskMoreInfo(activeTask.key, options)
+          .then(() => {
+            ElMessage.success('设置成功')
+          })
+          .catch(() => {
+            ElMessage.error('设置失败')
+          })
+      }
+    }
+
+    // 更新DDL
+    const updateDDL = () => {
+      if (newDate.value) {
+        updateTaskInfo({ ddl: newDate.value })
+      }
+    }
+    // 关闭DDL
+    const closeDDL = () => {
+      newDate.value = null
+      updateTaskInfo({ ddl: null })
     }
     onMounted(() => {
       $store.dispatch('category/getCategory')
@@ -175,6 +245,13 @@ export default defineComponent({
       showLinkModal,
       createShortLink,
       copyLink,
+      taskInfo,
+      activeInfo,
+      editMore,
+      newDate,
+      showTaskInfoPanel,
+      updateDDL,
+      closeDDL,
     }
   },
 })
@@ -201,7 +278,7 @@ export default defineComponent({
   justify-content: space-around;
 }
 
-.qr-code{
+.qr-code {
   margin-top: 10px;
   text-align: center;
 }

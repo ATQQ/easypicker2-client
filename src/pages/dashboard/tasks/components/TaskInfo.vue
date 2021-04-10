@@ -6,6 +6,14 @@
                 <div class="actions">
                     <el-button
                         circle
+                        type="warning"
+                        icon="el-icon-menu"
+                        size="small"
+                        title="更多"
+                        @click="$emit('more', item)"
+                    ></el-button>
+                    <el-button
+                        circle
                         type="success"
                         icon="el-icon-edit-outline"
                         size="small"

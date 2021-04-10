@@ -18,4 +18,7 @@ export default defineComponent({
 a{
   text-decoration: none;
 }
+.tc{
+  text-align: center;
+}
 </style>

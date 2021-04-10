@@ -40,10 +40,6 @@
         </template>
       </el-popover>
     </div>
-    <!-- <div>
-          <router-link to="tasks">任务管理</router-link>
-          <router-link to="files">文件管理</router-link>
-        </div> -->
     <router-view></router-view>
   </div>
 </template>
