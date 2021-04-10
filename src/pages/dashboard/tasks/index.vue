@@ -10,41 +10,18 @@
 
       <!-- 任务列表 -->
       <div class="task-list">
-        <el-card v-for="item in filterTasks" :key="item.key" class="task-item">
-          <template #header>
-            <div class="header">
-              <span>{{ item.name }}</span>
-              <div class="actions">
-                <el-button
-                  circle
-                  type="success"
-                  icon="el-icon-edit-outline"
-                  size="small"
-                  title="编辑基本信息"
-                  @click="editBaseInfo(item)"
-                ></el-button>
-                <el-button circle type="primary" icon="el-icon-share" size="small" title="分享"></el-button>
-                <el-button
-                  @click="deleteTask(item.key)"
-                  circle
-                  type="danger"
-                  icon="el-icon-delete"
-                  size="small"
-                  title="删除"
-                ></el-button>
-              </div>
-            </div>
-          </template>
-
-          <!-- 没有提交记录 -->
-          <div class="body">
-            <div class="empty">暂时没有提交记录...</div>
-          </div>
-        </el-card>
-
+        <task-info
+          @edit="editBaseInfo"
+          @delete="deleteTask"
+          @share="shareTask"
+          v-for="item in filterTasks"
+          :key="item.key"
+          :item="item"
+        ></task-info>
         <el-empty v-if="filterTasks.length === 0" description="此分类下没有任务哟"></el-empty>
       </div>
     </div>
+
     <!-- 任务基本信息维护弹窗 -->
     <el-dialog title="基本信息修改" v-model="showBaseInfoDialog">
       <el-form :model="taskBaseInfo">
@@ -65,6 +42,34 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 分享链接弹窗(二维码/链接/短链) -->
+    <el-dialog title="收取链接" v-model="showLinkModal" center>
+      <!-- 链接 -->
+      <div>
+        <el-input disabled placeholder="生成的链接" v-model="shareTaskLink">
+          <template #prepend>
+            <el-button type="primary" @click="createShortLink">
+              生成短链
+            </el-button>
+          </template>
+          <template #append>
+            <el-button type="primary" @click="copyLink">
+              复制
+            </el-button>
+          </template>
+        </el-input>
+      </div>
+      <!-- 二维码 -->
+      <div class="qr-code">
+        <qr-code :value="shareTaskLink"></qr-code>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="showLinkModal = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts">
@@ -73,13 +78,18 @@ import {
   computed, defineComponent, onMounted, reactive, ref,
 } from 'vue'
 import { useStore } from 'vuex'
+import QrCode from '@components/QrCode.vue'
+import { copyRes, getShortUrl } from '@/utils/stringUtil'
 import CategoryPanel from './components/CategoryPanel.vue'
 import CreateTask from './components/CreateTask.vue'
+import TaskInfo from './components/TaskInfo.vue'
 
 export default defineComponent({
   components: {
     CategoryPanel,
     CreateTask,
+    TaskInfo,
+    QrCode,
   },
   setup() {
     const $store = useStore()
@@ -94,6 +104,7 @@ export default defineComponent({
       return t
     })
 
+    // 删除任务
     const deleteTask = (k: string) => {
       if (!k) return
       ElMessageBox.confirm('确认删除此任务吗?', '警告', {
@@ -110,6 +121,8 @@ export default defineComponent({
           ElMessage.info('取消删除')
         })
     }
+
+    // 基本信息编辑
     const showBaseInfoDialog = ref(false)
     const taskBaseInfo = reactive({ name: '', category: '', key: '' })
     const editBaseInfo = (task: any) => {
@@ -123,6 +136,25 @@ export default defineComponent({
       $store.dispatch('task/updateTask', taskBaseInfo).then(() => {
         ElMessage.success('更新成功')
       })
+    }
+
+    // 生成分享链接
+    const shareTaskLink = ref('')
+    const showLinkModal = ref(false)
+    const shareTask = (k:string) => {
+      shareTaskLink.value = 'default'
+      const { origin } = window.location
+      shareTaskLink.value = `${origin}/task/${k}`
+      showLinkModal.value = true
+    }
+    const createShortLink = () => {
+      getShortUrl(shareTaskLink.value).then((v) => {
+        shareTaskLink.value = v
+        ElMessage.success('短链生成成功')
+      })
+    }
+    const copyLink = () => {
+      copyRes(shareTaskLink.value)
     }
     onMounted(() => {
       $store.dispatch('category/getCategory')
@@ -138,6 +170,11 @@ export default defineComponent({
       taskBaseInfo,
       editBaseInfo,
       handleSaveEditInfo,
+      shareTask,
+      shareTaskLink,
+      showLinkModal,
+      createShortLink,
+      copyLink,
     }
   },
 })
@@ -149,27 +186,6 @@ export default defineComponent({
   padding-bottom: 2em;
 }
 
-.el-tag + .el-tag {
-  margin-left: 10px;
-  margin-bottom: 10px;
-}
-.el-tag {
-  cursor: pointer;
-}
-
-.button-new-tag {
-  margin-left: 10px;
-  height: 32px;
-  line-height: 30px;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-.input-new-tag {
-  width: 90px;
-  margin-left: 10px;
-  margin-bottom: 10px;
-  vertical-align: bottom;
-}
 .panel {
   padding: 1em;
   background-color: #fff;
@@ -184,24 +200,9 @@ export default defineComponent({
   flex-wrap: wrap;
   justify-content: space-around;
 }
-.task-list .task-item {
-  min-width: 400px;
-  margin-top: 1em;
-  .header {
-    overflow: hidden;
-    .actions {
-      float: right;
-      padding: 3px 0;
-    }
-  }
 
-  .body {
-    height: 60px;
-    .empty {
-      text-align: center;
-      font-size: 12px;
-      color: grey;
-    }
-  }
+.qr-code{
+  margin-top: 10px;
+  text-align: center;
 }
 </style>

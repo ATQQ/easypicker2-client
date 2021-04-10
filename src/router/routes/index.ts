@@ -9,7 +9,7 @@ const Feedback = () => import('@/pages/feedback/index.vue')
 const Dashboard = () => import('@/pages/dashboard/index.vue')
 const Files = () => import('@/pages/dashboard/files/index.vue')
 const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
-
+const Task = () => import('@/pages/task/index.vue')
 const requireLogin = {
   requireLogin: false,
 }
@@ -21,6 +21,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/register', name: 'register', component: Register },
   { path: '/about', name: 'about', component: About },
   { path: '/feedback', name: 'feedback', component: Feedback },
+  { path: '/task/:key', name: 'task', component: Task },
   {
     path: '/dashboard',
     name: 'dashboard',
