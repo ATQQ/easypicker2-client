@@ -7,13 +7,13 @@ import styleImport from 'vite-plugin-style-import'
 export default defineConfig({
   plugins: [
     vue(),
-    styleImport({
-      libs: [{
-        libraryName: 'element-plus',
-        resolveStyle: (name) => `element-plus/packages/theme-chalk/src/${name.slice(3)}.scss`,
-        resolveComponent: (name) => `element-plus/lib/${name}`,
-      }],
-    }),
+    // styleImport({
+    //   libs: [{
+    //     libraryName: 'element-plus',
+    //     resolveStyle: (name) => `element-plus/lib/theme-chalk/${name}.css`,
+    //     resolveComponent: (name) => `element-plus/lib/${name}`,
+    //   }],
+    // }),
   ],
   build: {
     target: 'modules', // 默认值
