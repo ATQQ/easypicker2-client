@@ -22,10 +22,12 @@ export function copyRes(text:string) {
 * @param url
 */
 export function getShortUrl(text:string):Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     jsonp(`https://api.suowo.cn/api.htm?format=jsonp&url=${encodeURIComponent(text)}&key=5ec8a001be96bd79a37f19b8@bf33c7483d0c6900bb7bc90a0e6dfdf0&expireDate=2030-03-31&domain=0`, 'shortLink', (res) => {
       const { url, err } = res
-      console.log(res)
+      if (err) {
+        reject(err)
+      }
       resolve(url)
     })
   })
