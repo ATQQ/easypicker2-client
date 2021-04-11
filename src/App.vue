@@ -21,4 +21,7 @@ a{
 .tc{
   text-align: center;
 }
+.p10{
+  padding: 10px;
+}
 </style>

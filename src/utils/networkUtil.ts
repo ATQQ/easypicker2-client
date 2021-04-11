@@ -99,3 +99,30 @@ export function tableToExcel(headers:string[], body:any[], filename = 'res.xls')
   tempA.click()
   document.body.removeChild(tempA)
 }
+
+/**
+ * 七牛云上传
+ */
+export function qiniuUpload(token:string, file:File, key:string, options?:UploadFileOptions) {
+  const observable = qiniu.upload(file, key, token)
+  const { success, error, process } = options || {}
+  const subscription = observable.subscribe({
+    next(res) {
+      const { total: { percent } } = res
+      if (process) {
+        process(percent.toFixed(2), res, subscription)
+      }
+    },
+    error(err) {
+      if (error) {
+        error(err, subscription)
+      }
+    },
+    complete(res) {
+      if (success) {
+        success(res, subscription)
+      }
+    },
+  })
+  // subscription.close() // 取消上传
+}

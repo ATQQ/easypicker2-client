@@ -75,6 +75,9 @@
           <el-tab-pane label="截止日期" name="ddl">
             <DDlPanel :ddl="taskInfo.ddl" :k="activeTask.key"></DDlPanel>
           </el-tab-pane>
+          <el-tab-pane label="模板文件" name="template">
+            <TemplatePanel :value="taskInfo.template" :k="activeTask.key"></TemplatePanel>
+          </el-tab-pane>
           <el-tab-pane label="限制人员" name="people">
             <PeoplePanel :value="taskInfo.people" :k="activeTask.key"></PeoplePanel>
           </el-tab-pane>
@@ -96,13 +99,13 @@ import {
 import { useStore } from 'vuex'
 import QrCode from '@components/QrCode.vue'
 import { copyRes, getShortUrl } from '@/utils/stringUtil'
-import { PeopleApi, TaskApi } from '@/apis'
-import { tableToExcel, uploadFile } from '@/utils/networkUtil'
+import { TaskApi } from '@/apis'
 import CategoryPanel from './components/CategoryPanel.vue'
 import CreateTask from './components/CreateTask.vue'
 import TaskInfo from './components/TaskInfo.vue'
 import DDlPanel from './components/infoPanel/ddl.vue'
 import PeoplePanel from './components/infoPanel/people.vue'
+import TemplatePanel from './components/infoPanel/template.vue'
 
 export default defineComponent({
   components: {
@@ -112,6 +115,7 @@ export default defineComponent({
     QrCode,
     DDlPanel,
     PeoplePanel,
+    TemplatePanel,
   },
   setup(_, context) {
     const $store = useStore()
