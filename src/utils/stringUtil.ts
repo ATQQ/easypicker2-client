@@ -32,3 +32,7 @@ export function getShortUrl(text:string):Promise<string> {
     })
   })
 }
+
+export function base64(s:string) {
+  return window.btoa(unescape(encodeURIComponent(s)))
+}
