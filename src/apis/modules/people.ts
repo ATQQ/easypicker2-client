@@ -9,6 +9,19 @@ function importPeople(key: string, filename:string, type:string) {
   )
 }
 
+function getPeople(key:string) {
+  return ajax.get<any, BaseResponse>(`/people/${key}`)
+}
+
+function deletePeople(key:string, id:number) {
+  return ajax.delete<any, BaseResponse>(`/people/${key}`, {
+    params: {
+      id,
+    },
+  })
+}
 export default {
   importPeople,
+  getPeople,
+  deletePeople,
 }

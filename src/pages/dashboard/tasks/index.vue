@@ -73,69 +73,10 @@
       <div>
         <el-tabs v-model="activeInfo">
           <el-tab-pane label="截止日期" name="ddl">
-            <div class="tc">
-              <el-date-picker
-                :editable="false"
-                v-model="newDate"
-                type="datetime"
-                placeholder="点击设置新截止日期"
-                @blur="updateDDL"
-                :default-time="taskInfo.ddl"
-              ></el-date-picker>
-              <el-button @click="closeDDL">关闭</el-button>
-            </div>
+            <DDlPanel :ddl="taskInfo.ddl" :k="activeTask.key"></DDlPanel>
           </el-tab-pane>
           <el-tab-pane label="限制人员" name="people">
-            <div class="tc">
-              <el-button
-                @click="uodateLimitPeople(true)"
-                v-if="!taskInfo.people"
-                size="medium"
-                round
-                type="success"
-              >打开</el-button>
-              <el-button
-                @click="uodateLimitPeople(false)"
-                v-if="taskInfo.people"
-                size="medium"
-                round
-                type="danger"
-              >关闭</el-button>
-              <el-button
-                @click="checkPeople"
-                v-if="taskInfo.people"
-                round
-                size="medium"
-                type="primary"
-              >查看提交情况</el-button>
-              <div class="upload-people" v-if="taskInfo.people">
-                <el-upload
-                  accetp="text/plain"
-                  action=""
-                  class="upload-demo"
-                  ref="peopleUpload"
-                  :on-change="handleChangeFile"
-                  :on-exceed="handleExceedFile"
-                  :on-remove="clearFiles"
-                  :auto-upload="false"
-                  :limit="1"
-                  :file-list="peopleFileList"
-                >
-                  <template #trigger>
-                    <el-button size="small" type="primary">选取文件</el-button>
-                  </template>
-                  <el-button
-                    @click="submitUploadPeople"
-                    style="margin-left: 10px;"
-                    size="small"
-                    type="success"
-                  >开始上传</el-button>
-                  <template #tip>
-                    <div class="el-upload__tip">只能上传 txt 文本文件,每行一个名字</div>
-                  </template>
-                </el-upload>
-              </div>
-            </div>
+            <PeoplePanel :value="taskInfo.people" :k="activeTask.key"></PeoplePanel>
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -160,6 +101,8 @@ import { tableToExcel, uploadFile } from '@/utils/networkUtil'
 import CategoryPanel from './components/CategoryPanel.vue'
 import CreateTask from './components/CreateTask.vue'
 import TaskInfo from './components/TaskInfo.vue'
+import DDlPanel from './components/infoPanel/ddl.vue'
+import PeoplePanel from './components/infoPanel/people.vue'
 
 export default defineComponent({
   components: {
@@ -167,6 +110,8 @@ export default defineComponent({
     CreateTask,
     TaskInfo,
     QrCode,
+    DDlPanel,
+    PeoplePanel,
   },
   setup(_, context) {
     const $store = useStore()
@@ -236,101 +181,17 @@ export default defineComponent({
 
     // 附加属性编辑
     const taskInfo = reactive<TaskInfo>({ people: 1 })
-    const showTaskInfoPanel = ref(true)
+    const showTaskInfoPanel = ref(false)
     const activeInfo = ref('ddl')
     const activeTask: any = reactive({})
-    // 日期控件选择的值
-    const newDate = ref()
+
     const editMore = (item: any) => {
       Object.assign(activeTask, item)
       TaskApi.getTaskMoreInfo(item.key).then((res) => {
-        newDate.value = null
         Object.assign(taskInfo, res.data)
-        if (taskInfo.ddl) {
-          newDate.value = new Date(taskInfo.ddl as string)
-        }
         showTaskInfoPanel.value = true
       })
     }
-    const updateTaskInfo = (options: any) => {
-      if (activeTask?.key) {
-        TaskApi
-          .updateTaskMoreInfo(activeTask.key, options)
-          .then(() => {
-            ElMessage.success('设置成功')
-          })
-          .catch(() => {
-            ElMessage.error('设置失败')
-          })
-      }
-    }
-
-    // 更新DDL
-    const updateDDL = () => {
-      if (newDate.value) {
-        updateTaskInfo({ ddl: newDate.value })
-      }
-    }
-    // 关闭DDL
-    const closeDDL = () => {
-      newDate.value = null
-      updateTaskInfo({ ddl: null })
-    }
-
-    // 限制提交人员
-    const uodateLimitPeople = (limit: boolean) => {
-      updateTaskInfo({ people: +limit })
-      taskInfo.people = +limit
-    }
-    // 查看提交情况
-    const peopleFileList:any[] = reactive([])
-    const checkPeople = () => {
-      console.log(activeTask)
-    }
-    const peopleUpload = ref()
-    // 超出选择的文件个数
-    const handleExceedFile = () => {
-      ElMessage.error('只能选择一个文件,可删除后重新选择')
-    }
-    // 清空文件
-    const clearFiles = () => {
-      peopleFileList.splice(0, peopleFileList.length)
-      peopleUpload.value.clearFiles()
-    }
-    // 开始上传
-    const submitUploadPeople = () => {
-      peopleFileList.forEach((file) => {
-        uploadFile(file.raw, '/api/public/upload', {
-          success: (e:any) => {
-            const { name, type } = e.data
-            PeopleApi
-              .importPeople(activeTask.key, name, type)
-              .then((res) => {
-                const { success, fail } = res.data
-                ElMessage.success(`导入完成:${success}成功,${fail.length}失败`)
-                if (fail.length > 0) {
-                  setTimeout(() => {
-                    ElMessage.info('自动开始下载未成功导入名单')
-                    tableToExcel(['未成功导入名单'], fail.map((v:string) => ([v])), 'fail.xls')
-                  }, 1000)
-                }
-                clearFiles()
-              })
-          },
-        })
-      })
-    }
-
-    // 添加文件
-    const handleChangeFile = (file:any, fileList:any[]) => {
-      if (file.raw.type !== 'text/plain') {
-        ElMessage.warning('只支持txt文件')
-        clearFiles()
-        return
-      }
-      peopleFileList.push(file)
-    }
-
     onMounted(() => {
       $store.dispatch('category/getCategory')
       $store.dispatch('task/getTask')
@@ -353,18 +214,8 @@ export default defineComponent({
       taskInfo,
       activeInfo,
       editMore,
-      newDate,
       showTaskInfoPanel,
-      updateDDL,
-      closeDDL,
-      uodateLimitPeople,
-      peopleUpload,
-      peopleFileList,
-      checkPeople,
-      handleExceedFile,
-      clearFiles,
-      handleChangeFile,
-      submitUploadPeople,
+      activeTask,
     }
   },
 })
@@ -394,8 +245,5 @@ export default defineComponent({
 .qr-code {
   margin-top: 10px;
   text-align: center;
-}
-.upload-people {
-  padding: 10px;
 }
 </style>
