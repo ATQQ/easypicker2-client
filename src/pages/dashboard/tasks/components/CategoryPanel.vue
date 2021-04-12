@@ -72,6 +72,11 @@ export default defineComponent({
         })
       categoryName.value = ''
     }
+
+    const handleClickCategory = (k: string) => {
+      context.emit('update:category', k)
+    }
+
     const handleDeleteCategory = (c: any) => {
       ElMessageBox.confirm('是否删除', '提示', {
         confirmButtonText: '确定',
@@ -80,7 +85,11 @@ export default defineComponent({
       })
         .then(() => {
           $store.dispatch('category/deleteCategory', c.k).then(() => {
+            // 删除后变动的默认选择
+            handleClickCategory('default')
             ElMessage.success('删除成功')
+            // 获取最新的任务
+            $store.dispatch('task/getTask')
           })
         })
         .catch(() => {
@@ -88,9 +97,6 @@ export default defineComponent({
         })
     }
 
-    const handleClickCategory = (k: string) => {
-      context.emit('update:category', k)
-    }
     return {
       categorys,
       isShowCreateCategory,
