@@ -47,7 +47,8 @@ export default defineComponent({
     const isShowCreateTask = ref(false)
     const taskName = ref('')
     const createTask = () => {
-      if (!taskName.value) {
+      if (!taskName.value.trim()) {
+        ElMessage.warning('不能为空')
         return
       }
       $store

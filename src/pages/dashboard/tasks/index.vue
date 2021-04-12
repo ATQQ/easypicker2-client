@@ -166,6 +166,10 @@ export default defineComponent({
     }
     const handleSaveEditInfo = () => {
       showBaseInfoDialog.value = false
+      if (!taskBaseInfo.name.trim()) {
+        ElMessage.warning('不能为空')
+        return
+      }
       $store.dispatch('task/updateTask', taskBaseInfo).then(() => {
         ElMessage.success('更新成功')
       })

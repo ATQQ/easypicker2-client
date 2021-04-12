@@ -62,7 +62,8 @@ export default defineComponent({
     const categoryName = ref('')
     const addCategory = () => {
       isShowCreateCategory.value = false
-      if (!categoryName.value) {
+      if (!categoryName.value.trim()) {
+        ElMessage.warning('不能为空')
         return
       }
       $store
