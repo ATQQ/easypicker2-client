@@ -1,7 +1,9 @@
 <template>
   <div class="tasks">
     <!-- 分类管理 -->
-    <CategoryPanel v-model:category="selectCategory"></CategoryPanel>
+    <el-affix :offset="0">
+      <CategoryPanel v-model:category="selectCategory"></CategoryPanel>
+    </el-affix>
 
     <!-- 任务管理 -->
     <div class="panel task-panel">
