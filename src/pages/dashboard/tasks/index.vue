@@ -81,6 +81,9 @@
           <el-tab-pane label="限制人员" name="people">
             <PeoplePanel :value="taskInfo.people" :k="activeTask.key"></PeoplePanel>
           </el-tab-pane>
+          <el-tab-pane label="必填信息" name="info">
+            <InfoPanel :rewrite="taskInfo.rewrite" :info="taskInfo.info" :k="activeTask.key"></InfoPanel>
+          </el-tab-pane>
         </el-tabs>
       </div>
       <!-- <template #footer>
@@ -106,6 +109,7 @@ import TaskInfo from './components/TaskInfo.vue'
 import DDlPanel from './components/infoPanel/ddl.vue'
 import PeoplePanel from './components/infoPanel/people.vue'
 import TemplatePanel from './components/infoPanel/template.vue'
+import InfoPanel from './components/infoPanel/info.vue'
 
 export default defineComponent({
   components: {
@@ -116,6 +120,7 @@ export default defineComponent({
     DDlPanel,
     PeoplePanel,
     TemplatePanel,
+    InfoPanel,
   },
   setup(_, context) {
     const $store = useStore()
@@ -184,14 +189,15 @@ export default defineComponent({
     }
 
     // 附加属性编辑
-    const taskInfo = reactive<TaskInfo>({ people: 1 })
-    const showTaskInfoPanel = ref(false)
-    const activeInfo = ref('ddl')
+    const taskInfo = reactive<TaskInfo>({})
+    const showTaskInfoPanel = ref(true)
+    const activeInfo = ref('info')
     const activeTask: any = reactive({})
 
     const editMore = (item: any) => {
       Object.assign(activeTask, item)
       TaskApi.getTaskMoreInfo(item.key).then((res) => {
+        // todo:先初始化,再赋值
         Object.assign(taskInfo, res.data)
         showTaskInfoPanel.value = true
       })

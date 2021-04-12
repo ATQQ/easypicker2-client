@@ -1,7 +1,7 @@
 interface TaskInfo{
     template?:string
     rewrite?:number
-    format?:string
+    format?:number
     info?:string
     share?:string
     ddl?:string
