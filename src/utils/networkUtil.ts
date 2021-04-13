@@ -126,3 +126,11 @@ export function qiniuUpload(token:string, file:File, key:string, options?:Upload
   })
   // subscription.close() // 取消上传
 }
+
+export function downLoadByUrl(url: string, filename = `${Date.now()}`) {
+  const a = document.createElement('a')
+  a.href = url
+  a.target = '_blank'
+  a.download = filename
+  a.click()
+}

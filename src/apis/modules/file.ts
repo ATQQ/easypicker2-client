@@ -11,8 +11,18 @@ function addFile(options:DbFile) {
 function getFileList() {
   return ajax.get<any, BaseResponse>('file/list')
 }
+
+function getTemplateUrl(template:string, key:string) {
+  return ajax.get<any, BaseResponse>('file/template', {
+    params: {
+      template,
+      key,
+    },
+  })
+}
 export default {
   getUploadToken,
   addFile,
   getFileList,
+  getTemplateUrl,
 }

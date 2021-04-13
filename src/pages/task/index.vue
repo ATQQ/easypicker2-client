@@ -41,8 +41,9 @@
           </el-input>
         </div>
         <div class="p10">
-          <el-button type="warning">撤回已上传文件</el-button>
-          <el-button @click="submitUpload" type="success">开始上传</el-button>
+          <el-button size="small" type="warning">撤回已上传文件</el-button>
+          <el-button size="small" @click="submitUpload" type="success">开始上传</el-button>
+          <el-button size="small" v-if="taskMoreInfo.template" @click="downloadTemplate">模板文件下载</el-button>
         </div>
         <el-upload
           action
@@ -57,13 +58,14 @@
         >
           <el-button type="primary">选择文件</el-button>
         </el-upload>
-      </div>
+        </div>
     </div>
+    <LinkDialog v-model="showLinkModel" title="模板文件下载链接" :link="templateLink"></LinkDialog>
   </div>
 </template>
 <script lang="ts">
 import { FileApi, TaskApi } from '@/apis'
-import { qiniuUpload } from '@/utils/networkUtil'
+import { downLoadByUrl, qiniuUpload } from '@/utils/networkUtil'
 import { formatDate, getFileMd5Hash, getFileSuffix } from '@/utils/stringUtil'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -71,8 +73,12 @@ import {
   defineComponent, onMounted, reactive, ref,
 } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import LinkDialog from '@components/linkDialog.vue'
 
 export default defineComponent({
+  components: {
+    LinkDialog,
+  },
   setup() {
     // 顶部导航
     const $router = useRouter()
@@ -212,6 +218,22 @@ export default defineComponent({
     const handleExceed = () => {
       ElMessage.warning('一次提交最多只能选择5个文件')
     }
+    const showLinkModel = ref(false)
+    const templateLink = ref('')
+    const downloadTemplate = () => {
+      FileApi
+        .getTemplateUrl(taskMoreInfo.template, k.value)
+        .then((res) => {
+          showLinkModel.value = true
+          const { link } = res.data
+          templateLink.value = link
+          downLoadByUrl(link, taskMoreInfo.template)
+          ElMessage.success('已开始自动下载模板文件')
+          setTimeout(() => {
+            ElMessage.success('如未自动开始,可复制链接粘贴到浏览器下载(12h有效)')
+          }, 100)
+        })
+    }
     onMounted(() => {
       k.value = $route.params.key as string
       if (k.value) {
@@ -242,6 +264,9 @@ export default defineComponent({
       fileUpload,
       submitUpload,
       handleExceed,
+      downloadTemplate,
+      showLinkModel,
+      templateLink,
     }
   },
 })
