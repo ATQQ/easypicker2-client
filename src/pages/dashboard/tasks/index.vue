@@ -47,29 +47,8 @@
     </el-dialog>
 
     <!-- 分享链接弹窗(二维码/链接/短链) -->
-    <el-dialog title="收取链接" v-model="showLinkModal" center>
-      <!-- 链接 -->
-      <div>
-        <el-input disabled placeholder="生成的链接" v-model="shareTaskLink">
-          <template #prepend>
-            <el-button type="primary" @click="createShortLink">生成短链</el-button>
-          </template>
-          <template #append>
-            <el-button type="primary" @click="copyLink">复制</el-button>
-          </template>
-        </el-input>
-      </div>
-      <!-- 二维码 -->
-      <div class="qr-code">
-        <qr-code :value="shareTaskLink"></qr-code>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button type="primary" @click="showLinkModal = false">关闭</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
+    <LinkDialog v-model="showLinkModal" title="收取链接" :link="shareTaskLink">
+    </LinkDialog>
     <!-- 附加属性编辑弹窗 -->
     <el-dialog title="更多设置" v-model="showTaskInfoPanel" center>
       <div>
@@ -102,9 +81,9 @@ import {
   computed, defineComponent, onMounted, reactive, ref,
 } from 'vue'
 import { useStore } from 'vuex'
-import QrCode from '@components/QrCode.vue'
 import { copyRes, getShortUrl } from '@/utils/stringUtil'
 import { TaskApi } from '@/apis'
+import LinkDialog from '@components/linkDialog.vue'
 import CategoryPanel from './components/CategoryPanel.vue'
 import CreateTask from './components/CreateTask.vue'
 import TaskInfo from './components/TaskInfo.vue'
@@ -115,10 +94,10 @@ import InfoPanel from './components/infoPanel/info.vue'
 
 export default defineComponent({
   components: {
+    LinkDialog,
     CategoryPanel,
     CreateTask,
     TaskInfo,
-    QrCode,
     DDlPanel,
     PeoplePanel,
     TemplatePanel,
@@ -184,15 +163,6 @@ export default defineComponent({
       shareTaskLink.value = `${origin}/task/${k}`
       showLinkModal.value = true
     }
-    const createShortLink = () => {
-      getShortUrl(shareTaskLink.value).then((v) => {
-        shareTaskLink.value = v
-        ElMessage.success('短链生成成功')
-      })
-    }
-    const copyLink = () => {
-      copyRes(shareTaskLink.value)
-    }
 
     // 附加属性编辑
     const taskInfo = reactive<TaskInfo>({})
@@ -225,8 +195,6 @@ export default defineComponent({
       shareTask,
       shareTaskLink,
       showLinkModal,
-      createShortLink,
-      copyLink,
       taskInfo,
       activeInfo,
       editMore,
