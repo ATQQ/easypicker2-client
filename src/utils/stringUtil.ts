@@ -37,7 +37,7 @@ export function base64(s:string) {
   return window.btoa(unescape(encodeURIComponent(s)))
 }
 
-export function formatDate(d:Date, fmt:string) {
+export function formatDate(d:Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
   const o:any = {
     'M+': d.getMonth() + 1, // 月份
     'd+': d.getDate(), // 日
@@ -51,4 +51,8 @@ export function formatDate(d:Date, fmt:string) {
   // eslint-disable-next-line no-restricted-syntax
   for (const k in o) { if (new RegExp(`(${k})`).test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? (o[k]) : ((`00${o[k]}`).substr((`${o[k]}`).length))) }
   return fmt
+}
+
+export function getFileSuffix(str:string) {
+  return str.slice(str.lastIndexOf('.'))
 }

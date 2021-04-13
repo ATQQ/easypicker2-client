@@ -10,7 +10,7 @@ interface TaskInfo{
 
 declare namespace qiniu {
     interface Subscription {
-        close(): void
+        unsubscribe(): void
     }
 
     interface SubscriptionConfig {
@@ -25,3 +25,13 @@ declare namespace qiniu {
     type upload = (file: File, key: string, token: string) => Observable
     const upload: upload
 }
+
+interface DbFile {
+    taskKey?: string
+    taskName?: string
+    categoryKey?: string
+    name?: string
+    info?: string
+    hash?: string
+    size?: number
+  }

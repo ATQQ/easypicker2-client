@@ -196,7 +196,7 @@ export default defineComponent({
 
     // 附加属性编辑
     const taskInfo = reactive<TaskInfo>({})
-    const showTaskInfoPanel = ref(true)
+    const showTaskInfoPanel = ref(false)
     const activeInfo = ref('info')
     const activeTask: any = reactive({})
 

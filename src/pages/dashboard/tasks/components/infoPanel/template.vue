@@ -32,7 +32,6 @@
         >开始上传</el-button>
         <template #tip>
           <div class="el-upload__tip">选择模板文件,然后点击上传</div>
-          <el-progress :percentage="percentage" :status="percentage === 100 ? 'success' : ''"></el-progress>
         </template>
       </el-upload>
     </div>
@@ -87,39 +86,42 @@ export default defineComponent({
     }
     // 清空文件
     const clearFiles = () => {
-      fileList.splice(0, fileList.length)
       elUpload.value.clearFiles()
     }
     // 开始上传
     const submitUploadPeople = () => {
-      fileList.forEach((file) => {
+      const { uploadFiles } = elUpload.value
+      uploadFiles.forEach((file:any) => {
         if (!props.k) { return }
         const { name } = file
         const key = `easypicker2/${props.k}_template/${name}`
-        FileApi.getUploadToken().then((res) => {
-          qiniuUpload(res.data.token, file.raw, key, {
-            success(data: any) {
-              ElMessage.success('上传成功')
-              updateTaskInfo(props.k, { template: name })
-              clearFiles()
-              template.value = name
+        if (file.status === 'ready') {
+          file.status = 'uploading'
+          // qiniu上传
+          FileApi.getUploadToken().then((res) => {
+            qiniuUpload(res.data.token, file.raw, key, {
+              success(data: any) {
+                ElMessage.success('上传成功')
+                updateTaskInfo(props.k, { template: name })
+                // 清理上传完成的
+                clearFiles()
+                template.value = name
+                file.status = 'success'
               // hash,key
               // console.log(data)
-            },
-            process(per: number) {
-              // eslint-disable-next-line no-bitwise
-              percentage.value = ~~(per)
-            },
+              },
+              process(per: number) {
+                file.percentage = ~~(per)
+              },
+            })
           })
-        })
-        // qiniu上传
-        // 清理上传完成的
+        }
       })
     }
 
     // 添加文件
     const handleChangeFile = (file: any) => {
-      fileList.push(file)
+      // fileList.push(file)
     }
     return {
       template,
