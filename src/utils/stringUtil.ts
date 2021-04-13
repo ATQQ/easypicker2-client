@@ -1,4 +1,5 @@
 import { ElMessage } from 'element-plus'
+import SparkMD5 from 'spark-md5'
 import { jsonp } from './networkUtil'
 
 /**
@@ -55,4 +56,42 @@ export function formatDate(d:Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
 
 export function getFileSuffix(str:string) {
   return str.slice(str.lastIndexOf('.'))
+}
+
+export function getFileMd5Hash(file:File) {
+  return new Promise((resolve, reject) => {
+    const blobSlice = File.prototype.slice
+    const chunkSize = 2097152 // Read in chunks of 2MB
+    const chunks = Math.ceil(file.size / chunkSize)
+    let currentChunk = 0
+    const spark = new SparkMD5.ArrayBuffer()
+    const fileReader = new FileReader()
+
+    function loadNext() {
+      const start = currentChunk * chunkSize
+      const end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize
+
+      fileReader.readAsArrayBuffer(blobSlice.call(file, start, end))
+    }
+    fileReader.onload = function (e) {
+      // console.log('read chunk nr', currentChunk + 1, 'of', chunks)
+      spark.append(e?.target?.result) // Append array buffer
+      currentChunk += 1
+
+      if (currentChunk < chunks) {
+        loadNext()
+      } else {
+        // console.log('finished loading')
+        const hashResult = spark.end()
+        // console.info('computed hash', hashResult) // Compute hash
+        resolve(hashResult)
+      }
+    }
+
+    fileReader.onerror = function () {
+      reject(new Error('oops, something went wrong.'))
+    }
+
+    loadNext()
+  })
 }

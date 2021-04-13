@@ -1863,6 +1863,11 @@ sourcemap-codec@^1.4.4:
   resolved "https://registry.npm.taobao.org/sourcemap-codec/download/sourcemap-codec-1.4.8.tgz"
   integrity sha1-6oBL2UhXQC5pktBaOO8a41qatMQ=
 
+spark-md5@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.npm.taobao.org/spark-md5/download/spark-md5-3.0.1.tgz#83a0e255734f2ab4e5c466e5a2cfc9ba2aa2124d"
+  integrity sha1-g6DiVXNPKrTlxGblos/JuiqiEk0=
+
 spdx-correct@^3.0.0:
   version "3.1.1"
   resolved "https://registry.npm.taobao.org/spdx-correct/download/spdx-correct-3.1.1.tgz#dece81ac9c1e6713e5f7d1b6f17d468fa53d89a9"

@@ -64,7 +64,7 @@
 <script lang="ts">
 import { FileApi, TaskApi } from '@/apis'
 import { qiniuUpload } from '@/utils/networkUtil'
-import { formatDate, getFileSuffix } from '@/utils/stringUtil'
+import { formatDate, getFileMd5Hash, getFileSuffix } from '@/utils/stringUtil'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   computed,
@@ -153,8 +153,16 @@ export default defineComponent({
           return
         }
       }
-      uploadFiles.forEach((file:any) => {
-        if (file.status === 'ready') {
+
+      // TODO:校验提交人员?
+      // TODO:弹窗输入名字
+      for (const file of uploadFiles) {
+        if (!file.md5) {
+          ElMessage.info(`文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`)
+          setTimeout(() => {
+            ElMessage.info('文件越大计算时间越长(1G通常需要20s)')
+          }, 100)
+        } else if (file.status === 'ready') {
           // 开始上传
           file.status = 'uploading'
           let { name } = file
@@ -164,22 +172,20 @@ export default defineComponent({
             name = infos.map((v) => v.value).join('-') + getFileSuffix(name)
           }
 
-          // TODO:校验提交人员?
-          const key = `easypicker2/${k.value}/${name}`
-          // TODO: 判断是否存在,存在则后缀+数字自增
+          const key = `easypicker2/${k.value}/${file.md5}/${name}`
 
           // 挂载取消上传的方法
           FileApi.getUploadToken().then((res) => {
             qiniuUpload(res.data.token, file.raw, key, {
               success(data: any) {
                 file.status = 'success'
-                const { fsize, hash } = data
+                const { fsize } = data
                 FileApi.addFile({
                   name,
                   taskKey: k.value,
                   taskName: taskInfo.name,
                   size: fsize,
-                  hash,
+                  hash: file.md5,
                   info: JSON.stringify(infos),
                 }).then(() => {
                   ElMessage.success(`文件:${file.name}提交成功`)
@@ -192,12 +198,15 @@ export default defineComponent({
             })
           })
         }
-      })
+      }
     }
 
     // 添加文件
     const handleChangeFile = (file: any) => {
-      // fileList.push(file)
+      // 计算md5 hash
+      getFileMd5Hash(file.raw).then((str) => {
+        file.md5 = str
+      })
     }
 
     const handleExceed = () => {

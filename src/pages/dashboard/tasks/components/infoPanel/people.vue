@@ -45,7 +45,7 @@
             <el-button v-else type="danger" icon="el-icon-close" size="mini" circle></el-button>
           </template>
         </el-table-column>
-        <el-table-column sortable property="count" label="提交次数" width="150"></el-table-column>
+        <!-- <el-table-column sortable property="count" label="提交次数" width="150"></el-table-column> -->
         <el-table-column sortable property="lastDate" label="最后提交时间" width="180"></el-table-column>
         <el-table-column label="操作" width="100">
           <template #default="scope">
