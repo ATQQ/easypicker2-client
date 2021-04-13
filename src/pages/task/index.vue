@@ -64,7 +64,7 @@
   </div>
 </template>
 <script lang="ts">
-import { FileApi, TaskApi } from '@/apis'
+import { FileApi, PeopleApi, TaskApi } from '@/apis'
 import { downLoadByUrl, qiniuUpload } from '@/utils/networkUtil'
 import { formatDate, getFileMd5Hash, getFileSuffix } from '@/utils/stringUtil'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -150,6 +150,7 @@ export default defineComponent({
     })
 
     // 开始上传
+    const peopleName = ref('')
     const submitUpload = () => {
       const { uploadFiles } = fileUpload.value
       // 校验表单填写
@@ -159,51 +160,73 @@ export default defineComponent({
           return
         }
       }
-
-      // TODO:校验提交人员?
-      // TODO:弹窗输入名字
-      for (const file of uploadFiles) {
-        if (!file.md5) {
-          ElMessage.info(`文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`)
-          setTimeout(() => {
-            ElMessage.info('文件越大计算时间越长(1G通常需要20s)')
-          }, 100)
-        } else if (file.status === 'ready') {
+      const startUpload = () => {
+        for (const file of uploadFiles) {
+          if (!file.md5) {
+            ElMessage.info(`文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`)
+            setTimeout(() => {
+              ElMessage.info('文件越大计算时间越长(1G通常需要20s)')
+            }, 100)
+          } else if (file.status === 'ready') {
           // 开始上传
-          file.status = 'uploading'
-          let { name } = file
+            file.status = 'uploading'
+            let { name } = file
 
-          // 如果开启了自动重命名,这里重命名一下
-          if (taskMoreInfo.rewrite) {
-            name = infos.map((v) => v.value).join('-') + getFileSuffix(name)
-          }
+            // 如果开启了自动重命名,这里重命名一下
+            if (taskMoreInfo.rewrite) {
+              name = infos.map((v) => v.value).join('-') + getFileSuffix(name)
+            }
 
-          const key = `easypicker2/${k.value}/${file.md5}/${name}`
+            const key = `easypicker2/${k.value}/${file.md5}/${name}`
 
-          // 挂载取消上传的方法
-          FileApi.getUploadToken().then((res) => {
-            qiniuUpload(res.data.token, file.raw, key, {
-              success(data: any) {
-                file.status = 'success'
-                const { fsize } = data
-                FileApi.addFile({
-                  name,
-                  taskKey: k.value,
-                  taskName: taskInfo.name,
-                  size: fsize,
-                  hash: file.md5,
-                  info: JSON.stringify(infos),
-                }).then(() => {
-                  ElMessage.success(`文件:${file.name}提交成功`)
-                })
-              },
-              process(per: number, data:any, subscription: any) {
-                file.percentage = ~~(per)
-                file.subscription = subscription
-              },
+            // 挂载取消上传的方法
+            FileApi.getUploadToken().then((res) => {
+              qiniuUpload(res.data.token, file.raw, key, {
+                success(data: any) {
+                  file.status = 'success'
+                  const { fsize } = data
+                  FileApi.addFile({
+                    name,
+                    taskKey: k.value,
+                    taskName: taskInfo.name,
+                    size: fsize,
+                    hash: file.md5,
+                    info: JSON.stringify(infos),
+                  }).then(() => {
+                    ElMessage.success(`文件:${file.name}提交成功`)
+                    if (taskMoreInfo.people) {
+                      // 无感知更新一下
+                      PeopleApi.updatePeopleStatus(k.value, name, peopleName.value)
+                    }
+                  })
+                },
+                process(per: number, data:any, subscription: any) {
+                  file.percentage = ~~(per)
+                  file.subscription = subscription
+                },
+              })
             })
-          })
+          }
         }
+      }
+      // TODO: 优化代码
+      if (taskMoreInfo.people) {
+        ElMessageBox.prompt('请输入你的姓名', '姓名核验', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+        }).then(async ({ value }) => {
+          const { data: { exist } } = await PeopleApi.checkPeopleIsExist(k.value, value)
+          if (exist) {
+            peopleName.value = value
+            startUpload()
+          } else {
+            ElMessage.warning('你不在此次提交名单中,如有疑问请联系管理员')
+          }
+        }).catch(() => {
+          ElMessage.info('取消')
+        })
+      } else {
+        startUpload()
       }
     }
 

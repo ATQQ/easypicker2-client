@@ -20,8 +20,25 @@ function deletePeople(key:string, id:number) {
     },
   })
 }
+
+function updatePeopleStatus(key:string, filename:string, name:string) {
+  return ajax.put<any, BaseResponse>(`/people/${key}`, {
+    filename,
+    name,
+  })
+}
+
+function checkPeopleIsExist(key:string, name:string) {
+  return ajax.get<any, BaseResponse>(`/people/check/${key}`, {
+    params: {
+      name,
+    },
+  })
+}
 export default {
   importPeople,
   getPeople,
   deletePeople,
+  updatePeopleStatus,
+  checkPeopleIsExist,
 }
