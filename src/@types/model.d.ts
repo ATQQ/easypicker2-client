@@ -34,4 +34,5 @@ interface DbFile {
     info?: string
     hash?: string
     size?: number
+    people?: string
   }

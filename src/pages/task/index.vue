@@ -41,8 +41,8 @@
           </el-input>
         </div>
         <div class="p10">
-          <el-button size="small" type="warning">撤回已上传文件</el-button>
-          <el-button size="small" @click="submitUpload" type="success">开始上传</el-button>
+          <el-button v-if="isWithdraw" size="small" @click="startWithdraw" type="warning">开始撤回</el-button>
+          <el-button v-else size="small" @click="submitUpload" type="success">开始上传</el-button>
           <el-button size="small" v-if="taskMoreInfo.template" @click="downloadTemplate">模板文件下载</el-button>
         </div>
         <el-upload
@@ -58,7 +58,11 @@
         >
           <el-button type="primary">选择文件</el-button>
         </el-upload>
+        <div class="withdraw">
+          <el-button v-if="isWithdraw" @click="isWithdraw = false" size="small" type="text">正常提交</el-button>
+          <el-button v-else size="small" @click="isWithdraw = true" type="text">我要撤回</el-button>
         </div>
+      </div>
     </div>
     <LinkDialog v-model="showLinkModel" title="模板文件下载链接" :link="templateLink"></LinkDialog>
   </div>
@@ -168,7 +172,7 @@ export default defineComponent({
               ElMessage.info('文件越大计算时间越长(1G通常需要20s)')
             }, 100)
           } else if (file.status === 'ready') {
-          // 开始上传
+            // 开始上传
             file.status = 'uploading'
             let { name } = file
 
@@ -179,7 +183,6 @@ export default defineComponent({
 
             const key = `easypicker2/${k.value}/${file.md5}/${name}`
 
-            // 挂载取消上传的方法
             FileApi.getUploadToken().then((res) => {
               qiniuUpload(res.data.token, file.raw, key, {
                 success(data: any) {
@@ -192,6 +195,7 @@ export default defineComponent({
                     size: fsize,
                     hash: file.md5,
                     info: JSON.stringify(infos),
+                    people: peopleName.value,
                   }).then(() => {
                     ElMessage.success(`文件:${file.name}提交成功`)
                     if (taskMoreInfo.people) {
@@ -200,8 +204,9 @@ export default defineComponent({
                     }
                   })
                 },
-                process(per: number, data:any, subscription: any) {
+                process(per: number, data: any, subscription: any) {
                   file.percentage = ~~(per)
+                  // 挂载取消上传的方法
                   file.subscription = subscription
                 },
               })
@@ -257,6 +262,68 @@ export default defineComponent({
           }, 100)
         })
     }
+
+    const isWithdraw = ref(false)
+    const startWithdraw = () => {
+      const { uploadFiles } = fileUpload.value
+      // 校验表单填写
+      for (const info of infos) {
+        if (!info.value) {
+          ElMessage.warning('请先完成必要信息的填写,需和提交时信息完全一致')
+          return
+        }
+      }
+      const start = () => {
+        for (const file of uploadFiles) {
+          if (!file.md5) {
+            ElMessage.info(`文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`)
+            setTimeout(() => {
+              ElMessage.info('文件越大计算时间越长(1G通常需要20s)')
+            }, 100)
+          } else if (file.status !== 'uploading') {
+            // 准备开始撤回
+            let { name } = file
+
+            // 如果开启了自动重命名,这里重命名一下
+            if (taskMoreInfo.rewrite) {
+              name = infos.map((v) => v.value).join('-') + getFileSuffix(name)
+            }
+
+            FileApi.withdrawFile({
+              taskKey: k.value,
+              taskName: taskInfo.name,
+              filename: name,
+              hash: file.md5,
+              info: JSON.stringify(infos),
+              peopleName: peopleName.value,
+            }).then(() => {
+              ElMessage.success(`文件:${file.name}撤回成功`)
+            }).catch(() => {
+              ElMessage.error(`撤回失败: 没有文件:${file.name}对应提交记录`)
+            })
+          }
+        }
+      }
+      // TODO: 优化代码
+      if (taskMoreInfo.people) {
+        ElMessageBox.prompt('请输入你的姓名', '姓名核验', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+        }).then(async ({ value }) => {
+          const { data: { exist } } = await PeopleApi.checkPeopleIsExist(k.value, value)
+          if (exist) {
+            peopleName.value = value
+            start()
+          } else {
+            ElMessage.warning('你不在提交名单中,无法进行撤回操作,如有疑问请联系管理员')
+          }
+        }).catch(() => {
+          ElMessage.info('取消')
+        })
+      } else {
+        start()
+      }
+    }
     onMounted(() => {
       k.value = $route.params.key as string
       if (k.value) {
@@ -290,6 +357,8 @@ export default defineComponent({
       downloadTemplate,
       showLinkModel,
       templateLink,
+      isWithdraw,
+      startWithdraw,
     }
   },
 })
@@ -359,5 +428,9 @@ export default defineComponent({
       margin-bottom: 10px;
     }
   }
+}
+
+.withdraw {
+  text-align: right;
 }
 </style>

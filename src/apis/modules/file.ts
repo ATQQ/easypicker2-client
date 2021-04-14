@@ -20,9 +20,24 @@ function getTemplateUrl(template:string, key:string) {
     },
   })
 }
+
+interface WithdrawFileOptions{
+  taskKey:string
+  taskName:string
+  filename:string
+  hash:string
+  peopleName:string
+  info:string
+}
+function withdrawFile(options:WithdrawFileOptions) {
+  return ajax.delete('file/withdraw', {
+    params: options,
+  })
+}
 export default {
   getUploadToken,
   addFile,
   getFileList,
   getTemplateUrl,
+  withdrawFile,
 }
