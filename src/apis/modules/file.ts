@@ -21,6 +21,22 @@ function getTemplateUrl(template:string, key:string) {
   })
 }
 
+function getOneFileUrl(id:number) {
+  return ajax.get<any, BaseResponse>('file/one', {
+    params: {
+      id,
+    },
+  })
+}
+
+function deleteOneFile(id:number) {
+  return ajax.delete<any, BaseResponse>('file/one', {
+    params: {
+      id,
+    },
+  })
+}
+
 interface WithdrawFileOptions{
   taskKey:string
   taskName:string
@@ -40,4 +56,6 @@ export default {
   getFileList,
   getTemplateUrl,
   withdrawFile,
+  getOneFileUrl,
+  deleteOneFile,
 }

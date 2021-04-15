@@ -58,8 +58,8 @@
         <el-table-column fixed="right" label="操作" width="180">
           <template #default="scope">
             <el-button @click="checkInfo(scope.row)" type="text" size="small">查看提交信息</el-button>
-            <el-button @click="downloadOne" type="text" size="small">下载</el-button>
-            <el-button @click="handleDelete" type="text" size="small">删除</el-button>
+            <el-button @click="downloadOne(scope.row)" type="text" size="small">下载</el-button>
+            <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -70,25 +70,40 @@
         @current-change="handlePageChange"
         background
         :page-count="pageCount"
-        :page-sizes="[6,10, 50, 100]"
+        :page-sizes="[6, 10, 50, 100]"
         :page-size="pageSize"
         @size-change="handleSizeChange"
         :total="filterFiles.length"
         layout="total, sizes, prev, pager, next, jumper"
       ></el-pagination>
     </div>
+    <!-- 信息弹窗 -->
+    <el-dialog title="提交填写的信息" v-model="showInfoDialog">
+      <el-form>
+        <el-form-item v-for="(info,idx) in infos" :key="idx" :label="info.text" label-width="120px">
+          <el-input :modelValue="info.value"></el-input>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+    <LinkDialog v-model="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
   </div>
 </template>
 <script lang="ts">
 import { FileApi } from '@/apis'
 import { formatDate, formatSize } from '@/utils/stringUtil'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   computed,
   defineComponent, onMounted, reactive, ref, watch, watchEffect,
 } from 'vue'
 import { useStore } from 'vuex'
+import LinkDialog from '@components/linkDialog.vue'
+import { downLoadByUrl } from '@/utils/networkUtil'
 
 export default defineComponent({
+  components: {
+    LinkDialog,
+  },
   setup() {
     const $store = useStore()
     // 分类相关
@@ -144,19 +159,49 @@ export default defineComponent({
     const handleSelectionChange = (e: any) => {
       console.log(e)
     }
+    const showInfoDialog = ref(false)
+    const infos: any[] = reactive([])
     const checkInfo = (e: any) => {
-      console.log(e)
+      infos.splice(0, infos.length)
+      infos.push(...JSON.parse(e.info))
+      showInfoDialog.value = true
     }
+
+    const showLinkModel = ref(false)
+    const downloadUrl = ref('')
     const downloadOne = (e: any) => {
-      console.log(e)
+      const { id, name } = e
+      FileApi
+        .getOneFileUrl(id)
+        .then((res) => {
+          const { link } = res.data
+          showLinkModel.value = true
+          downloadUrl.value = link
+          downLoadByUrl(link, name)
+          ElMessage.success('已开始自动下载文件')
+          setTimeout(() => {
+            ElMessage.success('如未自动开始,可复制链接粘贴到浏览器下载(12h有效)')
+          }, 100)
+        })
+        .catch(() => {
+          ElMessage.error('文件已从服务器上移除')
+        })
     }
     const handleDelete = (e: any) => {
-      console.log(e)
+      const idx = files.findIndex((v) => v === e)
+      ElMessageBox.confirm('确认删除此文件吗', '提示').then(() => {
+        FileApi.deleteOneFile(e.id).then(() => {
+          ElMessage.success('删除成功')
+          files.splice(idx, 1)
+        })
+      }).catch(() => {
+        ElMessage.info('取消删除')
+      })
     }
 
     // 分页
     const pageSize = ref(6)
-    const handleSizeChange = (v:number) => {
+    const handleSizeChange = (v: number) => {
       pageSize.value = v
     }
     const pageCount = computed(() => {
@@ -198,6 +243,10 @@ export default defineComponent({
       pageCurrent,
       pageSize,
       handleSizeChange,
+      showInfoDialog,
+      infos,
+      showLinkModel,
+      downloadUrl,
     }
   },
 })
