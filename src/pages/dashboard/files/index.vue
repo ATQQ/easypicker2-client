@@ -69,8 +69,12 @@
         :current-page="pageCurrent"
         @current-change="handlePageChange"
         background
-        layout="prev, pager, next"
         :page-count="pageCount"
+        :page-sizes="[6,10, 50, 100]"
+        :page-size="pageSize"
+        @size-change="handleSizeChange"
+        :total="filterFiles.length"
+        layout="total, sizes, prev, pager, next, jumper"
       ></el-pagination>
     </div>
   </div>
@@ -152,6 +156,9 @@ export default defineComponent({
 
     // 分页
     const pageSize = ref(6)
+    const handleSizeChange = (v:number) => {
+      pageSize.value = v
+    }
     const pageCount = computed(() => {
       const t = Math.ceil(filterFiles.value.length / pageSize.value)
       return t
@@ -189,6 +196,8 @@ export default defineComponent({
       pageCount,
       handlePageChange,
       pageCurrent,
+      pageSize,
+      handleSizeChange,
     }
   },
 })
