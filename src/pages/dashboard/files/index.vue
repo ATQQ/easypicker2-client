@@ -1,5 +1,6 @@
 <template>
   <div class="files">
+    <!-- 筛选框 -->
     <div class="panel header">
       <div class="item">
         <span class="label">分类</span>
@@ -34,6 +35,20 @@
       <span style="align-self: center;" class="item">{{ filterFiles.length }} / {{ files.length }}</span>
     </div>
     <div class="panel">
+      <el-dropdown @command="handleDropdownClick">
+        <el-button type="primary" :disabled="selectItem.length===0" size="medium">
+          批量操作<i class="el-icon-arrow-down el-icon--right"></i>
+        </el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="download">下载</el-dropdown-item>
+            <el-dropdown-item command="delete">删除</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </div>
+    <!-- 主体内容 -->
+    <div class="panel">
       <el-table
         tooltip-effect="dark"
         multipleTable
@@ -64,6 +79,7 @@
         </el-table-column>
       </el-table>
     </div>
+    <!-- 分页 -->
     <div class="panel tc">
       <el-pagination
         :current-page="pageCurrent"
@@ -151,13 +167,46 @@ export default defineComponent({
       // eslint-disable-next-line no-useless-escape
       t.info]).replace(/[:'"\{\},\[\]]/g, '').includes(searchWord.value) : true)))
     /**
-     * 琼空所有选项
+     * 清空所有选项
      */
     const clearSelection = () => {
       multipleTable.value.clearSelection()
     }
+    // 多选选中的项
+    const selectItem:any[] = reactive([])
     const handleSelectionChange = (e: any) => {
-      console.log(e)
+      selectItem.splice(0, selectItem.length)
+      selectItem.push(...e)
+    }
+    const batchDownStart = ref(false)
+    const handleDropdownClick = (e:string) => {
+      const ids:number[] = selectItem.map((v) => v.id)
+      switch (e) {
+        case 'download':
+          if (batchDownStart.value) {
+            ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
+            return
+          }
+          // FileApi.batchDownload(ids).then(() => {
+          //   // 获取到后轮循查看是否成功
+          // })
+          // batchDownStart.value = true
+          ElMessage.info('开始归档选中的文件,请赖心等待,完成后将自动进行下载')
+          break
+        case 'delete':
+          ElMessageBox.confirm('确认删除吗?删除后无法恢复', '提示').then(() => {
+            FileApi.batchDel(ids).then(() => {
+              files.splice(0, files.length, ...files.filter((v) => !ids.includes(v.id)))
+              ElMessage.success('删除成功')
+            })
+          }).catch(() => {
+            ElMessage.info('取消')
+          })
+          break
+        default:
+          break
+      }
+      clearSelection()
     }
     const showInfoDialog = ref(false)
     const infos: any[] = reactive([])
@@ -247,6 +296,8 @@ export default defineComponent({
       infos,
       showLinkModel,
       downloadUrl,
+      selectItem,
+      handleDropdownClick,
     }
   },
 })

@@ -37,6 +37,19 @@ function deleteOneFile(id:number) {
   })
 }
 
+function batchDownload(ids:number[]) {
+  return ajax.post<any, BaseResponse>('file/batch/down', {
+    ids,
+  })
+}
+
+function batchDel(ids:number[]) {
+  return ajax.delete<any, BaseResponse>('file/batch/del', {
+    params: {
+      ids,
+    },
+  })
+}
 interface WithdrawFileOptions{
   taskKey:string
   taskName:string
@@ -58,4 +71,6 @@ export default {
   withdrawFile,
   getOneFileUrl,
   deleteOneFile,
+  batchDownload,
+  batchDel,
 }
