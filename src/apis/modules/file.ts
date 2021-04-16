@@ -50,6 +50,38 @@ function batchDel(ids:number[]) {
     },
   })
 }
+
+function checkCompressStatus(id:string) {
+  return ajax.post<any, BaseResponse>('file/compress/status', {
+    id,
+  })
+}
+function getCompressDownUrl(key:string) {
+  return ajax.post<any, BaseResponse>('file/compress/down', {
+    key,
+  })
+}
+function getCompressFileUrl(id:string):Promise<string> {
+  const check = (_r:any) => {
+    checkCompressStatus(id).then((r) => {
+      const { code, key } = r.data
+      if (code === 0) {
+        getCompressDownUrl(key).then((v) => {
+          const { url } = v.data
+          _r(url)
+        })
+      } else {
+        setTimeout(() => {
+          check(_r)
+        }, 1000)
+      }
+    })
+  }
+
+  return new Promise((resolve, reject) => {
+    check(resolve)
+  })
+}
 interface WithdrawFileOptions{
   taskKey:string
   taskName:string
@@ -73,4 +105,7 @@ export default {
   deleteOneFile,
   batchDownload,
   batchDel,
+  checkCompressStatus,
+  getCompressFileUrl,
+  getCompressDownUrl,
 }

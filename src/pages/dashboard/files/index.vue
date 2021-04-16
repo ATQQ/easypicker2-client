@@ -122,6 +122,8 @@ export default defineComponent({
   },
   setup() {
     const $store = useStore()
+    const showLinkModel = ref(false)
+    const downloadUrl = ref('')
     // 分类相关
     const categorys = computed(() => $store.state.category.categoryList)
     const selectCategory = ref('all')
@@ -187,10 +189,20 @@ export default defineComponent({
             ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
             return
           }
-          // FileApi.batchDownload(ids).then(() => {
-          //   // 获取到后轮循查看是否成功
-          // })
-          // batchDownStart.value = true
+          FileApi.batchDownload(ids).then((r) => {
+            const { k } = r.data
+            FileApi.getCompressFileUrl(k).then((v) => {
+              showLinkModel.value = true
+              downloadUrl.value = v
+              downLoadByUrl(v, `${Date.now()}.zip`)
+              ElMessage.success('已开始自动下载文件')
+              batchDownStart.value = false
+              setTimeout(() => {
+                ElMessage.success('如未自动开始,可复制链接粘贴到浏览器下载(12h有效)')
+              }, 100)
+            })
+          })
+          batchDownStart.value = true
           ElMessage.info('开始归档选中的文件,请赖心等待,完成后将自动进行下载')
           break
         case 'delete':
@@ -216,8 +228,6 @@ export default defineComponent({
       showInfoDialog.value = true
     }
 
-    const showLinkModel = ref(false)
-    const downloadUrl = ref('')
     const downloadOne = (e: any) => {
       const { id, name } = e
       FileApi
