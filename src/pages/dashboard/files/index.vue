@@ -36,8 +36,9 @@
     </div>
     <div class="panel">
       <el-dropdown @command="handleDropdownClick">
-        <el-button type="primary" :disabled="selectItem.length===0" size="medium">
-          批量操作<i class="el-icon-arrow-down el-icon--right"></i>
+        <el-button type="primary" :disabled="selectItem.length === 0" size="medium">
+          批量操作
+          <i class="el-icon-arrow-down el-icon--right"></i>
         </el-button>
         <template #dropdown>
           <el-dropdown-menu>
@@ -101,7 +102,7 @@
         </el-form-item>
       </el-form>
     </el-dialog>
-    <LinkDialog v-model="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
+    <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
   </div>
 </template>
 <script lang="ts">
@@ -110,7 +111,7 @@ import { formatDate, formatSize } from '@/utils/stringUtil'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   computed,
-  defineComponent, onMounted, reactive, ref, watch, watchEffect,
+  defineComponent, onMounted, reactive, ref,
 } from 'vue'
 import { useStore } from 'vuex'
 import LinkDialog from '@components/linkDialog.vue'
@@ -175,14 +176,14 @@ export default defineComponent({
       multipleTable.value.clearSelection()
     }
     // 多选选中的项
-    const selectItem:any[] = reactive([])
+    const selectItem: any[] = reactive([])
     const handleSelectionChange = (e: any) => {
       selectItem.splice(0, selectItem.length)
       selectItem.push(...e)
     }
     const batchDownStart = ref(false)
-    const handleDropdownClick = (e:string) => {
-      const ids:number[] = selectItem.map((v) => v.id)
+    const handleDropdownClick = (e: string) => {
+      const ids: number[] = selectItem.map((v) => v.id)
       switch (e) {
         case 'download':
           if (batchDownStart.value) {
@@ -195,11 +196,7 @@ export default defineComponent({
               showLinkModel.value = true
               downloadUrl.value = v
               downLoadByUrl(v, `${Date.now()}.zip`)
-              ElMessage.success('已开始自动下载文件')
               batchDownStart.value = false
-              setTimeout(() => {
-                ElMessage.success('如未自动开始,可复制链接粘贴到浏览器下载(12h有效)')
-              }, 100)
             })
           })
           batchDownStart.value = true
@@ -237,10 +234,6 @@ export default defineComponent({
           showLinkModel.value = true
           downloadUrl.value = link
           downLoadByUrl(link, name)
-          ElMessage.success('已开始自动下载文件')
-          setTimeout(() => {
-            ElMessage.success('如未自动开始,可复制链接粘贴到浏览器下载(12h有效)')
-          }, 100)
         })
         .catch(() => {
           ElMessage.error('文件已从服务器上移除')

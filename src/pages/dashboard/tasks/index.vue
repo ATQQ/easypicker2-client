@@ -47,7 +47,7 @@
     </el-dialog>
 
     <!-- 分享链接弹窗(二维码/链接/短链) -->
-    <LinkDialog v-model="showLinkModal" title="收取链接" :link="shareTaskLink">
+    <LinkDialog v-model:value="showLinkModal" :download="false" title="收取链接" :link="shareTaskLink">
     </LinkDialog>
     <!-- 附加属性编辑弹窗 -->
     <el-dialog title="更多设置" v-model="showTaskInfoPanel" center>

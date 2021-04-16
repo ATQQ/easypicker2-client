@@ -64,7 +64,7 @@
         </div>
       </div>
     </div>
-    <LinkDialog v-model="showLinkModel" title="模板文件下载链接" :link="templateLink"></LinkDialog>
+    <LinkDialog v-model:value="showLinkModel" title="模板文件下载链接" :link="templateLink"></LinkDialog>
   </div>
 </template>
 <script lang="ts">
@@ -256,10 +256,6 @@ export default defineComponent({
           const { link } = res.data
           templateLink.value = link
           downLoadByUrl(link, taskMoreInfo.template)
-          ElMessage.success('已开始自动下载模板文件')
-          setTimeout(() => {
-            ElMessage.success('如未自动开始,可复制链接粘贴到浏览器下载(12h有效)')
-          }, 100)
         })
     }
 
