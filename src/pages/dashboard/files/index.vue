@@ -196,8 +196,11 @@ export default defineComponent({
               showLinkModel.value = true
               downloadUrl.value = v
               downLoadByUrl(v, `${Date.now()}.zip`)
-              batchDownStart.value = false
             })
+          }).catch(() => {
+            ElMessage.error('所选文件均已从服务器上移除')
+          }).finally(() => {
+            batchDownStart.value = false
           })
           batchDownStart.value = true
           ElMessage.info('开始归档选中的文件,请赖心等待,完成后将自动进行下载')
