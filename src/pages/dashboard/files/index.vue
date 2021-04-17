@@ -47,6 +47,15 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
+      <el-button
+        :loading="batchDownStart"
+        :disabled="selectTask === 'all'"
+        type="primary"
+        size="medium"
+        icon="el-icon-download"
+        @click="handleDownloadTask"
+      >导出任务</el-button>
+      <el-button size="medium" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
     </div>
     <!-- 主体内容 -->
     <div class="panel">
@@ -142,7 +151,7 @@ export default defineComponent({
     // 提交的所有文件
     const files: any[] = reactive([])
     const loadFiles = () => {
-      files.slice(0, files.length)
+      files.splice(0, files.length)
       FileApi.getFileList().then((res) => {
         files.push(...res.data.files)
       })
@@ -196,10 +205,10 @@ export default defineComponent({
               showLinkModel.value = true
               downloadUrl.value = v
               downLoadByUrl(v, `${Date.now()}.zip`)
+              batchDownStart.value = false
             })
           }).catch(() => {
             ElMessage.error('所选文件均已从服务器上移除')
-          }).finally(() => {
             batchDownStart.value = false
           })
           batchDownStart.value = true
@@ -272,12 +281,46 @@ export default defineComponent({
     const handlePageChange = (idx: number) => {
       pageCurrent.value = idx
     }
+
+    // 刷新文件列表
+
+    const handleRefresh = () => {
+      loadFiles()
+      ElMessage.success('刷新成功')
+    }
+    const handleDownloadTask = () => {
+      const ids:number[] = files.filter((f) => f.task_key === selectTask.value).map((v) => v.id)
+      if (ids.length === 0) {
+        ElMessage.warning('该任务中没有数据')
+        return
+      }
+      if (batchDownStart.value) {
+        ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
+        return
+      }
+      FileApi.batchDownload(ids).then((r) => {
+        const { k } = r.data
+        FileApi.getCompressFileUrl(k).then((v) => {
+          showLinkModel.value = true
+          downloadUrl.value = v
+          downLoadByUrl(v, `${Date.now()}.zip`)
+          batchDownStart.value = false
+        })
+      }).catch(() => {
+        ElMessage.error('所选任务中的文件均已从服务器上移除')
+        batchDownStart.value = false
+      })
+      batchDownStart.value = true
+      ElMessage.info('开始归档任务中的文件,请赖心等待,完成后将自动进行下载')
+    }
     onMounted(() => {
       loadFiles()
       $store.dispatch('category/getCategory')
       $store.dispatch('task/getTask')
     })
     return {
+      handleRefresh,
+      handleDownloadTask,
       filterFiles,
       files,
       showFilterFiles,
@@ -304,6 +347,7 @@ export default defineComponent({
       downloadUrl,
       selectItem,
       handleDropdownClick,
+      batchDownStart,
     }
   },
 })
@@ -334,5 +378,8 @@ export default defineComponent({
   .item {
     margin-right: 10px;
   }
+}
+.el-button {
+  margin-left: 10px;
 }
 </style>
