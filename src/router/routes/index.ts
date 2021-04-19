@@ -3,6 +3,7 @@ import Home from '@/pages/home/index.vue'
 
 const NotFind = () => import('@/pages/404/index.vue')
 const Login = () => import('@/pages/login/index.vue')
+const Reset = () => import('@/pages/reset/index.vue')
 const Register = () => import('@/pages/register/index.vue')
 const About = () => import('@/pages/about/index.vue')
 const Feedback = () => import('@/pages/feedback/index.vue')
@@ -19,6 +20,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: Home },
   { path: '/login', name: 'login', component: Login },
   { path: '/register', name: 'register', component: Register },
+  { path: '/reset', name: 'reset', component: Reset },
   { path: '/about', name: 'about', component: About },
   { path: '/feedback', name: 'feedback', component: Feedback },
   { path: '/task/:key', name: 'task', component: Task },

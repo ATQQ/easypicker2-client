@@ -20,8 +20,15 @@ function codeLogin(phone:string, code:string) {
     phone, code,
   })
 }
+
+function resetPwd(phone:string, code:string, pwd:string) {
+  return ajax.put<any, BaseResponse>('user/password', {
+    phone, code, pwd,
+  })
+}
 export default {
   register,
   login,
   codeLogin,
+  resetPwd,
 }

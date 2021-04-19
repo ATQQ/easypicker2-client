@@ -5,15 +5,26 @@
       <div class="inputArea">
         <div>
           <el-input
-            maxlength="12"
-            placeholder="输入账号/手机号"
-            prefix-icon="el-icon-user"
+            maxlength="11"
+            placeholder="手机号"
+            prefix-icon="el-icon-phone"
             v-model="account"
             clearable
           >
+          </el-input>
+        </div>
+        <div>
+          <el-input
+            maxlength="4"
+            type="number"
+            placeholder="请输入验证码"
+            prefix-icon="el-icon-chat-dot-square"
+            v-model="code"
+            clearable
+          >
             <template #append>
-              <el-button v-if="accountLogin" @click="accountLogin = !accountLogin">验证码登录</el-button>
-              <el-button v-else @click="accountLogin = !accountLogin">账号登录</el-button>
+              <!-- 获取验证码 -->
+              <el-button :disabled="time!==0" @click="getCode" >{{ codeText }}</el-button>
             </template>
           </el-input>
         </div>
@@ -21,31 +32,32 @@
           <el-input
             maxlength="16"
             minlength="6"
-            :type="accountLogin ? 'password' : 'number'"
-            :placeholder="accountLogin ? '请输入密码' : '请输入验证码'"
+            type="password"
+            placeholder="请输入新密码"
             prefix-icon="el-icon-lock"
-            v-model="pwd"
-            :show-password="accountLogin"
+            v-model="pwd1"
+            show-password
             clearable
-          >
-            <template #append>
-              <el-button v-if="accountLogin">
-                <router-link style="color:#909399;" to="/reset">忘记密码?</router-link>
-              </el-button>
-              <!-- 获取验证码 -->
-              <el-button :disabled="time!==0" @click="getCode" v-else >{{ codeText }}</el-button>
-            </template>
-          </el-input>
+          ></el-input>
+        </div>
+        <div>
+          <el-input
+            maxlength="16"
+            minlength="6"
+            type="password"
+            placeholder="请再次输入新密码"
+            prefix-icon="el-icon-lock"
+            v-model="pwd2"
+            show-password
+            clearable
+          ></el-input>
         </div>
         <div class="tc">
-          <el-checkbox v-model="remember">记住登录信息?</el-checkbox>
-        </div>
-        <div class="tc">
-          <el-button @click="login()" type="primary" class="fw-w100">登录</el-button>
+          <el-button @click="reset" type="primary" class="fw-w100">确认重置</el-button>
         </div>
         <el-divider></el-divider>
         <div class="links">
-          <router-link to="/register">快速注册</router-link>
+          <router-link to="/login">去登陆</router-link>
         </div>
       </div>
     </login-panel>
@@ -70,7 +82,9 @@ export default defineComponent({
   },
   setup() {
     const account = ref('')
-    const pwd = ref('')
+    const code = ref('')
+    const pwd1 = ref('')
+    const pwd2 = ref('')
     const remember = ref(false)
     const accountLogin = ref(true)
     const $store = useStore()
@@ -81,22 +95,21 @@ export default defineComponent({
       })
     }
     const checkForm = () => {
-      if (account.value.length === 11) {
-        if (!rMobilePhone.test(account.value)) {
-          ElMessage.warning('手机号格式不正确')
-          return false
-        }
-      } else if (!rAccount.test(account.value)) {
-        ElMessage.warning('帐号格式不正确(4-8位 数字字母)')
+      if (!rMobilePhone.test(account.value)) {
+        ElMessage.warning('手机号格式不正确')
         return false
       }
 
-      if (accountLogin.value && !rPassword.test(pwd.value)) {
+      if (!rPassword.test(pwd1.value)) {
         ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
         return false
       }
+      if (pwd1.value !== pwd2.value) {
+        ElMessage.warning('两次输入的密码不一致')
+        return false
+      }
 
-      if (!accountLogin.value && !rVerCode.test(pwd.value)) {
+      if (!rVerCode.test(code.value)) {
         ElMessage.warning('验证码不正确(4位 数字)')
         return false
       }
@@ -124,62 +137,35 @@ export default defineComponent({
         ElMessage.success('获取成功,请注意查看手机(暂未上线)')
       })
     }
-    const login = () => {
+    const reset = () => {
       if (!checkForm()) {
         return
       }
-      // 账号密码
-      if (accountLogin.value) {
-        if (remember.value) {
-          localStorage.setItem('userinfo', JSON.stringify({
-            account: account.value,
-            pwd: pwd.value,
-            remember: remember.value,
-          }))
-        } else {
-          localStorage.removeItem('userinfo')
-        }
-        UserApi.login(account.value, pwd.value).then((res) => {
+      UserApi
+        .resetPwd(account.value, code.value, pwd1.value)
+        .then((res) => {
+          ElMessage.success('密码重置成功')
           const { token } = res.data
           $store.commit('user/setToken', token)
-          ElMessage.success('登录成功')
           redirectDashBoard()
-        }).catch(() => {
-          ElMessage.error({
-            type: 'error',
-            message: '密码不正确',
-          })
         })
-      } else {
-        // 手机号验证码登录
-        UserApi.codeLogin(account.value, pwd.value).then((res) => {
-          const { token } = res.data
-          $store.commit('user/setToken', token)
-          ElMessage.success('登录成功')
-          redirectDashBoard()
-        }).catch(() => {
-          ElMessage.error('验证码不正确')
+        .catch((err) => {
+          const { code: c } = err
+          const options:any = {
+            1008: '该手机号未绑定任何账号',
+            1003: '验证码不正确',
+            1004: '密码格式不正确',
+          }
+          ElMessage.error(options[c] || '重置失败,未知错误')
         })
-      }
     }
-    onMounted(() => {
-      const { token } = $store.state.user
-      if (token) {
-        redirectDashBoard()
-      }
-      const info = localStorage.getItem('userinfo')
-      if (info) {
-        const user = JSON.parse(info)
-        account.value = user.account
-        pwd.value = user.pwd
-        remember.value = user.remember
-      }
-    })
     return {
       account,
-      pwd,
+      code,
+      pwd1,
+      pwd2,
       time,
-      login,
+      reset,
       remember,
       accountLogin,
       codeText,

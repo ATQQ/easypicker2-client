@@ -37,6 +37,9 @@
         </div>
         <div class="tc">
           <el-checkbox v-model="bindPhone">绑定手机</el-checkbox>
+          <el-tooltip effect="dark" content="可用于修改/找回密码" placement="top-start">
+            <i class="el-icon-question"></i>
+          </el-tooltip>
         </div>
         <div v-if="bindPhone">
           <el-input
@@ -155,7 +158,7 @@ export default defineComponent({
       }).catch((err) => {
         const { code: c } = err
         const msg = '注册失败,未知错误'
-        const options:any = {
+        const options: any = {
           1001: '账号已存在',
           1002: '手机号已被注册',
           1003: '验证码不正确',
