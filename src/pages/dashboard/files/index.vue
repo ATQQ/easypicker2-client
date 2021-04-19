@@ -56,6 +56,12 @@
         @click="handleDownloadTask"
       >导出任务</el-button>
       <el-button size="medium" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
+      <el-button
+        type="success"
+        size="medium"
+        icon="el-icon-data"
+        @click="handlEexportExcell"
+      >导出Excel</el-button>
     </div>
     <!-- 主体内容 -->
     <div class="panel">
@@ -124,7 +130,7 @@ import {
 } from 'vue'
 import { useStore } from 'vuex'
 import LinkDialog from '@components/linkDialog.vue'
-import { downLoadByUrl } from '@/utils/networkUtil'
+import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
 
 export default defineComponent({
   components: {
@@ -289,7 +295,7 @@ export default defineComponent({
       ElMessage.success('刷新成功')
     }
     const handleDownloadTask = () => {
-      const ids:number[] = files.filter((f) => f.task_key === selectTask.value).map((v) => v.id)
+      const ids: number[] = files.filter((f) => f.task_key === selectTask.value).map((v) => v.id)
       if (ids.length === 0) {
         ElMessage.warning('该任务中没有数据')
         return
@@ -313,12 +319,30 @@ export default defineComponent({
       batchDownStart.value = true
       ElMessage.info('开始归档任务中的文件,请赖心等待,完成后将自动进行下载')
     }
+
+    const handlEexportExcell = () => {
+      if (showFilterFiles.value.length === 0) {
+        ElMessage.warning('表格中没有可导出的内容')
+        return
+      }
+      const headers = ['提交时间', '任务', '文件名', '文件大小', '提交信息']
+      const body = showFilterFiles.value.map(((v) => {
+        const {
+          date, task_name: taskName, name, size,
+        } = v
+        const info = JSON.parse(v.info).map((i:any) => `${i.text}--${i.value}`).join(',')
+        return [formatDate(new Date(date)), taskName, name, formatSize(size), info]
+      }))
+      tableToExcel(headers, body)
+      ElMessage.success('导出成功')
+    }
     onMounted(() => {
       loadFiles()
       $store.dispatch('category/getCategory')
       $store.dispatch('task/getTask')
     })
     return {
+      handlEexportExcell,
       handleRefresh,
       handleDownloadTask,
       filterFiles,
