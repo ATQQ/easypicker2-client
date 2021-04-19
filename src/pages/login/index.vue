@@ -92,7 +92,7 @@ export default defineComponent({
       }
 
       if (accountLogin.value && !rPassword.test(pwd.value)) {
-        ElMessage.warning('密码格式不正确(6-16位 字母/数字/下划线)')
+        ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
         return false
       }
 
