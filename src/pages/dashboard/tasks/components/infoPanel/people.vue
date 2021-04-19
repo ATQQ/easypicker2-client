@@ -31,6 +31,14 @@
       </el-upload>
     </div>
     <el-dialog title="提交情况" v-model="showPeopList">
+      <div class="p10">
+        <el-button
+          :disabled="peopleList.length === 0"
+          type="success"
+          size="medium"
+          @click="handleExportExcel"
+        >导出记录</el-button>
+      </div>
       <el-table stripe border :data="peopleList" height="360px">
         <el-table-column sortable property="name" label="姓名" width="150"></el-table-column>
         <el-table-column label="提交状态" width="100">
@@ -161,8 +169,21 @@ export default defineComponent({
       }
       peopleFileList.push(file)
     }
-
+    const handleExportExcel = () => {
+      if (peopleList.length === 0) {
+        ElMessage.warning('表格中没有可导出数据')
+        return
+      }
+      const headers = ['姓名', '提交状态', '最后提交时间']
+      const body = peopleList.map((v) => {
+        const { name, status, lastDate } = v
+        return [name, status ? '✔' : '', status ? formatDate(new Date(lastDate)) : '']
+      })
+      tableToExcel(headers, body)
+      ElMessage.success('导出成功')
+    }
     return {
+      handleExportExcel,
       people,
       uodateLimitPeople,
       checkPeople,
