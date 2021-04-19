@@ -14,7 +14,14 @@ function login(account:string, pwd:string) {
     account, pwd,
   })
 }
+
+function codeLogin(phone:string, code:string) {
+  return ajax.post<any, BaseResponse>('user/login/code', {
+    phone, code,
+  })
+}
 export default {
   register,
   login,
+  codeLogin,
 }

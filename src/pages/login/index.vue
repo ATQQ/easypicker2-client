@@ -1,30 +1,78 @@
 <template>
-    <div>
-        <h1>登录页</h1>
+  <div class="login">
+    <login-panel>
+      <!-- 表单输入区域 -->
+      <div class="inputArea">
         <div>
-      <el-input placeholder="请输账号" v-model="account">
-        <template #prepend>账号</template>
-      </el-input>
-    </div>
-    <div>
-      <el-input placeholder="请输入密码" v-model="pwd" type="password">
-        <template #prepend>密码</template>
-      </el-input>
-    </div>
-        <el-button type="primary" @click="login">登录</el-button>
-    </div>
+          <el-input
+            maxlength="12"
+            placeholder="输入账号/手机号"
+            prefix-icon="el-icon-user"
+            v-model="account"
+            clearable
+          >
+            <template #append>
+              <el-button v-if="accountLogin" @click="accountLogin = !accountLogin">验证码登录</el-button>
+              <el-button v-else @click="accountLogin = !accountLogin">账号登录</el-button>
+            </template>
+          </el-input>
+        </div>
+        <div>
+          <el-input
+            maxlength="16"
+            minlength="6"
+            :type="accountLogin ? 'password' : 'number'"
+            :placeholder="accountLogin ? '请输入密码' : '请输入验证码'"
+            prefix-icon="el-icon-lock"
+            v-model="pwd"
+            :show-password="accountLogin"
+            clearable
+          >
+            <template #append>
+              <el-button v-if="accountLogin">
+                <router-link style="color:#909399;" to="/password_reset">忘记密码?</router-link>
+              </el-button>
+              <!-- 获取验证码 -->
+              <el-button :disabled="time!==0" @click="getCode" v-else >{{ codeText }}</el-button>
+            </template>
+          </el-input>
+        </div>
+        <div class="tc">
+          <el-checkbox v-model="remember">记住登录信息?</el-checkbox>
+        </div>
+        <div class="tc">
+          <el-button @click="login()" type="primary" class="fw-w100">登录</el-button>
+        </div>
+        <el-divider></el-divider>
+        <div class="links">
+          <router-link to="/register">快速注册</router-link>
+        </div>
+      </div>
+    </login-panel>
+  </div>
 </template>
 <script lang="ts">
-import { UserApi } from '@/apis'
+import { publicApi, UserApi } from '@/apis'
 import { ElMessage } from 'element-plus'
-import { defineComponent, onMounted, ref } from 'vue'
+import {
+  defineComponent, onMounted, ref,
+} from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
+import loginPanel from '@components/loginPanel.vue'
+import {
+  rAccount, rMobilePhone, rPassword, rVerCode,
+} from '@/utils/regExp'
 
 export default defineComponent({
+  components: {
+    loginPanel,
+  },
   setup() {
     const account = ref('')
     const pwd = ref('')
+    const remember = ref(false)
+    const accountLogin = ref(true)
     const $store = useStore()
     const $router = useRouter()
     const redirectDashBoard = () => {
@@ -32,31 +80,136 @@ export default defineComponent({
         name: 'dashboard',
       })
     }
-    const login = () => {
-      UserApi.login(account.value, pwd.value).then((res) => {
-        const { token } = res.data
-        $store.commit('user/setToken', token)
-        ElMessage.success('登录成功')
-        redirectDashBoard()
-      }).catch(() => {
-        ElMessage.error({
-          type: 'error',
-          message: '密码不正确',
-        })
+    const checkForm = () => {
+      if (account.value.length === 11) {
+        if (!rMobilePhone.test(account.value)) {
+          ElMessage.warning('手机号格式不正确')
+          return false
+        }
+      } else if (!rAccount.test(account.value)) {
+        ElMessage.warning('帐号格式不正确(4-8位 数字字母)')
+        return false
+      }
+
+      if (accountLogin.value && !rPassword.test(pwd.value)) {
+        ElMessage.warning('密码格式不正确(6-16位 字母/数字/下划线)')
+        return false
+      }
+
+      if (!accountLogin.value && !rVerCode.test(pwd.value)) {
+        ElMessage.warning('验证码不正确(4位 数字)')
+        return false
+      }
+      return true
+    }
+    const codeText = ref('获取验证码')
+    const time = ref(0)
+    const refreshCodeText = () => {
+      if (time.value === 0) {
+        codeText.value = '获取验证码'
+        return
+      }
+      codeText.value = `${time.value}s`
+      time.value -= 1
+      setTimeout(refreshCodeText, 1000)
+    }
+    const getCode = () => {
+      if (!rMobilePhone.test(account.value)) {
+        ElMessage.warning('手机号格式不正确')
+        return
+      }
+      publicApi.getCode(account.value).then(() => {
+        time.value = 120
+        refreshCodeText()
+        ElMessage.success('获取成功,请注意查看手机(暂未上线)')
       })
     }
-
+    const login = () => {
+      if (!checkForm()) {
+        return
+      }
+      // 账号密码
+      if (accountLogin.value) {
+        if (remember.value) {
+          localStorage.setItem('userinfo', JSON.stringify({
+            account: account.value,
+            pwd: pwd.value,
+            remember: remember.value,
+          }))
+        } else {
+          localStorage.removeItem('userinfo')
+        }
+        UserApi.login(account.value, pwd.value).then((res) => {
+          const { token } = res.data
+          $store.commit('user/setToken', token)
+          ElMessage.success('登录成功')
+          redirectDashBoard()
+        }).catch(() => {
+          ElMessage.error({
+            type: 'error',
+            message: '密码不正确',
+          })
+        })
+      } else {
+        // 手机号验证码登录
+        UserApi.codeLogin(account.value, pwd.value).then((res) => {
+          const { token } = res.data
+          $store.commit('user/setToken', token)
+          ElMessage.success('登录成功')
+          redirectDashBoard()
+        }).catch(() => {
+          ElMessage.error('验证码不正确')
+        })
+      }
+    }
     onMounted(() => {
       const { token } = $store.state.user
       if (token) {
         redirectDashBoard()
       }
+      const info = localStorage.getItem('userinfo')
+      if (info) {
+        const user = JSON.parse(info)
+        account.value = user.account
+        pwd.value = user.pwd
+        remember.value = user.remember
+      }
     })
     return {
       account,
       pwd,
+      time,
       login,
+      remember,
+      accountLogin,
+      codeText,
+      getCode,
     }
   },
 })
 </script>
+
+<style scoped lang="scss">
+.login {
+  background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+  min-height: 100vh;
+}
+
+.inputArea {
+  // padding: 1rem;
+  margin: 0 auto;
+  max-width: 320px;
+  div {
+    margin-top: 10px;
+  }
+}
+// 登录按钮下方链接
+.links {
+  display: flex;
+  justify-content: center;
+  a {
+    color: #409eff;
+    margin-left: 10px;
+  }
+}
+</style>
