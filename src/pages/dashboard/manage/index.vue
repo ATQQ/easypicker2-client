@@ -1,29 +1,65 @@
 <template>
   <div class="monitor">
-    <h1>管理面板</h1>
+    <div class="navs">
+      <el-radio-group v-model="isCollapse" style="margin-bottom: 20px;">
+        <el-radio-button :label="false">展开</el-radio-button>
+        <el-radio-button :label="true">收起</el-radio-button>
+      </el-radio-group>
+      <el-menu
+        default-active="overview"
+        class="el-menu-vertical-demo"
+        :collapse="isCollapse"
+        @select="handleSelect"
+      >
+        <el-menu-item index="overview">
+          <i class="el-icon-s-data"></i>
+          <template #title>概况</template>
+        </el-menu-item>
+        <el-menu-item index="user">
+          <i class="el-icon-user"></i>
+          <template #title>用户管理</template>
+        </el-menu-item>
+      </el-menu>
+    </div>
+    <div class="container">
+      <router-view></router-view>
+    </div>
   </div>
 </template>
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
 export default defineComponent({
   setup() {
+    const isCollapse = ref(false)
+    const $router = useRouter()
+    const handleSelect = (path:string) => {
+      $router.replace({
+        path,
+      })
+    }
     return {
-
+      isCollapse,
+      handleSelect,
     }
   },
 })
 </script>
 
 <style scoped>
-.monitor{
-    width: 100%;
-    min-height: 100vh;
-    padding: 10px;
+.monitor {
+  width: 100%;
+  min-height: 100vh;
+  padding: 10px;
+  overflow: hidden;
+  display: flex;
 }
-embed{
-    width: 100%;
-    min-height: 100vh;
-    height: 100%;
+.navs{
+  min-width: 140px;
+  margin-right: 20px;
+}
+.container{
+  flex-shrink: 1;
 }
 </style>

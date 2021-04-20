@@ -11,6 +11,8 @@ const Dashboard = () => import('@/pages/dashboard/index.vue')
 const Files = () => import('@/pages/dashboard/files/index.vue')
 const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
 const Manage = () => import('@/pages/dashboard/manage/index.vue')
+const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
+const User = () => import('@/pages/dashboard/manage/user/index.vue')
 const Task = () => import('@/pages/task/index.vue')
 const requireLogin = {
   requireLogin: false,
@@ -50,6 +52,23 @@ const routes: RouteRecordRaw[] = [
         path: 'manage',
         component: Manage,
         meta: requireLogin,
+        redirect: {
+          name: 'overview',
+        },
+        children: [
+          {
+            name: 'overview',
+            path: 'overview',
+            component: Overview,
+            meta: requireLogin,
+          },
+          {
+            name: 'user',
+            path: 'user',
+            component: User,
+            meta: requireLogin,
+          },
+        ],
       },
     ],
   },
