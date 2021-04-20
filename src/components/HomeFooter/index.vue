@@ -54,7 +54,6 @@ export default defineComponent({
 .footer {
     ul {
         margin: 0 auto;
-        width: 70%;
         display: flex;
         justify-content: center;
         li {

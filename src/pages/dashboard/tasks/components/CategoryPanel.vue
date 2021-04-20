@@ -11,7 +11,7 @@
             <el-tag
                 :effect="category === 'default' ? 'dark' : 'plain'"
                 @click="handleClickCategory('default')"
-            >默认</el-tag>
+            >默认{{taskCount('default')}}</el-tag>
             <el-tag
                 v-for="tag in categorys"
                 :key="tag.k"
@@ -19,7 +19,7 @@
                 :effect="category === tag.k ? 'dark' : 'plain'"
                 @close="handleDeleteCategory(tag)"
                 @click="handleClickCategory(tag.k)"
-            >{{ tag.name }}</el-tag>
+            >{{ tag.name }}{{taskCount(tag.k)}}</el-tag>
             <el-input
                 class="input-new-tag"
                 v-if="isShowCreateCategory"
@@ -58,6 +58,11 @@ export default defineComponent({
     const $store = useStore()
     // 分类相关
     const categorys = computed(() => $store.state.category.categoryList)
+    const tasks = computed(() => $store.state.task.taskList)
+    const taskCount = (c:string) => {
+      const count = tasks.value.filter((t:any) => t.category === c).length
+      return count === 0 ? '' : ` (${count})`
+    }
     const isShowCreateCategory = ref(false)
     const categoryName = ref('')
     const addCategory = () => {
@@ -105,6 +110,7 @@ export default defineComponent({
       addCategory,
       handleDeleteCategory,
       handleClickCategory,
+      taskCount,
     }
   },
 })

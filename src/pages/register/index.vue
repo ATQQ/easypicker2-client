@@ -186,7 +186,7 @@ export default defineComponent({
 .register {
   background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
   min-height: 100vh;
-  padding: 10px;
+  padding: 10px 0;
 }
 
 .inputArea {
