@@ -17,6 +17,7 @@ export default defineConfig({
   ],
   build: {
     target: 'modules', // 默认值
+    sourcemap: true,
   },
   server: {
     port: 8080,

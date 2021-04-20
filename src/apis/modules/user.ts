@@ -26,9 +26,14 @@ function resetPwd(phone:string, code:string, pwd:string) {
     phone, code, pwd,
   })
 }
+
+function checkPower() {
+  return ajax.get<any, BaseResponse>('user/power/super')
+}
 export default {
   register,
   login,
   codeLogin,
   resetPwd,
+  checkPower,
 }

@@ -1,7 +1,8 @@
 import { Module } from 'vuex'
 
 interface State {
-  token: string
+  token: string,
+  isSuperAdmin: boolean
 }
 
 const store: Module<State, unknown> = {
@@ -9,6 +10,7 @@ const store: Module<State, unknown> = {
   state() {
     return {
       token: localStorage.getItem('token') as string,
+      isSuperAdmin: false,
     }
   },
   // 只能同步
@@ -20,6 +22,9 @@ const store: Module<State, unknown> = {
       } else {
         localStorage.removeItem('token')
       }
+    },
+    setSuperAdmin(state, payload) {
+      state.isSuperAdmin = payload
     },
   },
 }

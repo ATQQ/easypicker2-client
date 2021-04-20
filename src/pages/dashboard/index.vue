@@ -44,6 +44,7 @@
   </div>
 </template>
 <script lang="ts">
+import { UserApi } from '@/apis'
 import {
   defineComponent, onMounted, reactive, ref,
 } from 'vue'
@@ -54,7 +55,7 @@ export default defineComponent({
   setup() {
     const $router = useRouter()
     const $store = useStore()
-    const pcNavs = reactive([
+    const pcNavs:any[] = reactive([
       {
         title: '文件管理',
         path: '/dashboard/files',
@@ -66,18 +67,17 @@ export default defineComponent({
     ])
     const navActiveIdx = ref(0)
     const handleNav = (idx: number) => {
-      if (idx !== navActiveIdx.value) {
+      const n = pcNavs[idx]
+      if (!n.isExternal && idx !== navActiveIdx.value) {
         $router.push({
-          path: pcNavs[idx].path,
+          path: n.path,
         })
         navActiveIdx.value = idx
       }
+      if (n.isExternal) {
+        window.open(n.path, '_blank')
+      }
     }
-
-    onMounted(() => {
-      const $route = useRoute()
-      navActiveIdx.value = pcNavs.findIndex((v) => v.path === $route.path)
-    })
 
     const visible = ref(false)
     const logout = () => {
@@ -86,6 +86,27 @@ export default defineComponent({
         name: 'home',
       })
     }
+    onMounted(() => {
+      const $route = useRoute()
+      navActiveIdx.value = pcNavs.findIndex((v) => v.path === $route.path)
+      UserApi.checkPower().then((r) => {
+        const isSuperAdmin = r.data
+        $store.commit('user/setSuperAdmin', isSuperAdmin)
+        if (isSuperAdmin) {
+          const superNavs = [
+            {
+              title: '应用管理',
+              path: '/dashboard/manage',
+            },
+            {
+              title: '网站监控',
+              path: 'https://www.frontjs.com/app/87c1ef7667a513f313b4abb22a88dc78',
+              isExternal: true,
+            }]
+          pcNavs.push(...superNavs)
+        }
+      })
+    })
     return {
       pcNavs,
       navActiveIdx,
