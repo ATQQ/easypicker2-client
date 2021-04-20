@@ -200,7 +200,7 @@ export default defineComponent({
                     ElMessage.success(`文件:${file.name}提交成功`)
                     if (taskMoreInfo.people) {
                       // 无感知更新一下
-                      PeopleApi.updatePeopleStatus(k.value, name, peopleName.value)
+                      PeopleApi.updatePeopleStatus(k.value, name, peopleName.value, file.md5)
                     }
                   })
                 },

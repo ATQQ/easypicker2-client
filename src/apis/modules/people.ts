@@ -21,10 +21,11 @@ function deletePeople(key:string, id:number) {
   })
 }
 
-function updatePeopleStatus(key:string, filename:string, name:string) {
+function updatePeopleStatus(key:string, filename:string, name:string, hash:string) {
   return ajax.put<any, BaseResponse>(`/people/${key}`, {
     filename,
     name,
+    hash,
   })
 }
 

@@ -163,7 +163,7 @@ export default defineComponent({
       }
     }
     onMounted(() => {
-      const { token } = $store.state.user
+      const token = localStorage.getItem('token')
       if (token) {
         redirectDashBoard()
       }

@@ -1,4 +1,6 @@
+import router from '@/router'
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
 const instance = axios.create({
   baseURL: '/api/',
@@ -32,23 +34,35 @@ instance.interceptors.request.use((config) => {
   })
 })
 
+// 跳转首页防抖
+let redirectHome = true
 /**
  * 响应拦截
  */
 instance.interceptors.response.use((v) => {
-  if (v.data?.code === 401) {
-    localStorage.removeItem('token')
-    // alert('即将跳转登录页。。。', '登录过期')
-    // setTimeout(redirectHome, 1500)
-    return v.data
-  }
   if (v.status === 200) {
     if (v.data.code === 0) {
       return v.data
     }
+    if (v.data?.code === 3004) {
+      localStorage.removeItem('token')
+      if (redirectHome) {
+        redirectHome = false
+        ElMessage.error('登录过期,跳转首页')
+        router.replace({
+          name: 'home',
+        })
+        setTimeout(() => {
+          redirectHome = true
+        }, 1000)
+      }
+    }
+    if (v?.data?.code === 500) {
+      ElMessage.error(v?.data?.msg)
+    }
     return Promise.reject(v.data)
   }
-  // alert(v.statusText, '网络错误')
+  ElMessage.error(v.statusText)
   return Promise.reject(v)
 })
 export default instance
