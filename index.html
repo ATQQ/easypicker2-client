@@ -15,6 +15,33 @@
 <body>
   <div id="app"></div>
   <script type="module" src="/src/main.ts"></script>
+  <style>
+    #cnzz_stat_icon_1278930107 {
+      padding: 2rem 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: fixed;
+      z-index: -10;
+      opacity: 0;
+    }
+  </style>
+  <script defer>
+    function init() {
+      const tj = document.createElement('div')
+      tj.id = 'cnzz'
+      const span = document.createElement('span')
+      span.id = 'cnzz_stat_icon_1278930107'
+      const script = document.createElement('script')
+      script.src =
+        'https://v1.cnzz.com/z_stat.php?id=1278930107&online=1&show=line'
+      script.type = 'text/javascript'
+      document.body.append(tj)
+      tj.append(span)
+      tj.append(script)
+    }
+    init()
+  </script>
 </body>
 
 </html>
