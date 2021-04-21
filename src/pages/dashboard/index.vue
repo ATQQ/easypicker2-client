@@ -89,6 +89,7 @@ export default defineComponent({
     onMounted(() => {
       const $route = useRoute()
       navActiveIdx.value = pcNavs.findIndex((v) => v.path === $route.path)
+
       UserApi.checkPower().then((r) => {
         const isSuperAdmin = r.data
         $store.commit('user/setSuperAdmin', isSuperAdmin)
@@ -104,6 +105,38 @@ export default defineComponent({
               isExternal: true,
             }]
           pcNavs.push(...superNavs)
+          const Manage = () => import('@/pages/dashboard/manage/index.vue')
+          const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
+          const User = () => import('@/pages/dashboard/manage/user/index.vue')
+          $router.addRoute('dashboard', {
+            name: 'manage',
+            path: 'manage',
+            component: Manage,
+            meta: {
+              requireLogin: false,
+            },
+            redirect: {
+              name: 'overview',
+            },
+            children: [
+              {
+                name: 'overview',
+                path: 'overview',
+                component: Overview,
+                meta: {
+                  requireLogin: false,
+                },
+              },
+              {
+                name: 'user',
+                path: 'user',
+                component: User,
+                meta: {
+                  requireLogin: false,
+                },
+              },
+            ],
+          })
         }
       })
     })
