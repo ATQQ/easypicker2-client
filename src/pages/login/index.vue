@@ -5,7 +5,6 @@
       <div class="inputArea">
         <div>
           <el-input
-            maxlength="12"
             placeholder="输入账号/手机号"
             prefix-icon="el-icon-user"
             v-model="account"
@@ -87,8 +86,9 @@ export default defineComponent({
           return false
         }
       } else if (!rAccount.test(account.value)) {
-        ElMessage.warning('帐号格式不正确(4-8位 数字字母)')
-        return false
+        // 兼容老平台数据,不校验账号
+        // ElMessage.warning('帐号格式不正确(4-8位 数字字母)')
+        // return false
       }
 
       if (accountLogin.value && !rPassword.test(pwd.value)) {
