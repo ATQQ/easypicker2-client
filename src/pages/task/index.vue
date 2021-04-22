@@ -257,6 +257,9 @@ export default defineComponent({
           templateLink.value = link
           downLoadByUrl(link, taskMoreInfo.template)
         })
+        .catch(() => {
+          ElMessage.warning('文件已从服务器上移除,请联系管理员重新上传')
+        })
     }
 
     const isWithdraw = ref(false)

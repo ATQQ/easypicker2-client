@@ -11,7 +11,6 @@ export default defineComponent({
   setup: () => {
     onMounted(() => {
       const route = useRoute()
-      console.log(route.params)
     })
   },
 })

@@ -61,7 +61,7 @@
         size="medium"
         icon="el-icon-data"
         @click="handlEexportExcell"
-        :disabled="showFilterFiles.length===0"
+        :disabled="showFilterFiles.length === 0"
       >导出Excel</el-button>
     </div>
     <!-- 主体内容 -->
@@ -85,7 +85,9 @@
         <el-table-column prop="task_name" label="任务" width="150"></el-table-column>
         <el-table-column prop="name" label="文件名" width="180"></el-table-column>
         <el-table-column prop="size" label="文件大小">
-          <template #default="scope">{{ formatSize(scope.row.size) }}</template>
+          <template
+            #default="scope"
+          >{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="180">
           <template #default="scope">
@@ -331,7 +333,7 @@ export default defineComponent({
         const {
           date, task_name: taskName, name, size,
         } = v
-        const info = JSON.parse(v.info).map((i:any) => `${i.text}--${i.value}`).join(',')
+        const info = JSON.parse(v.info).map((i: any) => `${i.text}--${i.value}`).join(',')
         return [formatDate(new Date(date)), taskName, name, formatSize(size), info]
       }))
       tableToExcel(headers, body)
