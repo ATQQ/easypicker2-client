@@ -5,8 +5,8 @@
       <div class="inputArea">
         <div>
           <el-input
-            placeholder="输入账号/手机号"
-            prefix-icon="el-icon-user"
+            :placeholder="accountLogin ? '输入账号/手机号' : '输入手机号'"
+            :prefix-icon="accountLogin ? 'el-icon-user' : 'el-icon-phone'"
             v-model="account"
             clearable
           >
@@ -32,7 +32,7 @@
                 <router-link style="color:#909399;" to="/reset">忘记密码?</router-link>
               </el-button>
               <!-- 获取验证码 -->
-              <el-button :disabled="time!==0" @click="getCode" v-else >{{ codeText }}</el-button>
+              <el-button :disabled="time !== 0" @click="getCode" v-else>{{ codeText }}</el-button>
             </template>
           </el-input>
         </div>
@@ -121,7 +121,7 @@ export default defineComponent({
       publicApi.getCode(account.value).then(() => {
         time.value = 120
         refreshCodeText()
-        ElMessage.success('获取成功,请注意查看手机(暂未上线)')
+        ElMessage.success('获取成功,请注意查看手机短信')
       })
     }
     const login = () => {

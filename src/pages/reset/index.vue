@@ -134,7 +134,7 @@ export default defineComponent({
       publicApi.getCode(account.value).then(() => {
         time.value = 120
         refreshCodeText()
-        ElMessage.success('获取成功,请注意查看手机(暂未上线)')
+        ElMessage.success('获取成功,请注意查看手机短信')
       })
     }
     const reset = () => {
