@@ -41,12 +41,19 @@
         </template>
 
         <!-- 没有提交记录 -->
-        <!-- <div class="body">
-            <div class="empty">暂时没有提交记录...</div>
-        </div> -->
+        <div class="body">
+            <div v-if="item.recentLog.length === 0" class="empty">暂时没有提交记录...</div>
+            <ul v-else>
+                <li v-for="(log,idx) in item.recentLog" :key="Number(idx)">
+                    <span class="time">{{ formatDate(new Date(log.date)) }}</span>
+                    <span class="name">{{ log.filename }}</span>
+                </li>
+            </ul>
+        </div>
     </el-card>
 </template>
 <script lang="ts">
+import { formatDate } from '@/utils/stringUtil'
 import {
   defineComponent,
 } from 'vue'
@@ -60,7 +67,9 @@ export default defineComponent({
     },
   },
   setup() {
-    return {}
+    return {
+      formatDate,
+    }
   },
 })
 </script>
@@ -77,11 +86,19 @@ export default defineComponent({
     }
 
     .body {
-        height: 60px;
+        min-height: 30px;
         .empty {
             text-align: center;
             font-size: 12px;
             color: grey;
+        }
+        ul{
+            font-size: 12px;
+            color: grey;
+            list-style: none;
+            .time{
+                margin-right: 10px;
+            }
         }
     }
 }
