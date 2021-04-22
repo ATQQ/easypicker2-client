@@ -41,9 +41,9 @@
         </template>
 
         <!-- 没有提交记录 -->
-        <div class="body">
+        <!-- <div class="body">
             <div class="empty">暂时没有提交记录...</div>
-        </div>
+        </div> -->
     </el-card>
 </template>
 <script lang="ts">

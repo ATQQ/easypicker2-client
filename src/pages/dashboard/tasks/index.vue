@@ -78,10 +78,9 @@
 <script lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  computed, defineComponent, onMounted, reactive, ref,
+  computed, defineComponent, onMounted, reactive, ref, watch, watchEffect,
 } from 'vue'
 import { useStore } from 'vuex'
-import { copyRes, getShortUrl } from '@/utils/stringUtil'
 import { TaskApi } from '@/apis'
 import LinkDialog from '@components/linkDialog.vue'
 import CategoryPanel from './components/CategoryPanel.vue'
@@ -178,6 +177,26 @@ export default defineComponent({
         showTaskInfoPanel.value = true
       })
     }
+
+    // 用于选择默认展示项目
+    const taskCount = (c:string) => {
+      const count = tasks.value.filter((t:any) => t.category === c).length
+      return count
+    }
+    // 选中一个有任务数据的分类
+    watchEffect(() => {
+      if (taskCount('default') > 0) {
+        return
+      }
+      if (categorys.value.length > 0) {
+        for (const c of categorys.value) {
+          if (taskCount(c.k) > 0) {
+            selectCategory.value = c.k
+            break
+          }
+        }
+      }
+    })
     onMounted(() => {
       $store.dispatch('category/getCategory')
       $store.dispatch('task/getTask')
