@@ -6,6 +6,7 @@ const Login = () => import('@/pages/login/index.vue')
 const Reset = () => import('@/pages/reset/index.vue')
 const Register = () => import('@/pages/register/index.vue')
 const About = () => import('@/pages/about/index.vue')
+const Author = () => import('@/pages/callme/index.vue')
 const Feedback = () => import('@/pages/feedback/index.vue')
 const Dashboard = () => import('@/pages/dashboard/index.vue')
 const Files = () => import('@/pages/dashboard/files/index.vue')
@@ -25,6 +26,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/register', name: 'register', component: Register },
   { path: '/reset', name: 'reset', component: Reset },
   { path: '/about', name: 'about', component: About },
+  { path: '/author', name: 'author', component: Author },
   { path: '/feedback', name: 'feedback', component: Feedback },
   { path: '/task/:key', name: 'task', component: Task },
   {
