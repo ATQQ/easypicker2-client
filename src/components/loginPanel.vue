@@ -59,6 +59,8 @@ export default defineComponent({
             width: 90%;
             img {
                 width: 100%;
+                display: block;
+                margin: 0 auto;
             }
         }
         p {
