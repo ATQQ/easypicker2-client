@@ -69,7 +69,7 @@
         </div>
         <el-divider></el-divider>
         <div class="links">
-          <router-link to="/login">去登陆</router-link>
+          <router-link to="/login">已有账号,去登陆</router-link>
         </div>
       </div>
     </login-panel>

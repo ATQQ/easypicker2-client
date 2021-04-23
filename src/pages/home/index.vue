@@ -10,7 +10,10 @@
     <section class="introduce">
       <p v-for="(item, index) in introduces" :key="index">{{ item }}</p>
     </section>
-
+    <section class="introduce">
+      <p><router-link to="/login">点我登陆</router-link></p>
+      <p><router-link to="/register">没有账号? 去注册</router-link></p>
+    </section>
     <footer>
       <!-- 底部导航栏 -->
       <HomeFooter />
@@ -52,7 +55,7 @@ export default defineComponent({
   text-align: center;
   font-weight: lighter;
   font-size: 60px;
-  padding-top: 25vh;
+  padding-top: 22vh;
 }
 .introduce {
   padding: 10px;
@@ -60,6 +63,10 @@ export default defineComponent({
   text-align: center;
   p {
     margin-top: 10px;
+  }
+  a{
+    color: aliceblue;
+    font-weight: bold;
   }
 }
 footer {
