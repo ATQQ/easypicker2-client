@@ -68,13 +68,17 @@ export default defineComponent({
     const addCategory = () => {
       isShowCreateCategory.value = false
       if (!categoryName.value.trim()) {
-        ElMessage.warning('不能为空')
+        // ElMessage.warning('不能为空')
         return
       }
       $store
         .dispatch('category/createCategory', categoryName.value)
         .then(() => {
           ElMessage.success('创建成功')
+        }).catch((err) => {
+          if (err.code === 2001) {
+            ElMessage.warning('分类名称已存在')
+          }
         })
       categoryName.value = ''
     }
