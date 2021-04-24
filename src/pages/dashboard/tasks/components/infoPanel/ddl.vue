@@ -12,7 +12,9 @@
       </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref, watch } from 'vue'
+import {
+  defineComponent, ref, watchEffect,
+} from 'vue'
 import { updateTaskInfo } from '../../public'
 
 export default defineComponent({
@@ -29,13 +31,14 @@ export default defineComponent({
   },
   setup(props) {
     const newDate = ref()
-    watch(() => props.ddl, (newVal) => {
-      if (newVal) {
-        newDate.value = new Date(newVal)
+    watchEffect(() => {
+      if (props.ddl) {
+        newDate.value = new Date(props.ddl)
       } else {
         newDate.value = null
       }
     })
+
     // 更新DDL
     const updateDDL = () => {
       if (newDate.value) {
