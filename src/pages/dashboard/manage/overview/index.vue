@@ -81,7 +81,7 @@ export default defineComponent({
       {
         type: 'user',
         title: '用户数量',
-        value: '102,400',
+        value: '0',
         supplement: '较昨日 +10',
         icon: 'el-icon-user',
         color: '#40c9c6',
@@ -89,7 +89,7 @@ export default defineComponent({
       {
         type: 'file',
         title: '文件数量',
-        value: '102,400',
+        value: '0',
         supplement: '较昨日 +10',
         icon: 'el-icon-document',
         color: '#36a3f7',
@@ -97,7 +97,7 @@ export default defineComponent({
       {
         type: 'log',
         title: '日志数量',
-        value: '102,400',
+        value: '0',
         supplement: '较昨日 +10',
         icon: 'el-icon-tickets',
         color: '#f4516c',
@@ -105,7 +105,7 @@ export default defineComponent({
       {
         type: 'pv',
         title: 'PV/UV',
-        value: '102,400',
+        value: '0/0',
         supplement: '',
         icon: 'el-icon-s-data',
         color: '#34bfa3',
@@ -114,13 +114,17 @@ export default defineComponent({
     // 刷新记录条数
     const refreshCount = () => {
       SuperOverviewApi.getCount().then((res) => {
-        const { user, file, log } = res.data
+        const {
+          user, file, log, pv,
+        } = res.data
         cardList[0].value = user.sum
         cardList[0].supplement = `较昨日 +${user.recent}`
         cardList[1].value = file.sum
         cardList[1].supplement = `较昨日 +${file.recent}`
         cardList[2].value = log.sum
         cardList[2].supplement = `较昨日 +${log.recent}`
+        cardList[3].value = `${pv.today.sum}/${pv.today.uv}`
+        cardList[3].supplement = `历史: ${pv.all.sum}/${pv.all.uv}`
       })
     }
 
@@ -139,6 +143,7 @@ export default defineComponent({
         request: '网络请求',
         behavior: '用户行为',
         error: '错误',
+        pv: '页面访问',
       }
       return logsTypeText[type]
     }
@@ -156,6 +161,10 @@ export default defineComponent({
       }, {
         label: '服务端错误',
         type: 'error',
+      },
+      {
+        label: '页面访问',
+        type: 'pv',
       },
     ])
 

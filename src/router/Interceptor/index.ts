@@ -1,3 +1,4 @@
+import { PublicApi } from '@/apis'
 import { Router } from 'vue-router'
 
 declare module 'vue-router' {
@@ -14,12 +15,15 @@ function registerRouteGuard(router: Router) {
      * 全局前置守卫
      */
   router.beforeEach((to, from) => {
-    if (to.meta.requireLogin) {
-      if (from.path === '/') {
-        return from
-      }
-      return false
-    }
+    // 上报PV
+    const { fullPath } = to
+    PublicApi.reportPv(fullPath)
+    // if (to.meta.requireLogin) {
+    //   if (from.path === '/') {
+    //     return from
+    //   }
+    //   return false
+    // }
     return true
   })
 

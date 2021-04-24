@@ -15,6 +15,15 @@ function getCode(phone: string) {
   )
 }
 
+function reportPv(path:string) {
+  return ajax.post<any, BaseResponse>(
+    'public/report/pv',
+    {
+      path,
+    },
+  )
+}
 export default {
   getCode,
+  reportPv,
 }
