@@ -76,7 +76,7 @@
   </div>
 </template>
 <script lang="ts">
-import { publicApi, UserApi } from '@/apis'
+import { PublicApi, UserApi } from '@/apis'
 import { defineComponent, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -113,7 +113,7 @@ export default defineComponent({
         ElMessage.warning('手机号格式不正确')
         return
       }
-      publicApi.getCode(phone.value).then(() => {
+      PublicApi.getCode(phone.value).then(() => {
         time.value = 120
         refreshCodeText()
         ElMessage.success('获取成功,请注意查看手机短信')

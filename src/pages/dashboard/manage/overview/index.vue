@@ -1,21 +1,79 @@
 <template>
-    <div>
-        <div class="card-list">
-            <div v-for="c in cardList" :key="c.type" class="card">
-                <div class="logo">
-                    <i :style="{color:c.color}" :class="c.icon"></i>
-                </div>
-                <div class="content">
-                    <div class="title">{{c.title}}</div>
-                    <div class="text">{{c.value}}</div>
-                    <div class="supplement">{{c.supplement}}</div>
-                </div>
-            </div>
+  <div class="overview">
+    <div class="card-list">
+      <div v-for="c in cardList" :key="c.type" class="card">
+        <div class="logo">
+          <i :style="{ color: c.color }" :class="c.icon"></i>
         </div>
+        <div class="content">
+          <div class="title">{{ c.title }}</div>
+          <div class="text">{{ c.value }}</div>
+          <div class="supplement">{{ c.supplement }}</div>
+        </div>
+      </div>
     </div>
+    <div class="panel">
+      <div class="p10 log-filter">
+        <span class="item">
+          <span class="label">类型</span>
+          <el-select v-model="filterLogType" size="medium" placeholder="请选择日志类型">
+            <el-option
+              v-for="(item,idx) in logTypeList"
+              :key="idx"
+              :label="item.label"
+              :value="item.type"
+            ></el-option>
+          </el-select>
+        </span>
+        <span class="item">
+          <el-input
+            size="medium"
+            clearable
+            placeholder="请输入要检索的内容"
+            prefix-icon="el-icon-search"
+            v-model="searchWord"
+          ></el-input>
+        </span>
+      </div>
+      <el-table
+        height="400"
+        stripe
+        border
+        :default-sort="{ prop: 'date', order: 'descending' }"
+        :data="pageLogs"
+        style="width: 100%"
+      >
+        <el-table-column prop="date" label="日期" width="180">
+          <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
+        </el-table-column>
+        <el-table-column prop="type" label="类型" width="140">
+          <template #default="scope">{{ getLogsTypeText(scope.row.type) }}</template>
+        </el-table-column>
+        <el-table-column prop="ip" label="地址" width="140"></el-table-column>
+        <el-table-column prop="msg" label="内容"></el-table-column>
+      </el-table>
+      <div class="tc p10">
+        <el-pagination
+          :current-page="pageCurrent"
+          @current-change="handlePageChange"
+          background
+          :page-count="pageCount"
+          :page-sizes="[10, 50, 100, 200]"
+          :page-size="pageSize"
+          @size-change="handleSizeChange"
+          :total="filterLogs.length"
+          layout="total, sizes, prev, pager, next, jumper"
+        ></el-pagination>
+      </div>
+    </div>
+  </div>
 </template>
 <script lang="ts">
-import { defineComponent, reactive } from 'vue'
+import { SuperOverviewApi } from '@/apis'
+import { formatDate } from '@/utils/stringUtil'
+import {
+  computed, defineComponent, onMounted, reactive, ref,
+} from 'vue'
 
 export default defineComponent({
   setup() {
@@ -44,59 +102,182 @@ export default defineComponent({
         icon: 'el-icon-tickets',
         color: '#f4516c',
       },
+      {
+        type: 'pv',
+        title: 'PV/UV',
+        value: '102,400',
+        supplement: '',
+        icon: 'el-icon-s-data',
+        color: '#34bfa3',
+      },
     ])
+    // 刷新记录条数
+    const refreshCount = () => {
+      SuperOverviewApi.getCount().then((res) => {
+        const { user, file, log } = res.data
+        cardList[0].value = user.sum
+        cardList[0].supplement = `较昨日 +${user.recent}`
+        cardList[1].value = file.sum
+        cardList[1].supplement = `较昨日 +${file.recent}`
+        cardList[2].value = log.sum
+        cardList[2].supplement = `较昨日 +${log.recent}`
+      })
+    }
+
+    // 日志
+    const logs: any[] = reactive([])
+    const refreshLogs = () => {
+      SuperOverviewApi.getAllLogMsg().then((res) => {
+        logs.splice(0, logs.length)
+        const d = res.data.logs
+        logs.push(...d)
+      })
+    }
+
+    function getLogsTypeText(type: string) {
+      const logsTypeText: any = {
+        request: '网络请求',
+        behavior: '用户行为',
+        error: '错误',
+      }
+      return logsTypeText[type]
+    }
+    // 筛选的日志
+    const filterLogType = ref('behavior')
+    const searchWord = ref('')
+    const logTypeList = reactive([
+      {
+        label: '用户行为',
+        type: 'behavior',
+      },
+      {
+        label: '网络请求',
+        type: 'request',
+      }, {
+        label: '服务端错误',
+        type: 'error',
+      },
+    ])
+
+    const filterLogs = computed(() => logs
+      .filter((v) => v.type === filterLogType.value)
+      .filter((v) => {
+        const { date, ip, msg } = v
+        if (searchWord.value.length === 0) return true
+        return `${date} ${ip} ${msg}`.includes(searchWord.value)
+      }))
+    // 分页
+    const pageSize = ref(10)
+    const handleSizeChange = (v: number) => {
+      pageSize.value = v
+    }
+    const pageCount = computed(() => {
+      const t = Math.ceil(filterLogs.value.length / pageSize.value)
+      return t
+    })
+    const pageCurrent = ref(1)
+    const pageLogs = computed(() => {
+      const start = (pageCurrent.value - 1) * pageSize.value
+      const end = (pageCurrent.value) * pageSize.value
+      return filterLogs.value.slice(start, end)
+    })
+    const handlePageChange = (idx: number) => {
+      pageCurrent.value = idx
+    }
+    onMounted(() => {
+      refreshCount()
+      refreshLogs()
+    })
     return {
       cardList,
+      logs,
+      filterLogs,
+      formatDate,
+      getLogsTypeText,
+      pageSize,
+      handleSizeChange,
+      pageCount,
+      pageLogs,
+      handlePageChange,
+      pageCurrent,
+      filterLogType,
+      logTypeList,
+      searchWord,
     }
   },
 })
 </script>
 
 <style scoped lang="scss">
+.overview {
+  margin: 0 auto;
+}
 .card-list {
-    display: flex;
-    margin-top: 20px;
+  display: flex;
+  margin-top: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 .card {
-    margin: 10px;
-    height: 108px;
-    cursor: pointer;
-    font-size: 12px;
-    position: relative;
-    overflow: hidden;
-    color: #666;
-    background: #fff;
-    box-shadow: 4px 4px 40px rgb(0 0 0 / 5%);
-    border-color: rgba(0, 0, 0, 0.05);
-    width: 300px;
-    .logo {
-        float: left;
-        margin: 16px 10px 0 10px;
-        -webkit-transition: all 0.38s ease-out;
-        transition: all 0.38s ease-out;
-        border-radius: 6px;
-        font-size: 48px;
-        i {
-            padding: 10px;
-        }
+  margin: 10px 20px 10px 0;
+  height: 108px;
+  cursor: pointer;
+  font-size: 12px;
+  position: relative;
+  overflow: hidden;
+  color: #666;
+  background: #fff;
+  box-shadow: 4px 4px 40px rgb(0 0 0 / 5%);
+  border-color: rgba(0, 0, 0, 0.05);
+  width: 260px;
+  .logo {
+    float: left;
+    margin: 16px 10px 0 10px;
+    -webkit-transition: all 0.38s ease-out;
+    transition: all 0.38s ease-out;
+    border-radius: 6px;
+    font-size: 48px;
+    i {
+      padding: 10px;
     }
-    .content {
-        float: right;
-        font-weight: 700;
-        margin: 26px;
-        margin-left: 0;
-        .title {
-            line-height: 18px;
-            color: rgba(0, 0, 0, 0.45);
-            font-size: 16px;
-        }
-        .text {
-            font-size: 20px;
-        }
-        .supplement{
-            font-size: 12px;
-            font-weight: lighter;
-        }
+  }
+  .content {
+    float: right;
+    font-weight: 700;
+    margin: 26px;
+    margin-left: 0;
+    .title {
+      line-height: 18px;
+      color: rgba(0, 0, 0, 0.45);
+      font-size: 16px;
     }
+    .text {
+      font-size: 20px;
+    }
+    .supplement {
+      font-size: 12px;
+      font-weight: lighter;
+    }
+  }
+}
+.panel {
+  max-width: 1024px;
+  padding: 1em;
+  background-color: #fff;
+  margin: 10px auto;
+  box-sizing: border-box;
+  box-shadow: 0 2px 12px 0 rgb(0 0 0 / 10%);
+  border-radius: 4px;
+}
+.log-filter {
+  display: flex;
+  flex-wrap: wrap;
+  .item {
+    margin-right: 10px;
+    .label {
+      margin-right: 10px;
+      font-size: 12px;
+    }
+  }
 }
 </style>

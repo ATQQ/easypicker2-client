@@ -49,7 +49,7 @@ export default defineComponent({
 
 <style scoped>
 .monitor {
-  width: 100%;
+  width: 96%;
   min-height: 100vh;
   padding: 10px;
   overflow: hidden;
@@ -57,9 +57,9 @@ export default defineComponent({
 }
 .navs{
   min-width: 140px;
-  margin-right: 20px;
 }
 .container{
-  flex-shrink: 1;
+  padding-left: 20px;
+  flex-grow: 1;
 }
 </style>

@@ -51,7 +51,7 @@
   </div>
 </template>
 <script lang="ts">
-import { publicApi, UserApi } from '@/apis'
+import { PublicApi, UserApi } from '@/apis'
 import { ElMessage } from 'element-plus'
 import {
   defineComponent, onMounted, ref,
@@ -118,7 +118,7 @@ export default defineComponent({
         ElMessage.warning('手机号格式不正确')
         return
       }
-      publicApi.getCode(account.value).then(() => {
+      PublicApi.getCode(account.value).then(() => {
         time.value = 120
         refreshCodeText()
         ElMessage.success('获取成功,请注意查看手机短信')
