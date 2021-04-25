@@ -41,5 +41,11 @@ a{
   .el-message-box{
     width: auto;
   }
+  .el-pagination{
+    white-space:break-spaces;
+  }
+  .el-pagination >*{
+    margin-bottom: 10px;
+  }
 }
 </style>

@@ -32,7 +32,7 @@
           v-model="searchWord"
         ></el-input>
       </div>
-      <span style="align-self: center;" class="item">{{ filterFiles.length }} / {{ files.length }}</span>
+      <!-- <span style="align-self: center;" class="item">{{ filterFiles.length }} / {{ files.length }}</span> -->
     </div>
     <div class="panel">
       <el-dropdown @command="handleDropdownClick">
@@ -89,11 +89,13 @@
             #default="scope"
           >{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="180">
+        <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
-            <el-button @click="checkInfo(scope.row)" type="text" size="small">查看提交信息</el-button>
-            <el-button @click="downloadOne(scope.row)" type="text" size="small">下载</el-button>
-            <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+            <div class="text-btns">
+              <el-button @click="checkInfo(scope.row)" type="text" size="small">查看提交信息</el-button>
+              <el-button @click="downloadOne(scope.row)" type="text" size="small">下载</el-button>
+              <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -113,7 +115,7 @@
       ></el-pagination>
     </div>
     <!-- 信息弹窗 -->
-    <el-dialog title="提交填写的信息" v-model="showInfoDialog">
+    <el-dialog :fullscreen="isMobile" title="提交填写的信息" v-model="showInfoDialog">
       <el-form>
         <el-form-item v-for="(info,idx) in infos" :key="idx" :label="info.text" label-width="120px">
           <el-input :modelValue="info.value"></el-input>
@@ -347,7 +349,11 @@ export default defineComponent({
       $store.dispatch('category/getCategory')
       $store.dispatch('task/getTask')
     })
+
+    const isMobile = computed(() => $store.getters['public/isMobile'])
+
     return {
+      isMobile,
       handlEexportExcell,
       handleRefresh,
       handleDownloadTask,
@@ -389,6 +395,19 @@ export default defineComponent({
   padding-bottom: 2em;
 }
 
+@media screen and (max-width: 700px) {
+  .files {
+    margin-top: 70px;
+  }
+  .text-btns {
+    display: flex;
+    flex-direction: column;
+    ::v-deep .el-button {
+      margin-left: 0px;
+      margin-bottom: 0px;
+    }
+  }
+}
 .panel {
   padding: 1em;
   background-color: #fff;
@@ -407,9 +426,11 @@ export default defineComponent({
   flex-wrap: wrap;
   .item {
     margin-right: 10px;
+    margin-bottom: 10px;
   }
 }
 .el-button {
   margin-left: 10px;
+  margin-bottom: 10px;
 }
 </style>

@@ -3,7 +3,7 @@
     <el-dialog :fullscreen="isMobile" @close="handleClose" :title="title" v-model="showModel" center>
       <!-- 链接 -->
       <div>
-        <el-input disabled placeholder="生成的链接" v-model="shareLink">
+        <el-input placeholder="生成的链接" v-model="shareLink">
           <template #prepend>
             <el-button type="primary" @click="createShortLink">生成短链</el-button>
           </template>
