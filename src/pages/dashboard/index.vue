@@ -43,7 +43,7 @@
         </template>
       </el-popover>
     </div>
-    <!-- <router-view></router-view> -->
+    <router-view></router-view>
   </div>
 </template>
 <script lang="ts">
