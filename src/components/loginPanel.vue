@@ -38,7 +38,7 @@ export default defineComponent({
 <style scoped lang="scss">
 // 背景之外的部分
 .lay-form {
-    padding-top: 96px;
+    padding-top: 86px;
     margin: auto;
 }
 
@@ -78,14 +78,14 @@ export default defineComponent({
     }
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 700px) {
     .pannel {
         width: 90%;
         background-color: rgba(255, 255, 255, 0.65);
     }
     .logo {
         img {
-            width: 55vw !important;
+            width: 60%;
         }
     }
 }

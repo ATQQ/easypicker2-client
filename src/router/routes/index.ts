@@ -1,10 +1,10 @@
 import { RouteRecordRaw } from 'vue-router'
 import Home from '@/pages/home/index.vue'
+import Login from '@/pages/login/index.vue'
+import Register from '@/pages/register/index.vue'
 
 const NotFind = () => import('@/pages/404/index.vue')
-const Login = () => import('@/pages/login/index.vue')
 const Reset = () => import('@/pages/reset/index.vue')
-const Register = () => import('@/pages/register/index.vue')
 const About = () => import('@/pages/about/index.vue')
 const Author = () => import('@/pages/callme/index.vue')
 const Feedback = () => import('@/pages/feedback/index.vue')
@@ -15,9 +15,7 @@ const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
 // const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
 // const User = () => import('@/pages/dashboard/manage/user/index.vue')
 const Task = () => import('@/pages/task/index.vue')
-const requireLogin = {
-  requireLogin: false,
-}
+
 const routes: RouteRecordRaw[] = [
   // 404
   {
