@@ -7,7 +7,7 @@
       </el-radio-group>
       <el-menu
         default-active="overview"
-        class="el-menu-vertical-demo"
+        class="el-menu-nav"
         :collapse="isCollapse"
         @select="handleSelect"
       >
@@ -65,5 +65,31 @@ export default defineComponent({
 .container{
   padding-left: 20px;
   flex-grow: 1;
+  width: calc(100% - 150px);
+}
+
+@media screen and (max-width:700px) {
+  .monitor{
+    margin-top: 70px;
+    padding: 10px 0;
+    width: 100%;
+  }
+  .navs{
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .el-radio-group{
+    display: none;
+  }
+  .el-menu-nav{
+    display: flex;
+  }
+  .container{
+    padding-left: 0;
+    margin-top: 30px;
+    width: 100%;
+  }
 }
 </style>

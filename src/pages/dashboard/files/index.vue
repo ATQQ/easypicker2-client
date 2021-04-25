@@ -35,34 +35,36 @@
       <!-- <span style="align-self: center;" class="item">{{ filterFiles.length }} / {{ files.length }}</span> -->
     </div>
     <div class="panel">
-      <el-dropdown @command="handleDropdownClick">
-        <el-button type="primary" :disabled="selectItem.length === 0" size="medium">
-          批量操作
-          <i class="el-icon-arrow-down el-icon--right"></i>
-        </el-button>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="download">下载</el-dropdown-item>
-            <el-dropdown-item command="delete">删除</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
-      <el-button
-        :loading="batchDownStart"
-        :disabled="selectTask === 'all'"
-        type="primary"
-        size="medium"
-        icon="el-icon-download"
-        @click="handleDownloadTask"
-      >导出任务</el-button>
-      <el-button size="medium" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
-      <el-button
-        type="success"
-        size="medium"
-        icon="el-icon-data"
-        @click="handlEexportExcell"
-        :disabled="showFilterFiles.length === 0"
-      >导出Excel</el-button>
+      <div class="export-btns">
+        <el-dropdown @command="handleDropdownClick">
+          <el-button type="primary" :disabled="selectItem.length === 0" size="medium">
+            批量操作
+            <i class="el-icon-arrow-down el-icon--right"></i>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="download">下载</el-dropdown-item>
+              <el-dropdown-item command="delete">删除</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-button
+          :loading="batchDownStart"
+          :disabled="selectTask === 'all'"
+          type="primary"
+          size="medium"
+          icon="el-icon-download"
+          @click="handleDownloadTask"
+        >导出任务</el-button>
+        <el-button size="medium" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
+        <el-button
+          type="success"
+          size="medium"
+          icon="el-icon-data"
+          @click="handlEexportExcell"
+          :disabled="showFilterFiles.length === 0"
+        >导出Excel</el-button>
+      </div>
     </div>
     <!-- 主体内容 -->
     <div class="panel">
@@ -402,10 +404,18 @@ export default defineComponent({
   .text-btns {
     display: flex;
     flex-direction: column;
-    ::v-deep .el-button {
+    :deep .el-button {
       margin-left: 0px;
       margin-bottom: 0px;
     }
+  }
+  .header {
+    justify-content: center;
+  }
+  .export-btns{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
   }
 }
 .panel {
@@ -422,7 +432,6 @@ export default defineComponent({
 }
 .header {
   display: flex;
-  justify-content: start;
   flex-wrap: wrap;
   .item {
     margin-right: 10px;

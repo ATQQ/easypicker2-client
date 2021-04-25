@@ -42,7 +42,7 @@
           <template #default="scope">{{ formatDate(new Date(scope.row.join_time)) }}</template>
         </el-table-column>
         <el-table-column prop="login_count" label="登录次数"></el-table-column>
-        <el-table-column prop="open_time" label="解封时间" v-if="filterLogType===1">
+        <el-table-column prop="open_time" label="解封时间" v-if="filterLogType === 1">
           <template
             #default="scope"
           >{{ scope.row.open_time && formatDate(new Date(scope.row.open_time)) }}</template>
@@ -50,7 +50,7 @@
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
             <el-button
-              @click="handleChangeStatus(scope.row.id, scope.row.status,scope.row.open_time)"
+              @click="handleChangeStatus(scope.row.id, scope.row.status, scope.row.open_time)"
               type="text"
               size="small"
             >修改状态</el-button>
@@ -72,22 +72,14 @@
       </div>
     </div>
     <!-- 用户状态修改弹窗 -->
-    <el-dialog center title="状态修改" v-model="showUserStatusDialog">
+    <el-dialog :fullscreen="isMobile" center title="状态修改" v-model="showUserStatusDialog">
       <div class="tc">
         <el-select v-model="selectStatus" placeholder="请选择新分类">
-          <el-option
-          v-for="s in userStatusList"
-          :key="s.type"
-          :label="s.label" :value="s.type"></el-option>
+          <el-option v-for="s in userStatusList" :key="s.type" :label="s.label" :value="s.type"></el-option>
         </el-select>
       </div>
-      <div style="margin-top: 10px;" class="tc" v-if="selectStatus===1">
-        <el-date-picker
-        :editable="false"
-        v-model="openTime"
-        type="datetime"
-        placeholder="点击设置解封日期"
-      ></el-date-picker>
+      <div style="margin-top: 10px;" class="tc" v-if="selectStatus === 1">
+        <el-date-picker :editable="false" v-model="openTime" type="datetime" placeholder="点击设置解封日期"></el-date-picker>
       </div>
       <template #footer>
         <span class="dialog-footer">
@@ -106,9 +98,11 @@ import { ElMessage } from 'element-plus'
 import {
   computed, defineComponent, onMounted, reactive, ref,
 } from 'vue'
+import { useStore } from 'vuex'
 
 export default defineComponent({
   setup() {
+    const $store = useStore()
     // 用户
     const users: any[] = reactive([])
     const refreshUsers = () => {
@@ -180,7 +174,7 @@ export default defineComponent({
     const selectStatus = ref(USER_STATUS.NORMAL)
     const userStatusList = logTypeList
     const openTime = ref('')
-    const handleChangeStatus = (userId: number, status: USER_STATUS, oTime:string) => {
+    const handleChangeStatus = (userId: number, status: USER_STATUS, oTime: string) => {
       selectUserId.value = userId
       selectStatus.value = status
       openTime.value = oTime
@@ -205,7 +199,10 @@ export default defineComponent({
     onMounted(() => {
       refreshUsers()
     })
+    const isMobile = computed(() => $store.getters['public/isMobile'])
+
     return {
+      isMobile,
       filterUsers,
       formatDate,
       getLogsTypeText,
@@ -230,57 +227,18 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
+@media screen and (max-width: 700px) {
+  .user {
+    margin-top: 40px !important;
+  }
+  .log-filter {
+    justify-content: center;
+  }
+}
 .user {
   margin: 0 auto;
 }
-.card-list {
-  display: flex;
-  margin-top: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.card {
-  margin: 10px 20px 10px 0;
-  height: 108px;
-  cursor: pointer;
-  font-size: 12px;
-  position: relative;
-  overflow: hidden;
-  color: #666;
-  background: #fff;
-  box-shadow: 4px 4px 40px rgb(0 0 0 / 5%);
-  border-color: rgba(0, 0, 0, 0.05);
-  width: 260px;
-  .logo {
-    float: left;
-    margin: 16px 10px 0 10px;
-    -webkit-transition: all 0.38s ease-out;
-    transition: all 0.38s ease-out;
-    border-radius: 6px;
-    font-size: 48px;
-    i {
-      padding: 10px;
-    }
-  }
-  .content {
-    float: right;
-    font-weight: 700;
-    margin: 26px;
-    margin-left: 0;
-    .title {
-      line-height: 18px;
-      color: rgba(0, 0, 0, 0.45);
-      font-size: 16px;
-    }
-    .text {
-      font-size: 20px;
-    }
-    .supplement {
-      font-size: 12px;
-      font-weight: lighter;
-    }
-  }
-}
+
 .panel {
   max-width: 1256px;
   padding: 1em;
@@ -295,6 +253,7 @@ export default defineComponent({
   flex-wrap: wrap;
   .item {
     margin-right: 10px;
+    margin-bottom: 10px;
     .label {
       margin-right: 10px;
       font-size: 12px;
