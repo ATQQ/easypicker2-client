@@ -84,12 +84,14 @@ import loginPanel from '@components/loginPanel.vue'
 import {
   rAccount, rMobilePhone, rPassword, rVerCode,
 } from '@/utils/regExp'
+import { useStore } from 'vuex'
 
 export default defineComponent({
   components: {
     loginPanel,
   },
   setup() {
+    const $store = useStore()
     const account = ref('')
     const pwd1 = ref('')
     const pwd2 = ref('')
@@ -152,9 +154,13 @@ export default defineComponent({
       UserApi.register(account.value, pwd1.value, bindPhone.value, {
         phone: phone.value,
         code: code.value,
-      }).then(() => {
+      }).then((res) => {
+        const { token } = res.data
+        $store.commit('user/setToken', token)
         ElMessage.success('注册成功')
-        $router.back()
+        $router.replace({
+          name: 'dashboard',
+        })
       }).catch((err) => {
         const { code: c } = err
         const msg = '注册失败,未知错误'
