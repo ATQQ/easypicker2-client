@@ -39,6 +39,9 @@ export function base64(s:string) {
 }
 
 export function formatDate(d:Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
+  if (!(d instanceof Date)) {
+    d = new Date(d)
+  }
   const o:any = {
     'M+': d.getMonth() + 1, // 月份
     'd+': d.getDate(), // 日

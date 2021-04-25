@@ -185,6 +185,8 @@ export default defineComponent({
       formatDate(new Date(t.date)),
       formatSize(t.size),
       t.people,
+      t.name,
+      t.task_name,
       // eslint-disable-next-line no-useless-escape
       t.info]).replace(/[:'"\{\},\[\]]/g, '').includes(searchWord.value) : true)))
     /**

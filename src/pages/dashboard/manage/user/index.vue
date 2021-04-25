@@ -146,12 +146,15 @@ export default defineComponent({
     ])
 
     const filterUsers = computed(() => users
-      .filter((v) => v.status === filterLogType.value))
-    // .filter((v) => {
-    //   const { date, ip, msg } = v
-    //   if (searchWord.value.length === 0) return true
-    //   return `${date} ${ip} ${msg}`.includes(searchWord.value)
-    // })
+      .filter((v) => v.status === filterLogType.value)
+      .filter((v) => {
+        const {
+          account, phone, join_time, login_count, login_time, open_time,
+        } = v
+        if (searchWord.value.length === 0) return true
+        return `${account} ${phone} ${login_count} ${formatDate(open_time)} ${formatDate(login_time)} ${formatDate(join_time)}`.includes(searchWord.value)
+      }))
+
     // 分页
     const pageSize = ref(10)
     const handleSizeChange = (v: number) => {
