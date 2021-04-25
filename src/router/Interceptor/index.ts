@@ -7,6 +7,8 @@ declare module 'vue-router' {
         isAdmin?: boolean
         // 是否需要登录
         requireLogin?: boolean
+        // 路由title
+        title?:string
     }
 }
 
@@ -18,6 +20,10 @@ function registerRouteGuard(router: Router) {
     // 上报PV
     const { fullPath } = to
     PublicApi.reportPv(fullPath)
+
+    // 更改title
+    window.document.title = `${import.meta.env.VITE_APP_TITLE} ${to.meta.title}`
+
     // if (to.meta.requireLogin) {
     //   if (from.path === '/') {
     //     return from

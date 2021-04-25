@@ -20,15 +20,78 @@ const requireLogin = {
 }
 const routes: RouteRecordRaw[] = [
   // 404
-  { path: '/:pathMatch(.*)*', name: '404', component: NotFind },
-  { path: '/', name: 'home', component: Home },
-  { path: '/login', name: 'login', component: Login },
-  { path: '/register', name: 'register', component: Register },
-  { path: '/reset', name: 'reset', component: Reset },
-  { path: '/about', name: 'about', component: About },
-  { path: '/author', name: 'author', component: Author },
-  { path: '/feedback', name: 'feedback', component: Feedback },
-  { path: '/task/:key', name: 'task', component: Task },
+  {
+    path: '/:pathMatch(.*)*',
+    name: '404',
+    component: NotFind,
+    meta: {
+      title: '404',
+    },
+  },
+  {
+    path: '/',
+    name: 'home',
+    component: Home,
+    meta: {
+      title: '首页',
+    },
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: Login,
+    meta: {
+      title: '登录',
+    },
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: Register,
+    meta: {
+      title: '注册',
+    },
+  },
+  {
+    path: '/reset',
+    name: 'reset',
+    component: Reset,
+    meta: {
+      title: '找回密码',
+    },
+  },
+  {
+    path: '/about',
+    name: 'about',
+    component: About,
+    meta: {
+      title: '关于',
+    },
+  },
+  {
+    path: '/author',
+    name: 'author',
+    component: Author,
+    meta: {
+      title: '联系作者',
+    },
+  },
+  {
+    path: '/feedback',
+    name: 'feedback',
+    component: Feedback,
+    meta: {
+      title: '建议反馈',
+    },
+  },
+  {
+    path: '/task/:key',
+    name: 'task',
+    component: Task,
+    meta: {
+      title: '文件提交',
+    },
+  },
   {
     path: '/dashboard',
     name: 'dashboard',
@@ -41,13 +104,17 @@ const routes: RouteRecordRaw[] = [
         name: 'files',
         path: 'files',
         component: Files,
-        meta: requireLogin,
+        meta: {
+          title: '文件列表',
+        },
       },
       {
         name: 'tasks',
         path: 'tasks',
         component: Tasks,
-        meta: requireLogin,
+        meta: {
+          title: '任务列表',
+        },
       },
       // {
       //   name: 'manage',

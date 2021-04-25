@@ -124,7 +124,7 @@ export default defineComponent({
                 path: 'overview',
                 component: Overview,
                 meta: {
-                  requireLogin: false,
+                  title: '应用概况',
                 },
               },
               {
@@ -132,7 +132,7 @@ export default defineComponent({
                 path: 'user',
                 component: User,
                 meta: {
-                  requireLogin: false,
+                  title: '用户列表',
                 },
               },
             ],
