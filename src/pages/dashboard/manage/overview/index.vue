@@ -36,22 +36,24 @@
         </span>
       </div>
       <el-table
+        tooltip-effect="dark"
         height="400"
         stripe
         border
         :default-sort="{ prop: 'date', order: 'descending' }"
         :data="pageLogs"
-        style="width: 100%"
+        style="width: 100%;"
       >
-        <el-table-column prop="date" label="日期" width="180">
+        <el-table-column sortable prop="date" label="日期" width="180">
           <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
         </el-table-column>
-        <el-table-column prop="type" label="类型" width="140">
+        <el-table-column prop="type" label="类型" width="100">
           <template #default="scope">{{ getLogsTypeText(scope.row.type) }}</template>
         </el-table-column>
-        <el-table-column prop="ip" label="地址" width="140"></el-table-column>
-        <el-table-column prop="msg" label="内容"></el-table-column>
+        <el-table-column prop="ip" label="地址"></el-table-column>
+        <el-table-column fixed="right" width="160" prop="msg" label="内容"></el-table-column>
       </el-table>
+
       <div class="tc p10">
         <el-pagination
           :current-page="pageCurrent"
@@ -218,6 +220,17 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
+@media screen and (max-width: 700px) {
+  .card-list {
+    margin-top: 40px;
+  }
+  .card {
+    min-width: 300px;
+  }
+  .log-filter {
+    justify-content: center;
+  }
+}
 .overview {
   margin: 0 auto;
 }
@@ -228,7 +241,7 @@ export default defineComponent({
   flex-wrap: wrap;
 }
 .card {
-  margin: 10px 20px 10px 0;
+  margin: 10px;
   height: 108px;
   cursor: pointer;
   font-size: 12px;
@@ -283,6 +296,7 @@ export default defineComponent({
   flex-wrap: wrap;
   .item {
     margin-right: 10px;
+    margin-bottom: 10px;
     .label {
       margin-right: 10px;
       font-size: 12px;

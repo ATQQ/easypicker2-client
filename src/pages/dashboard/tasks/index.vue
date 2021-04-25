@@ -1,9 +1,9 @@
 <template>
   <div class="tasks">
     <!-- 分类管理 -->
-    <el-affix :offset="0">
+    <div class="categorys-area">
       <CategoryPanel v-model:category="selectCategory"></CategoryPanel>
-    </el-affix>
+    </div>
 
     <!-- 任务管理 -->
     <div class="panel task-panel">
@@ -26,7 +26,7 @@
     </div>
 
     <!-- 任务基本信息维护弹窗 -->
-    <el-dialog title="基本信息修改" v-model="showBaseInfoDialog">
+    <el-dialog :fullscreen="isMobile" title="基本信息修改" v-model="showBaseInfoDialog">
       <el-form :model="taskBaseInfo">
         <el-form-item label="活动名称" label-width="100px">
           <el-input v-model="taskBaseInfo.name" autocomplete="off"></el-input>
@@ -50,7 +50,7 @@
     <LinkDialog v-model:value="showLinkModal" :download="false" title="收取链接" :link="shareTaskLink">
     </LinkDialog>
     <!-- 附加属性编辑弹窗 -->
-    <el-dialog title="更多设置" v-model="showTaskInfoPanel" center>
+    <el-dialog :fullscreen="isMobile" title="更多设置" v-model="showTaskInfoPanel" center>
       <div>
         <el-tabs v-model="activeInfo">
           <el-tab-pane label="截止日期" name="ddl">
@@ -104,6 +104,7 @@ export default defineComponent({
   },
   setup(_, context) {
     const $store = useStore()
+    const isMobile = computed(() => $store.getters['public/isMobile'])
     // 分类相关
     const categorys = computed(() => $store.state.category.categoryList)
 
@@ -219,6 +220,7 @@ export default defineComponent({
       editMore,
       showTaskInfoPanel,
       activeTask,
+      isMobile,
     }
   },
 })
@@ -249,4 +251,11 @@ export default defineComponent({
   margin-top: 10px;
   text-align: center;
 }
+
+@media screen and (max-width:700px) {
+  .categorys-area{
+    margin-top: 20px;
+  }
+}
+
 </style>

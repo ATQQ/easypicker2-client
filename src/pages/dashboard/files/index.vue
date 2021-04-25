@@ -32,37 +32,39 @@
           v-model="searchWord"
         ></el-input>
       </div>
-      <span style="align-self: center;" class="item">{{ filterFiles.length }} / {{ files.length }}</span>
+      <!-- <span style="align-self: center;" class="item">{{ filterFiles.length }} / {{ files.length }}</span> -->
     </div>
     <div class="panel">
-      <el-dropdown @command="handleDropdownClick">
-        <el-button type="primary" :disabled="selectItem.length === 0" size="medium">
-          批量操作
-          <i class="el-icon-arrow-down el-icon--right"></i>
-        </el-button>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="download">下载</el-dropdown-item>
-            <el-dropdown-item command="delete">删除</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
-      <el-button
-        :loading="batchDownStart"
-        :disabled="selectTask === 'all'"
-        type="primary"
-        size="medium"
-        icon="el-icon-download"
-        @click="handleDownloadTask"
-      >导出任务</el-button>
-      <el-button size="medium" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
-      <el-button
-        type="success"
-        size="medium"
-        icon="el-icon-data"
-        @click="handlEexportExcell"
-        :disabled="showFilterFiles.length === 0"
-      >导出Excel</el-button>
+      <div class="export-btns">
+        <el-dropdown @command="handleDropdownClick">
+          <el-button type="primary" :disabled="selectItem.length === 0" size="medium">
+            批量操作
+            <i class="el-icon-arrow-down el-icon--right"></i>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="download">下载</el-dropdown-item>
+              <el-dropdown-item command="delete">删除</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <el-button
+          :loading="batchDownStart"
+          :disabled="selectTask === 'all'"
+          type="primary"
+          size="medium"
+          icon="el-icon-download"
+          @click="handleDownloadTask"
+        >导出任务</el-button>
+        <el-button size="medium" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
+        <el-button
+          type="success"
+          size="medium"
+          icon="el-icon-data"
+          @click="handlEexportExcell"
+          :disabled="showFilterFiles.length === 0"
+        >导出Excel</el-button>
+      </div>
     </div>
     <!-- 主体内容 -->
     <div class="panel">
@@ -89,11 +91,13 @@
             #default="scope"
           >{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="180">
+        <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
-            <el-button @click="checkInfo(scope.row)" type="text" size="small">查看提交信息</el-button>
-            <el-button @click="downloadOne(scope.row)" type="text" size="small">下载</el-button>
-            <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+            <div class="text-btns">
+              <el-button @click="checkInfo(scope.row)" type="text" size="small">查看提交信息</el-button>
+              <el-button @click="downloadOne(scope.row)" type="text" size="small">下载</el-button>
+              <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -113,7 +117,7 @@
       ></el-pagination>
     </div>
     <!-- 信息弹窗 -->
-    <el-dialog title="提交填写的信息" v-model="showInfoDialog">
+    <el-dialog :fullscreen="isMobile" title="提交填写的信息" v-model="showInfoDialog">
       <el-form>
         <el-form-item v-for="(info,idx) in infos" :key="idx" :label="info.text" label-width="120px">
           <el-input :modelValue="info.value"></el-input>
@@ -347,7 +351,11 @@ export default defineComponent({
       $store.dispatch('category/getCategory')
       $store.dispatch('task/getTask')
     })
+
+    const isMobile = computed(() => $store.getters['public/isMobile'])
+
     return {
+      isMobile,
       handlEexportExcell,
       handleRefresh,
       handleDownloadTask,
@@ -389,6 +397,27 @@ export default defineComponent({
   padding-bottom: 2em;
 }
 
+@media screen and (max-width: 700px) {
+  .files {
+    margin-top: 70px;
+  }
+  .text-btns {
+    display: flex;
+    flex-direction: column;
+    :deep .el-button {
+      margin-left: 0px;
+      margin-bottom: 0px;
+    }
+  }
+  .header {
+    justify-content: center;
+  }
+  .export-btns{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+  }
+}
 .panel {
   padding: 1em;
   background-color: #fff;
@@ -403,13 +432,14 @@ export default defineComponent({
 }
 .header {
   display: flex;
-  justify-content: start;
   flex-wrap: wrap;
   .item {
     margin-right: 10px;
+    margin-bottom: 10px;
   }
 }
 .el-button {
   margin-left: 10px;
+  margin-bottom: 10px;
 }
 </style>

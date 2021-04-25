@@ -30,7 +30,7 @@
         </template>
       </el-upload>
     </div>
-    <el-dialog title="提交情况" v-model="showPeopList">
+    <el-dialog :fullscreen="isMobile" title="提交情况" v-model="showPeopList">
       <div class="p10">
         <el-button
           :disabled="peopleList.length === 0"
@@ -70,8 +70,10 @@ import { uploadFile, tableToExcel } from '@/utils/networkUtil'
 import { formatDate } from '@/utils/stringUtil'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
+  computed,
   defineComponent, reactive, ref, watchEffect,
 } from 'vue'
+import { useStore } from 'vuex'
 import { updateTaskInfo } from '../../public'
 
 export default defineComponent({
@@ -182,7 +184,12 @@ export default defineComponent({
       tableToExcel(headers, body)
       ElMessage.success('导出成功')
     }
+
+    const $store = useStore()
+    const isMobile = computed(() => $store.getters['public/isMobile'])
+
     return {
+      isMobile,
       handleExportExcel,
       people,
       uodateLimitPeople,
