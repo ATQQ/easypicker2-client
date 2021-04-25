@@ -13,7 +13,7 @@
         </el-input>
       </div>
       <!-- 二维码 -->
-      <div class="qr-code">
+      <div style="margin-top: 10px;text-align: center;">
         <qr-code :value="shareLink"></qr-code>
       </div>
       <!-- <template #footer>
@@ -98,9 +98,3 @@ export default defineComponent({
   },
 })
 </script>
-<style scoped>
-.qr-code {
-  margin-top: 10px;
-  text-align: center;
-}
-</style>
