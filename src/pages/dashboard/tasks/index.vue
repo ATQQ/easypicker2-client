@@ -247,11 +247,6 @@ export default defineComponent({
   justify-content: space-around;
 }
 
-.qr-code {
-  margin-top: 10px;
-  text-align: center;
-}
-
 @media screen and (max-width:700px) {
   .categorys-area{
     margin-top: 20px;
