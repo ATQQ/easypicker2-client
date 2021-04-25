@@ -8,8 +8,10 @@
             <img src="./../../assets/i/EasyPicker.png" alt="logo" />
           </router-link>
         </div>
+        <input type="checkbox" id="navActive" />
         <nav>
-          <div
+          <label
+            for="navActive"
             class="nav-item"
             v-for="(n, idx) in pcNavs"
             :key="idx"
@@ -17,25 +19,26 @@
               active: navActiveIdx === idx,
             }"
             @click="handleNav(idx)"
-          >
-            {{ n.title }}
-          </div>
+          >{{ n.title }}</label>
         </nav>
+        <div class="mask"></div>
       </div>
+      <!-- 移动端展示 -->
+      <span id="navMenu">
+        <label for="navActive">
+          <i class="el-icon-s-unfold"></i>
+        </label>
+      </span>
       <el-popover placement="top" :width="160" v-model:visible="visible">
         <p>确定退出登录吗？</p>
         <div style="text-align: right; margin: 0">
-          <el-button size="mini" type="text" @click="visible = false"
-            >取消</el-button
-          >
-          <el-button type="primary" size="mini" @click="logout"
-            >确定</el-button
-          >
+          <el-button size="mini" type="text" @click="visible = false">取消</el-button>
+          <el-button type="primary" size="mini" @click="logout">确定</el-button>
         </div>
         <template #reference>
           <span class="exit">
             退出
-            <i class="el-icon-error"> </i>
+            <i class="el-icon-error"></i>
           </span>
         </template>
       </el-popover>
@@ -57,7 +60,7 @@ export default defineComponent({
     const $store = useStore()
     const $route = useRoute()
 
-    const pcNavs:any[] = reactive([
+    const pcNavs: any[] = reactive([
       {
         title: '文件管理',
         path: '/dashboard/files',
@@ -153,7 +156,7 @@ export default defineComponent({
 })
 </script>
 <style scoped lang="scss">
-.dashboard{
+.dashboard {
   background-color: #fafafa;
 }
 .pc-nav {
@@ -190,6 +193,75 @@ export default defineComponent({
     margin: 0 10px;
     img {
       height: 40px;
+    }
+  }
+}
+#navActive {
+  display: none;
+  opacity: 0;
+}
+#navMenu {
+  display: none;
+}
+@media screen and (max-width: 700px) {
+  #navActive {
+    display: block;
+    position: fixed;
+    left: 0;
+    top: 0;
+  }
+  #navMenu {
+    cursor: pointer;
+    display: block;
+    position: absolute;
+    left: 10px;
+    top: 5px;
+    font-size: 2rem;
+  }
+  .pc-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 6;
+    .nav {
+      flex-wrap: wrap;
+      width: 100%;
+      .logo {
+        width: 100%;
+        text-align: center;
+      }
+    }
+    #navActive {
+      & + nav {
+        display: none;
+      }
+    }
+    #navActive:checked {
+      & + nav {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        position: absolute;
+        z-index: 1;
+        background: #fff;
+        left: 0;
+        top: 50px;
+        +.mask {
+          display: block;
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          top: 50px;
+          background-color: rgba(0,0,0,0.5);
+        }
+      }
+    }
+    .exit {
+      position: absolute;
+      right: 10px;
+      top: 20px;
     }
   }
 }

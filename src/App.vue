@@ -3,10 +3,22 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, onMounted } from 'vue'
+import { useStore } from 'vuex'
 
 export default defineComponent({
   name: 'App',
+  setup() {
+    const $store = useStore()
+    const refreshWidth = () => {
+      const clientWIdth = window.document.body.clientWidth
+      $store.commit('public/setWidth', clientWIdth)
+    }
+    onMounted(() => {
+      window.addEventListener('load', refreshWidth)
+      window.addEventListener('resize', refreshWidth)
+    })
+  },
 })
 </script>
 
@@ -23,5 +35,17 @@ a{
 }
 .p10{
   padding: 10px;
+}
+
+@media screen and (max-width:700px) {
+  .el-message-box{
+    width: auto;
+  }
+  .el-pagination{
+    white-space:break-spaces;
+  }
+  .el-pagination >*{
+    margin-bottom: 10px;
+  }
 }
 </style>

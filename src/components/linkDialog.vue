@@ -1,9 +1,9 @@
 <template>
   <div>
-    <el-dialog @close="handleClose" :title="title" v-model="showModel" center>
+    <el-dialog :fullscreen="isMobile" @close="handleClose" :title="title" v-model="showModel" center>
       <!-- 链接 -->
       <div>
-        <el-input disabled placeholder="生成的链接" v-model="shareLink">
+        <el-input placeholder="生成的链接" v-model="shareLink">
           <template #prepend>
             <el-button type="primary" @click="createShortLink">生成短链</el-button>
           </template>
@@ -28,9 +28,11 @@
 import { copyRes, getShortUrl } from '@/utils/stringUtil'
 import { ElMessage } from 'element-plus'
 import {
+  computed,
   defineComponent, ref, watchEffect,
 } from 'vue'
 import QrCode from '@components/QrCode.vue'
+import { useStore } from 'vuex'
 
 export default defineComponent({
   name: 'linkDialog',
@@ -81,12 +83,17 @@ export default defineComponent({
     const copyLink = () => {
       copyRes(shareLink.value)
     }
+
+    const $store = useStore()
+    const isMobile = computed(() => $store.getters['public/isMobile'])
+
     return {
       shareLink,
       createShortLink,
       copyLink,
       handleClose,
       showModel,
+      isMobile,
     }
   },
 })

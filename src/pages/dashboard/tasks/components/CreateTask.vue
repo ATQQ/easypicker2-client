@@ -11,8 +11,8 @@
         <!-- 新增区域 -->
         <div v-show="isShowCreateTask">
             <div class="input-container">
-                <el-input placeholder="请输入任务名称(左侧选择分类)" v-model="taskName">
-                    <template #prepend>{{ categoryName }}</template>
+                <el-input placeholder="请输入任务名称(上述列表选择分类)" v-model="taskName">
+                    <!-- <template #prepend>{{ categoryName }}</template> -->
                     <template #append>
                         <el-button @click="createTask" type="primary">确定</el-button>
                     </template>
