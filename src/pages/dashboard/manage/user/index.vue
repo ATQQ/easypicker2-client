@@ -24,24 +24,38 @@
         </span>
       </div>
       <el-table
-        height="400"
+        height="550"
         stripe
         border
         :default-sort="{ prop: 'date', order: 'descending' }"
         :data="pageUsers"
         style="width: 100%"
       >
-        <el-table-column prop="id" label="日期" width="50">
+        <el-table-column prop="account" label="账号" width="120"></el-table-column>
+        <el-table-column prop="phone" label="手机号" width="70"></el-table-column>
+        <el-table-column prop="login_time" label="最后登录时间" width="190">
+          <template
+            #default="scope"
+          >{{ scope.row.login_time && formatDate(new Date(scope.row.login_time)) }}</template>
         </el-table-column>
-        <!-- <el-table-column prop="type" label="类型" width="140">
-          <template #default="scope">{{ getLogsTypeText(scope.row.type) }}</template>
-        </el-table-column> -->
-        <el-table-column prop="account" label="账号"></el-table-column>
-        <el-table-column prop="phone" label="手机号"></el-table-column>
-        <el-table-column prop="join_time" label="注册时间"></el-table-column>
-        <el-table-column prop="login_time" label="最后登录时间"></el-table-column>
+        <el-table-column prop="join_time" label="注册时间" width="190">
+          <template #default="scope">{{ formatDate(new Date(scope.row.join_time)) }}</template>
+        </el-table-column>
         <el-table-column prop="login_count" label="登录次数"></el-table-column>
-        <!-- <el-table-column prop="open_time" label="解封时间"></el-table-column> -->
+        <el-table-column prop="open_time" label="解封时间" v-if="filterLogType===1">
+          <template
+            #default="scope"
+          >{{ scope.row.open_time && formatDate(new Date(scope.row.open_time)) }}</template>
+        </el-table-column>
+        <el-table-column fixed="right" label="操作" width="100">
+          <template #default="scope">
+            <el-button
+              @click="handleChangeStatus(scope.row.id, scope.row.status,scope.row.open_time)"
+              type="text"
+              size="small"
+            >修改状态</el-button>
+          </template>
+        </el-table-column>
       </el-table>
       <div class="tc p10">
         <el-pagination
@@ -57,12 +71,38 @@
         ></el-pagination>
       </div>
     </div>
+    <!-- 用户状态修改弹窗 -->
+    <el-dialog center title="状态修改" v-model="showUserStatusDialog">
+      <div class="tc">
+        <el-select v-model="selectStatus" placeholder="请选择新分类">
+          <el-option
+          v-for="s in userStatusList"
+          :key="s.type"
+          :label="s.label" :value="s.type"></el-option>
+        </el-select>
+      </div>
+      <div style="margin-top: 10px;" class="tc" v-if="selectStatus===1">
+        <el-date-picker
+        :editable="false"
+        v-model="openTime"
+        type="datetime"
+        placeholder="点击设置解封日期"
+      ></el-date-picker>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showUserStatusDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSaveStatus">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts">
 import { SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate } from '@/utils/stringUtil'
+import { ElMessage } from 'element-plus'
 import {
   computed, defineComponent, onMounted, reactive, ref,
 } from 'vue'
@@ -130,6 +170,35 @@ export default defineComponent({
     const handlePageChange = (idx: number) => {
       pageCurrent.value = idx
     }
+
+    // 状态修改
+    const showUserStatusDialog = ref(false)
+    const selectUserId = ref(0)
+    const selectStatus = ref(USER_STATUS.NORMAL)
+    const userStatusList = logTypeList
+    const openTime = ref('')
+    const handleChangeStatus = (userId: number, status: USER_STATUS, oTime:string) => {
+      selectUserId.value = userId
+      selectStatus.value = status
+      openTime.value = oTime
+      showUserStatusDialog.value = true
+    }
+    const handleSaveStatus = () => {
+      const user = users.find((u) => u.id === selectUserId.value)
+      if (selectStatus.value === USER_STATUS.FREEZE) {
+        if (!openTime.value) {
+          ElMessage.warning('请设置解冻时间')
+          return
+        }
+        user.open_time = openTime.value
+      } else {
+        user.open_time = ''
+      }
+      user.status = selectStatus.value
+      showUserStatusDialog.value = false
+      SuperUserApi.updateUserStatus(user.id, user.status, user.open_time)
+      ElMessage.success('修改成功')
+    }
     onMounted(() => {
       refreshUsers()
     })
@@ -146,6 +215,12 @@ export default defineComponent({
       filterLogType,
       logTypeList,
       searchWord,
+      handleChangeStatus,
+      showUserStatusDialog,
+      selectStatus,
+      userStatusList,
+      handleSaveStatus,
+      openTime,
     }
   },
 })
@@ -204,7 +279,7 @@ export default defineComponent({
   }
 }
 .panel {
-  max-width: 1024px;
+  max-width: 1256px;
   padding: 1em;
   background-color: #fff;
   margin: 10px auto;

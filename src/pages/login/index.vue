@@ -62,6 +62,7 @@ import loginPanel from '@components/loginPanel.vue'
 import {
   rAccount, rMobilePhone, rPassword, rVerCode,
 } from '@/utils/regExp'
+import { formatDate } from '@/utils/stringUtil'
 
 export default defineComponent({
   components: {
@@ -144,10 +145,16 @@ export default defineComponent({
           $store.commit('user/setToken', token)
           ElMessage.success('登录成功')
           redirectDashBoard()
-        }).catch(() => {
+        }).catch((err) => {
+          const { code, data } = err
+          const msg = '密码不正确'
+          const msgs:any = {
+            1010: '账号已被封禁,有疑问请联系管理员',
+            1009: `账号已被冻结,解冻时间${data?.openTime && formatDate(new Date(data.openTime))}`,
+          }
           ElMessage.error({
             type: 'error',
-            message: '密码不正确',
+            message: msgs[code] || msg,
           })
         })
       } else {

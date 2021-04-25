@@ -281,6 +281,7 @@ export default defineComponent({
       const t = Math.ceil(filterFiles.value.length / pageSize.value)
       return t
     })
+    // 当前页
     const pageCurrent = ref(1)
     const showFilterFiles = computed(() => {
       const start = (pageCurrent.value - 1) * pageSize.value

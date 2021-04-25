@@ -28,13 +28,17 @@
 </template>
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 export default defineComponent({
   setup() {
     const isCollapse = ref(false)
     const $router = useRouter()
+    const $route = useRoute()
     const handleSelect = (path:string) => {
+      if ($route.path.endsWith(path)) {
+        return
+      }
       $router.replace({
         path,
       })
