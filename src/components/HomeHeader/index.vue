@@ -20,12 +20,12 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, reactive } from 'vue'
 
 export default defineComponent({
   name: 'HomeHeader',
   setup() {
-    const links = [{
+    const links = reactive([{
       href: '/login',
       text: '登录',
     },
@@ -36,7 +36,7 @@ export default defineComponent({
     {
       href: '/about',
       text: '关于',
-    }]
+    }])
     return {
       links,
     }

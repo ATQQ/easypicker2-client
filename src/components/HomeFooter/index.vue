@@ -20,12 +20,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, reactive } from 'vue'
 
 export default defineComponent({
   name: 'HomeFooter',
   setup() {
-    const navs = [
+    const navs = reactive([
       // {
       //   title: '使用手册',
       //   // TODO: ddl 2021-04-30 补全链接
@@ -47,7 +47,7 @@ export default defineComponent({
         title: '反馈',
         link: 'https://www.wenjuan.com/s/UZBZJvA040/',
       },
-    ]
+    ])
 
     const cunnrentYear = new Date().getFullYear()
     return {

@@ -702,10 +702,10 @@ es-to-primitive@^1.2.1:
     is-date-object "^1.0.1"
     is-symbol "^1.0.2"
 
-esbuild@^0.9.2:
-  version "0.9.2"
-  resolved "https://registry.npm.taobao.org/esbuild/download/esbuild-0.9.2.tgz"
-  integrity sha1-fp/eJHyRPtjuBZ4mSLDFP30Aq+U=
+esbuild@^0.9.3:
+  version "0.9.7"
+  resolved "https://registry.nlark.com/esbuild/download/esbuild-0.9.7.tgz?cache=0&sync_timestamp=1619262300318&other_urls=https%3A%2F%2Fregistry.nlark.com%2Fesbuild%2Fdownload%2Fesbuild-0.9.7.tgz#ea0d639cbe4b88ec25fbed4d6ff00c8d788ef70b"
+  integrity sha1-6g1jnL5LiOwl++1Nb/AMjXiO9ws=
 
 escape-string-regexp@^1.0.5:
   version "1.0.5"
@@ -2095,10 +2095,10 @@ validate-npm-package-license@^3.0.1:
     spdx-correct "^3.0.0"
     spdx-expression-parse "^3.0.0"
 
-vite-plugin-style-import@^0.9.1:
-  version "0.9.1"
-  resolved "https://registry.npm.taobao.org/vite-plugin-style-import/download/vite-plugin-style-import-0.9.1.tgz#259a0358c20628e9814cc6c4cf25f389b5761945"
-  integrity sha1-JZoDWMIGKOmBTMbEzyXzibV2GUU=
+vite-plugin-style-import@^0.10.0:
+  version "0.10.0"
+  resolved "https://registry.nlark.com/vite-plugin-style-import/download/vite-plugin-style-import-0.10.0.tgz#f348ca95b72cdaa212a98c2d4da0dfbf70584165"
+  integrity sha1-80jKlbcs2qISqYwtTaDfv3BYQWU=
   dependencies:
     "@rollup/pluginutils" "^4.1.0"
     change-case "^4.1.2"
@@ -2106,12 +2106,12 @@ vite-plugin-style-import@^0.9.1:
     es-module-lexer "^0.4.1"
     magic-string "^0.25.7"
 
-vite@^2.1.0:
-  version "2.1.1"
-  resolved "https://registry.npm.taobao.org/vite/download/vite-2.1.1.tgz"
-  integrity sha1-E8enpWZbQ18o/oVJyqsYHgrZr3s=
+vite@^2.2.2:
+  version "2.2.2"
+  resolved "https://registry.nlark.com/vite/download/vite-2.2.2.tgz?cache=0&sync_timestamp=1619281068535&other_urls=https%3A%2F%2Fregistry.nlark.com%2Fvite%2Fdownload%2Fvite-2.2.2.tgz#9ad2063929ecd632f16dc9471217e26992938aad"
+  integrity sha1-mtIGOSns1jLxbclHEhfiaZKTiq0=
   dependencies:
-    esbuild "^0.9.2"
+    esbuild "^0.9.3"
     postcss "^8.2.1"
     resolve "^1.19.0"
     rollup "^2.38.5"

@@ -55,6 +55,8 @@ export default defineComponent({
   setup() {
     const $router = useRouter()
     const $store = useStore()
+    const $route = useRoute()
+
     const pcNavs:any[] = reactive([
       {
         title: '文件管理',
@@ -87,9 +89,11 @@ export default defineComponent({
       })
     }
     onMounted(() => {
-      const $route = useRoute()
+      // 动态修改active的项
       navActiveIdx.value = pcNavs.findIndex((v) => v.path === $route.path)
 
+      // 动态添加管理页面相关路由
+      const isAlreadyAdd = $router.getRoutes().find((r) => r.name === 'manage')
       UserApi.checkPower().then((r) => {
         const isSuperAdmin = r.data
         $store.commit('user/setSuperAdmin', isSuperAdmin)
@@ -105,6 +109,7 @@ export default defineComponent({
               isExternal: true,
             }]
           pcNavs.push(...superNavs)
+          if (isAlreadyAdd) return
           const Manage = () => import('@/pages/dashboard/manage/index.vue')
           const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
           const User = () => import('@/pages/dashboard/manage/user/index.vue')
@@ -112,9 +117,6 @@ export default defineComponent({
             name: 'manage',
             path: 'manage',
             component: Manage,
-            meta: {
-              requireLogin: false,
-            },
             redirect: {
               name: 'overview',
             },

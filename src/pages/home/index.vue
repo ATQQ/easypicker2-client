@@ -21,7 +21,7 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, reactive } from 'vue'
 import HomeHeader from '@components/HomeHeader/index.vue'
 import HomeFooter from '@components/HomeFooter/index.vue'
 
@@ -32,11 +32,11 @@ export default defineComponent({
     HomeFooter,
   },
   setup() {
-    const introduces: string[] = [
+    const introduces: string[] = reactive([
       '一款在线文件收取助手',
       '自动归档,记录每次提交的文件信息与提交人信息',
       '随时随地下载,查看收取详细情况',
-    ]
+    ])
     return {
       introduces,
     }

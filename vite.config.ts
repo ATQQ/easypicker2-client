@@ -10,7 +10,9 @@ export default defineConfig({
     // styleImport({
     //   libs: [{
     //     libraryName: 'element-plus',
-    //     resolveStyle: (name) => `element-plus/lib/theme-chalk/${name}.css`,
+    //     esModule: true,
+    //     ensureStyleFile: true,
+    //     resolveStyle: (name) => `element-plus/packages/theme-chalk/src/${name.slice(3)}.scss`,
     //     resolveComponent: (name) => `element-plus/lib/${name}`,
     //   }],
     // }),
