@@ -45,6 +45,7 @@
         "max-len":"warn",
         "no-restricted-syntax":"off",
         "no-bitwise":"off",
-        "camelcase":"off"
+        "camelcase":"off",
+        "no-case-declarations":"off"
     }
 }
