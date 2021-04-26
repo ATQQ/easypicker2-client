@@ -45,6 +45,7 @@
             <el-dropdown-menu>
               <el-dropdown-item command="download">下载</el-dropdown-item>
               <el-dropdown-item command="delete">删除</el-dropdown-item>
+              <el-dropdown-item command="excel">导出Excel</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -58,6 +59,7 @@
         >导出任务</el-button>
         <el-button size="medium" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
         <el-button
+          title="导出表格中所有的数据"
           type="success"
           size="medium"
           icon="el-icon-data"
@@ -239,6 +241,23 @@ export default defineComponent({
             ElMessage.info('取消')
           })
           break
+        case 'excel':
+          // 优化
+          if (selectItem.length === 0) {
+            ElMessage.warning('没有选中需要导出的内容')
+            return
+          }
+          const headers = ['提交时间', '任务', '文件名', '文件大小', '提交信息']
+          const body = selectItem.map(((v) => {
+            const {
+              date, task_name: taskName, name, size,
+            } = v
+            const info = JSON.parse(v.info).map((i: any) => `${i.text}--${i.value}`).join(',')
+            return [formatDate(new Date(date)), taskName, name, formatSize(size), info]
+          }))
+          tableToExcel(headers, body)
+          ElMessage.success('导出成功')
+          break
         default:
           break
       }
@@ -331,12 +350,12 @@ export default defineComponent({
     }
 
     const handlEexportExcell = () => {
-      if (showFilterFiles.value.length === 0) {
+      if (filterFiles.value.length === 0) {
         ElMessage.warning('表格中没有可导出的内容')
         return
       }
       const headers = ['提交时间', '任务', '文件名', '文件大小', '提交信息']
-      const body = showFilterFiles.value.map(((v) => {
+      const body = filterFiles.value.map(((v) => {
         const {
           date, task_name: taskName, name, size,
         } = v
