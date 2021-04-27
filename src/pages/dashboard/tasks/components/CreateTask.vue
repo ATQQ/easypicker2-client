@@ -6,7 +6,7 @@
                 type="primary"
                 :plain="!isShowCreateTask"
                 @click="isShowCreateTask = !isShowCreateTask"
-            >{{ isShowCreateTask ? "关闭新增面板" : "创建任务" }}</el-button>
+            >{{ isShowCreateTask ? "关闭创建面板" : "创建收集任务" }}</el-button>
         </div>
         <!-- 新增区域 -->
         <div v-show="isShowCreateTask">
