@@ -50,7 +50,7 @@
         <el-table-column prop="type" label="类型" width="100">
           <template #default="scope">{{ getLogsTypeText(scope.row.type) }}</template>
         </el-table-column>
-        <el-table-column prop="ip" label="地址"></el-table-column>
+        <el-table-column sortable prop="ip" label="地址"></el-table-column>
         <el-table-column fixed="right" width="160" prop="msg" label="内容"></el-table-column>
       </el-table>
 

@@ -33,7 +33,7 @@
       >
         <el-table-column prop="account" label="账号" width="120"></el-table-column>
         <el-table-column prop="phone" label="手机号" width="70"></el-table-column>
-        <el-table-column prop="login_time" label="最后登录时间" width="190">
+        <el-table-column sortable prop="login_time" label="最后登录时间" width="190">
           <template
             #default="scope"
           >{{ scope.row.login_time && formatDate(new Date(scope.row.login_time)) }}</template>
@@ -41,7 +41,7 @@
         <el-table-column prop="join_time" label="注册时间" width="190">
           <template #default="scope">{{ formatDate(new Date(scope.row.join_time)) }}</template>
         </el-table-column>
-        <el-table-column prop="login_count" label="登录次数"></el-table-column>
+        <el-table-column sortable prop="login_count" label="登录次数"></el-table-column>
         <el-table-column prop="open_time" label="解封时间" v-if="filterLogType === 1">
           <template
             #default="scope"
