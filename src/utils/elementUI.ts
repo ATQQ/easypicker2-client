@@ -10,15 +10,19 @@ import { App } from '@vue/runtime-core'
 //   ElDropdown, ElDropdownItem,
 //   ElTable, ElTableColumn, ElPagination, ElRadio,
 //   ElRadioGroup, ElRadioButton, ElAffix, ElUpload,
-//   ElDivider, ElCheckbox, ElSwitch, ElDropdownMenu,
+//   ElDivider, ElCheckbox, ElSwitch, ElDropdownMenu, ElTooltip,
 //   ElMenuItem, ElMenu, locale,
 // } from 'element-plus'
-// import 'element-plus/packages/theme-chalk/src/icon.scss'
+// import 'element-plus/lib/theme-chalk/el-icon.css'
 
 // import lang from 'element-plus/lib/locale/lang/zh-cn'
 // import 'dayjs/locale/zh-cn'
 
-// locale(lang)
+// if (import.meta.env.PROD) {
+//   locale.use(lang)
+// } else {
+//   locale(lang)
+// }
 
 // const components = [
 //   ElSelect,
@@ -32,7 +36,7 @@ import { App } from '@vue/runtime-core'
 //   ElButton, ElInput, ElPopover, ElTag, ElDropdown,
 //   ElDropdownItem, ElTable, ElTableColumn, ElPagination,
 //   ElRadio, ElRadioGroup, ElRadioButton, ElAffix,
-//   ElCard, ElUpload, ElDivider,
+//   ElCard, ElUpload, ElDivider, ElTooltip,
 //   ElCheckbox, ElSwitch, ElDropdownMenu, ElMenuItem, ElMenu]
 
 // export default function mountElementUI(app: App<Element>) {
