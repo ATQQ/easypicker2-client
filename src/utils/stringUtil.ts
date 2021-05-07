@@ -19,7 +19,9 @@ export function copyRes(text:string, msg = '结果已成功复制到剪贴板') 
 
   // 第三方
   copy(text).then(() => {
-    ElMessage.success(msg)
+    if (msg) {
+      ElMessage.success(msg)
+    }
   }).catch((err) => {
     console.error(err)
     ElMessage.warning('不支持自动复制，请手动选择复制')
