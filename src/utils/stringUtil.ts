@@ -1,21 +1,29 @@
 import { ElMessage } from 'element-plus'
 import SparkMD5 from 'spark-md5'
+import copy from 'clipboard-copy'
 import { jsonp } from './networkUtil'
-
 /**
 * 将结果写入的剪贴板
 * @param {String} text
 */
-export function copyRes(text:string) {
-  const input = document.createElement('input')
-  document.body.appendChild(input)
-  input.setAttribute('value', text)
-  input.select()
-  if (document.execCommand('copy')) {
-    document.execCommand('copy')
-  }
-  document.body.removeChild(input)
-  ElMessage.success('结果已成功复制到剪贴板')
+export function copyRes(text:string, msg = '结果已成功复制到剪贴板') {
+  // 自定义
+  // const input = document.createElement('input')
+  // document.body.appendChild(input)
+  // input.setAttribute('value', text)
+  // input.select()
+  // if (document.execCommand('copy')) {
+  //   document.execCommand('copy')
+  // }
+  // document.body.removeChild(input)
+
+  // 第三方
+  copy(text).then(() => {
+    ElMessage.success(msg)
+  }).catch((err) => {
+    console.error(err)
+    ElMessage.warning('不支持自动复制，请手动选择复制')
+  })
 }
 
 /**
