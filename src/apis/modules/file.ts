@@ -95,6 +95,13 @@ function withdrawFile(options:WithdrawFileOptions) {
     params: options,
   })
 }
+
+function checkSubmitStatus(taskKey:string, info:ant) {
+  return ajax.post<any, BaseResponse>('file/submit/people', {
+    taskKey,
+    info,
+  })
+}
 export default {
   getUploadToken,
   addFile,
@@ -108,4 +115,5 @@ export default {
   checkCompressStatus,
   getCompressFileUrl,
   getCompressDownUrl,
+  checkSubmitStatus,
 }

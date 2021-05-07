@@ -43,7 +43,7 @@
         <div class="p10">
           <el-button v-if="isWithdraw" size="small" @click="startWithdraw" type="warning">开始撤回</el-button>
           <el-button v-else size="small" @click="submitUpload" type="success">开始上传</el-button>
-          <el-button size="small" v-if="taskMoreInfo.template" @click="downloadTemplate">模板文件下载</el-button>
+          <el-button @click="checkSubmitStatus" type="text" size="small">查询提交情况</el-button>
         </div>
         <el-upload
           action
@@ -59,6 +59,7 @@
           <el-button type="primary">选择文件</el-button>
         </el-upload>
         <div class="withdraw">
+          <el-button type="text" style="color:#85ce61" v-if="taskMoreInfo.template" size="small" @click="downloadTemplate">下载模板</el-button>
           <el-button v-if="isWithdraw" @click="isWithdraw = false" size="small" type="text">正常提交</el-button>
           <el-button v-else size="small" @click="isWithdraw = true" type="text">我要撤回</el-button>
         </div>
@@ -262,6 +263,7 @@ export default defineComponent({
         })
     }
 
+    // 撤回相关逻辑
     const isWithdraw = ref(false)
     const startWithdraw = () => {
       const { uploadFiles } = fileUpload.value
@@ -323,6 +325,24 @@ export default defineComponent({
         start()
       }
     }
+
+    // 查询提交情况
+    const checkSubmitStatus = () => {
+      // 校验表单填写
+      for (const info of infos) {
+        if (!info.value) {
+          ElMessage.warning('请先完成必要信息的填写,需和提交时信息完全一致')
+          return
+        }
+      }
+      FileApi.checkSubmitStatus(k.value, infos).then((res) => {
+        if (res.data.isSubmit) {
+          ElMessage.success('已经提交过啦')
+        } else {
+          ElMessage.warning('还未提交过哟')
+        }
+      })
+    }
     onMounted(() => {
       k.value = $route.params.key as string
       if (k.value) {
@@ -358,6 +378,7 @@ export default defineComponent({
       templateLink,
       isWithdraw,
       startWithdraw,
+      checkSubmitStatus,
     }
   },
 })
