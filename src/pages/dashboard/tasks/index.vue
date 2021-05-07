@@ -83,6 +83,7 @@ import {
 import { useStore } from 'vuex'
 import { TaskApi } from '@/apis'
 import LinkDialog from '@components/linkDialog.vue'
+import { copyRes } from '@/utils/stringUtil'
 import CategoryPanel from './components/CategoryPanel.vue'
 import CreateTask from './components/CreateTask.vue'
 import TaskInfo from './components/TaskInfo.vue'
@@ -102,7 +103,7 @@ export default defineComponent({
     TemplatePanel,
     InfoPanel,
   },
-  setup(_, context) {
+  setup() {
     const $store = useStore()
     const isMobile = computed(() => $store.getters['public/isMobile'])
     // 分类相关
@@ -161,6 +162,7 @@ export default defineComponent({
       shareTaskLink.value = 'default'
       const { origin } = window.location
       shareTaskLink.value = `${origin}/task/${k}`
+      copyRes(shareTaskLink.value, '收集链接已自动复制到粘贴板')
       showLinkModal.value = true
     }
 

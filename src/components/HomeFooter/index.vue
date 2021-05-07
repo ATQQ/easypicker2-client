@@ -2,7 +2,7 @@
   <div class="footer">
     <ul>
       <li v-for="(item, index) in navs" :key="index">
-        <a target="_blank" v-bind:href="item.link">{{ item.title }}</a>
+        <a target="_blank" rel="noopener" v-bind:href="item.link">{{ item.title }}</a>
       </li>
       <li>
         <router-link to="/author">联系作者</router-link>
@@ -14,7 +14,7 @@
     </ul>
     <p>
       © 2019 - {{ cunnrentYear }} by
-      <a target="_blank" href="https://github.com/ATQQ">sugar</a>
+      <a target="_blank" rel="noopener" href="https://github.com/ATQQ">sugar</a>
     </p>
   </div>
 </template>
