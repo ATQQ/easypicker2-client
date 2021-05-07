@@ -59,16 +59,18 @@ export default defineComponent({
   setup(props, context) {
     const shareLink = ref('')
     const showModel = ref(false)
+    const copyLink = () => {
+      copyRes(shareLink.value)
+    }
     watchEffect(() => {
       shareLink.value = props.link
     })
     watchEffect(() => {
       showModel.value = props.value
       if (showModel.value && props.download) {
-        ElMessage.success('已开始自动下载模板文件')
         setTimeout(() => {
-          ElMessage.success('如未自动开始,可复制链接粘贴到浏览器下载(12h有效)')
-        }, 100)
+          ElMessage.success('如未自动开始下载，请复制链接到浏览器中执行下载(12h有效)')
+        }, 200)
       }
     })
     const handleClose = () => {
@@ -79,9 +81,6 @@ export default defineComponent({
         shareLink.value = v
         ElMessage.success('短链生成成功')
       })
-    }
-    const copyLink = () => {
-      copyRes(shareLink.value)
     }
 
     const $store = useStore()
