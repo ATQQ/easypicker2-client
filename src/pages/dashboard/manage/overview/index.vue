@@ -34,6 +34,9 @@
             v-model="searchWord"
           ></el-input>
         </span>
+        <span class="item">
+          <el-button size="medium" icon="el-icon-refresh" @click="refreshLogs">刷新</el-button>
+        </span>
       </div>
       <el-table
         tooltip-effect="dark"
@@ -73,6 +76,7 @@
 <script lang="ts">
 import { SuperOverviewApi } from '@/apis'
 import { formatDate } from '@/utils/stringUtil'
+import { ElMessage } from 'element-plus'
 import {
   computed, defineComponent, onMounted, reactive, ref,
 } from 'vue'
@@ -133,6 +137,7 @@ export default defineComponent({
     // 日志
     const logs: any[] = reactive([])
     const refreshLogs = () => {
+      ElMessage.success('抓取日志数据成功')
       SuperOverviewApi.getAllLogMsg().then((res) => {
         logs.splice(0, logs.length)
         const d = res.data.logs
@@ -214,6 +219,7 @@ export default defineComponent({
       filterLogType,
       logTypeList,
       searchWord,
+      refreshLogs,
     }
   },
 })
