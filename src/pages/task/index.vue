@@ -145,7 +145,7 @@ export default defineComponent({
     const fileList: any[] = reactive([])
     const fileUpload: any = ref()
 
-    const handleRemoveFile = (file: any) => ElMessageBox.confirm('确认删除', '提示').then(() => {
+    const handleRemoveFile = (file: any) => ElMessageBox.confirm('不影响已经上传成功的，正在上传的将取消上传', '确认移除此文件吗').then(() => {
       if (file.status === 'uploading') {
         ElMessage.info(`取消${file.name}的上传`)
         // 取消上传
@@ -245,7 +245,7 @@ export default defineComponent({
     }
 
     const handleExceed = () => {
-      ElMessage.warning('一次提交最多只能选择5个文件')
+      ElMessage.warning('一次提交最多只能选择5个文件，请移除已经上传成功的')
     }
     const showLinkModel = ref(false)
     const templateLink = ref('')
