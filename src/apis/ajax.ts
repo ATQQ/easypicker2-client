@@ -3,7 +3,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 const instance = axios.create({
-  baseURL: '/api/',
+  baseURL: import.meta.env.VITE_APP_AXIOS_BASE_URL,
 })
 
 /**
