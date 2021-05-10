@@ -24,10 +24,15 @@ export default defineConfig({
   server: {
     port: 8080,
     proxy: {
-      '/api': {
+      '/api/': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ''),
+      },
+      '/api-stage/': {
+        target: 'https://service-hc4kiz1c-1256505457.gz.apigw.tencentcs.com/release/',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api-stage/, ''),
       },
     },
   },
