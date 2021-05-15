@@ -4,8 +4,8 @@ import ajax from '../ajax'
  * 获取验证码
  * @param mobile 手机号
  */
-function getCode(phone: string) {
-  return ajax.get<any, BaseResponse>(
+function getCode(phone: string):PublicApiTypes.getCode {
+  return ajax.get(
     'public/code',
     {
       params: {
@@ -15,7 +15,7 @@ function getCode(phone: string) {
   )
 }
 
-function reportPv(path:string) {
+function reportPv(path:string):PublicApiTypes.reportPv {
   return ajax.post<any, BaseResponse>(
     'public/report/pv',
     {
