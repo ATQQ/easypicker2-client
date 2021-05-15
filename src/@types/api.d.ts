@@ -97,3 +97,18 @@ declare namespace PublicApiTypes{
     type getCode = ResponseData
     type reportPv = ResponseData
 }
+
+declare namespace PeopleApiTypes{
+    interface People{
+        count:number
+        id:number
+        lastDate:string
+        name:string
+        statue:number
+    }
+    type importPeople = ResponseData<{success:number, fail:string[]}>
+    type getPeople = ResponseData<{people:People[]}>
+    type deletePeople = ResponseData
+    type updatePeopleStatus = ResponseData
+    type checkPeopleIsExist = ResponseData<{exist:boolean}>
+}
