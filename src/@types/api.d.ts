@@ -63,3 +63,32 @@ declare namespace UserApiTypes{
     type resetPwd = ResponseData<{token?:string, openTime?:string}>
     type checkPower = ResponseData<boolean>
 }
+
+declare namespace TaskApiTypes{
+    interface TaskLog{
+        date:string
+        filename:string
+    }
+    interface TaskItem{
+        category:string
+        key:string
+        name:string
+        recentLog:TaskLog[]
+    }
+    interface TaskInfo{
+        ddl?:string|null
+        format?:string
+        info?:string
+        people?:number
+        rewrite?:number
+        share?:string
+        template?:string
+    }
+    type getList = ResponseData<{tasks:TaskItem[]}>
+    type create = ResponseData
+    type deleteOne = ResponseData
+    type updateBaseInfo = ResponseData
+    type getTaskInfo = ResponseData<{name:string, category:string}>
+    type getTaskMoreInfo = ResponseData<TaskInfo>
+    type updateTaskMoreInfo = ResponseData
+}
