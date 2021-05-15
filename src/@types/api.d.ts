@@ -112,3 +112,14 @@ declare namespace PeopleApiTypes{
     type updatePeopleStatus = ResponseData
     type checkPeopleIsExist = ResponseData<{exist:boolean}>
 }
+
+declare namespace CateGoryApiTypes{
+    interface CategoryItem{
+        id:number
+        name:string
+        k:string
+    }
+    type getList = ResponseData<{categories:CategoryItem[]}>
+    type createNew = ResponseData
+    type deleteOne = ResponseData
+}
