@@ -1,12 +1,12 @@
 import ajax from '../../ajax'
 
 const baseUrl = '/super/overview'
-function getCount() {
-  return ajax.get<any, BaseResponse>(`${baseUrl}/count`)
+function getCount():OverviewApiTypes.getCount {
+  return ajax.get(`${baseUrl}/count`)
 }
 
-function getAllLogMsg() {
-  return ajax.get<any, BaseResponse>(`${baseUrl}/log`)
+function getAllLogMsg():OverviewApiTypes.getAllLogMsg {
+  return ajax.get(`${baseUrl}/log`)
 }
 export default {
   getCount,
