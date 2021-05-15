@@ -1,13 +1,4 @@
-interface TaskInfo{
-    template?:string
-    rewrite?:number
-    format?:number
-    info?:string
-    share?:string
-    ddl?:string
-    people?:number
-}
-
+// 第三方库的类型定义
 declare namespace qiniu {
     interface Subscription {
         unsubscribe(): void
@@ -25,14 +16,3 @@ declare namespace qiniu {
     type upload = (file: File, key: string, token: string) => Observable
     const upload: upload
 }
-
-interface DbFile {
-    taskKey?: string
-    taskName?: string
-    categoryKey?: string
-    name?: string
-    info?: string
-    hash?: string
-    size?: number
-    people?: string
-  }

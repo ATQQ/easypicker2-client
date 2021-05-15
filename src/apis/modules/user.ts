@@ -1,34 +1,31 @@
 import ajax from '../ajax'
 
-function register(account:string, pwd:string, bindPhone = false, options?:any) {
-  return ajax.post<any, BaseResponse>('user/register', {
-    account,
-    pwd,
-    bindPhone,
+function register(options:UserApiTypes.RegisterOptions):UserApiTypes.register {
+  return ajax.post('user/register', {
     ...options,
   })
 }
 
-function login(account:string, pwd:string) {
-  return ajax.post<any, BaseResponse>('user/login', {
+function login(account:string, pwd:string):UserApiTypes.login {
+  return ajax.post('user/login', {
     account, pwd,
   })
 }
 
-function codeLogin(phone:string, code:string) {
-  return ajax.post<any, BaseResponse>('user/login/code', {
+function codeLogin(phone:string, code:string):UserApiTypes.codeLogin {
+  return ajax.post('user/login/code', {
     phone, code,
   })
 }
 
-function resetPwd(phone:string, code:string, pwd:string) {
-  return ajax.put<any, BaseResponse>('user/password', {
+function resetPwd(phone:string, code:string, pwd:string):UserApiTypes.resetPwd {
+  return ajax.put('user/password', {
     phone, code, pwd,
   })
 }
 
-function checkPower() {
-  return ajax.get<any, BaseResponse>('user/power/super')
+function checkPower():UserApiTypes.checkPower {
+  return ajax.get('user/power/super')
 }
 export default {
   register,

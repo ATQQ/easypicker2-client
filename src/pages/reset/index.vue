@@ -67,14 +67,15 @@
 import { PublicApi, UserApi } from '@/apis'
 import { ElMessage } from 'element-plus'
 import {
-  defineComponent, onMounted, ref,
+  defineComponent, ref,
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import loginPanel from '@components/loginPanel.vue'
 import {
-  rAccount, rMobilePhone, rPassword, rVerCode,
+  rMobilePhone, rPassword, rVerCode,
 } from '@/utils/regExp'
+import { formatDate } from '@/utils/stringUtil'
 
 export default defineComponent({
   components: {
@@ -150,11 +151,13 @@ export default defineComponent({
           redirectDashBoard()
         })
         .catch((err) => {
-          const { code: c } = err
+          const { code: c, data } = err
           const options:any = {
             1008: '该手机号未绑定任何账号',
             1003: '验证码不正确',
             1004: '密码格式不正确',
+            1010: '账号已被封禁,有疑问请联系管理员',
+            1009: `账号已被冻结,解冻时间${data?.openTime && formatDate(new Date(data.openTime))}`,
           }
           ElMessage.error(options[c] || '重置失败,未知错误')
         })
