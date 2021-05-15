@@ -125,6 +125,18 @@ export default defineComponent({
         ElMessage.success('获取成功,请注意查看手机短信')
       })
     }
+
+    const loginErrorMsg = (err:any, msg:string) => {
+      const { code, data } = err
+      const msgs:any = {
+        1010: '账号已被封禁,有疑问请联系管理员',
+        1009: `账号已被冻结,解冻时间${data?.openTime && formatDate(new Date(data.openTime))}`,
+      }
+      ElMessage.error({
+        type: 'error',
+        message: msgs[code] || msg,
+      })
+    }
     const login = () => {
       if (!checkForm()) {
         return
@@ -146,16 +158,7 @@ export default defineComponent({
           ElMessage.success('登录成功')
           redirectDashBoard()
         }).catch((err) => {
-          const { code, data } = err
-          const msg = '密码不正确'
-          const msgs:any = {
-            1010: '账号已被封禁,有疑问请联系管理员',
-            1009: `账号已被冻结,解冻时间${data?.openTime && formatDate(new Date(data.openTime))}`,
-          }
-          ElMessage.error({
-            type: 'error',
-            message: msgs[code] || msg,
-          })
+          loginErrorMsg(err, '密码不正确')
         })
       } else {
         // 手机号验证码登录
@@ -164,8 +167,8 @@ export default defineComponent({
           $store.commit('user/setToken', token)
           ElMessage.success('登录成功')
           redirectDashBoard()
-        }).catch(() => {
-          ElMessage.error('验证码不正确')
+        }).catch((err) => {
+          loginErrorMsg(err, '验证码不正确')
         })
       }
     }

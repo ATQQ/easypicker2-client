@@ -151,7 +151,10 @@ export default defineComponent({
       if (!checkForm()) {
         return
       }
-      UserApi.register(account.value, pwd1.value, bindPhone.value, {
+      UserApi.register({
+        account: account.value,
+        pwd: pwd1.value,
+        bindPhone: bindPhone.value,
         phone: phone.value,
         code: code.value,
       }).then((res) => {
