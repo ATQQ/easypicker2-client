@@ -1,19 +1,19 @@
 import ajax from '../ajax'
 
-function getUploadToken() {
-  return ajax.get<any, BaseResponse>('file/token')
+function getUploadToken():FileApiTypes.getUploadToken {
+  return ajax.get('file/token')
 }
 
-function addFile(options:DbFile) {
-  return ajax.post<any, BaseResponse>('file/info', options)
+function addFile(options:FileApiTypes.FileOptions):FileApiTypes.addFile {
+  return ajax.post('file/info', options)
 }
 
-function getFileList() {
-  return ajax.get<any, BaseResponse>('file/list')
+function getFileList():FileApiTypes.getFileList {
+  return ajax.get('file/list')
 }
 
-function getTemplateUrl(template:string, key:string) {
-  return ajax.get<any, BaseResponse>('file/template', {
+function getTemplateUrl(template:string, key:string):FileApiTypes.getTemplateUrl {
+  return ajax.get('file/template', {
     params: {
       template,
       key,
@@ -21,43 +21,43 @@ function getTemplateUrl(template:string, key:string) {
   })
 }
 
-function getOneFileUrl(id:number) {
-  return ajax.get<any, BaseResponse>('file/one', {
+function getOneFileUrl(id:number):FileApiTypes.getOneFileUrl {
+  return ajax.get('file/one', {
     params: {
       id,
     },
   })
 }
 
-function deleteOneFile(id:number) {
-  return ajax.delete<any, BaseResponse>('file/one', {
+function deleteOneFile(id:number):FileApiTypes.deleteOneFile {
+  return ajax.delete('file/one', {
     params: {
       id,
     },
   })
 }
 
-function batchDownload(ids:number[]) {
-  return ajax.post<any, BaseResponse>('file/batch/down', {
+function batchDownload(ids:number[]):FileApiTypes.batchDownload {
+  return ajax.post('file/batch/down', {
     ids,
   })
 }
 
-function batchDel(ids:number[]) {
-  return ajax.delete<any, BaseResponse>('file/batch/del', {
+function batchDel(ids:number[]):FileApiTypes.batchDel {
+  return ajax.delete('file/batch/del', {
     params: {
       ids,
     },
   })
 }
 
-function checkCompressStatus(id:string) {
-  return ajax.post<any, BaseResponse>('file/compress/status', {
+function checkCompressStatus(id:string):FileApiTypes.checkCompressStatus {
+  return ajax.post('file/compress/status', {
     id,
   })
 }
-function getCompressDownUrl(key:string) {
-  return ajax.post<any, BaseResponse>('file/compress/down', {
+function getCompressDownUrl(key:string):FileApiTypes.getCompressDownUrl {
+  return ajax.post('file/compress/down', {
     key,
   })
 }
@@ -66,7 +66,7 @@ function getCompressFileUrl(id:string):Promise<string> {
     checkCompressStatus(id).then((r) => {
       const { code, key } = r.data
       if (code === 0) {
-        getCompressDownUrl(key).then((v) => {
+        getCompressDownUrl(key ?? '').then((v) => {
           const { url } = v.data
           _r(url)
         })
@@ -78,26 +78,19 @@ function getCompressFileUrl(id:string):Promise<string> {
     })
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     check(resolve)
   })
 }
-interface WithdrawFileOptions{
-  taskKey:string
-  taskName:string
-  filename:string
-  hash:string
-  peopleName:string
-  info:string
-}
-function withdrawFile(options:WithdrawFileOptions) {
+
+function withdrawFile(options:FileApiTypes.WithdrawFileOptions):FileApiTypes.withdrawFile {
   return ajax.delete('file/withdraw', {
     params: options,
   })
 }
 
-function checkSubmitStatus(taskKey:string, info:ant) {
-  return ajax.post<any, BaseResponse>('file/submit/people', {
+function checkSubmitStatus(taskKey:string, info:any):FileApiTypes.checkSubmitStatus {
+  return ajax.post('file/submit/people', {
     taskKey,
     info,
   })
