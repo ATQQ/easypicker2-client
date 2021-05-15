@@ -92,3 +92,8 @@ declare namespace TaskApiTypes{
     type getTaskMoreInfo = ResponseData<TaskInfo>
     type updateTaskMoreInfo = ResponseData
 }
+
+declare namespace PublicApiTypes{
+    type getCode = ResponseData
+    type reportPv = ResponseData
+}
