@@ -1,7 +1,7 @@
 import { TaskApi } from '@/apis'
 import { ElMessage } from 'element-plus'
 
-export const updateTaskInfo = (key:string, options: any) => {
+export const updateTaskInfo = (key:string, options: TaskApiTypes.TaskInfo) => {
   if (key) {
     TaskApi
       .updateTaskMoreInfo(key, options)

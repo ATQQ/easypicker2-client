@@ -164,7 +164,7 @@ export default defineComponent({
       return tasks.value.filter((t) => t.category === selectCategory.value)
     })
     // 提交的所有文件
-    const files: any[] = reactive([])
+    const files: FileApiTypes.File[] = reactive([])
     const loadFiles = () => {
       files.splice(0, files.length)
       FileApi.getFileList().then((res) => {

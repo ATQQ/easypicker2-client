@@ -1,21 +1,21 @@
 import ajax from '../ajax'
 
-function getList() {
-  return ajax.get<any, BaseResponse>(
+function getList():CateGoryApiTypes.getList {
+  return ajax.get(
     'category',
   )
 }
 
-function createNew(name:string) {
-  return ajax.post<any, BaseResponse>(
+function createNew(name:string):CateGoryApiTypes.createNew {
+  return ajax.post(
     'category/create', {
       name,
     },
   )
 }
 
-function deleteOne(key:string) {
-  return ajax.delete<any, BaseResponse>(`category/${key}`)
+function deleteOne(key:string):CateGoryApiTypes.deleteOne {
+  return ajax.delete(`category/${key}`)
 }
 export default {
   getList,
