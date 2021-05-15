@@ -48,3 +48,18 @@ declare namespace FileApiTypes{
     type withdrawFile = ResponseData
     type checkSubmitStatus = ResponseData<{isSubmit:boolean, txt?:string}>
 }
+
+declare namespace UserApiTypes{
+    interface RegisterOptions{
+        account:string
+        pwd:string
+        bindPhone:boolean
+        phone?:string
+        code?:string
+    }
+    type register = ResponseData<{token?:string}>
+    type login = ResponseData<{token?:string, openTime?:string}>
+    type codeLogin = ResponseData<{token?:string, openTime?:string}>
+    type resetPwd = ResponseData<{token?:string, openTime?:string}>
+    type checkPower = ResponseData<boolean>
+}
