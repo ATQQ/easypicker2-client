@@ -86,11 +86,12 @@ export default defineComponent({
           ElMessage.warning('手机号格式不正确')
           return false
         }
-      } else if (!rAccount.test(account.value)) {
-        // 兼容老平台数据,不校验账号
-        // ElMessage.warning('帐号格式不正确(4-8位 数字字母)')
-        // return false
       }
+      // else if (!rAccount.test(account.value)) {
+      // 兼容老平台数据,不校验账号
+      // ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
+      // return false
+      // }
 
       if (accountLogin.value && !rPassword.test(pwd.value)) {
         ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
