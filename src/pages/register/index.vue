@@ -4,7 +4,7 @@
       <div class="inputArea">
         <div>
           <el-input
-            maxlength="8"
+            maxlength="11"
             placeholder="输入账号"
             prefix-icon="el-icon-user"
             v-model="account"
@@ -123,7 +123,7 @@ export default defineComponent({
     }
     const checkForm = () => {
       if (!rAccount.test(account.value)) {
-        ElMessage.warning('帐号格式不正确(4-8位 数字字母)')
+        ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
         return false
       }
 
