@@ -37,9 +37,10 @@ function deleteOneFile(id:number):FileApiTypes.deleteOneFile {
   })
 }
 
-function batchDownload(ids:number[]):FileApiTypes.batchDownload {
+function batchDownload(ids:number[], zipName?:string):FileApiTypes.batchDownload {
   return ajax.post('file/batch/down', {
     ids,
+    zipName,
   })
 }
 
