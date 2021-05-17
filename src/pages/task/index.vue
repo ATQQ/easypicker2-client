@@ -69,6 +69,7 @@
   </div>
 </template>
 <script lang="ts">
+import filenamify from 'filenamify'
 import { FileApi, PeopleApi, TaskApi } from '@/apis'
 import { downLoadByUrl, qiniuUpload } from '@/utils/networkUtil'
 import { formatDate, getFileMd5Hash, getFileSuffix } from '@/utils/stringUtil'
@@ -181,6 +182,8 @@ export default defineComponent({
             if (taskMoreInfo.rewrite) {
               name = infos.map((v) => v.value).join('-') + getFileSuffix(name)
             }
+            // 替换不合法的字符
+            name = filenamify(name, { replacement: '_' })
 
             const key = `easypicker2/${k.value}/${file.md5}/${name}`
 
