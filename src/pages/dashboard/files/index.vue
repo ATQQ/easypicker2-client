@@ -155,7 +155,7 @@ export default defineComponent({
     const categorys = computed(() => $store.state.category.categoryList)
     const selectCategory = ref('all')
     // 任务相关
-    const tasks = computed<any[]>(() => $store.state.task.taskList)
+    const tasks = computed<TaskApiTypes.TaskItem[]>(() => $store.state.task.taskList)
     const selectTask = ref('all')
     const filterTasks = computed(() => {
       if (selectCategory.value === 'all') {
@@ -164,6 +164,10 @@ export default defineComponent({
       // eslint-disable-next-line vue/no-side-effects-in-computed-properties
       selectTask.value = 'all'
       return tasks.value.filter((t) => t.category === selectCategory.value)
+    })
+    const selectTaskName = computed(() => {
+      const t = filterTasks.value.find((v) => v.key === selectTask.value)
+      return t?.name
     })
     // 提交的所有文件
     const files: FileApiTypes.File[] = reactive([])
@@ -218,7 +222,7 @@ export default defineComponent({
             ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
             return
           }
-          FileApi.batchDownload(ids).then((r) => {
+          FileApi.batchDownload(ids, `批量下载_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}`).then((r) => {
             const { k } = r.data
             FileApi.getCompressFileUrl(k).then((v) => {
               showLinkModel.value = true
@@ -335,7 +339,7 @@ export default defineComponent({
         ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
         return
       }
-      FileApi.batchDownload(ids).then((r) => {
+      FileApi.batchDownload(ids, selectTaskName.value).then((r) => {
         const { k } = r.data
         FileApi.getCompressFileUrl(k).then((v) => {
           showLinkModel.value = true
