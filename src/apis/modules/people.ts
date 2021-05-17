@@ -2,10 +2,9 @@ import ajax from '../ajax'
 
 function importPeople(key: string, filename:string, type:string):PeopleApiTypes.importPeople {
   return ajax.post(
-    '/people/menu', {
+    `/people/${key}`, {
       filename,
       type,
-      key,
     },
   )
 }
