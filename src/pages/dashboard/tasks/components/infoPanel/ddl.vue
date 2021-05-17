@@ -23,6 +23,7 @@ export default defineComponent({
     ddl: {
       type: String,
       default: '',
+      required: false,
     },
     k: {
       type: String,

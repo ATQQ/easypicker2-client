@@ -86,6 +86,10 @@ export default defineComponent({
       type: String,
       default: '',
     },
+    name: {
+      type: String,
+      default: '',
+    },
   },
   name: 'peoplePanel',
   setup(props) {
@@ -152,7 +156,7 @@ export default defineComponent({
                 if (fail.length > 0) {
                   setTimeout(() => {
                     ElMessage.info('自动开始下载未成功导入名单')
-                    tableToExcel(['未成功导入名单'], fail.map((v: string) => ([v])), 'fail.xls')
+                    tableToExcel(['未成功导入名单'], fail.map((v: string) => ([v])), `${props.name}_导入失败名单_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
                   }, 1000)
                 }
                 clearFiles()
@@ -181,7 +185,7 @@ export default defineComponent({
         const { name, status, lastDate } = v
         return [name, status ? '✔' : '', status ? formatDate(new Date(lastDate)) : '']
       })
-      tableToExcel(headers, body)
+      tableToExcel(headers, body, `${props.name}_提交情况_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
       ElMessage.success('导出成功')
     }
 

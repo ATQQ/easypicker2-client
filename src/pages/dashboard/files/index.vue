@@ -24,6 +24,16 @@
         </el-select>
       </div>
       <div class="item">
+        <el-button
+          :loading="batchDownStart"
+          :disabled="selectTask === 'all'"
+          type="primary"
+          size="medium"
+          icon="el-icon-download"
+          @click="handleDownloadTask"
+        >下载任务中的文件</el-button>
+      </div>
+      <div class="item">
         <el-input
           size="medium"
           clearable
@@ -45,18 +55,10 @@
             <el-dropdown-menu>
               <el-dropdown-item command="download">下载</el-dropdown-item>
               <el-dropdown-item command="delete">删除</el-dropdown-item>
-              <el-dropdown-item command="excel">导出Excel</el-dropdown-item>
+              <el-dropdown-item command="excel">导出记录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-button
-          :loading="batchDownStart"
-          :disabled="selectTask === 'all'"
-          type="primary"
-          size="medium"
-          icon="el-icon-download"
-          @click="handleDownloadTask"
-        >导出任务</el-button>
         <el-button size="medium" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
         <el-button
           title="导出表格中所有的数据"
@@ -65,7 +67,7 @@
           icon="el-icon-data"
           @click="handlEexportExcell"
           :disabled="showFilterFiles.length === 0"
-        >导出Excel</el-button>
+        >导出记录</el-button>
       </div>
     </div>
     <!-- 主体内容 -->
@@ -255,7 +257,7 @@ export default defineComponent({
             const info = JSON.parse(v.info).map((i: any) => `${i.text}--${i.value}`).join(',')
             return [formatDate(new Date(date)), taskName, name, formatSize(size), info]
           }))
-          tableToExcel(headers, body)
+          tableToExcel(headers, body, `批量导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
           ElMessage.success('导出成功')
           break
         default:
@@ -362,7 +364,7 @@ export default defineComponent({
         const info = JSON.parse(v.info).map((i: any) => `${i.text}--${i.value}`).join(',')
         return [formatDate(new Date(date)), taskName, name, formatSize(size), info]
       }))
-      tableToExcel(headers, body)
+      tableToExcel(headers, body, `筛选数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
       ElMessage.success('导出成功')
     }
     onMounted(() => {

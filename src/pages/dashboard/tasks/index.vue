@@ -60,10 +60,12 @@
             <TemplatePanel :value="taskInfo.template" :k="activeTask.key"></TemplatePanel>
           </el-tab-pane>
           <el-tab-pane label="限制人员" name="people">
-            <PeoplePanel :value="taskInfo.people" :k="activeTask.key"></PeoplePanel>
+            <PeoplePanel :name="activeTask.name" :value="taskInfo.people" :k="activeTask.key">
+            </PeoplePanel>
           </el-tab-pane>
           <el-tab-pane label="必填信息" name="info">
-            <InfoPanel :rewrite="taskInfo.rewrite" :info="taskInfo.info" :k="activeTask.key"></InfoPanel>
+            <InfoPanel :rewrite="taskInfo.rewrite" :info="taskInfo.info" :k="activeTask.key">
+            </InfoPanel>
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -167,10 +169,12 @@ export default defineComponent({
     }
 
     // 附加属性编辑
-    const taskInfo = reactive<TaskInfo>({})
+    const taskInfo = reactive<TaskApiTypes.TaskInfo>({})
     const showTaskInfoPanel = ref(false)
     const activeInfo = ref('info')
-    const activeTask: any = reactive({})
+    const activeTask: TaskApiTypes.TaskItem = reactive({
+      category: '', key: '', name: '', recentLog: [],
+    })
 
     const editMore = (item: any) => {
       Object.assign(activeTask, item)
@@ -182,8 +186,8 @@ export default defineComponent({
     }
 
     // 用于选择默认展示项目
-    const taskCount = (c:string) => {
-      const count = tasks.value.filter((t:any) => t.category === c).length
+    const taskCount = (c: string) => {
+      const count = tasks.value.filter((t: any) => t.category === c).length
       return count
     }
     // 选中一个有任务数据的分类
@@ -249,10 +253,9 @@ export default defineComponent({
   justify-content: space-around;
 }
 
-@media screen and (max-width:700px) {
-  .categorys-area{
+@media screen and (max-width: 700px) {
+  .categorys-area {
     margin-top: 20px;
   }
 }
-
 </style>
