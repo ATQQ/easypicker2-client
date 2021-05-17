@@ -68,7 +68,8 @@ export function formatDate(d:Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
 }
 
 export function getFileSuffix(str:string) {
-  return str.slice(str.lastIndexOf('.'))
+  const lastIndex = str.lastIndexOf('.')
+  return str.lastIndexOf('.') >= 0 ? str.slice(lastIndex) : ''
 }
 
 export function getFileMd5Hash(file:File) {
