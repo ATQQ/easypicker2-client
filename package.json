@@ -14,7 +14,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "clipboard-copy": "^4.0.1",
-    "element-plus": "^1.0.2-beta.36",
+    "element-plus": "^1.0.2-beta.56",
     "filenamify": "^4.3.0",
     "spark-md5": "^3.0.1",
     "vue": "^3.0.5",
@@ -23,19 +23,19 @@
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
-    "@types/node": "^15.0.2",
-    "@typescript-eslint/eslint-plugin": "^4.20.0",
-    "@typescript-eslint/parser": "^4.20.0",
-    "@vitejs/plugin-vue": "^1.1.5",
-    "@vue/compiler-sfc": "^3.0.5",
-    "eslint": "^7.23.0",
+    "@types/node": "^16.4.1",
+    "@typescript-eslint/eslint-plugin": "^4.28.4",
+    "@typescript-eslint/parser": "^4.28.4",
+    "@vitejs/plugin-vue": "^1.2.5",
+    "@vue/compiler-sfc": "^3.1.5",
+    "eslint": "^7.31.0",
     "eslint-config-airbnb-base": "^14.2.1",
-    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-todo-ddl": "^1.1.1",
-    "eslint-plugin-vue": "^7.8.0",
-    "sass": "^1.32.8",
-    "typescript": "^4.1.3",
-    "vite": "^2.2.2",
-    "vite-plugin-style-import": "^0.10.0"
+    "eslint-plugin-vue": "^7.14.0",
+    "sass": "^1.35.2",
+    "typescript": "^4.3.5",
+    "vite": "^2.4.3",
+    "vite-plugin-style-import": "^1.0.1"
   }
 }
