@@ -53,7 +53,7 @@
           :on-exceed="handleExceed"
           :auto-upload="false"
           multiple
-          :limit="5"
+          :limit="limitUploadCount"
           :file-list="fileList"
         >
           <el-button type="primary">选择文件</el-button>
@@ -246,9 +246,9 @@ export default defineComponent({
         file.md5 = str
       })
     }
-
+    const limitUploadCount = ref(10)
     const handleExceed = () => {
-      ElMessage.warning('一次提交最多只能选择5个文件，请移除已经上传成功的')
+      ElMessage.warning(`一次提交最多只能选择${limitUploadCount.value}个文件，请移除已经上传成功的或刷新页面`)
     }
     const showLinkModel = ref(false)
     const templateLink = ref('')
@@ -382,6 +382,7 @@ export default defineComponent({
       isWithdraw,
       startWithdraw,
       checkSubmitStatus,
+      limitUploadCount,
     }
   },
 })
