@@ -14,7 +14,7 @@
     </ul>
     <p>
       © 2019 - {{ cunnrentYear }} by
-      <a target="_blank" rel="noopener" href="https://github.com/ATQQ">sugar</a>
+      <a target="_blank" rel="noopener" href="https://sugarat.top">粥里有勺糖</a>
     </p>
   </div>
 </template>
