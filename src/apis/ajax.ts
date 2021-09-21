@@ -64,5 +64,8 @@ instance.interceptors.response.use((v) => {
   }
   ElMessage.error(v.statusText)
   return Promise.reject(v)
+}, (err) => {
+  ElMessage.error(`网络错误：${err}`)
+  return Promise.reject(err)
 })
 export default instance

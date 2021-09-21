@@ -72,14 +72,14 @@
                     <li><a target="_blank" href="https://juejin.cn/user/1028798615918983">掘金</a></li>
                 </ul>
             </div>
-            <div class="panel">
+            <!-- <div class="panel">
                 <h1>开发计划</h1>
                 <h2>...未完待续</h2>
             </div>
             <div class="panel">
                 <h1>涉及技术</h1>
                 <h2>...未完待续</h2>
-            </div>
+            </div> -->
         </main>
     </div>
 </template>
