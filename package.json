@@ -17,7 +17,7 @@
     "element-plus": "^1.0.2-beta.56",
     "filenamify": "^4.3.0",
     "spark-md5": "^3.0.1",
-    "vue": "^3.0.5",
+    "vue": "^3.2.12",
     "vue-router": "4",
     "vuex": "^4.0.0"
   },
@@ -26,16 +26,16 @@
     "@types/node": "^16.4.1",
     "@typescript-eslint/eslint-plugin": "^4.28.4",
     "@typescript-eslint/parser": "^4.28.4",
-    "@vitejs/plugin-vue": "^1.2.5",
-    "@vue/compiler-sfc": "^3.1.5",
+    "@vitejs/plugin-vue": "^1.8.1",
+    "@vue/compiler-sfc": "^3.2.12",
     "eslint": "^7.31.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.23.4",
     "eslint-plugin-todo-ddl": "^1.1.1",
     "eslint-plugin-vue": "^7.14.0",
     "sass": "^1.35.2",
-    "typescript": "^4.3.5",
-    "vite": "^2.4.3",
-    "vite-plugin-style-import": "^1.0.1"
+    "typescript": "^4.4.3",
+    "vite": "^2.5.10",
+    "vite-plugin-style-import": "^1.2.1"
   }
 }
