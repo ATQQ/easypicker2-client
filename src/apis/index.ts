@@ -15,3 +15,4 @@ export const PeopleApi = people
 export const FileApi = file
 export const SuperOverviewApi = superOverview
 export const SuperUserApi = superUser
+export { default as WishApi } from './modules/wish'

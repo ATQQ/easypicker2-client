@@ -48,6 +48,7 @@
         "camelcase":"off",
         "no-case-declarations":"off",
         "@typescript-eslint/no-namespace":"off",
-        "no-undef":"off"
+        "no-undef":"off",
+        "no-shadow":"off"
     }
 }

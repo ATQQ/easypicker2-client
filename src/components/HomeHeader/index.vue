@@ -19,13 +19,20 @@
         </nav>
     </div>
 </template>
-<script lang="ts">
-import { defineComponent, reactive } from 'vue'
+<script lang="ts" setup>
+import { onMounted, reactive } from 'vue'
+import { useRoute } from 'vue-router'
 
-export default defineComponent({
-  name: 'HomeHeader',
-  setup() {
-    const links = reactive([{
+const $route = useRoute()
+const links = reactive([])
+onMounted(() => {
+  const { path } = $route
+  const navList = [
+    {
+      href: '/',
+      text: '首页',
+    },
+    {
       href: '/login',
       text: '登录',
     },
@@ -34,13 +41,19 @@ export default defineComponent({
       text: '快速注册',
     },
     {
+      href: '/wish',
+      text: '需求墙',
+    },
+    {
       href: '/about',
       text: '关于',
-    }])
-    return {
-      links,
+    },
+  ]
+  for (const nav of navList) {
+    if (nav.href !== path) {
+      links.push(nav)
     }
-  },
+  }
 })
 </script>
 <style lang="scss" scoped>
