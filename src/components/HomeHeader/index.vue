@@ -4,14 +4,16 @@
             <div class="right-menu">
                 <label for="nav-open">
                     <span class="menu-icon">
-                        <span class="el-icon-s-fold"></span>
+                        <el-icon :size="28">
+                            <Fold />
+                        </el-icon>
                     </span>
                 </label>
             </div>
             <input type="checkbox" id="nav-open" />
             <div id="miniMenu">
                 <ul class="nav-list">
-                    <li v-for="({href,text},idx) in links" :key="idx">
+                    <li v-for="({ href, text }, idx) in links" :key="idx">
                         <router-link :to="href">{{ text }}</router-link>
                     </li>
                 </ul>
@@ -22,6 +24,7 @@
 <script lang="ts" setup>
 import { onMounted, reactive } from 'vue'
 import { useRoute } from 'vue-router'
+import { Fold } from '@element-plus/icons-vue'
 
 const $route = useRoute()
 const links = reactive([])
@@ -63,7 +66,7 @@ onMounted(() => {
 }
 .navbar {
     color: #fff;
-    padding: 10px;
+    padding: 12px 10px 10px 10px;
 
     .right-menu {
         margin-right: 15px;
