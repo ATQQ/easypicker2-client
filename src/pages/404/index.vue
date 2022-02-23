@@ -1,17 +1,57 @@
 <template>
-    <div>
-        <h1>404 not find，糟糕页面走丢了，3s后回到首页<router-link to="/">回到首页</router-link></h1>
+    <div  class="not-found">
+        <h1>404 Not Found</h1>
+        <h2>
+          糟糕页面走丢了
+        </h2>
+        <h3>
+          {{time}}s后<router-link to="/">回到首页</router-link>
+        </h3>
     </div>
 </template>
-<script lang="ts">
-import { defineComponent, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+<script lang="ts" setup>
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-export default defineComponent({
-  setup: () => {
-    onMounted(() => {
-      const route = useRoute()
-    })
-  },
+const time = ref(3)
+
+onMounted(() => {
+  const router = useRouter()
+  const timer = setInterval(() => {
+    if (time.value === 1) {
+      clearInterval(timer)
+
+      router.replace('/')
+    }
+    time.value -= 1
+  }, 1000)
 })
 </script>
+<style lang="scss" scoped>
+.not-found {
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  background-image: linear-gradient(to top, #30cfd0 0%, #330867 100%);
+  min-height: 100vh;
+}
+h1,h2,h3,a {
+  color: aliceblue;
+  text-align: center;
+  font-weight: lighter;
+}
+a{
+  margin-left: 10px;
+  border-bottom: 2px solid aliceblue;
+}
+h1{
+  font-size: 48px;
+  padding-top: 40%;
+}
+h2{
+  font-size: 30px;
+  padding-top: 2vh;
+}
+h3{
+  font-size: 28px;
+  padding-top: 1vh;
+}
+</style>
