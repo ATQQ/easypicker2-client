@@ -1,12 +1,18 @@
 <template>
-  <router-view></router-view>
+  <el-config-provider :size="size" :zIndex="zIndex">
+    <router-view></router-view>
+  </el-config-provider>
 </template>
 
 <script lang="ts">
 import { defineComponent, onMounted } from 'vue'
 import { useStore } from 'vuex'
+import { ElConfigProvider } from 'element-plus'
 
 export default defineComponent({
+  components: {
+    ElConfigProvider,
+  },
   name: 'App',
   setup() {
     const $store = useStore()
@@ -18,33 +24,37 @@ export default defineComponent({
       window.addEventListener('load', refreshWidth)
       window.addEventListener('resize', refreshWidth)
     })
+    return {
+      zIndex: 3000,
+      size: 'large',
+    }
   },
 })
 </script>
 
 <style>
-*{
-  padding:0;
-  margin:0;
+* {
+  padding: 0;
+  margin: 0;
 }
-a{
+a {
   text-decoration: none;
 }
-.tc{
+.tc {
   text-align: center;
 }
-.p10{
+.p10 {
   padding: 10px;
 }
 
-@media screen and (max-width:700px) {
-  .el-message-box{
+@media screen and (max-width: 700px) {
+  .el-message-box {
     width: auto;
   }
-  .el-pagination{
-    white-space:break-spaces;
+  .el-pagination {
+    white-space: break-spaces;
   }
-  .el-pagination >*{
+  .el-pagination > * {
     margin-bottom: 10px;
   }
 }
