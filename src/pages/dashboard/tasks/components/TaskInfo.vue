@@ -7,32 +7,28 @@
                     <el-button
                         circle
                         type="warning"
-                        icon="el-icon-menu"
-                        size="small"
+                        :icon="Menu"
                         title="更多"
                         @click="$emit('more', item)"
                     ></el-button>
                     <el-button
                         circle
                         type="success"
-                        icon="el-icon-edit-outline"
-                        size="small"
+                        :icon="Edit"
                         title="编辑基本信息"
                         @click="$emit('edit', item)"
                     ></el-button>
                     <el-button
                         circle
                         type="primary"
-                        icon="el-icon-share"
-                        size="small"
+                        :icon="Share"
                         title="分享"
                         @click="$emit('share', item.key)"
                     ></el-button>
                     <el-button
                         circle
                         type="danger"
-                        icon="el-icon-delete"
-                        size="small"
+                        :icon="Delete"
                         title="删除"
                         @click="$emit('delete', item.key)"
                     ></el-button>
@@ -52,24 +48,17 @@
         </div>
     </el-card>
 </template>
-<script lang="ts">
-import { formatDate } from '@/utils/stringUtil'
+<script lang="ts" setup>
 import {
-  defineComponent,
-} from 'vue'
+  Delete, Share, Menu, Edit,
+} from '@element-plus/icons-vue'
 
-export default defineComponent({
-  name: 'taskInfo',
-  props: {
-    item: {
-      type: Object,
-      required: true,
-    },
-  },
-  setup() {
-    return {
-      formatDate,
-    }
+import { formatDate } from '@/utils/stringUtil'
+
+const props = defineProps({
+  item: {
+    type: Object,
+    required: true,
   },
 })
 </script>

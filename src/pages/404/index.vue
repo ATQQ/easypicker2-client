@@ -44,7 +44,7 @@ a{
 }
 h1{
   font-size: 48px;
-  padding-top: 40%;
+  padding-top: 10%;
 }
 h2{
   font-size: 30px;

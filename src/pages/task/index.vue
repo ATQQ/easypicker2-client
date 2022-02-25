@@ -63,7 +63,7 @@
           </el-input>
         </div>
         <el-upload
-          action
+          action=""
           ref="fileUpload"
           :on-change="handleChangeFile"
           :before-remove="
@@ -134,29 +134,14 @@
     ></LinkDialog>
   </div>
 </template>
-<script lang="ts">
+<script lang="ts" setup>
 import filenamify from 'filenamify'
-import {
-  FileApi,
-  PeopleApi,
-  TaskApi,
-} from '@/apis'
-import {
-  downLoadByUrl,
-  qiniuUpload,
-} from '@/utils/networkUtil'
-import {
-  formatDate,
-  getFileMd5Hash,
-  getFileSuffix,
-} from '@/utils/stringUtil'
 import {
   ElMessage,
   ElMessageBox,
 } from 'element-plus'
 import {
   computed,
-  defineComponent,
   onMounted,
   reactive,
   ref,
@@ -166,463 +151,445 @@ import {
   useRouter,
 } from 'vue-router'
 import LinkDialog from '@components/linkDialog.vue'
+import { UploadFile } from 'element-plus/es/components/upload/src/upload.type'
+import {
+  formatDate,
+  getFileMd5Hash,
+  getFileSuffix,
+} from '@/utils/stringUtil'
+import {
+  downLoadByUrl,
+  qiniuUpload,
+} from '@/utils/networkUtil'
+import {
+  FileApi,
+  PeopleApi,
+  TaskApi,
+} from '@/apis'
 
-export default defineComponent({
-  components: {
-    LinkDialog,
+// 顶部导航
+const $router = useRouter()
+const $route = useRoute()
+const pcNavs = reactive([
+  {
+    title: '我也要收集',
+    path: '/',
   },
-  setup() {
-    // 顶部导航
-    const $router = useRouter()
-    const $route = useRoute()
-    const pcNavs = reactive([
-      {
-        title: '我也要收集',
-        path: '/',
-      },
-    ])
-    const handleNav = (idx: number) => {
-      $router.push({
-        path: pcNavs[idx].path,
-      })
-    }
+])
+const handleNav = (idx: number) => {
+  $router.push({
+    path: pcNavs[idx].path,
+  })
+}
 
-    // 任务基本信息展示
-    const taskInfo: any = reactive({})
-    const taskMoreInfo: any = reactive(
-      {},
-    )
-    const k = ref('')
+// 任务基本信息展示
+const taskInfo: any = reactive({})
+const taskMoreInfo: any = reactive(
+  {},
+)
+const k = ref('')
 
-    // 截止日期
-    const waitTime = ref(0)
-    const isOver = computed(
-      () => waitTime.value <= 0,
-    )
-    const waitTimeStr = computed(() => {
-      let seconds = ~~(
-        waitTime.value / 1000
-      )
-      let hour = ~~(
-        seconds
+// 截止日期
+const waitTime = ref(0)
+const isOver = computed(
+  () => waitTime.value <= 0,
+)
+const waitTimeStr = computed(() => {
+  let seconds = ~~(
+    waitTime.value / 1000
+  )
+  let hour = ~~(
+    seconds
         / (60 * 60)
-      )
-      const day = ~~(hour / 24)
-      hour %= 24
-      const minute = ~~(
-        (seconds % 3600)
+  )
+  const day = ~~(hour / 24)
+  hour %= 24
+  const minute = ~~(
+    (seconds % 3600)
         / 60
+  )
+  seconds %= 60
+  return `剩余${day}天${hour}时${minute}分${seconds}秒`
+})
+const refreshWaitTime = () => {
+  setTimeout(() => {
+    if (taskMoreInfo?.ddl) {
+      const date = new Date(
+        taskMoreInfo.ddl,
       )
-      seconds %= 60
-      return `剩余${day}天${hour}时${minute}分${seconds}秒`
-    })
-    const refreshWaitTime = () => {
-      setTimeout(() => {
-        if (taskMoreInfo?.ddl) {
-          const date = new Date(
-            taskMoreInfo.ddl,
-          )
-          waitTime.value = date.getTime() - Date.now()
-        } else {
-          waitTime.value = 0
-        }
-        refreshWaitTime()
-      }, 1000)
+      waitTime.value = date.getTime() - Date.now()
+    } else {
+      waitTime.value = 0
     }
-    const ddlStr = computed(() => {
-      if (taskMoreInfo?.ddl) {
-        const date = new Date(
-          taskMoreInfo.ddl,
-        )
-        return formatDate(date)
-      }
-      return ''
-    })
-
-    // 必填信息
-    const infos: any[] = reactive([])
-
-    // 文件上传部分
-
-    // 文件上传
-    const fileList: any[] = reactive(
-      [],
+    refreshWaitTime()
+  }, 1000)
+}
+const ddlStr = computed(() => {
+  if (taskMoreInfo?.ddl) {
+    const date = new Date(
+      taskMoreInfo.ddl,
     )
-    const fileUpload: any = ref()
+    return formatDate(date)
+  }
+  return ''
+})
 
-    const handleRemoveFile = (
-      file: any,
-    ) => ElMessageBox.confirm(
-      '不影响已经上传成功的，正在上传的将取消上传',
-      '确认移除此文件吗',
-    ).then(() => {
-      if (
-        file.status === 'uploading'
-      ) {
+// 必填信息
+const infos: any[] = reactive([])
+
+// 文件上传部分
+
+// 文件上传
+const fileList: any[] = reactive(
+  [],
+)
+const fileUpload: any = ref()
+
+const handleRemoveFile:any = (file:any) => ElMessageBox.confirm(
+  '不影响已经上传成功的，正在上传的将取消上传',
+  '确认移除此文件吗',
+).then(() => {
+  if (
+    file.status === 'uploading'
+  ) {
+    ElMessage.info(
+      `取消${file.name}的上传`,
+    )
+    // 取消上传
+    file.subscription.unsubscribe() // 取消上传
+  }
+  return true
+})
+
+// 开始上传
+const peopleName = ref('')
+const submitUpload = () => {
+  const { uploadFiles } = fileUpload.value
+  // 校验表单填写
+  for (const info of infos) {
+    if (!info.value) {
+      ElMessage.warning(
+        '请先完成必要信息的填写',
+      )
+      return
+    }
+  }
+  const startUpload = () => {
+    for (const file of uploadFiles) {
+      if (!file.md5) {
         ElMessage.info(
-          `取消${file.name}的上传`,
+          `文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`,
         )
-        // 取消上传
-        file.subscription.unsubscribe() // 取消上传
-      }
-      return true
-    })
-
-    // 开始上传
-    const peopleName = ref('')
-    const submitUpload = () => {
-      const { uploadFiles } = fileUpload.value
-      // 校验表单填写
-      for (const info of infos) {
-        if (!info.value) {
-          ElMessage.warning(
-            '请先完成必要信息的填写',
+        setTimeout(() => {
+          ElMessage.info(
+            '文件越大计算时间越长(1G通常需要20s)',
           )
-          return
-        }
-      }
-      const startUpload = () => {
-        for (const file of uploadFiles) {
-          if (!file.md5) {
-            ElMessage.info(
-              `文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`,
-            )
-            setTimeout(() => {
-              ElMessage.info(
-                '文件越大计算时间越长(1G通常需要20s)',
-              )
-            }, 100)
-          } else if (
-            file.status === 'ready'
-          ) {
-            // 开始上传
-            file.status = 'uploading'
-            let { name } = file
+        }, 100)
+      } else if (
+        file.status === 'ready'
+      ) {
+        // 开始上传
+        file.status = 'uploading'
+        let { name } = file
 
-            // 如果开启了自动重命名,这里重命名一下
-            if (taskMoreInfo.rewrite) {
-              name = infos
-                .map((v) => v.value)
-                .join('-')
+        // 如果开启了自动重命名,这里重命名一下
+        if (taskMoreInfo.rewrite) {
+          name = infos
+            .map((v) => v.value)
+            .join('-')
                 + getFileSuffix(name)
-            }
-            // 替换不合法的字符
-            name = filenamify(name, {
-              replacement: '_',
-            })
+        }
+        // 替换不合法的字符
+        name = filenamify(name, {
+          replacement: '_',
+        })
 
-            const key = `easypicker2/${k.value}/${file.md5}/${name}`
+        const key = `easypicker2/${k.value}/${file.md5}/${name}`
 
-            FileApi.getUploadToken().then(
-              (res) => {
-                qiniuUpload(
-                  res.data.token,
-                  file.raw,
-                  key,
-                  {
-                    success(data: any) {
-                      file.status = 'success'
-                      const { fsize } = data
-                      FileApi.addFile({
-                        name,
-                        taskKey:
+        FileApi.getUploadToken().then(
+          (res) => {
+            qiniuUpload(
+              res.data.token,
+              file.raw,
+              key,
+              {
+                success(data: any) {
+                  file.status = 'success'
+                  const { fsize } = data
+                  FileApi.addFile({
+                    name,
+                    taskKey:
                           k.value,
-                        taskName:
+                    taskName:
                           taskInfo.name,
-                        size: fsize,
-                        hash: file.md5,
-                        info: JSON.stringify(
-                          infos,
-                        ),
-                        people:
+                    size: fsize,
+                    hash: file.md5,
+                    info: JSON.stringify(
+                      infos,
+                    ),
+                    people:
                           peopleName.value,
-                      }).then(() => {
-                        ElMessage.success(
-                          `文件:${file.name}提交成功`,
-                        )
-                        if (
-                          taskMoreInfo.people
-                        ) {
-                          // 无感知更新一下
-                          PeopleApi.updatePeopleStatus(
-                            k.value,
-                            name,
-                            peopleName.value,
-                            file.md5,
-                          )
-                        }
-                      })
-                    },
-                    process(
-                      per: number,
-                      data: any,
-                      subscription: any,
+                  }).then(() => {
+                    ElMessage.success(
+                      `文件:${file.name}提交成功`,
+                    )
+                    if (
+                      taskMoreInfo.people
                     ) {
-                      file.percentage = ~~per
-                      // 挂载取消上传的方法
-                      file.subscription = subscription
-                    },
-                  },
-                )
+                      // 无感知更新一下
+                      PeopleApi.updatePeopleStatus(
+                        k.value,
+                        name,
+                        peopleName.value,
+                        file.md5,
+                      )
+                    }
+                  })
+                },
+                process(
+                  per: number,
+                  data: any,
+                  subscription: any,
+                ) {
+                  file.percentage = ~~per
+                  // 挂载取消上传的方法
+                  file.subscription = subscription
+                },
               },
             )
-          }
-        }
-      }
-      // TODO: 优化代码
-      if (taskMoreInfo.people) {
-        ElMessageBox.prompt(
-          '请输入你的姓名',
-          '姓名核验',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
           },
         )
-          .then(async ({ value }) => {
-            const {
-              data: { exist },
-            } = await PeopleApi.checkPeopleIsExist(
-              k.value,
-              value,
-            )
-            if (exist) {
-              peopleName.value = value
-              startUpload()
-            } else {
-              ElMessage.warning(
-                '你不在此次提交名单中,如有疑问请联系管理员',
-              )
-            }
-          })
-          .catch(() => {
-            ElMessage.info('取消')
-          })
-      } else {
-        startUpload()
       }
     }
-
-    // 添加文件
-    const handleChangeFile = (
-      file: any,
-    ) => {
-      // 计算md5 hash
-      getFileMd5Hash(file.raw).then(
-        (str) => {
-          file.md5 = str
-        },
-      )
-    }
-    const limitUploadCount = ref(10)
-    const handleExceed = () => {
-      ElMessage.warning(
-        `一次提交最多只能选择${limitUploadCount.value}个文件，请移除已经上传成功的或刷新页面`,
-      )
-    }
-    const showLinkModel = ref(false)
-    const templateLink = ref('')
-    const downloadTemplate = () => {
-      FileApi.getTemplateUrl(
-        taskMoreInfo.template,
-        k.value,
-      )
-        .then((res) => {
-          showLinkModel.value = true
-          const { link } = res.data
-          templateLink.value = link
-          downLoadByUrl(
-            link,
-            taskMoreInfo.template,
-          )
-        })
-        .catch(() => {
-          ElMessage.warning(
-            '文件已从服务器上移除,请联系管理员重新上传',
-          )
-        })
-    }
-
-    // 撤回相关逻辑
-    const isWithdraw = ref(false)
-    const startWithdraw = () => {
-      const { uploadFiles } = fileUpload.value
-      // 校验表单填写
-      for (const info of infos) {
-        if (!info.value) {
-          ElMessage.warning(
-            '请先完成必要信息的填写,需和提交时信息完全一致',
-          )
-          return
-        }
-      }
-      const start = () => {
-        for (const file of uploadFiles) {
-          if (!file.md5) {
-            ElMessage.info(
-              `文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`,
-            )
-            setTimeout(() => {
-              ElMessage.info(
-                '文件越大计算时间越长(1G通常需要20s)',
-              )
-            }, 100)
-          } else if (
-            file.status !== 'uploading'
-          ) {
-            // 准备开始撤回
-            let { name } = file
-
-            // 如果开启了自动重命名,这里重命名一下
-            if (taskMoreInfo.rewrite) {
-              name = infos
-                .map((v) => v.value)
-                .join('-')
-                + getFileSuffix(name)
-            }
-
-            FileApi.withdrawFile({
-              taskKey: k.value,
-              taskName: taskInfo.name,
-              filename: name,
-              hash: file.md5,
-              info: JSON.stringify(
-                infos,
-              ),
-              peopleName:
-                peopleName.value,
-            })
-              .then(() => {
-                ElMessage.success(
-                  `文件:${file.name}撤回成功`,
-                )
-              })
-              .catch(() => {
-                ElMessage.error(
-                  `撤回失败: 没有文件:${file.name}对应提交记录`,
-                )
-              })
-          }
-        }
-      }
-      // TODO: 优化代码
-      if (taskMoreInfo.people) {
-        ElMessageBox.prompt(
-          '请输入你的姓名',
-          '姓名核验',
-          {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-          },
+  }
+  // TODO: 优化代码
+  if (taskMoreInfo.people) {
+    ElMessageBox.prompt(
+      '请输入你的姓名',
+      '姓名核验',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+      },
+    )
+      .then(async ({ value }) => {
+        const {
+          data: { exist },
+        } = await PeopleApi.checkPeopleIsExist(
+          k.value,
+          value,
         )
-          .then(async ({ value }) => {
-            const {
-              data: { exist },
-            } = await PeopleApi.checkPeopleIsExist(
-              k.value,
-              value,
-            )
-            if (exist) {
-              peopleName.value = value
-              start()
-            } else {
-              ElMessage.warning(
-                '你不在提交名单中,无法进行撤回操作,如有疑问请联系管理员',
-              )
-            }
-          })
-          .catch(() => {
-            ElMessage.info('取消')
-          })
-      } else {
-        start()
-      }
-    }
-
-    // 查询提交情况
-    const checkSubmitStatus = () => {
-      // 校验表单填写
-      for (const info of infos) {
-        if (!info.value) {
-          ElMessage.warning(
-            '请先完成必要信息的填写,需和提交时信息完全一致',
-          )
-          return
-        }
-      }
-      FileApi.checkSubmitStatus(
-        k.value,
-        infos,
-      ).then((res) => {
-        if (res.data.isSubmit) {
-          ElMessage.success(
-            '已经提交过啦',
-          )
+        if (exist) {
+          peopleName.value = value
+          startUpload()
         } else {
           ElMessage.warning(
-            '还未提交过哟',
+            '你不在此次提交名单中,如有疑问请联系管理员',
           )
         }
       })
-    }
-    onMounted(() => {
-      k.value = $route.params
-        .key as string
-      if (k.value) {
-        TaskApi.getTaskInfo(
-          k.value,
-        ).then((res) => {
-          Object.assign(
-            taskInfo,
-            res.data,
-          )
-        })
-        TaskApi.getTaskMoreInfo(
-          k.value,
-        ).then((res) => {
-          Object.assign(
-            taskMoreInfo,
-            res.data,
-          )
-          infos.push(
-            ...JSON.parse(
-              taskMoreInfo.info,
-            ).map((v: string) => ({
-              text: v,
-              value: '',
-            })),
-          )
-        })
-        refreshWaitTime()
-      }
+      .catch(() => {
+        ElMessage.info('取消')
+      })
+  } else {
+    startUpload()
+  }
+}
+
+// 添加文件
+const handleChangeFile = (
+  file: any,
+) => {
+  // 计算md5 hash
+  getFileMd5Hash(file.raw).then(
+    (str) => {
+      file.md5 = str
+    },
+  )
+}
+const limitUploadCount = ref(10)
+const handleExceed = () => {
+  ElMessage.warning(
+    `一次提交最多只能选择${limitUploadCount.value}个文件，请移除已经上传成功的或刷新页面`,
+  )
+}
+const showLinkModel = ref(false)
+const templateLink = ref('')
+const downloadTemplate = () => {
+  FileApi.getTemplateUrl(
+    taskMoreInfo.template,
+    k.value,
+  )
+    .then((res) => {
+      showLinkModel.value = true
+      const { link } = res.data
+      templateLink.value = link
+      downLoadByUrl(
+        link,
+        taskMoreInfo.template,
+      )
     })
-    return {
-      pcNavs,
-      handleNav,
-      taskInfo,
-      taskMoreInfo,
-      k,
-      ddlStr,
-      isOver,
-      waitTime,
-      waitTimeStr,
-      infos,
-      fileList,
-      handleChangeFile,
-      handleRemoveFile,
-      fileUpload,
-      submitUpload,
-      handleExceed,
-      downloadTemplate,
-      showLinkModel,
-      templateLink,
-      isWithdraw,
-      startWithdraw,
-      checkSubmitStatus,
-      limitUploadCount,
+    .catch(() => {
+      ElMessage.warning(
+        '文件已从服务器上移除,请联系管理员重新上传',
+      )
+    })
+}
+
+// 撤回相关逻辑
+const isWithdraw = ref(false)
+const startWithdraw = () => {
+  const { uploadFiles } = fileUpload.value
+  // 校验表单填写
+  for (const info of infos) {
+    if (!info.value) {
+      ElMessage.warning(
+        '请先完成必要信息的填写,需和提交时信息完全一致',
+      )
+      return
     }
-  },
+  }
+  const start = () => {
+    for (const file of uploadFiles) {
+      if (!file.md5) {
+        ElMessage.info(
+          `文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`,
+        )
+        setTimeout(() => {
+          ElMessage.info(
+            '文件越大计算时间越长(1G通常需要20s)',
+          )
+        }, 100)
+      } else if (
+        file.status !== 'uploading'
+      ) {
+        // 准备开始撤回
+        let { name } = file
+
+        // 如果开启了自动重命名,这里重命名一下
+        if (taskMoreInfo.rewrite) {
+          name = infos
+            .map((v) => v.value)
+            .join('-')
+                + getFileSuffix(name)
+        }
+
+        FileApi.withdrawFile({
+          taskKey: k.value,
+          taskName: taskInfo.name,
+          filename: name,
+          hash: file.md5,
+          info: JSON.stringify(
+            infos,
+          ),
+          peopleName:
+                peopleName.value,
+        })
+          .then(() => {
+            ElMessage.success(
+              `文件:${file.name}撤回成功`,
+            )
+          })
+          .catch(() => {
+            ElMessage.error(
+              `撤回失败: 没有文件:${file.name}对应提交记录`,
+            )
+          })
+      }
+    }
+  }
+  // TODO: 优化代码
+  if (taskMoreInfo.people) {
+    ElMessageBox.prompt(
+      '请输入你的姓名',
+      '姓名核验',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+      },
+    )
+      .then(async ({ value }) => {
+        const {
+          data: { exist },
+        } = await PeopleApi.checkPeopleIsExist(
+          k.value,
+          value,
+        )
+        if (exist) {
+          peopleName.value = value
+          start()
+        } else {
+          ElMessage.warning(
+            '你不在提交名单中,无法进行撤回操作,如有疑问请联系管理员',
+          )
+        }
+      })
+      .catch(() => {
+        ElMessage.info('取消')
+      })
+  } else {
+    start()
+  }
+}
+
+// 查询提交情况
+const checkSubmitStatus = () => {
+  // 校验表单填写
+  for (const info of infos) {
+    if (!info.value) {
+      ElMessage.warning(
+        '请先完成必要信息的填写,需和提交时信息完全一致',
+      )
+      return
+    }
+  }
+  FileApi.checkSubmitStatus(
+    k.value,
+    infos,
+  ).then((res) => {
+    if (res.data.isSubmit) {
+      ElMessage.success(
+        '已经提交过啦',
+      )
+    } else {
+      ElMessage.warning(
+        '还未提交过哟',
+      )
+    }
+  })
+}
+onMounted(() => {
+  k.value = $route.params
+    .key as string
+  if (k.value) {
+    TaskApi.getTaskInfo(
+      k.value,
+    ).then((res) => {
+      Object.assign(
+        taskInfo,
+        res.data,
+      )
+    })
+    TaskApi.getTaskMoreInfo(
+      k.value,
+    ).then((res) => {
+      Object.assign(
+        taskMoreInfo,
+        res.data,
+      )
+      infos.push(
+        ...JSON.parse(
+          taskMoreInfo.info,
+        ).map((v: string) => ({
+          text: v,
+          value: '',
+        })),
+      )
+    })
+    refreshWaitTime()
+  }
 })
+
 </script>
 <style scoped lang="scss">
 .task-panel {
