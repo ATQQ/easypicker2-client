@@ -12,7 +12,7 @@
 
       <!-- 任务列表 -->
       <div class="task-list">
-        <task-info
+        <TaskInfo
           @edit="editBaseInfo"
           @delete="deleteTask"
           @share="shareTask"
@@ -20,7 +20,7 @@
           v-for="item in filterTasks"
           :key="item.key"
           :item="item"
-        ></task-info>
+        ></TaskInfo>
         <el-empty v-if="filterTasks.length === 0" description="此分类下没有任务哟"></el-empty>
       </div>
     </div>
@@ -77,14 +77,14 @@
     </el-dialog>
   </div>
 </template>
-<script lang="ts">
+<script lang="ts"  setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  computed, defineComponent, onMounted, reactive, ref, watch, watchEffect,
+  computed, onMounted, reactive, ref, watchEffect,
 } from 'vue'
 import { useStore } from 'vuex'
-import { TaskApi } from '@/apis'
 import LinkDialog from '@components/linkDialog.vue'
+import { TaskApi } from '@/apis'
 import { copyRes } from '@/utils/stringUtil'
 import CategoryPanel from './components/CategoryPanel.vue'
 import CreateTask from './components/CreateTask.vue'
@@ -94,141 +94,107 @@ import PeoplePanel from './components/infoPanel/people.vue'
 import TemplatePanel from './components/infoPanel/template.vue'
 import InfoPanel from './components/infoPanel/info.vue'
 
-export default defineComponent({
-  components: {
-    LinkDialog,
-    CategoryPanel,
-    CreateTask,
-    TaskInfo,
-    DDlPanel,
-    PeoplePanel,
-    TemplatePanel,
-    InfoPanel,
-  },
-  setup() {
-    const $store = useStore()
-    const isMobile = computed(() => $store.getters['public/isMobile'])
-    // 分类相关
-    const categorys = computed(() => $store.state.category.categoryList)
+const $store = useStore()
+const isMobile = computed(() => $store.getters['public/isMobile'])
+// 分类相关
+const categorys = computed(() => $store.state.category.categoryList)
 
-    // 任务相关
-    const selectCategory = ref('default')
-    const tasks = computed<any[]>(() => $store.state.task.taskList)
-    const filterTasks = computed(() => {
-      const t = tasks.value.filter((v) => v.category === selectCategory.value)
-      return t
-    })
+// 任务相关
+const selectCategory = ref('default')
+const tasks = computed<any[]>(() => $store.state.task.taskList)
+const filterTasks = computed(() => {
+  const t = tasks.value.filter((v) => v.category === selectCategory.value)
+  return t
+})
 
-    // 删除任务
-    const deleteTask = (k: string) => {
-      if (!k) return
-      ElMessageBox.confirm('确认删除此任务吗?', '警告', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
+// 删除任务
+const deleteTask = (k: string) => {
+  if (!k) return
+  ElMessageBox.confirm('确认删除此任务吗?', '警告', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(() => {
+      $store.dispatch('task/deleteTask', k).then(() => {
+        ElMessage.success('删除成功')
       })
-        .then(() => {
-          $store.dispatch('task/deleteTask', k).then(() => {
-            ElMessage.success('删除成功')
-          })
-        })
-        .catch(() => {
-          ElMessage.info('取消删除')
-        })
-    }
-
-    // 基本信息编辑
-    const showBaseInfoDialog = ref(false)
-    const taskBaseInfo = reactive({ name: '', category: '', key: '' })
-    const editBaseInfo = (task: any) => {
-      taskBaseInfo.name = task.name
-      taskBaseInfo.category = task.category
-      taskBaseInfo.key = task.key
-      showBaseInfoDialog.value = true
-    }
-    const handleSaveEditInfo = () => {
-      showBaseInfoDialog.value = false
-      if (!taskBaseInfo.name.trim()) {
-        ElMessage.warning('不能为空')
-        return
-      }
-      $store.dispatch('task/updateTask', taskBaseInfo).then(() => {
-        ElMessage.success('更新成功')
-      })
-    }
-
-    // 生成分享链接
-    const shareTaskLink = ref('')
-    const showLinkModal = ref(false)
-    const shareTask = (k: string) => {
-      shareTaskLink.value = 'default'
-      const { origin } = window.location
-      shareTaskLink.value = `${origin}/task/${k}`
-      copyRes(shareTaskLink.value, '收集链接已自动复制到粘贴板')
-      showLinkModal.value = true
-    }
-
-    // 附加属性编辑
-    const taskInfo = reactive<TaskApiTypes.TaskInfo>({})
-    const showTaskInfoPanel = ref(false)
-    const activeInfo = ref('info')
-    const activeTask: TaskApiTypes.TaskItem = reactive({
-      category: '', key: '', name: '', recentLog: [],
     })
-
-    const editMore = (item: any) => {
-      Object.assign(activeTask, item)
-      TaskApi.getTaskMoreInfo(item.key).then((res) => {
-        // todo:先初始化,再赋值
-        Object.assign(taskInfo, res.data)
-        showTaskInfoPanel.value = true
-      })
-    }
-
-    // 用于选择默认展示项目
-    const taskCount = (c: string) => {
-      const count = tasks.value.filter((t: any) => t.category === c).length
-      return count
-    }
-    // 选中一个有任务数据的分类
-    watchEffect(() => {
-      if (taskCount('default') > 0) {
-        return
-      }
-      if (categorys.value.length > 0) {
-        for (const c of categorys.value) {
-          if (taskCount(c.k) > 0) {
-            selectCategory.value = c.k
-            break
-          }
-        }
-      }
+    .catch(() => {
+      ElMessage.info('取消删除')
     })
-    onMounted(() => {
-      $store.dispatch('category/getCategory')
-      $store.dispatch('task/getTask')
-    })
-    return {
-      categorys,
-      selectCategory,
-      tasks,
-      deleteTask,
-      filterTasks,
-      showBaseInfoDialog,
-      taskBaseInfo,
-      editBaseInfo,
-      handleSaveEditInfo,
-      shareTask,
-      shareTaskLink,
-      showLinkModal,
-      taskInfo,
-      activeInfo,
-      editMore,
-      showTaskInfoPanel,
-      activeTask,
-      isMobile,
+}
+
+// 基本信息编辑
+const showBaseInfoDialog = ref(false)
+const taskBaseInfo = reactive({ name: '', category: '', key: '' })
+const editBaseInfo = (task: any) => {
+  taskBaseInfo.name = task.name
+  taskBaseInfo.category = task.category
+  taskBaseInfo.key = task.key
+  showBaseInfoDialog.value = true
+}
+const handleSaveEditInfo = () => {
+  showBaseInfoDialog.value = false
+  if (!taskBaseInfo.name.trim()) {
+    ElMessage.warning('不能为空')
+    return
+  }
+  $store.dispatch('task/updateTask', taskBaseInfo).then(() => {
+    ElMessage.success('更新成功')
+  })
+}
+
+// 生成分享链接
+const shareTaskLink = ref('')
+const showLinkModal = ref(false)
+const shareTask = (k: string) => {
+  shareTaskLink.value = 'default'
+  const { origin } = window.location
+  shareTaskLink.value = `${origin}/task/${k}`
+  copyRes(shareTaskLink.value, '收集链接已自动复制到粘贴板')
+  showLinkModal.value = true
+}
+
+// 附加属性编辑
+const taskInfo = reactive<TaskApiTypes.TaskInfo>({})
+const showTaskInfoPanel = ref(false)
+const activeInfo = ref('info')
+const activeTask: TaskApiTypes.TaskItem = reactive({
+  category: '', key: '', name: '', recentLog: [],
+})
+
+const editMore = (item: any) => {
+  Object.assign(activeTask, item)
+  TaskApi.getTaskMoreInfo(item.key).then((res) => {
+    // todo:先初始化,再赋值
+    Object.assign(taskInfo, res.data)
+    showTaskInfoPanel.value = true
+  })
+}
+
+// 用于选择默认展示项目
+const taskCount = (c: string) => {
+  const count = tasks.value.filter((t: any) => t.category === c).length
+  return count
+}
+// 选中一个有任务数据的分类
+watchEffect(() => {
+  if (taskCount('default') > 0) {
+    return
+  }
+  if (categorys.value.length > 0) {
+    for (const c of categorys.value) {
+      if (taskCount(c.k) > 0) {
+        selectCategory.value = c.k
+        break
+      }
     }
-  },
+  }
+})
+onMounted(() => {
+  $store.dispatch('category/getCategory')
+  $store.dispatch('task/getTask')
 })
 </script>
 <style scoped lang="scss">
