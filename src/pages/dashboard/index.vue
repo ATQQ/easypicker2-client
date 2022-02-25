@@ -32,7 +32,7 @@
           <i class="el-icon-s-unfold"></i>
         </label>
       </span>
-      <el-popover placement="bottom" :width="160" v-model:visible="visible">
+      <el-popover placement="left" v-model:visible="visible">
         <p>确定退出登录吗？</p>
         <div style="text-align: right; margin: 0">
           <el-button size="small" type="text" @click="visible = false">取消</el-button>
