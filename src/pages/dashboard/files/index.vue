@@ -29,7 +29,7 @@
           :disabled="selectTask === 'all'"
           type="primary"
           size="default"
-          icon="el-icon-download"
+          :icon="Download"
           @click="handleDownloadTask"
         >下载任务中的文件</el-button>
       </div>
@@ -38,18 +38,24 @@
           size="default"
           clearable
           placeholder="请输入要检索的内容"
-          prefix-icon="el-icon-search"
+          :prefix-icon="Search"
           v-model="searchWord"
         ></el-input>
       </div>
-      <!-- <span style="align-self: center;" class="item">{{ filterFiles.length }} / {{ files.length }}</span> -->
     </div>
     <div class="panel">
       <div class="export-btns">
-        <el-dropdown @command="handleDropdownClick">
-          <el-button type="primary" :disabled="selectItem.length === 0" size="default">
+        <el-dropdown ref="batchDropDown" trigger="contextmenu" @command="handleDropdownClick">
+          <el-button
+            @click="openBatchDropDown"
+            type="primary"
+            :disabled="selectItem.length === 0"
+            size="default"
+          >
             批量操作
-            <i class="el-icon-arrow-down el-icon--right"></i>
+            <el-icon>
+              <ArrowDown />
+            </el-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
@@ -59,12 +65,12 @@
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-button size="default" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
+        <el-button size="default" :icon="Refresh" @click="handleRefresh">刷新</el-button>
         <el-button
           title="导出表格中所有的数据"
           type="success"
           size="default"
-          icon="el-icon-data"
+          :icon="DataAnalysis"
           @click="handlEexportExcell"
           :disabled="showFilterFiles.length === 0"
         >导出记录</el-button>
@@ -80,7 +86,7 @@
         stripe
         border
         :default-sort="{ prop: 'date', order: 'descending' }"
-        height="400"
+        :max-height="666"
         :data="showFilterFiles"
         style="width: 100%"
       >
@@ -89,13 +95,13 @@
           <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
         </el-table-column>
         <el-table-column prop="task_name" label="任务" width="150"></el-table-column>
-        <el-table-column prop="name" label="文件名" width="180"></el-table-column>
+        <el-table-column prop="name" label="文件名" width="200"></el-table-column>
         <el-table-column prop="size" label="文件大小">
           <template
             #default="scope"
           >{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
         </el-table-column>
-        <el-table-column fixed="right" label="操作" width="100">
+        <el-table-column fixed="right" label="操作" width="140">
           <template #default="scope">
             <div class="text-btns">
               <el-button @click="checkInfo(scope.row)" type="text" size="small">查看提交信息</el-button>
@@ -123,7 +129,12 @@
     <!-- 信息弹窗 -->
     <el-dialog :fullscreen="isMobile" title="提交填写的信息" v-model="showInfoDialog">
       <el-form>
-        <el-form-item v-for="(info,idx) in infos" :key="idx" :label="info.text" label-width="120px">
+        <el-form-item
+          v-for="(info, idx) in infos"
+          :key="idx"
+          :label="info.text"
+          label-width="120px"
+        >
           <el-input :modelValue="info.value"></el-input>
         </el-form-item>
       </el-form>
@@ -131,215 +142,102 @@
     <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
   </div>
 </template>
-<script lang="ts">
+<script lang="ts" setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  computed,
-  defineComponent, onMounted, reactive, ref,
+  computed, onMounted, reactive, ref,
 } from 'vue'
 import { useStore } from 'vuex'
 import LinkDialog from '@components/linkDialog.vue'
+import {
+  ArrowDown, Refresh, DataAnalysis, Download, Search,
+} from '@element-plus/icons-vue'
 import { formatDate, formatSize } from '@/utils/stringUtil'
 import { FileApi } from '@/apis'
 import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
 
-export default defineComponent({
-  components: {
-    LinkDialog,
-  },
-  setup() {
-    const $store = useStore()
-    const showLinkModel = ref(false)
-    const downloadUrl = ref('')
-    // 分类相关
-    const categorys = computed(() => $store.state.category.categoryList)
-    const selectCategory = ref('all')
-    // 任务相关
-    const tasks = computed<TaskApiTypes.TaskItem[]>(() => $store.state.task.taskList)
-    const selectTask = ref('all')
-    const filterTasks = computed(() => {
-      if (selectCategory.value === 'all') {
-        return tasks.value
-      }
-      // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-      selectTask.value = 'all'
-      return tasks.value.filter((t) => t.category === selectCategory.value)
-    })
-    const selectTaskName = computed(() => {
-      const t = filterTasks.value.find((v) => v.key === selectTask.value)
-      return t?.name
-    })
-    // 提交的所有文件
-    const files: FileApiTypes.File[] = reactive([])
-    const loadFiles = () => {
-      files.splice(0, files.length)
-      FileApi.getFileList().then((res) => {
-        files.push(...res.data.files)
-      })
-    }
-    const multipleTable: any = ref()
-    const searchWord = ref('')
+const $store = useStore()
+const showLinkModel = ref(false)
+const downloadUrl = ref('')
+// 分类相关
+const categorys = computed(() => $store.state.category.categoryList)
+const selectCategory = ref('all')
+// 任务相关
+const tasks = computed<TaskApiTypes.TaskItem[]>(() => $store.state.task.taskList)
+const selectTask = ref('all')
+const filterTasks = computed(() => {
+  if (selectCategory.value === 'all') {
+    return tasks.value
+  }
+  // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+  selectTask.value = 'all'
+  return tasks.value.filter((t) => t.category === selectCategory.value)
+})
+const selectTaskName = computed(() => {
+  const t = filterTasks.value.find((v) => v.key === selectTask.value)
+  return t?.name
+})
+// 提交的所有文件
+const files: FileApiTypes.File[] = reactive([])
+const loadFiles = () => {
+  files.splice(0, files.length)
+  FileApi.getFileList().then((res) => {
+    files.push(...res.data.files)
+  })
+}
+const multipleTable: any = ref()
+const searchWord = ref('')
 
-    // 用于展示的文件
-    // 1. 过滤指定任务
-    const filterFiles = computed(() => files.filter((f) => {
-      if (filterTasks.value.length === 0) {
-        return false
-      }
+// 用于展示的文件
+// 1. 过滤指定任务
+const filterFiles = computed(() => files.filter((f) => {
+  if (filterTasks.value.length === 0) {
+    return false
+  }
 
-      if (selectTask.value === 'all') {
-        return filterTasks.value.find((t) => t.key === f.task_key)
-      }
+  if (selectTask.value === 'all') {
+    return filterTasks.value.find((t) => t.key === f.task_key)
+  }
 
-      return selectTask.value === f.task_key
-      // 2. 过滤关键词(精细优化)
-    }).filter((t) => (searchWord.value ? JSON.stringify([
-      formatDate(new Date(t.date)),
-      formatSize(t.size),
-      t.people,
-      t.name,
-      t.task_name,
-      // eslint-disable-next-line no-useless-escape
-      t.info]).replace(/[:'"\{\},\[\]]/g, '').includes(searchWord.value) : true)))
-    /**
+  return selectTask.value === f.task_key
+  // 2. 过滤关键词(精细优化)
+}).filter((t) => (searchWord.value ? JSON.stringify([
+  formatDate(new Date(t.date)),
+  formatSize(t.size),
+  t.people,
+  t.name,
+  t.task_name,
+  // eslint-disable-next-line no-useless-escape
+  t.info]).replace(/[:'"\{\},\[\]]/g, '').includes(searchWord.value) : true)))
+/**
      * 清空所有选项
      */
-    const clearSelection = () => {
-      multipleTable.value.clearSelection()
-    }
-    // 多选选中的项
-    const selectItem: any[] = reactive([])
-    const handleSelectionChange = (e: any) => {
-      selectItem.splice(0, selectItem.length)
-      selectItem.push(...e)
-    }
-    const batchDownStart = ref(false)
-    const handleDropdownClick = (e: string) => {
-      const ids: number[] = selectItem.map((v) => v.id)
-      switch (e) {
-        case 'download':
-          if (batchDownStart.value) {
-            ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
-            return
-          }
-          FileApi.batchDownload(ids, `批量下载_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}`).then((r) => {
-            const { k } = r.data
-            FileApi.getCompressFileUrl(k).then((v) => {
-              showLinkModel.value = true
-              downloadUrl.value = v
-              downLoadByUrl(v, `${Date.now()}.zip`)
-              batchDownStart.value = false
-            })
-          }).catch(() => {
-            ElMessage.error('所选文件均已从服务器上移除')
-            batchDownStart.value = false
-          })
-          batchDownStart.value = true
-          ElMessage.info('开始归档选中的文件,请赖心等待,完成后将自动进行下载')
-          break
-        case 'delete':
-          ElMessageBox.confirm('确认删除吗?删除后无法恢复', '提示').then(() => {
-            FileApi.batchDel(ids).then(() => {
-              files.splice(0, files.length, ...files.filter((v) => !ids.includes(v.id)))
-              ElMessage.success('删除成功')
-            })
-          }).catch(() => {
-            ElMessage.info('取消')
-          })
-          break
-        case 'excel':
-          // 优化
-          if (selectItem.length === 0) {
-            ElMessage.warning('没有选中需要导出的内容')
-            return
-          }
-          const headers = ['提交时间', '任务', '文件名', '文件大小', '提交信息']
-          const body = selectItem.map(((v) => {
-            const {
-              date, task_name: taskName, name, size,
-            } = v
-            const info = JSON.parse(v.info).map((i: any) => `${i.text}--${i.value}`).join(',')
-            return [formatDate(new Date(date)), taskName, name, formatSize(size), info]
-          }))
-          tableToExcel(headers, body, `批量导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
-          ElMessage.success('导出成功')
-          break
-        default:
-          break
-      }
-      clearSelection()
-    }
-    const showInfoDialog = ref(false)
-    const infos: any[] = reactive([])
-    const checkInfo = (e: any) => {
-      infos.splice(0, infos.length)
-      infos.push(...JSON.parse(e.info))
-      showInfoDialog.value = true
-    }
-
-    const downloadOne = (e: any) => {
-      const { id, name } = e
-      FileApi
-        .getOneFileUrl(id)
-        .then((res) => {
-          const { link } = res.data
-          showLinkModel.value = true
-          downloadUrl.value = link
-          downLoadByUrl(link, name)
-        })
-        .catch(() => {
-          ElMessage.error('文件已从服务器上移除')
-        })
-    }
-    const handleDelete = (e: any) => {
-      const idx = files.findIndex((v) => v === e)
-      ElMessageBox.confirm('确认删除此文件吗', '提示').then(() => {
-        FileApi.deleteOneFile(e.id).then(() => {
-          ElMessage.success('删除成功')
-          files.splice(idx, 1)
-        })
-      }).catch(() => {
-        ElMessage.info('取消删除')
-      })
-    }
-
-    // 分页
-    const pageSize = ref(6)
-    const handleSizeChange = (v: number) => {
-      pageSize.value = v
-    }
-    const pageCount = computed(() => {
-      const t = Math.ceil(filterFiles.value.length / pageSize.value)
-      return t
-    })
-    // 当前页
-    const pageCurrent = ref(1)
-    const showFilterFiles = computed(() => {
-      const start = (pageCurrent.value - 1) * pageSize.value
-      const end = (pageCurrent.value) * pageSize.value
-      return filterFiles.value.slice(start, end)
-    })
-    const handlePageChange = (idx: number) => {
-      pageCurrent.value = idx
-    }
-
-    // 刷新文件列表
-
-    const handleRefresh = () => {
-      loadFiles()
-      ElMessage.success('刷新成功')
-    }
-    const handleDownloadTask = () => {
-      const ids: number[] = files.filter((f) => f.task_key === selectTask.value).map((v) => v.id)
-      if (ids.length === 0) {
-        ElMessage.warning('该任务中没有数据')
-        return
-      }
+const clearSelection = () => {
+  multipleTable.value.clearSelection()
+}
+// 多选选中的项
+const selectItem: any[] = reactive([])
+const handleSelectionChange = (e: any) => {
+  selectItem.splice(0, selectItem.length)
+  selectItem.push(...e)
+}
+const batchDownStart = ref(false)
+const batchDropDown = ref()
+const openBatchDropDown = () => {
+  batchDropDown.value.handleOpen()
+  setTimeout(() => {
+    batchDropDown.value.handleClose()
+  }, 2500)
+}
+const handleDropdownClick = (e: string) => {
+  const ids: number[] = selectItem.map((v) => v.id)
+  switch (e) {
+    case 'download':
       if (batchDownStart.value) {
         ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
         return
       }
-      FileApi.batchDownload(ids, selectTaskName.value).then((r) => {
+      FileApi.batchDownload(ids, `批量下载_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}`).then((r) => {
         const { k } = r.data
         FileApi.getCompressFileUrl(k).then((v) => {
           showLinkModel.value = true
@@ -348,72 +246,154 @@ export default defineComponent({
           batchDownStart.value = false
         })
       }).catch(() => {
-        ElMessage.error('所选任务中的文件均已从服务器上移除')
+        ElMessage.error('所选文件均已从服务器上移除')
         batchDownStart.value = false
       })
       batchDownStart.value = true
-      ElMessage.info('开始归档任务中的文件,请赖心等待,完成后将自动进行下载')
-    }
-
-    const handlEexportExcell = () => {
-      if (filterFiles.value.length === 0) {
-        ElMessage.warning('表格中没有可导出的内容')
+      ElMessage.info('开始归档选中的文件,请赖心等待,完成后将自动进行下载')
+      break
+    case 'delete':
+      ElMessageBox.confirm('确认删除吗?删除后无法恢复', '提示').then(() => {
+        FileApi.batchDel(ids).then(() => {
+          files.splice(0, files.length, ...files.filter((v) => !ids.includes(v.id)))
+          ElMessage.success('删除成功')
+        })
+      }).catch(() => {
+        ElMessage.info('取消')
+      })
+      break
+    case 'excel':
+      // 优化
+      if (selectItem.length === 0) {
+        ElMessage.warning('没有选中需要导出的内容')
         return
       }
       const headers = ['提交时间', '任务', '文件名', '文件大小', '提交信息']
-      const body = filterFiles.value.map(((v) => {
+      const body = selectItem.map(((v) => {
         const {
           date, task_name: taskName, name, size,
         } = v
         const info = JSON.parse(v.info).map((i: any) => `${i.text}--${i.value}`).join(',')
         return [formatDate(new Date(date)), taskName, name, formatSize(size), info]
       }))
-      tableToExcel(headers, body, `筛选数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
+      tableToExcel(headers, body, `批量导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
       ElMessage.success('导出成功')
-    }
-    onMounted(() => {
-      loadFiles()
-      $store.dispatch('category/getCategory')
-      $store.dispatch('task/getTask')
+      break
+    default:
+      break
+  }
+  clearSelection()
+}
+const showInfoDialog = ref(false)
+const infos: any[] = reactive([])
+const checkInfo = (e: any) => {
+  infos.splice(0, infos.length)
+  infos.push(...JSON.parse(e.info))
+  showInfoDialog.value = true
+}
+
+const downloadOne = (e: any) => {
+  const { id, name } = e
+  FileApi
+    .getOneFileUrl(id)
+    .then((res) => {
+      const { link } = res.data
+      showLinkModel.value = true
+      downloadUrl.value = link
+      downLoadByUrl(link, name)
     })
+    .catch(() => {
+      ElMessage.error('文件已从服务器上移除')
+    })
+}
+const handleDelete = (e: any) => {
+  const idx = files.findIndex((v) => v === e)
+  ElMessageBox.confirm('确认删除此文件吗', '提示').then(() => {
+    FileApi.deleteOneFile(e.id).then(() => {
+      ElMessage.success('删除成功')
+      files.splice(idx, 1)
+    })
+  }).catch(() => {
+    ElMessage.info('取消删除')
+  })
+}
 
-    const isMobile = computed(() => $store.getters['public/isMobile'])
-
-    return {
-      isMobile,
-      handlEexportExcell,
-      handleRefresh,
-      handleDownloadTask,
-      filterFiles,
-      files,
-      showFilterFiles,
-      multipleTable,
-      handleSelectionChange,
-      checkInfo,
-      downloadOne,
-      formatDate,
-      handleDelete,
-      formatSize,
-      categorys,
-      selectCategory,
-      filterTasks,
-      selectTask,
-      searchWord,
-      pageCount,
-      handlePageChange,
-      pageCurrent,
-      pageSize,
-      handleSizeChange,
-      showInfoDialog,
-      infos,
-      showLinkModel,
-      downloadUrl,
-      selectItem,
-      handleDropdownClick,
-      batchDownStart,
-    }
-  },
+// 分页
+const pageSize = ref(6)
+const handleSizeChange = (v: number) => {
+  pageSize.value = v
+}
+const pageCount = computed(() => {
+  const t = Math.ceil(filterFiles.value.length / pageSize.value)
+  return t
 })
+// 当前页
+const pageCurrent = ref(1)
+const showFilterFiles = computed(() => {
+  const start = (pageCurrent.value - 1) * pageSize.value
+  const end = (pageCurrent.value) * pageSize.value
+  return filterFiles.value.slice(start, end)
+})
+const handlePageChange = (idx: number) => {
+  pageCurrent.value = idx
+}
+
+// 刷新文件列表
+
+const handleRefresh = () => {
+  loadFiles()
+  ElMessage.success('刷新成功')
+}
+const handleDownloadTask = () => {
+  const ids: number[] = files.filter((f) => f.task_key === selectTask.value).map((v) => v.id)
+  if (ids.length === 0) {
+    ElMessage.warning('该任务中没有数据')
+    return
+  }
+  if (batchDownStart.value) {
+    ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
+    return
+  }
+  FileApi.batchDownload(ids, selectTaskName.value).then((r) => {
+    const { k } = r.data
+    FileApi.getCompressFileUrl(k).then((v) => {
+      showLinkModel.value = true
+      downloadUrl.value = v
+      downLoadByUrl(v, `${Date.now()}.zip`)
+      batchDownStart.value = false
+    })
+  }).catch(() => {
+    ElMessage.error('所选任务中的文件均已从服务器上移除')
+    batchDownStart.value = false
+  })
+  batchDownStart.value = true
+  ElMessage.info('开始归档任务中的文件,请赖心等待,完成后将自动进行下载')
+}
+
+const handlEexportExcell = () => {
+  if (filterFiles.value.length === 0) {
+    ElMessage.warning('表格中没有可导出的内容')
+    return
+  }
+  const headers = ['提交时间', '任务', '文件名', '文件大小', '提交信息']
+  const body = filterFiles.value.map(((v) => {
+    const {
+      date, task_name: taskName, name, size,
+    } = v
+    const info = JSON.parse(v.info).map((i: any) => `${i.text}--${i.value}`).join(',')
+    return [formatDate(new Date(date)), taskName, name, formatSize(size), info]
+  }))
+  tableToExcel(headers, body, `筛选数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
+  ElMessage.success('导出成功')
+}
+onMounted(() => {
+  loadFiles()
+  $store.dispatch('category/getCategory')
+  $store.dispatch('task/getTask')
+})
+
+const isMobile = computed(() => $store.getters['public/isMobile'])
+
 </script>
 <style scoped lang="scss">
 .files {
@@ -429,7 +409,7 @@ export default defineComponent({
   .text-btns {
     display: flex;
     flex-direction: column;
-    :deep .el-button {
+    :deep(.el-button) {
       margin-left: 0px;
       margin-bottom: 0px;
     }
@@ -437,7 +417,7 @@ export default defineComponent({
   .header {
     justify-content: center;
   }
-  .export-btns{
+  .export-btns {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;

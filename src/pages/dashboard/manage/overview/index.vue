@@ -3,7 +3,9 @@
     <div class="card-list">
       <div v-for="c in cardList" :key="c.type" class="card">
         <div class="logo">
-          <i :style="{ color: c.color }" :class="c.icon"></i>
+          <el-icon :color="c.color">
+           <component :is="c.icon"></component>
+          </el-icon>
         </div>
         <div class="content">
           <div class="title">{{ c.title }}</div>
@@ -18,7 +20,7 @@
           <span class="label">类型</span>
           <el-select v-model="filterLogType" size="default" placeholder="请选择日志类型">
             <el-option
-              v-for="(item,idx) in logTypeList"
+              v-for="(item, idx) in logTypeList"
               :key="idx"
               :label="item.label"
               :value="item.type"
@@ -73,156 +75,139 @@
     </div>
   </div>
 </template>
-<script lang="ts">
+<script lang="ts" setup>
 import { ElMessage } from 'element-plus'
 import {
-  computed, defineComponent, onMounted, reactive, ref,
+  computed, onMounted, reactive, ref,
 } from 'vue'
+import {
+  User, Document, Tickets, DataBoard,
+} from '@element-plus/icons-vue'
 import { SuperOverviewApi } from '@/apis'
 import { formatDate } from '@/utils/stringUtil'
 
-export default defineComponent({
-  setup() {
-    const cardList = reactive([
-      {
-        type: 'user',
-        title: '用户数量',
-        value: '0',
-        supplement: '较昨日 +10',
-        icon: 'el-icon-user',
-        color: '#40c9c6',
-      },
-      {
-        type: 'file',
-        title: '文件数量',
-        value: '0',
-        supplement: '较昨日 +10',
-        icon: 'el-icon-document',
-        color: '#36a3f7',
-      },
-      {
-        type: 'log',
-        title: '日志数量',
-        value: '0',
-        supplement: '较昨日 +10',
-        icon: 'el-icon-tickets',
-        color: '#f4516c',
-      },
-      {
-        type: 'pv',
-        title: 'PV/UV',
-        value: '0/0',
-        supplement: '',
-        icon: 'el-icon-s-data',
-        color: '#34bfa3',
-      },
-    ])
-    // 刷新记录条数
-    const refreshCount = () => {
-      SuperOverviewApi.getCount().then((res) => {
-        const {
-          user, file, log, pv,
-        } = res.data
-        cardList[0].value = user.sum
-        cardList[0].supplement = `较昨日 +${user.recent}`
-        cardList[1].value = file.sum
-        cardList[1].supplement = `较昨日 +${file.recent}`
-        cardList[2].value = log.sum
-        cardList[2].supplement = `较昨日 +${log.recent}`
-        cardList[3].value = `${pv.today.sum}/${pv.today.uv}`
-        cardList[3].supplement = `历史: ${pv.all.sum}/${pv.all.uv}`
-      })
-    }
-
-    // 日志
-    const logs: any[] = reactive([])
-    const refreshLogs = () => {
-      ElMessage.success('抓取日志数据成功')
-      SuperOverviewApi.getAllLogMsg().then((res) => {
-        logs.splice(0, logs.length)
-        const d = res.data.logs
-        logs.push(...d)
-      })
-    }
-
-    function getLogsTypeText(type: string) {
-      const logsTypeText: any = {
-        request: '网络请求',
-        behavior: '用户行为',
-        error: '错误',
-        pv: '页面访问',
-      }
-      return logsTypeText[type]
-    }
-    // 筛选的日志
-    const filterLogType = ref('behavior')
-    const searchWord = ref('')
-    const logTypeList = reactive([
-      {
-        label: '用户行为',
-        type: 'behavior',
-      },
-      {
-        label: '网络请求',
-        type: 'request',
-      }, {
-        label: '服务端错误',
-        type: 'error',
-      },
-      {
-        label: '页面访问',
-        type: 'pv',
-      },
-    ])
-
-    const filterLogs = computed(() => logs
-      .filter((v) => v.type === filterLogType.value)
-      .filter((v) => {
-        const { date, ip, msg } = v
-        if (searchWord.value.length === 0) return true
-        return `${date} ${ip} ${msg}`.includes(searchWord.value)
-      }))
-    // 分页
-    const pageSize = ref(10)
-    const handleSizeChange = (v: number) => {
-      pageSize.value = v
-    }
-    const pageCount = computed(() => {
-      const t = Math.ceil(filterLogs.value.length / pageSize.value)
-      return t
-    })
-    const pageCurrent = ref(1)
-    const pageLogs = computed(() => {
-      const start = (pageCurrent.value - 1) * pageSize.value
-      const end = (pageCurrent.value) * pageSize.value
-      return filterLogs.value.slice(start, end)
-    })
-    const handlePageChange = (idx: number) => {
-      pageCurrent.value = idx
-    }
-    onMounted(() => {
-      refreshCount()
-      refreshLogs()
-    })
-    return {
-      cardList,
-      logs,
-      filterLogs,
-      formatDate,
-      getLogsTypeText,
-      pageSize,
-      handleSizeChange,
-      pageCount,
-      pageLogs,
-      handlePageChange,
-      pageCurrent,
-      filterLogType,
-      logTypeList,
-      searchWord,
-      refreshLogs,
-    }
+const cardList = reactive([
+  {
+    type: 'user',
+    title: '用户数量',
+    value: '0',
+    supplement: '较昨日 +10',
+    icon: User,
+    color: '#40c9c6',
   },
+  {
+    type: 'file',
+    title: '文件数量',
+    value: '0',
+    supplement: '较昨日 +10',
+    icon: Document,
+    color: '#36a3f7',
+  },
+  {
+    type: 'log',
+    title: '日志数量',
+    value: '0',
+    supplement: '较昨日 +10',
+    icon: Tickets,
+    color: '#f4516c',
+  },
+  {
+    type: 'pv',
+    title: 'PV/UV',
+    value: '0/0',
+    supplement: '',
+    icon: DataBoard,
+    color: '#34bfa3',
+  },
+])
+// 刷新记录条数
+const refreshCount = () => {
+  SuperOverviewApi.getCount().then((res) => {
+    const {
+      user, file, log, pv,
+    } = res.data
+    cardList[0].value = `${user.sum}`
+    cardList[0].supplement = `较昨日 +${user.recent}`
+    cardList[1].value = `${file.sum}`
+    cardList[1].supplement = `较昨日 +${file.recent}`
+    cardList[2].value = `${log.sum}`
+    cardList[2].supplement = `较昨日 +${log.recent}`
+    cardList[3].value = `${pv.today.sum}/${pv.today.uv}`
+    cardList[3].supplement = `历史: ${pv.all.sum}/${pv.all.uv}`
+  })
+}
+
+// 日志
+const logs: any[] = reactive([])
+const refreshLogs = () => {
+  ElMessage.success('抓取日志数据成功')
+  SuperOverviewApi.getAllLogMsg().then((res) => {
+    logs.splice(0, logs.length)
+    const d = res.data.logs
+    logs.push(...d)
+  })
+}
+
+function getLogsTypeText(type: string) {
+  const logsTypeText: any = {
+    request: '网络请求',
+    behavior: '用户行为',
+    error: '错误',
+    pv: '页面访问',
+  }
+  return logsTypeText[type]
+}
+// 筛选的日志
+const filterLogType = ref('behavior')
+const searchWord = ref('')
+const logTypeList = reactive([
+  {
+    label: '用户行为',
+    type: 'behavior',
+  },
+  {
+    label: '网络请求',
+    type: 'request',
+  }, {
+    label: '服务端错误',
+    type: 'error',
+  },
+  {
+    label: '页面访问',
+    type: 'pv',
+  },
+])
+
+const filterLogs = computed(() => logs
+  .filter((v) => v.type === filterLogType.value)
+  .filter((v) => {
+    const { date, ip, msg } = v
+    if (searchWord.value.length === 0) return true
+    return `${date} ${ip} ${msg}`.includes(searchWord.value)
+  }))
+// 分页
+const pageSize = ref(10)
+const handleSizeChange = (v: number) => {
+  pageSize.value = v
+}
+const pageCount = computed(() => {
+  const t = Math.ceil(filterLogs.value.length / pageSize.value)
+  return t
 })
+const pageCurrent = ref(1)
+const pageLogs = computed(() => {
+  const start = (pageCurrent.value - 1) * pageSize.value
+  const end = (pageCurrent.value) * pageSize.value
+  return filterLogs.value.slice(start, end)
+})
+const handlePageChange = (idx: number) => {
+  pageCurrent.value = idx
+}
+onMounted(() => {
+  refreshCount()
+  refreshLogs()
+})
+
 </script>
 
 <style scoped lang="scss">
