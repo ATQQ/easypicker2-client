@@ -47,10 +47,11 @@ a {
     width: auto;
   }
   .el-pagination {
-    white-space: break-spaces;
+    flex-wrap: wrap;
+    justify-content: center;
   }
   .el-pagination > * {
-    margin-bottom: 10px;
+    margin-bottom: 10px !important;
   }
 }
 </style>
