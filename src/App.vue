@@ -1,38 +1,33 @@
 <template>
-  <el-config-provider :size="size" :zIndex="zIndex">
+  <el-config-provider size="large" :zIndex="1000">
     <router-view></router-view>
   </el-config-provider>
 </template>
 
-<script lang="ts">
-import { defineComponent, onMounted } from 'vue'
+<script lang="ts" setup>
+import { onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { ElConfigProvider } from 'element-plus'
 
-export default defineComponent({
-  components: {
-    ElConfigProvider,
-  },
-  name: 'App',
-  setup() {
-    const $store = useStore()
-    const refreshWidth = () => {
-      const clientWIdth = window.document.body.clientWidth
-      $store.commit('public/setWidth', clientWIdth)
-    }
-    onMounted(() => {
-      window.addEventListener('load', refreshWidth)
-      window.addEventListener('resize', refreshWidth)
-    })
-    return {
-      zIndex: 3000,
-      size: 'large',
-    }
-  },
+const $store = useStore()
+const refreshWidth = () => {
+  const clientWIdth = window.document.body.clientWidth
+  $store.commit('public/setWidth', clientWIdth)
+}
+onMounted(() => {
+  window.addEventListener('load', refreshWidth)
+  window.addEventListener('resize', refreshWidth)
 })
 </script>
 
 <style>
+.el-progress{
+  margin-top: 0 !important;
+  position: static !important;
+}
+.el-progress__text{
+  top: 8px !important;
+}
 * {
   padding: 0;
   margin: 0;
