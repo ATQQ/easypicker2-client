@@ -5,7 +5,7 @@
       <div class="item">
         <span class="label">分类</span>
         <!--TODO: multiple 多选待评估 -->
-        <el-select size="medium" v-model="selectCategory" filterable placeholder="请选择">
+        <el-select size="default" v-model="selectCategory" filterable placeholder="请选择">
           <el-option label="全部" value="all" />
           <el-option label="默认" value="default" />
           <el-option v-for="item in categorys" :key="item.k" :label="item.name" :value="item.k"></el-option>
@@ -13,7 +13,7 @@
       </div>
       <div class="item">
         <span class="label">任务</span>
-        <el-select size="medium" v-model="selectTask" filterable placeholder="请选择">
+        <el-select size="default" v-model="selectTask" filterable placeholder="请选择">
           <el-option label="全部" value="all" />
           <el-option
             v-for="item in filterTasks"
@@ -28,14 +28,14 @@
           :loading="batchDownStart"
           :disabled="selectTask === 'all'"
           type="primary"
-          size="medium"
+          size="default"
           icon="el-icon-download"
           @click="handleDownloadTask"
         >下载任务中的文件</el-button>
       </div>
       <div class="item">
         <el-input
-          size="medium"
+          size="default"
           clearable
           placeholder="请输入要检索的内容"
           prefix-icon="el-icon-search"
@@ -47,7 +47,7 @@
     <div class="panel">
       <div class="export-btns">
         <el-dropdown @command="handleDropdownClick">
-          <el-button type="primary" :disabled="selectItem.length === 0" size="medium">
+          <el-button type="primary" :disabled="selectItem.length === 0" size="default">
             批量操作
             <i class="el-icon-arrow-down el-icon--right"></i>
           </el-button>
@@ -59,11 +59,11 @@
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-button size="medium" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
+        <el-button size="default" icon="el-icon-refresh" @click="handleRefresh">刷新</el-button>
         <el-button
           title="导出表格中所有的数据"
           type="success"
-          size="medium"
+          size="default"
           icon="el-icon-data"
           @click="handlEexportExcell"
           :disabled="showFilterFiles.length === 0"
@@ -132,8 +132,6 @@
   </div>
 </template>
 <script lang="ts">
-import { FileApi } from '@/apis'
-import { formatDate, formatSize } from '@/utils/stringUtil'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   computed,
@@ -141,6 +139,8 @@ import {
 } from 'vue'
 import { useStore } from 'vuex'
 import LinkDialog from '@components/linkDialog.vue'
+import { formatDate, formatSize } from '@/utils/stringUtil'
+import { FileApi } from '@/apis'
 import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
 
 export default defineComponent({

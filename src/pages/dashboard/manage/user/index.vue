@@ -4,7 +4,7 @@
       <div class="p10 log-filter">
         <span class="item">
           <span class="label">状态</span>
-          <el-select v-model="filterLogType" size="medium" placeholder="请选择日志类型">
+          <el-select v-model="filterLogType" size="default" placeholder="请选择日志类型">
             <el-option
               v-for="(item,idx) in logTypeList"
               :key="idx"
@@ -15,7 +15,7 @@
         </span>
         <span class="item">
           <el-input
-            size="medium"
+            size="default"
             clearable
             placeholder="请输入要检索的内容"
             prefix-icon="el-icon-search"
@@ -91,14 +91,14 @@
   </div>
 </template>
 <script lang="ts">
-import { SuperUserApi } from '@/apis'
-import { USER_STATUS } from '@/constants'
-import { formatDate } from '@/utils/stringUtil'
 import { ElMessage } from 'element-plus'
 import {
   computed, defineComponent, onMounted, reactive, ref,
 } from 'vue'
 import { useStore } from 'vuex'
+import { SuperUserApi } from '@/apis'
+import { USER_STATUS } from '@/constants'
+import { formatDate } from '@/utils/stringUtil'
 
 export default defineComponent({
   setup() {

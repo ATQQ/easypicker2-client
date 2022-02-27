@@ -16,7 +16,7 @@
       <div class="p10 log-filter">
         <span class="item">
           <span class="label">类型</span>
-          <el-select v-model="filterLogType" size="medium" placeholder="请选择日志类型">
+          <el-select v-model="filterLogType" size="default" placeholder="请选择日志类型">
             <el-option
               v-for="(item,idx) in logTypeList"
               :key="idx"
@@ -27,7 +27,7 @@
         </span>
         <span class="item">
           <el-input
-            size="medium"
+            size="default"
             clearable
             placeholder="请输入要检索的内容"
             prefix-icon="el-icon-search"
@@ -35,7 +35,7 @@
           ></el-input>
         </span>
         <span class="item">
-          <el-button size="medium" icon="el-icon-refresh" @click="refreshLogs">刷新</el-button>
+          <el-button size="default" icon="el-icon-refresh" @click="refreshLogs">刷新</el-button>
         </span>
       </div>
       <el-table
@@ -74,12 +74,12 @@
   </div>
 </template>
 <script lang="ts">
-import { SuperOverviewApi } from '@/apis'
-import { formatDate } from '@/utils/stringUtil'
 import { ElMessage } from 'element-plus'
 import {
   computed, defineComponent, onMounted, reactive, ref,
 } from 'vue'
+import { SuperOverviewApi } from '@/apis'
+import { formatDate } from '@/utils/stringUtil'
 
 export default defineComponent({
   setup() {

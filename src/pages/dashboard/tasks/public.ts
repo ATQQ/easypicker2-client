@@ -1,15 +1,21 @@
-import { TaskApi } from '@/apis'
 import { ElMessage } from 'element-plus'
+import { TaskApi } from '@/apis'
 
 export const updateTaskInfo = (key:string, options: TaskApiTypes.TaskInfo) => {
   if (key) {
     TaskApi
       .updateTaskMoreInfo(key, options)
       .then(() => {
-        ElMessage.success('设置成功')
+        ElMessage.success({
+          message: '设置成功',
+          zIndex: 4000,
+        })
       })
       .catch(() => {
-        ElMessage.error('设置失败')
+        ElMessage.error({
+          message: '设置失败',
+          zIndex: 4000,
+        })
       })
   }
 }
