@@ -12,11 +12,15 @@
         @select="handleSelect"
       >
         <el-menu-item index="overview">
-          <i class="el-icon-s-data"></i>
+          <el-icon>
+            <data-board/>
+          </el-icon>
           <template #title>概况</template>
         </el-menu-item>
         <el-menu-item index="user">
-          <i class="el-icon-user"></i>
+          <el-icon>
+            <User/>
+          </el-icon>
           <template #title>用户管理</template>
         </el-menu-item>
       </el-menu>
@@ -26,29 +30,23 @@
     </div>
   </div>
 </template>
-<script lang="ts">
-import { defineComponent, ref } from 'vue'
+<script lang="ts" setup>
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { User, DataBoard } from '@element-plus/icons-vue'
 
-export default defineComponent({
-  setup() {
-    const isCollapse = ref(false)
-    const $router = useRouter()
-    const $route = useRoute()
-    const handleSelect = (path:string) => {
-      if ($route.path.endsWith(path)) {
-        return
-      }
-      $router.replace({
-        path,
-      })
-    }
-    return {
-      isCollapse,
-      handleSelect,
-    }
-  },
-})
+const isCollapse = ref(false)
+const $router = useRouter()
+const $route = useRoute()
+const handleSelect = (path:string) => {
+  if ($route.path.endsWith(path)) {
+    return
+  }
+  $router.replace({
+    path,
+  })
+}
+
 </script>
 
 <style scoped>

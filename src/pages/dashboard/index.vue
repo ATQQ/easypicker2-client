@@ -29,7 +29,6 @@
           <el-icon  size="32">
             <Expand/>
           </el-icon>
-          <i class="el-icon-s-unfold"></i>
         </label>
       </span>
       <el-popover placement="left" v-model:visible="visible">
