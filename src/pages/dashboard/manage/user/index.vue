@@ -18,7 +18,7 @@
             size="default"
             clearable
             placeholder="请输入要检索的内容"
-            prefix-icon="el-icon-search"
+            :prefix-icon="Search"
             v-model="searchWord"
           ></el-input>
         </span>
@@ -90,140 +90,116 @@
     </el-dialog>
   </div>
 </template>
-<script lang="ts">
+<script lang="ts" setup>
 import { ElMessage } from 'element-plus'
 import {
-  computed, defineComponent, onMounted, reactive, ref,
+  computed, onMounted, reactive, ref,
 } from 'vue'
 import { useStore } from 'vuex'
+import { Search } from '@element-plus/icons-vue'
 import { SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate } from '@/utils/stringUtil'
 
-export default defineComponent({
-  setup() {
-    const $store = useStore()
-    // 用户
-    const users: any[] = reactive([])
-    const refreshUsers = () => {
-      SuperUserApi.getUserList().then((res) => {
-        users.splice(0, users.length)
-        const d = res.data.list
-        users.push(...d)
-      })
-    }
+const $store = useStore()
+// 用户
+const users: any[] = reactive([])
+const refreshUsers = () => {
+  SuperUserApi.getUserList().then((res) => {
+    users.splice(0, users.length)
+    const d = res.data.list
+    users.push(...d)
+  })
+}
 
-    function getLogsTypeText(type: string) {
-      const logsTypeText: any = {
-        request: '网络请求',
-        behavior: '用户行为',
-        error: '错误',
-        pv: '页面访问',
-      }
-      return logsTypeText[type]
-    }
-    // 筛选用户状态
-    const filterLogType = ref(USER_STATUS.NORMAL)
-    const searchWord = ref('')
-    const logTypeList = reactive([
-      {
-        label: '正常',
-        type: USER_STATUS.NORMAL,
-      },
-      {
-        label: '冻结',
-        type: USER_STATUS.FREEZE,
-      }, {
-        label: '封禁',
-        type: USER_STATUS.BAN,
-      },
-    ])
-
-    const filterUsers = computed(() => users
-      .filter((v) => v.status === filterLogType.value)
-      .filter((v) => {
-        const {
-          account, phone, join_time, login_count, login_time, open_time,
-        } = v
-        if (searchWord.value.length === 0) return true
-        return `${account} ${phone} ${login_count} ${formatDate(open_time)} ${formatDate(login_time)} ${formatDate(join_time)}`.includes(searchWord.value)
-      }))
-
-    // 分页
-    const pageSize = ref(10)
-    const handleSizeChange = (v: number) => {
-      pageSize.value = v
-    }
-    const pageCount = computed(() => {
-      const t = Math.ceil(filterUsers.value.length / pageSize.value)
-      return t
-    })
-    const pageCurrent = ref(1)
-    const pageUsers = computed(() => {
-      const start = (pageCurrent.value - 1) * pageSize.value
-      const end = (pageCurrent.value) * pageSize.value
-      return filterUsers.value.slice(start, end)
-    })
-    const handlePageChange = (idx: number) => {
-      pageCurrent.value = idx
-    }
-
-    // 状态修改
-    const showUserStatusDialog = ref(false)
-    const selectUserId = ref(0)
-    const selectStatus = ref(USER_STATUS.NORMAL)
-    const userStatusList = logTypeList
-    const openTime = ref('')
-    const handleChangeStatus = (userId: number, status: USER_STATUS, oTime: string) => {
-      selectUserId.value = userId
-      selectStatus.value = status
-      openTime.value = oTime
-      showUserStatusDialog.value = true
-    }
-    const handleSaveStatus = () => {
-      const user = users.find((u) => u.id === selectUserId.value)
-      if (selectStatus.value === USER_STATUS.FREEZE) {
-        if (!openTime.value) {
-          ElMessage.warning('请设置解冻时间')
-          return
-        }
-        user.open_time = openTime.value
-      } else {
-        user.open_time = ''
-      }
-      user.status = selectStatus.value
-      showUserStatusDialog.value = false
-      SuperUserApi.updateUserStatus(user.id, user.status, user.open_time)
-      ElMessage.success('修改成功')
-    }
-    onMounted(() => {
-      refreshUsers()
-    })
-    const isMobile = computed(() => $store.getters['public/isMobile'])
-
-    return {
-      isMobile,
-      filterUsers,
-      formatDate,
-      getLogsTypeText,
-      pageSize,
-      handleSizeChange,
-      pageCount,
-      pageUsers,
-      handlePageChange,
-      pageCurrent,
-      filterLogType,
-      logTypeList,
-      searchWord,
-      handleChangeStatus,
-      showUserStatusDialog,
-      selectStatus,
-      userStatusList,
-      handleSaveStatus,
-      openTime,
-    }
+function getLogsTypeText(type: string) {
+  const logsTypeText: any = {
+    request: '网络请求',
+    behavior: '用户行为',
+    error: '错误',
+    pv: '页面访问',
+  }
+  return logsTypeText[type]
+}
+// 筛选用户状态
+const filterLogType = ref(USER_STATUS.NORMAL)
+const searchWord = ref('')
+const logTypeList = reactive([
+  {
+    label: '正常',
+    type: USER_STATUS.NORMAL,
   },
+  {
+    label: '冻结',
+    type: USER_STATUS.FREEZE,
+  }, {
+    label: '封禁',
+    type: USER_STATUS.BAN,
+  },
+])
+
+const filterUsers = computed(() => users
+  .filter((v) => v.status === filterLogType.value)
+  .filter((v) => {
+    const {
+      account, phone, join_time, login_count, login_time, open_time,
+    } = v
+    if (searchWord.value.length === 0) return true
+    return `${account} ${phone} ${login_count} ${formatDate(open_time)} ${formatDate(login_time)} ${formatDate(join_time)}`.includes(searchWord.value)
+  }))
+
+// 分页
+const pageSize = ref(10)
+const handleSizeChange = (v: number) => {
+  pageSize.value = v
+}
+const pageCount = computed(() => {
+  const t = Math.ceil(filterUsers.value.length / pageSize.value)
+  return t
 })
+const pageCurrent = ref(1)
+const pageUsers = computed(() => {
+  const start = (pageCurrent.value - 1) * pageSize.value
+  const end = (pageCurrent.value) * pageSize.value
+  return filterUsers.value.slice(start, end)
+})
+const handlePageChange = (idx: number) => {
+  pageCurrent.value = idx
+}
+
+// 状态修改
+const showUserStatusDialog = ref(false)
+const selectUserId = ref(0)
+const selectStatus = ref(USER_STATUS.NORMAL)
+const userStatusList = logTypeList
+const openTime = ref('')
+const handleChangeStatus = (userId: number, status: USER_STATUS, oTime: string) => {
+  selectUserId.value = userId
+  selectStatus.value = status
+  openTime.value = oTime
+  showUserStatusDialog.value = true
+}
+const handleSaveStatus = () => {
+  const user = users.find((u) => u.id === selectUserId.value)
+  if (selectStatus.value === USER_STATUS.FREEZE) {
+    if (!openTime.value) {
+      ElMessage.warning('请设置解冻时间')
+      return
+    }
+    user.open_time = openTime.value
+  } else {
+    user.open_time = ''
+  }
+  user.status = selectStatus.value
+  showUserStatusDialog.value = false
+  SuperUserApi.updateUserStatus(user.id, user.status, user.open_time)
+  ElMessage.success('修改成功')
+}
+onMounted(() => {
+  refreshUsers()
+})
+const isMobile = computed(() => $store.getters['public/isMobile'])
+
 </script>
 
 <style scoped lang="scss">

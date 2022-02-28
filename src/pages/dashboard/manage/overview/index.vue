@@ -32,12 +32,12 @@
             size="default"
             clearable
             placeholder="请输入要检索的内容"
-            prefix-icon="el-icon-search"
+            :prefix-icon="Search"
             v-model="searchWord"
           ></el-input>
         </span>
         <span class="item">
-          <el-button size="default" icon="el-icon-refresh" @click="refreshLogs">刷新</el-button>
+          <el-button size="default" :icon="Refresh" @click="refreshLogs">刷新</el-button>
         </span>
       </div>
       <el-table
@@ -81,7 +81,7 @@ import {
   computed, onMounted, reactive, ref,
 } from 'vue'
 import {
-  User, Document, Tickets, DataBoard,
+  User, Document, Tickets, DataBoard, Search, Refresh,
 } from '@element-plus/icons-vue'
 import { SuperOverviewApi } from '@/apis'
 import { formatDate } from '@/utils/stringUtil'
