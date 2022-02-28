@@ -1,5 +1,5 @@
-import { UserApi } from '@/apis'
 import { Module } from 'vuex'
+import { UserApi } from '@/apis'
 
 interface State {
   token: string,

@@ -1,5 +1,5 @@
-import { TaskApi } from '@/apis'
 import { Module } from 'vuex'
+import { TaskApi } from '@/apis'
 
 interface State {
   taskList: any []

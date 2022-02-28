@@ -1,5 +1,5 @@
-import { PublicApi } from '@/apis'
 import { Router } from 'vue-router'
+import { PublicApi } from '@/apis'
 
 declare module 'vue-router' {
     interface RouteMeta {
