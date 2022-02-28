@@ -6,6 +6,9 @@
                 <!-- 基本信息 -->
                 <div class="baseinfo">
                     <span v-for="(info,idx) in baseInfo" :key="idx" class="info-item">
+                        <el-icon>
+                            <component :is="info.icon"/>
+                        </el-icon>
                         <i :class="info.icon"></i>
                         <a target="_blank" :href="info.href">{{ info.text }}</a>
                     </span>
@@ -32,48 +35,41 @@
         </main>
     </div>
 </template>
-<script lang="ts">
-import { defineComponent, reactive } from 'vue'
+<script lang="ts" setup>
+import { UserFilled, Promotion } from '@element-plus/icons-vue'
 
-export default defineComponent({
-  setup() {
-    const baseInfo = reactive([
-      {
-        icon: 'el-icon-user-solid',
-        text: '粥里有勺糖',
-        href: 'https://sugarat.top',
-      },
-      {
-        icon: 'el-icon-s-promotion',
-        text: 'engineerzjl@foxmail.com',
-        href: 'mailto:engineerzjl@foxmail.com',
-      },
-    ])
-
-    const qrCOdes = reactive([
-      {
-        text: '微信',
-        img: 'https://img.cdn.sugarat.top/mdImg/MTYxOTE1NTk3MTkyNA==619155971925',
-      },
-      {
-        text: '公众号',
-        img: 'https://img.cdn.sugarat.top/mdImg/MTYxOTE1NTYwNzQ5MQ==619155607491',
-      },
-      {
-        text: 'QQ',
-        img: 'https://img.cdn.sugarat.top/mdImg/MTYxOTE1NjQ5ODczOQ==619156498739',
-      },
-      {
-        text: '交流群',
-        img: 'https://img.cdn.sugarat.top/mdImg/MTYxOTE1NjU5NTc5MA==619156595790',
-      },
-    ])
-    return {
-      baseInfo,
-      qrCOdes,
-    }
+const baseInfo = [
+  {
+    icon: UserFilled,
+    text: '粥里有勺糖',
+    href: 'https://sugarat.top',
   },
-})
+  {
+    icon: Promotion,
+    text: 'engineerzjl@foxmail.com',
+    href: 'mailto:engineerzjl@foxmail.com',
+  },
+]
+
+const qrCOdes = [
+  {
+    text: '微信',
+    img: 'https://img.cdn.sugarat.top/mdImg/MTYxOTE1NTk3MTkyNA==619155971925',
+  },
+  {
+    text: '公众号',
+    img: 'https://img.cdn.sugarat.top/mdImg/MTYxOTE1NTYwNzQ5MQ==619155607491',
+  },
+  {
+    text: 'QQ',
+    img: 'https://img.cdn.sugarat.top/mdImg/MTYxOTE1NjQ5ODczOQ==619156498739',
+  },
+  {
+    text: '交流群',
+    img: 'https://img.cdn.sugarat.top/mdImg/MTYxOTE1NjU5NTc5MA==619156595790',
+  },
+]
+
 </script>
 <style lang="scss" scoped>
 h1,

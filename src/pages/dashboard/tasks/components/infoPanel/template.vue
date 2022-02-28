@@ -4,7 +4,7 @@
       v-if="template"
       :disabled="!template"
       @click="deleteTemplate"
-      size="medium"
+      size="default"
       round
       type="danger"
     >删除</el-button>
@@ -12,7 +12,7 @@
     <div class="upload-file" v-if="!template">
       <el-upload
         accetp="text/plain"
-        action
+        action=""
         ref="elUpload"
         :on-change="handleChangeFile"
         :on-exceed="handleExceedFile"
@@ -38,12 +38,12 @@
   </div>
 </template>
 <script lang="ts">
-import { FileApi } from '@/apis'
-import { qiniuUpload } from '@/utils/networkUtil'
 import { ElMessage } from 'element-plus'
 import {
   defineComponent, reactive, ref, watchEffect,
 } from 'vue'
+import { FileApi } from '@/apis'
+import { qiniuUpload } from '@/utils/networkUtil'
 import { updateTaskInfo } from '../../public'
 
 export default defineComponent({
@@ -91,7 +91,7 @@ export default defineComponent({
     // 开始上传
     const submitUploadPeople = () => {
       const { uploadFiles } = elUpload.value
-      uploadFiles.forEach((file:any) => {
+      uploadFiles.forEach((file: any) => {
         if (!props.k) { return }
         const { name } = file
         const key = `easypicker2/${props.k}_template/${name}`
@@ -107,8 +107,8 @@ export default defineComponent({
                 clearFiles()
                 template.value = name
                 file.status = 'success'
-              // hash,key
-              // console.log(data)
+                // hash,key
+                // console.log(data)
               },
               process(per: number) {
                 file.percentage = ~~(per)
@@ -137,5 +137,3 @@ export default defineComponent({
   },
 })
 </script>
-<style scoped>
-</style>

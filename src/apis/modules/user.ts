@@ -27,10 +27,15 @@ function resetPwd(phone:string, code:string, pwd:string):UserApiTypes.resetPwd {
 function checkPower():UserApiTypes.checkPower {
   return ajax.get('user/power/super')
 }
+
+function checkLoginStatus():UserApiTypes.checkLoginStatus {
+  return ajax.get('user/login')
+}
 export default {
   register,
   login,
   codeLogin,
   resetPwd,
   checkPower,
+  checkLoginStatus,
 }

@@ -2,6 +2,7 @@ import { RouteRecordRaw } from 'vue-router'
 import Home from '@/pages/home/index.vue'
 import Login from '@/pages/login/index.vue'
 import Register from '@/pages/register/index.vue'
+import Wish from '@/pages/wish/index.vue'
 
 const NotFind = () => import('@/pages/404/index.vue')
 const Reset = () => import('@/pages/reset/index.vue')
@@ -32,6 +33,14 @@ const routes: RouteRecordRaw[] = [
     component: Home,
     meta: {
       title: '首页',
+    },
+  },
+  {
+    path: '/wish',
+    name: 'wish',
+    component: Wish,
+    meta: {
+      title: '需求墙',
     },
   },
   {

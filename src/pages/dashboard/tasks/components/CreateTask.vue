@@ -2,7 +2,7 @@
   <div>
     <div class="btn-area">
       <el-button
-        size="small"
+        size="large"
         type="primary"
         :plain="!isShowCreateTask"
         @click="

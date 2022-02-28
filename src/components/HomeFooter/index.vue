@@ -12,50 +12,42 @@
               <router-link to="/feedback">反馈</router-link>
       </li>-->
     </ul>
-    <p>
+    <p>v{{version}}
       © 2019 - {{ cunnrentYear }} by
       <a target="_blank" rel="noopener" href="https://sugarat.top">粥里有勺糖</a>
     </p>
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, reactive } from 'vue'
+<script lang="ts" setup>
+import { reactive } from 'vue'
+import { version } from '../../../package.json'
 
-export default defineComponent({
-  name: 'HomeFooter',
-  setup() {
-    const navs = reactive([
-      // {
-      //   title: '使用手册',
-      //   // TODO: ddl 2021-04-30 补全链接
-      //   link: 'https://sugarat.top/',
-      // },
-      {
-        title: 'GitHub',
-        link: 'https://github.com/ATQQ/easypicker2-client',
-      },
-      // {
-      //   title: '联系QQ',
-      //   link: 'http://wpa.qq.com/msgrd?v=3&uin=2604395430&site=qq&menu=yes',
-      // },
-      {
-        title: '博客',
-        link: 'https://sugarat.top/',
-      },
-      {
-        title: '反馈',
-        link: 'https://www.wenjuan.com/s/UZBZJvA040/',
-      },
-    ])
-
-    const cunnrentYear = new Date().getFullYear()
-    return {
-      navs,
-      cunnrentYear,
-    }
+const navs = reactive([
+  // {
+  //   title: '使用手册',
+  //   // TODO: ddl 2021-04-30 补全链接
+  //   link: 'https://sugarat.top/',
+  // },
+  {
+    title: 'GitHub',
+    link: 'https://github.com/ATQQ/easypicker2-client',
   },
-})
+  // {
+  //   title: '联系QQ',
+  //   link: 'http://wpa.qq.com/msgrd?v=3&uin=2604395430&site=qq&menu=yes',
+  // },
+  {
+    title: '博客',
+    link: 'https://sugarat.top/',
+  },
+  {
+    title: '反馈',
+    link: 'https://www.wenjuan.com/s/UZBZJvA040/',
+  },
+])
+
+const cunnrentYear = new Date().getFullYear()
 </script>
 
 <style lang="scss" scoped>

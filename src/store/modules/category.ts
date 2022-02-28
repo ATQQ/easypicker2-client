@@ -1,5 +1,5 @@
-import { CategoryApi } from '@/apis'
 import { Module } from 'vuex'
+import { CategoryApi } from '@/apis'
 
 interface State {
   categoryList: any []

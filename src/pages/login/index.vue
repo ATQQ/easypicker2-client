@@ -6,13 +6,17 @@
         <div>
           <el-input
             :placeholder="accountLogin ? '输入账号/手机号' : '输入手机号'"
-            :prefix-icon="accountLogin ? 'el-icon-user' : 'el-icon-phone'"
+            :prefix-icon="accountLogin ? User : Phone"
             v-model="account"
             clearable
           >
             <template #append>
-              <el-button v-if="accountLogin" @click="accountLogin = !accountLogin">验证码登录</el-button>
-              <el-button v-else @click="accountLogin = !accountLogin">账号登录</el-button>
+              <template v-if="accountLogin">
+                <el-button @click="accountLogin = !accountLogin">验证码登录</el-button>
+              </template>
+              <template v-else>
+                <el-button @click="accountLogin = !accountLogin">账号登录</el-button>
+              </template>
             </template>
           </el-input>
         </div>
@@ -22,7 +26,7 @@
             minlength="6"
             :type="accountLogin ? 'password' : 'number'"
             :placeholder="accountLogin ? '请输入密码' : '请输入验证码'"
-            prefix-icon="el-icon-lock"
+            :prefix-icon="Lock"
             v-model="pwd"
             :show-password="accountLogin"
             clearable
@@ -50,154 +54,139 @@
     </login-panel>
   </div>
 </template>
-<script lang="ts">
-import { PublicApi, UserApi } from '@/apis'
+<script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import {
-  defineComponent, onMounted, ref,
+  onMounted, ref,
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import loginPanel from '@components/loginPanel.vue'
+import { User, Phone, Lock } from '@element-plus/icons-vue'
 import {
-  rAccount, rMobilePhone, rPassword, rVerCode,
+  rMobilePhone, rPassword, rVerCode,
 } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
+import { PublicApi, UserApi } from '@/apis'
 
-export default defineComponent({
-  components: {
-    loginPanel,
-  },
-  setup() {
-    const account = ref('')
-    const pwd = ref('')
-    const remember = ref(false)
-    const accountLogin = ref(true)
-    const $store = useStore()
-    const $router = useRouter()
-    const redirectDashBoard = () => {
-      $router.replace({
-        name: 'dashboard',
-      })
+const account = ref('')
+const pwd = ref('')
+const remember = ref(false)
+const accountLogin = ref(true)
+const $store = useStore()
+const $router = useRouter()
+const redirectDashBoard = () => {
+  $router.replace({
+    name: 'dashboard',
+  })
+}
+const checkForm = () => {
+  if (account.value.length === 11) {
+    if (!rMobilePhone.test(account.value)) {
+      ElMessage.warning('手机号格式不正确')
+      return false
     }
-    const checkForm = () => {
-      if (account.value.length === 11) {
-        if (!rMobilePhone.test(account.value)) {
-          ElMessage.warning('手机号格式不正确')
-          return false
-        }
-      }
-      // else if (!rAccount.test(account.value)) {
-      // 兼容老平台数据,不校验账号
-      // ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
-      // return false
-      // }
+  }
+  // else if (!rAccount.test(account.value)) {
+  // 兼容老平台数据,不校验账号
+  // ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
+  // return false
+  // }
 
-      if (accountLogin.value && !rPassword.test(pwd.value)) {
-        ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
-        return false
-      }
+  if (accountLogin.value && !rPassword.test(pwd.value)) {
+    ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
+    return false
+  }
 
-      if (!accountLogin.value && !rVerCode.test(pwd.value)) {
-        ElMessage.warning('验证码不正确(4位 数字)')
-        return false
-      }
-      return true
-    }
-    const codeText = ref('获取验证码')
-    const time = ref(0)
-    const refreshCodeText = () => {
-      if (time.value === 0) {
-        codeText.value = '获取验证码'
-        return
-      }
-      codeText.value = `${time.value}s`
-      time.value -= 1
-      setTimeout(refreshCodeText, 1000)
-    }
-    const getCode = () => {
-      if (!rMobilePhone.test(account.value)) {
-        ElMessage.warning('手机号格式不正确')
-        return
-      }
-      PublicApi.getCode(account.value).then(() => {
-        time.value = 120
-        refreshCodeText()
-        ElMessage.success('获取成功,请注意查看手机短信')
-      })
-    }
+  if (!accountLogin.value && !rVerCode.test(pwd.value)) {
+    ElMessage.warning('验证码不正确(4位 数字)')
+    return false
+  }
+  return true
+}
+const codeText = ref('获取验证码')
+const time = ref(0)
+const refreshCodeText = () => {
+  if (time.value === 0) {
+    codeText.value = '获取验证码'
+    return
+  }
+  codeText.value = `${time.value}s`
+  time.value -= 1
+  setTimeout(refreshCodeText, 1000)
+}
+const getCode = () => {
+  if (!rMobilePhone.test(account.value)) {
+    ElMessage.warning('手机号格式不正确')
+    return
+  }
+  PublicApi.getCode(account.value).then(() => {
+    time.value = 120
+    refreshCodeText()
+    ElMessage.success('获取成功,请注意查看手机短信')
+  })
+}
 
-    const loginErrorMsg = (err:any, msg:string) => {
-      const { code, data } = err
-      const msgs:any = {
-        1010: '账号已被封禁,有疑问请联系管理员',
-        1009: `账号已被冻结,解冻时间${data?.openTime && formatDate(new Date(data.openTime))}`,
-      }
-      ElMessage.error({
-        type: 'error',
-        message: msgs[code] || msg,
-      })
+const loginErrorMsg = (err: any, msg: string) => {
+  const { code, data } = err
+  const msgs: any = {
+    1010: '账号已被封禁,有疑问请联系管理员',
+    1009: `账号已被冻结,解冻时间${data?.openTime && formatDate(new Date(data.openTime))}`,
+  }
+  ElMessage.error({
+    type: 'error',
+    message: msgs[code] || msg,
+  })
+}
+const login = () => {
+  if (!checkForm()) {
+    return
+  }
+  // 账号密码
+  if (accountLogin.value) {
+    if (remember.value) {
+      localStorage.setItem('userinfo', JSON.stringify({
+        account: account.value,
+        pwd: pwd.value,
+        remember: remember.value,
+      }))
+    } else {
+      localStorage.removeItem('userinfo')
     }
-    const login = () => {
-      if (!checkForm()) {
-        return
-      }
-      // 账号密码
-      if (accountLogin.value) {
-        if (remember.value) {
-          localStorage.setItem('userinfo', JSON.stringify({
-            account: account.value,
-            pwd: pwd.value,
-            remember: remember.value,
-          }))
-        } else {
-          localStorage.removeItem('userinfo')
-        }
-        UserApi.login(account.value, pwd.value).then((res) => {
-          const { token } = res.data
-          $store.commit('user/setToken', token)
-          ElMessage.success('登录成功')
-          redirectDashBoard()
-        }).catch((err) => {
-          loginErrorMsg(err, '密码不正确')
-        })
-      } else {
-        // 手机号验证码登录
-        UserApi.codeLogin(account.value, pwd.value).then((res) => {
-          const { token } = res.data
-          $store.commit('user/setToken', token)
-          ElMessage.success('登录成功')
-          redirectDashBoard()
-        }).catch((err) => {
-          loginErrorMsg(err, '验证码不正确')
-        })
-      }
-    }
-    onMounted(() => {
-      const token = localStorage.getItem('token')
-      if (token) {
-        redirectDashBoard()
-      }
-      const info = localStorage.getItem('userinfo')
-      if (info) {
-        const user = JSON.parse(info)
-        account.value = user.account
-        pwd.value = user.pwd
-        remember.value = user.remember
-      }
+    UserApi.login(account.value, pwd.value).then((res) => {
+      const { token } = res.data
+      $store.commit('user/setToken', token)
+      ElMessage.success('登录成功')
+      redirectDashBoard()
+    }).catch((err) => {
+      loginErrorMsg(err, '密码不正确')
     })
-    return {
-      account,
-      pwd,
-      time,
-      login,
-      remember,
-      accountLogin,
-      codeText,
-      getCode,
-    }
-  },
+  } else {
+    // 手机号验证码登录
+    UserApi.codeLogin(account.value, pwd.value).then((res) => {
+      const { token } = res.data
+      $store.commit('user/setToken', token)
+      ElMessage.success('登录成功')
+      redirectDashBoard()
+    }).catch((err) => {
+      loginErrorMsg(err, '验证码不正确')
+    })
+  }
+}
+onMounted(() => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    redirectDashBoard()
+  }
+  const info = localStorage.getItem('userinfo')
+  if (info) {
+    const user = JSON.parse(info)
+    account.value = user.account
+    pwd.value = user.pwd
+    remember.value = user.remember
+  }
 })
+
 </script>
 
 <style scoped lang="scss">
