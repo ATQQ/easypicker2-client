@@ -3,7 +3,7 @@
     <el-button
       @click="uodateLimitPeople(true)"
       v-if="!people"
-      size="medium"
+      size="default"
       round
       type="success"
       >打开</el-button
@@ -11,7 +11,7 @@
     <el-button
       @click="uodateLimitPeople(false)"
       v-if="people"
-      size="medium"
+      size="default"
       round
       type="danger"
       >关闭</el-button
@@ -20,7 +20,7 @@
       @click="checkPeople"
       v-if="people"
       round
-      size="medium"
+      size="default"
       type="primary"
       >查看提交情况</el-button
     >
@@ -75,14 +75,14 @@
               peopleList.length === 0
             "
             type="success"
-            size="medium"
+            size="default"
             @click="handleExportExcel"
             >导出记录</el-button
           >
         </div>
         <div class="item">
           <el-select
-            size="medium"
+            size="default"
             v-model="selectSubmitStatus"
             filterable
             placeholder="状态筛选"
@@ -103,7 +103,7 @@
         </div>
         <div class="item">
           <el-input
-            size="medium"
+            size="default"
           placeholder="输入要查询的姓名" v-model="searchName"></el-input>
         </div>
       </div>
@@ -165,12 +165,6 @@
   </div>
 </template>
 <script lang="ts">
-import { PeopleApi } from '@/apis'
-import {
-  uploadFile,
-  tableToExcel,
-} from '@/utils/networkUtil'
-import { formatDate } from '@/utils/stringUtil'
 import {
   ElMessage,
   ElMessageBox,
@@ -183,6 +177,12 @@ import {
   watchEffect,
 } from 'vue'
 import { useStore } from 'vuex'
+import { PeopleApi } from '@/apis'
+import {
+  uploadFile,
+  tableToExcel,
+} from '@/utils/networkUtil'
+import { formatDate } from '@/utils/stringUtil'
 import { updateTaskInfo } from '../../public'
 
 export default defineComponent({
@@ -362,9 +362,10 @@ export default defineComponent({
       if (
         file.raw.type !== 'text/plain'
       ) {
-        ElMessage.warning(
-          '只支持txt文件',
-        )
+        ElMessage.warning({
+          message: '只支持txt文件',
+          zIndex: 4000,
+        })
         clearFiles()
         return
       }

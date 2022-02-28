@@ -1,21 +1,20 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
-// import styleImport from 'vite-plugin-style-import'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
-    // styleImport({
-    //   libs: [{
-    //     libraryName: 'element-plus',
-    //     esModule: true,
-    //     ensureStyleFile: true,
-    //     resolveStyle: (name) => `element-plus/packages/theme-chalk/src/${name.slice(3)}.scss`,
-    //     resolveComponent: (name) => `element-plus/lib/${name}`,
-    //   }],
-    // }),
+    AutoImport({
+      resolvers: [ElementPlusResolver()],
+    }),
+    Components({
+      resolvers: [ElementPlusResolver()],
+    }),
   ],
   build: {
     target: 'modules', // 默认值

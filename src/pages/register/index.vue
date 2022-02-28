@@ -6,7 +6,7 @@
           <el-input
             maxlength="11"
             placeholder="输入账号"
-            prefix-icon="el-icon-user"
+            :prefix-icon="User"
             v-model="account"
             clearable
           ></el-input>
@@ -17,7 +17,7 @@
             minlength="6"
             type="password"
             placeholder="请输入密码"
-            prefix-icon="el-icon-lock"
+            :prefix-icon="Lock"
             v-model="pwd1"
             show-password
             clearable
@@ -29,7 +29,7 @@
             minlength="6"
             type="password"
             placeholder="请再次输入密码"
-            prefix-icon="el-icon-lock"
+            :prefix-icon="Lock"
             v-model="pwd2"
             show-password
             clearable
@@ -38,14 +38,16 @@
         <div class="tc">
           <el-checkbox v-model="bindPhone">绑定手机</el-checkbox>
           <el-tooltip effect="dark" content="可用于修改/找回密码" placement="top-start">
-            <i class="el-icon-question"></i>
+            <el-icon :size="16">
+              <QuestionFilled />
+            </el-icon>
           </el-tooltip>
         </div>
         <div v-if="bindPhone">
           <el-input
             maxlength="11"
             placeholder="输入手机号"
-            prefix-icon="el-icon-phone"
+            :prefix-icon="Phone"
             v-model="phone"
             clearable
           ></el-input>
@@ -55,7 +57,7 @@
             maxlength="4"
             type="number"
             placeholder="请输入验证码"
-            prefix-icon="el-icon-lock"
+            :prefix-icon="Lock"
             v-model="code"
             clearable
           >
@@ -75,121 +77,106 @@
     </login-panel>
   </div>
 </template>
-<script lang="ts">
-import { PublicApi, UserApi } from '@/apis'
-import { defineComponent, ref } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import loginPanel from '@components/loginPanel.vue'
+import { useStore } from 'vuex'
+import {
+  User, Lock, Phone, QuestionFilled,
+} from '@element-plus/icons-vue'
 import {
   rAccount, rMobilePhone, rPassword, rVerCode,
 } from '@/utils/regExp'
-import { useStore } from 'vuex'
+import { PublicApi, UserApi } from '@/apis'
 
-export default defineComponent({
-  components: {
-    loginPanel,
-  },
-  setup() {
-    const $store = useStore()
-    const account = ref('')
-    const pwd1 = ref('')
-    const pwd2 = ref('')
-    const phone = ref('')
-    const code = ref('')
-    const $router = useRouter()
-    const bindPhone = ref(false)
-    const codeText = ref('获取验证码')
-    const time = ref(0)
-    const refreshCodeText = () => {
-      if (time.value === 0) {
-        codeText.value = '获取验证码'
-        return
-      }
-      codeText.value = `${time.value}s`
-      time.value -= 1
-      setTimeout(refreshCodeText, 1000)
-    }
-    const getCode = () => {
-      if (!rMobilePhone.test(phone.value)) {
-        ElMessage.warning('手机号格式不正确')
-        return
-      }
-      PublicApi.getCode(phone.value).then(() => {
-        time.value = 120
-        refreshCodeText()
-        ElMessage.success('获取成功,请注意查看手机短信')
-      })
-    }
-    const checkForm = () => {
-      if (!rAccount.test(account.value)) {
-        ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
-        return false
-      }
+const $store = useStore()
+const account = ref('')
+const pwd1 = ref('')
+const pwd2 = ref('')
+const phone = ref('')
+const code = ref('')
+const $router = useRouter()
+const bindPhone = ref(false)
+const codeText = ref('获取验证码')
+const time = ref(0)
+const refreshCodeText = () => {
+  if (time.value === 0) {
+    codeText.value = '获取验证码'
+    return
+  }
+  codeText.value = `${time.value}s`
+  time.value -= 1
+  setTimeout(refreshCodeText, 1000)
+}
+const getCode = () => {
+  if (!rMobilePhone.test(phone.value)) {
+    ElMessage.warning('手机号格式不正确')
+    return
+  }
+  PublicApi.getCode(phone.value).then(() => {
+    time.value = 120
+    refreshCodeText()
+    ElMessage.success('获取成功,请注意查看手机短信')
+  })
+}
+const checkForm = () => {
+  if (!rAccount.test(account.value)) {
+    ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
+    return false
+  }
 
-      if (!rPassword.test(pwd1.value)) {
-        ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
-        return false
-      }
-      if (pwd1.value !== pwd2.value) {
-        ElMessage.warning('两次输入的密码不一致')
-        return false
-      }
-      if (bindPhone.value) {
-        if (!rMobilePhone.test(phone.value)) {
-          ElMessage.warning('手机号格式不正确')
-          return false
-        }
-        if (!rVerCode.test(code.value)) {
-          ElMessage.warning('验证码不正确(4位 数字)')
-          return false
-        }
-      }
-      return true
+  if (!rPassword.test(pwd1.value)) {
+    ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
+    return false
+  }
+  if (pwd1.value !== pwd2.value) {
+    ElMessage.warning('两次输入的密码不一致')
+    return false
+  }
+  if (bindPhone.value) {
+    if (!rMobilePhone.test(phone.value)) {
+      ElMessage.warning('手机号格式不正确')
+      return false
     }
-    const handleRegister = () => {
-      if (!checkForm()) {
-        return
-      }
-      UserApi.register({
-        account: account.value,
-        pwd: pwd1.value,
-        bindPhone: bindPhone.value,
-        phone: phone.value,
-        code: code.value,
-      }).then((res) => {
-        const { token } = res.data
-        $store.commit('user/setToken', token)
-        ElMessage.success('注册成功')
-        $router.replace({
-          name: 'dashboard',
-        })
-      }).catch((err) => {
-        const { code: c } = err
-        const msg = '注册失败,未知错误'
-        const options: any = {
-          1001: '账号已存在',
-          1002: '手机号已被注册',
-          1003: '验证码不正确',
-          1006: '手机号格式不正确',
-        }
-        ElMessage.error(options[c] || msg)
-      })
+    if (!rVerCode.test(code.value)) {
+      ElMessage.warning('验证码不正确(4位 数字)')
+      return false
     }
-    return {
-      account,
-      pwd1,
-      pwd2,
-      bindPhone,
-      phone,
-      code,
-      codeText,
-      time,
-      handleRegister,
-      getCode,
+  }
+  return true
+}
+const handleRegister = () => {
+  if (!checkForm()) {
+    return
+  }
+  UserApi.register({
+    account: account.value,
+    pwd: pwd1.value,
+    bindPhone: bindPhone.value,
+    phone: phone.value,
+    code: code.value,
+  }).then((res) => {
+    const { token } = res.data
+    $store.commit('user/setToken', token)
+    ElMessage.success('注册成功')
+    $router.replace({
+      name: 'dashboard',
+    })
+  }).catch((err) => {
+    const { code: c } = err
+    const msg = '注册失败,未知错误'
+    const options: any = {
+      1001: '账号已存在',
+      1002: '手机号已被注册',
+      1003: '验证码不正确',
+      1006: '手机号格式不正确',
     }
-  },
-})
+    ElMessage.error(options[c] || msg)
+  })
+}
+
 </script>
 <style scoped lang="scss">
 .register {

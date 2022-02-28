@@ -1,6 +1,6 @@
-import router from '@/router'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import router from '@/router'
 
 const instance = axios.create({
   baseURL: import.meta.env.VITE_APP_AXIOS_BASE_URL,
@@ -64,5 +64,8 @@ instance.interceptors.response.use((v) => {
   }
   ElMessage.error(v.statusText)
   return Promise.reject(v)
+}, (err) => {
+  ElMessage.error(`网络错误：${err}`)
+  return Promise.reject(err)
 })
 export default instance

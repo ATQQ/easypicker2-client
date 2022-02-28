@@ -20,7 +20,7 @@
           v-if="isShowCreateCategory"
           v-model="categoryName"
           ref="saveTagInput"
-          size="small"
+          placeholder="分类名称"
           @keyup.enter="addCategory"
           @focusout="addCategory"
         ></el-input>
@@ -220,7 +220,8 @@ export default defineComponent({
   padding-bottom: 0;
 }
 .input-new-tag {
-  width: 90px;
+  width: 120px;
+  padding: 0;
   margin-left: 10px;
   margin-bottom: 10px;
   vertical-align: bottom;

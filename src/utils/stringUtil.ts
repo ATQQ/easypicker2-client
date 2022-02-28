@@ -23,6 +23,7 @@ export function copyRes(text:string, msg = '结果已成功复制到剪贴板') 
       ElMessage.success(msg)
     }
   }).catch((err) => {
+    // TODO:错误上报API接入
     console.error(err)
     ElMessage.warning('不支持自动复制，请手动选择复制')
   })
