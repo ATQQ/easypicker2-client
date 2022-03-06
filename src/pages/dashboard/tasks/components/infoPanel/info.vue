@@ -24,7 +24,7 @@
         v-for="(item, idx) in infos"
         :key="idx"
         v-model="item.text"
-        :maxlength="10"
+        :maxlength="maxInputLength"
         clearable
         show-word-limit
       >
@@ -66,6 +66,8 @@ const props = defineProps({
     default: '',
   },
 })
+
+const maxInputLength = +import.meta.env.VITE_APP_INPUT_MAX_LENGTH || 10
 
 const autoRewrite = ref(false)
 const infos: any[] = reactive([])
