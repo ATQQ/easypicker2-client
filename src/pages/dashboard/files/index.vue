@@ -96,7 +96,7 @@
         </el-table-column>
         <el-table-column prop="task_name" label="任务" width="150"></el-table-column>
         <el-table-column prop="name" label="文件名" width="200"></el-table-column>
-        <el-table-column prop="size" label="文件大小">
+        <el-table-column prop="size" label="大小">
           <template
             #default="scope"
           >{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
@@ -253,7 +253,7 @@ const handleDropdownClick = (e: string) => {
       ElMessage.info('开始归档选中的文件,请赖心等待,完成后将自动进行下载')
       break
     case 'delete':
-      ElMessageBox.confirm('确认删除吗?删除后无法恢复', '提示').then(() => {
+      ElMessageBox.confirm('删除后无法恢复', '确认删除吗').then(() => {
         FileApi.batchDel(ids).then(() => {
           files.splice(0, files.length, ...files.filter((v) => !ids.includes(v.id)))
           ElMessage.success('删除成功')
@@ -268,7 +268,7 @@ const handleDropdownClick = (e: string) => {
         ElMessage.warning('没有选中需要导出的内容')
         return
       }
-      const headers = ['提交时间', '任务', '文件名', '文件大小', '提交信息']
+      const headers = ['提交时间', '任务', '文件名', '大小', '提交信息']
       const body = selectItem.map(((v) => {
         const {
           date, task_name: taskName, name, size,
@@ -308,7 +308,7 @@ const downloadOne = (e: any) => {
 }
 const handleDelete = (e: any) => {
   const idx = files.findIndex((v) => v === e)
-  ElMessageBox.confirm('确认删除此文件吗', '提示').then(() => {
+  ElMessageBox.confirm('确认删除此文件吗？', '提示').then(() => {
     FileApi.deleteOneFile(e.id).then(() => {
       ElMessage.success('删除成功')
       files.splice(idx, 1)
@@ -375,7 +375,7 @@ const handlEexportExcell = () => {
     ElMessage.warning('表格中没有可导出的内容')
     return
   }
-  const headers = ['提交时间', '任务', '文件名', '文件大小', '提交信息']
+  const headers = ['提交时间', '任务', '文件名', '大小', '提交信息']
   const body = filterFiles.value.map(((v) => {
     const {
       date, task_name: taskName, name, size,

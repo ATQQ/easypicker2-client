@@ -110,10 +110,9 @@ const filterTasks = computed(() => {
 // 删除任务
 const deleteTask = (k: string) => {
   if (!k) return
-  ElMessageBox.confirm('确认删除此任务吗?', '警告', {
+  ElMessageBox.confirm('确认删除此任务吗?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning',
   })
     .then(() => {
       $store.dispatch('task/deleteTask', k).then(() => {
