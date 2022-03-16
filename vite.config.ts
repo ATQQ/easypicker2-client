@@ -16,6 +16,15 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()],
     }),
   ],
+  optimizeDeps: {
+    include: [
+      'element-plus',
+      'vue',
+      'vue-router',
+      'vuex',
+      'axios',
+    ],
+  },
   build: {
     target: 'modules', // 默认值
     sourcemap: true,
