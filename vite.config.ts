@@ -29,10 +29,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ''),
       },
-      '/api-stage/': {
-        target: 'https://service-hc4kiz1c-1256505457.gz.apigw.tencentcs.com/release/',
+      '/api-test/': {
+        target: 'https://ep.dev.sugarat.top',
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api-stage/, ''),
+        rewrite: (p) => p.replace(/^\/api-test/, 'api/'),
       },
     },
   },

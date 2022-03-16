@@ -3,9 +3,9 @@
   "version": "2.0.0",
   "scripts": {
     "dev": "vite",
-    "dev:stage": "vite --mode stage",
+    "dev:test": "vite --mode test",
     "build": "vite build --debug",
-    "build:stage": "vite build --mode stage",
+    "build:test": "vite build --mode test",
     "serve": "vite preview",
     "lint": "eslint src --fix",
     "compress": "bash ./build/compress.sh",
