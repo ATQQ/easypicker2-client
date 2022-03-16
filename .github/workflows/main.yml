@@ -50,7 +50,7 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.ACCESS_TOKEN }}
           ARGS: "-rltgoDzvO --delete"
-          SOURCE: "ep-clinet.tar.gz"
+          SOURCE: "ep-dev-clinet.tar.gz"
           REMOTE_HOST: ${{ secrets.REMOTE_ORIGIN }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ secrets.TARGET }}
