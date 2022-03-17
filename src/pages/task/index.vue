@@ -49,7 +49,7 @@
         >
         <div class="infos">
           <el-input
-            :maxlength="10"
+            :maxlength="maxInputLength"
             clearable
             show-word-limit
             v-for="(info, idx) in infos"
@@ -151,7 +151,6 @@ import {
   useRouter,
 } from 'vue-router'
 import LinkDialog from '@components/linkDialog.vue'
-import { UploadFile } from 'element-plus/es/components/upload/src/upload.type'
 import {
   formatDate,
   getFileMd5Hash,
@@ -166,6 +165,8 @@ import {
   PeopleApi,
   TaskApi,
 } from '@/apis'
+
+const maxInputLength = +import.meta.env.VITE_APP_INPUT_MAX_LENGTH || 10
 
 // 顶部导航
 const $router = useRouter()

@@ -26,33 +26,39 @@
       <!-- 移动端展示 -->
       <span id="navMenu">
         <label for="navActive">
-          <el-icon  size="32">
-            <Expand/>
+          <el-icon size="32">
+            <Expand />
           </el-icon>
         </label>
       </span>
-      <el-popover placement="left" v-model:visible="visible">
-        <p>确定退出登录吗？</p>
-        <div style="text-align: right; margin: 0">
-          <el-button size="small" type="text" @click="visible = false">取消</el-button>
-          <el-button type="primary" size="small" @click="logout">确定</el-button>
-        </div>
-        <template #reference>
-          <span class="exit" @click="visible = true">
-            退出
-            <el-icon size="16">
-              <CircleCloseFilled/>
-            </el-icon>
-          </span>
-        </template>
-      </el-popover>
+      <span class="exit" @click="handleLogout">
+        退出
+        <el-icon size="16">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            data-v-53d86618
+          >
+            <path
+              fill-rule="evenodd"
+              clip-rule="evenodd"
+              d="M10.6667 2.55473C13.0212 3.58347 14.6667 5.93291 14.6667 8.66667C14.6667 12.3486 11.6819 15.3333 8 15.3333C4.3181 15.3333 1.33333 12.3486 1.33333 8.66667C1.33333 5.93291 2.97879 3.58347 5.33333 2.55473V4.04684C3.7392 4.969 2.66667 6.69259 2.66667 8.66667C2.66667 11.6122 5.05448 14 8 14C10.9455 14 13.3333 11.6122 13.3333 8.66667C13.3333 6.69259 12.2608 4.969 10.6667 4.04684V2.55473ZM7.33333 8.66667V1.33333C7.33333 1.14924 7.48257 1 7.66667 1H8.33333C8.51743 1 8.66667 1.14924 8.66667 1.33333V8.66667C8.66667 8.85076 8.51743 9 8.33333 9H7.66667C7.48257 9 7.33333 8.85076 7.33333 8.66667Z"
+              fill="#86909C"
+              data-v-53d86618
+            />
+          </svg>
+        </el-icon>
+      </span>
     </div>
     <router-view></router-view>
   </div>
 </template>
 <script lang="ts" setup>
 import {
-  Expand, CircleCloseFilled,
+  Expand,
 } from '@element-plus/icons-vue'
 
 import {
@@ -60,6 +66,7 @@ import {
 } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { UserApi } from '@/apis'
 
 const $router = useRouter()
@@ -90,13 +97,18 @@ const handleNav = (idx: number) => {
   }
 }
 
-const visible = ref(false)
-const logout = () => {
-  $store.commit('user/setToken', null)
-  $router.replace({
-    name: 'home',
-  })
+const handleLogout = () => {
+  ElMessageBox.confirm('确认退出登录？', '登出提示')
+    .then(() => {
+      $store.commit('user/setToken', null)
+      $router.replace({
+        name: 'home',
+      })
+    }).catch(() => {
+      ElMessage.info('取消')
+    })
 }
+
 onMounted(() => {
   // 动态修改active的项
   navActiveIdx.value = pcNavs.findIndex((v) => v.path === $route.path)
@@ -247,14 +259,14 @@ onMounted(() => {
         background: #fff;
         left: 0;
         top: 50px;
-        +.mask {
+        + .mask {
           display: block;
           position: fixed;
           left: 0;
           right: 0;
           bottom: 0;
           top: 50px;
-          background-color: rgba(0,0,0,0.5);
+          background-color: rgba(0, 0, 0, 0.5);
         }
       }
     }
