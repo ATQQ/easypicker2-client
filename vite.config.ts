@@ -16,6 +16,15 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()],
     }),
   ],
+  optimizeDeps: {
+    include: [
+      'element-plus',
+      'vue',
+      'vue-router',
+      'vuex',
+      'axios',
+    ],
+  },
   build: {
     target: 'modules', // 默认值
     sourcemap: true,
@@ -29,10 +38,10 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ''),
       },
-      '/api-stage/': {
-        target: 'https://service-hc4kiz1c-1256505457.gz.apigw.tencentcs.com/release/',
+      '/api-test/': {
+        target: 'https://ep.dev.sugarat.top',
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api-stage/, ''),
+        rewrite: (p) => p.replace(/^\/api-test/, 'api/'),
       },
     },
   },
