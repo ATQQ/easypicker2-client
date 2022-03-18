@@ -138,7 +138,7 @@ pnpm dev
 ```
 
 ## 4. 获取服务端源码
-### 方式1：通过Git拉取
+### 方式1: 通过Git拉取
 ```shell
 # from Github
 git clone https://github.com/ATQQ/easypicker2-server.git
@@ -147,7 +147,7 @@ git clone https://github.com/ATQQ/easypicker2-server.git
 
 git clone https://gitee.com/sugarjl/easypicker2-server.git
 ```
-### 方式2：下载源码压缩包
+### 方式2: 下载源码压缩包
 * [Github](https://github.com/ATQQ/easypicker2-server)
 * [Gitee](https://gitee.com/sugarjl/easypicker2-server)
 
