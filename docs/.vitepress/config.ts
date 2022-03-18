@@ -24,7 +24,7 @@ export default defineConfig({
         docsBranch: 'main',
         editLinks: true,
         editLinkText: '编辑文档',
-        lastUpdated: true,
+        lastUpdated: '最后更新时间',
         nav: [
             { text: '部署', link: '/deploy/' },
         ],
@@ -43,6 +43,10 @@ export default defineConfig({
                     {
                         text: '线上部署 - 使用宝塔面板',
                         link: '/deploy/online',
+                    },
+                    {
+                        text: '七牛云OSS服务创建',
+                        link: '/deploy/qiniu',
                     }
                 ],
             },

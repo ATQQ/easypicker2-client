@@ -130,18 +130,77 @@ pnpm serve
 ### 本地启动 - 本地的后端服务
 需要参照 4，5，6 同时启动本地的后端服务
 
+后端服务使用本地的 http://localhost:3000
+
 ```shell
+# 启动
 pnpm dev
 ```
 
-TODO：待完善
 ## 4. 获取服务端源码
 ### 方式1：通过Git拉取
+```shell
+# from Github
+git clone https://github.com/ATQQ/easypicker2-server.git
+
+#or from  Gitee
+
+git clone https://gitee.com/sugarjl/easypicker2-server.git
+```
 ### 方式2：下载源码压缩包
+* [Github](https://github.com/ATQQ/easypicker2-server)
+* [Gitee](https://gitee.com/sugarjl/easypicker2-server)
 
-## 5. 本地安装数据库
-### 5.1 Mysql - 用户数据
-### 5.2 Redis - 登录状态
-### 5.3 MongoDB - 运行日志
+参照客户端源码下载图示，找到下载位置
 
-## 6. 启动后端服务
+## 5. 启动后端服务
+在终端工具中，使用`cd`指令定位到项目跟目录
+
+### 安装依赖
+```shell
+pnpm install
+```
+### 构建产物
+```shell
+pnpm  build
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2NzUyMTg3NQ==647567521875)
+
+### 运行
+```shell
+pnpm start
+```
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2NzYxOTg4OA==647567619888)
+
+当然要让服务正常工作需要，在本地安装三个数据库，同时[创建七牛云账号](./qiniu.md)
+
+请接着往下看
+### 一些配置
+`数据库&云服务&本地服务`等相关的配置均放在了`.env`文件中，如下
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2Nzc1NjE5MQ==647567756191)
+
+每个变量的释义参看源码中的 [src/types/env.d.ts](https://github.com/ATQQ/easypicker2-server/blob/master/src/types/env.d.ts)
+
+通常情况下只需要关心一下
+* 服务相关
+  * SERVER_PORT: 服务启动的端口，默认3000，无特殊需求可以不修改
+* MySql相关
+  * MYSQL_DB_NAME: 数据库名
+  * MYSQL_DB_USER: 账号
+  * MYSQL_DB_PWD:  密码
+* 七牛云相关：OSS - 文件存储，上传/下载文件依赖其提供服务
+* 腾讯云相关：短信服务，不接入短信不用配
+
+## 6. 本地安装数据库
+此部分参考[菜鸟教程](https://www.runoob.com/mysql/mysql-tutorial.html) 自行完成安装
+
+`Redis`与`MongoDB`无需配置账户密码，服务端口等，保持默认行为即可
+
+* Mysql - 存储用户数据
+* Redis - 记录登录状态
+* MongoDB - 记录运行日志
+
+### MySQL导入表结构数据
+在简单[阅读教程](https://www.runoob.com/mysql/mysql-tutorial.html)后，运行源码中的 [docs/sql/auto_create.sql](https://github.com/ATQQ/easypicker2-server/blob/master/docs/sql/auto_create.sql) 完成表结构的自动创建
