@@ -193,14 +193,78 @@ pnpm start
 * 七牛云相关：OSS - 文件存储，上传/下载文件依赖其提供服务
 * 腾讯云相关：短信服务，不接入短信不用配
 
-## 6. 本地安装数据库
-此部分参考[菜鸟教程](https://www.runoob.com/mysql/mysql-tutorial.html) 自行完成安装
+## 6. 安装数据库
+此部分参考[菜鸟教程](https://www.runoob.com/) 自行完成安装
 
 `Redis`与`MongoDB`无需配置账户密码，服务端口等，保持默认行为即可
 
-* Mysql - 存储用户数据
-* Redis - 记录登录状态
-* MongoDB - 记录运行日志
+* [MySQL 教程](https://www.runoob.com/mysql/mysql-tutorial.html) - 存储用户数据
+  * 推荐使用5.x[(下载地址)](https://downloads.mysql.com/archives/community/)的版本，8.x的Node驱动存在问题
+* [Redis 教程](https://www.runoob.com/redis/redis-tutorial.html) - 记录登录状态
+* [MongoDB 教程](https://www.runoob.com/mongodb/mongodb-tutorial.html) - 记录运行日志
 
-### MySQL导入表结构数据
-在简单[阅读教程](https://www.runoob.com/mysql/mysql-tutorial.html)后，运行源码中的 [docs/sql/auto_create.sql](https://github.com/ATQQ/easypicker2-server/blob/master/docs/sql/auto_create.sql) 完成表结构的自动创建
+## 7. MySQL导入表结构数据
+在简单[阅读教程](https://www.runoob.com/mysql/mysql-tutorial.html)，并完成MySQL的安装之后
+
+查看是否安装成功
+```shell
+mysql --version
+```
+
+### 初始化一个数据库
+
+使用`root`账号登录
+```shell
+mysql -u root -p
+```
+回车后输入密码
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwODU4NjE3OQ==647608586179)
+
+查看当前已有数据库
+```shell
+show databases;
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwODY3ODQ4MA==647608678480)
+
+创建一个数据库
+```shell
+create database ep_local_test;
+```
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwODc5ODc3Nw==647608798777)
+
+### 导入表结构数据
+选择咱刚创建的数据库
+```shell
+use ep_local_test;
+```
+
+查看当前拥有的表
+```shell
+show tables;
+```
+
+导入所需的表 其中`sql文件位置`为本地的后端项目中`docs/sql/auto_create.sql`的绝对路径
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTE5ODYzNA==647609198634)
+
+```shell
+source sql文件位置
+```
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTI0ODAzNQ==647609248035)
+
+完成导入后再查看当前拥有的表
+
+```shell
+show tables;
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTI5MzAyMQ==647609293021)
+
+到此MySQL的本地准备工作准备完毕
+
+接下来在服务端项目中`.env`环境变量中配置MySQL相关值即可
+* MYSQL_DB_NAME=ep_local_test
+* MYSQL_DB_USER=root
+* MYSQL_DB_PWD=你的密码
