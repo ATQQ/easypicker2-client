@@ -29,6 +29,10 @@
 
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MzQ0MjUzMg==647483442532)
 
+此部分的`shell`指令无特殊说明，都是在宝塔面板的终端工具中运行
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjU3OTk2NA==647612579964)
+
 测试是否正常安装，终端工具运行如下指令
 ```shell
 node -v
@@ -76,19 +80,91 @@ npm install -g pnpm
 pnpm -v
 ```
 
-TODO:待完善
-
 ## 3. 部署网站
 ### 构建产物
-### 创建网站
-### 上传产物
+参考[本地部署-启动客户端](./local.md#_3-启动客户端)
 
-## 4. 部署后端服务
-### 上传源码
+在完成依赖安装后,执行`build`,构建产物
+```shell
+pnpm build
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjkxMzU1MA==647612913550)
+
+此时构建产物，都在项目的`dist`目录中
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjk3OTkzOQ==647612979939)
+
+### 创建网站
+点击`添加站点`
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzAzMTExMg==647613031112)
+
+输入要绑定的域名，选择纯静态，没有域名可以联系我，给你绑定个`sugarat.top`下的3||4级域名
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzI5NTU2NQ==647613295565)
+
+### 上传产物
+点击前往创建的目录
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzQ3OTEwNQ==647613479105)
+
+点击上传，将我们刚才构建生成的`dist`目录拖到上传面板
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzU1NDU4Mw==647613554583)
+
+上传完成
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzY2MzU3Mw==647613663573)
+
+### 修改网站访问目录
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzc3ODEwNA==647613778104)
+
+访问 `http://ep.test.sugarat.top`测试,就看到咱们的前端应用了
+
+## 4. 创建MySQL数据库
+
+## 5. 部署后端服务
+### 本地构建源码
+参照[本地启动-后端服务](./local.md#_5-启动后端服务)，进行依赖安装和构建
+
+此部分是在本地项目中进行
+```shell
+pnpm install
+```
+
+```shell
+pnpm build
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDEwMTIyMw==647614101223)
+
+### 上传构建产物
+咱们再上面创建网站的目录下，创建一个`server`目录
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDI4MDc2OA==647614280768)
+
+进入这个目录，上传我们的产物以及一些配置文件（共4个文件）
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDU5MTY2Mw==647614591663)
+
 ### 安装依赖
-### 配置数据库
-### 创建七牛云OSS存储服务
+在当前目录下打开宝塔终端工具执行
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDg5MDkyMg==647614890922)
+```shell
+pnpm install
+```
+
 ### 修改环境变量
+双击 `.env` 文件进行修改
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNTIzNzAzMg==647615237032)
+
+MySQL 的账号密码在 数据库面板获取
+
+
 ### 启动服务
 
 ## 5. 配置反向代理
