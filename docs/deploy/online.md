@@ -123,7 +123,45 @@ pnpm build
 
 访问 `http://ep.test.sugarat.top`测试,就看到咱们的前端应用了
 
+### 开启HTTPS(可选)
+为网站添加`SSL`证书
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1Mzc4OTkzNQ==647653789935)
+
+宝塔提供免费SSL证书点击申请即可
+
+申请完然后点击对应证书的部署按钮即可
+
+部署完成后，可以点击右上角开启`强制HTTPS`
+
 ## 4. 创建MySQL数据库
+### 新增数据库
+在数据库面板，点击添加数据库
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MjU0MDYwNg==647652540606)
+
+密码使用随机的，输入数据库名字即可（账号默认和数据库名一致）
+
+### 导入表结构
+管理创建的数据库
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MjY5MjQzNA==647652692434)
+
+跳转到`phpMyAdmin`面板,选择导入
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1Mjg2NDcxNw==647652864717)
+
+选择服务端项目中 [docs/sql/auto_create.sql](https://github.com/ATQQ/easypicker2-server/blob/master/docs/sql/auto_create.sql) 进行上传
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzA2NjE5MQ==647653066191)
+
+选择文件后点击执行
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzE2OTExNw==647653169117)
+
+再次来到结构面板，即可看到完成了 6 张表的创建
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzI1MDUzNQ==647653250535)
 
 ## 5. 部署后端服务
 ### 本地构建源码
@@ -162,9 +200,58 @@ pnpm install
 
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNTIzNzAzMg==647615237032)
 
-MySQL 的账号密码在 数据库面板获取
+每个变量的释义参看源码中的 [src/types/env.d.ts](https://github.com/ATQQ/easypicker2-server/blob/master/src/types/env.d.ts)
 
+通常情况下只需要关心一下
+* 服务相关
+  * SERVER_PORT: 服务启动的端口，默认3000，无特殊需求可以不修改
+* MySql相关
+  * MYSQL_DB_NAME: 数据库名
+  * MYSQL_DB_USER: 账号
+  * MYSQL_DB_PWD:  密码
+* 七牛云相关：OSS - 文件存储，上传/下载文件依赖其提供服务
+* 腾讯云相关：短信服务，不接入短信不用配
+
+#### MySQL 相关
+MySQL 的账号密码在数据库面板获取，即前面创建的数据库账号密码
+
+#### 监听端口
+默认启动监听端口为3000，如与其它服务有冲突可以修改`SERVER_PORT`为其它值（推荐 3000 => 65535）
+
+#### 七牛云
+参考[七牛云OSS服务创建](./qiniu.md)部分的文章，获取七牛云相关的几个环境变量
+
+到此准备工作算完成了，接下来启动我们的后端服务即可
 
 ### 启动服务
 
+在PM2面板点击添加项目
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1NTQxMTAzOQ==647655411039)
+
+* 启动文件输入 `npm`
+* 运行目录选择 前面创建的 `server`所在目录
+* 项目名称随意，自己能辨别即可
+
+然后点击启动即可
+
+
+### 查看运行日志
+点击对应服务的 运行/错误 查看相关日志，从面板能看到最终服务启动所在的端口
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1NjM4MzI3Mw==647656383273)
+
+到此服务端启动算完成了
+
+只差最后一步了
+
 ## 5. 配置反向代理
+
+打开网站的设置面板，点击添加反向代理，勾选`高级功能`
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY2Njc0Nzg4Mw==647666747883)
+
+代理名称随便填
+* 代理目录`/api/`
+* 目标URL填`自己的后端服务地址`
+* 内容替换`/api`,第二个留空
