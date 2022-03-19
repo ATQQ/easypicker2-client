@@ -268,3 +268,6 @@ show tables;
 * MYSQL_DB_NAME=ep_local_test
 * MYSQL_DB_USER=root
 * MYSQL_DB_PWD=你的密码
+
+
+有其它问题可以小群交流

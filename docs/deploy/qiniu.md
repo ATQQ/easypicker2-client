@@ -65,3 +65,12 @@
 * QINIU_BUCKET_DOMAIN
   
 填写到，后端服务中`.env`中对应位置即可，然后重启服务
+
+## 5. 绑定自定义域名（可选）
+在存储空间里找到`域名管理`，点击绑定域名即可
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDUwNTkzNw==647694505937)
+
+后续操作，阅读七牛云[提供的文档即可](https://developer.qiniu.com/kodo/8527/kodo-domain-name-management)
+
+有其它问题可以小群交流

@@ -102,7 +102,16 @@ pnpm build
 
 输入要绑定的域名，选择纯静态，没有域名可以联系我，给你绑定个`sugarat.top`下的3||4级域名
 
+或者直接使用IP访问，这里就输入`你的机器IP加一个端口号`,格式`ip:port`，例如`39.156.66.18:3333`
+
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzI5NTU2NQ==647613295565)
+
+#### 使用IP+端口注意事项
+需在自己服务器的`防火墙`中开放使用的端口
+
+例如`笔者`的腾讯云
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5Mjk1NDI4OA==647692954288)
 
 ### 上传产物
 点击前往创建的目录
@@ -123,6 +132,19 @@ pnpm build
 
 访问 `http://ep.test.sugarat.top`测试,就看到咱们的前端应用了
 
+### 添加配置防止路由404
+在对应网站设置面板，点击`配置文件`,加入以下配置
+
+```conf
+# vue-router
+location / {
+   try_files $uri $uri/ /index.html;
+}
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5MzExMDgyMw==647693110823)
+
+
 ### 开启HTTPS(可选)
 为网站添加`SSL`证书
 
@@ -140,8 +162,9 @@ pnpm build
 
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MjU0MDYwNg==647652540606)
 
-密码使用随机的，输入数据库名字即可（账号默认和数据库名一致）
+**密码使用随机的，输入数据库名字即可（账号默认和数据库名一致）**
 
+**数据库名记得小写**
 ### 导入表结构
 管理创建的数据库
 
@@ -255,3 +278,47 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 * 代理目录`/api/`
 * 目标URL填`自己的后端服务地址`
 * 内容替换`/api`,第二个留空
+
+## 6. 其余功能
+### 开启内容压缩
+在网站设置面板，点击反向代理，配置文件
+
+添加`#`注释或者删掉 `proxy_set_header Accept-Encoding "";`
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5MzM2MDI3OQ==647693360279)
+
+这样返回的内容会进行压缩，响应速度会有所提升
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5Mzg3MDc2NA==647693870764)
+
+### 配置管理员权限
+
+账号加了管理员权限后，就能看到后台管理的入口
+* 查看访问日志
+* 管理用户账号
+
+
+| 添加前                                                                      | 添加后                                                                      |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDAzOTMxNg==647694039316) | ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDMxMDE1OA==647694310158) |
+
+
+打开对应的数据库
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDE5NTQyMA==647694195420)
+
+选择`user`表
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDI0NjM5Ng==647694246396)
+
+修改账号的`power`字段值为`0`
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDE1NTczMg==647694155732)
+
+然后重新登录账号，就能看到入口了
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDMxMDE1OA==647694310158)
+
+大功告成
+
+有其它问题可以小群交流
