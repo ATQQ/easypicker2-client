@@ -4,4 +4,5 @@
 
 ## 目录
 * [本地部署](./local.md)
-* [本地部署](./online.md)
+* [线上部署 - 宝塔面板](./online.md)
+* [七牛云OSS服务创建](./qiniu.md)

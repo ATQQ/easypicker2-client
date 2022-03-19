@@ -6,10 +6,10 @@ name: prod-CI
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ main ]
+    branches: [ release ]
   pull_request:
     types: [ assigned ]
-    branches: [ main ]
+    branches: [ release ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
