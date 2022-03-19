@@ -130,18 +130,144 @@ pnpm serve
 ### 本地启动 - 本地的后端服务
 需要参照 4，5，6 同时启动本地的后端服务
 
+后端服务使用本地的 `http://localhost:3000`
+
 ```shell
+# 启动
 pnpm dev
 ```
 
-TODO：待完善
 ## 4. 获取服务端源码
-### 方式1：通过Git拉取
-### 方式2：下载源码压缩包
+### 方式1: 通过Git拉取
+```shell
+# from Github
+git clone https://github.com/ATQQ/easypicker2-server.git
 
-## 5. 本地安装数据库
-### 5.1 Mysql - 用户数据
-### 5.2 Redis - 登录状态
-### 5.3 MongoDB - 运行日志
+#or from  Gitee
 
-## 6. 启动后端服务
+git clone https://gitee.com/sugarjl/easypicker2-server.git
+```
+### 方式2: 下载源码压缩包
+* [Github](https://github.com/ATQQ/easypicker2-server)
+* [Gitee](https://gitee.com/sugarjl/easypicker2-server)
+
+参照客户端源码下载图示，找到下载位置
+
+## 5. 启动后端服务
+在终端工具中，使用`cd`指令定位到项目跟目录
+
+### 安装依赖
+```shell
+pnpm install
+```
+### 构建产物
+```shell
+pnpm  build
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2NzUyMTg3NQ==647567521875)
+
+### 运行
+```shell
+pnpm start
+```
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2NzYxOTg4OA==647567619888)
+
+当然要让服务正常工作需要，在本地安装三个数据库，同时[创建七牛云账号](./qiniu.md)
+
+请接着往下看
+### 一些配置
+`数据库&云服务&本地服务`等相关的配置均放在了`.env`文件中，如下
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2Nzc1NjE5MQ==647567756191)
+
+每个变量的释义参看源码中的 [src/types/env.d.ts](https://github.com/ATQQ/easypicker2-server/blob/master/src/types/env.d.ts)
+
+通常情况下只需要关心一下
+* 服务相关
+  * SERVER_PORT: 服务启动的端口，默认3000，无特殊需求可以不修改
+* MySql相关
+  * MYSQL_DB_NAME: 数据库名
+  * MYSQL_DB_USER: 账号
+  * MYSQL_DB_PWD:  密码
+* 七牛云相关：OSS - 文件存储，上传/下载文件依赖其提供服务
+* 腾讯云相关：短信服务，不接入短信不用配
+
+## 6. 安装数据库
+此部分参考[菜鸟教程](https://www.runoob.com/) 自行完成安装
+
+`Redis`与`MongoDB`无需配置账户密码，服务端口等，保持默认行为即可
+
+* [MySQL 教程](https://www.runoob.com/mysql/mysql-tutorial.html) - 存储用户数据
+  * 推荐使用5.x[(下载地址)](https://downloads.mysql.com/archives/community/)的版本，8.x的Node驱动存在问题
+* [Redis 教程](https://www.runoob.com/redis/redis-tutorial.html) - 记录登录状态
+* [MongoDB 教程](https://www.runoob.com/mongodb/mongodb-tutorial.html) - 记录运行日志
+
+## 7. MySQL导入表结构数据
+在简单[阅读教程](https://www.runoob.com/mysql/mysql-tutorial.html)，并完成MySQL的安装之后
+
+查看是否安装成功
+```shell
+mysql --version
+```
+
+### 初始化一个数据库
+
+使用`root`账号登录
+```shell
+mysql -u root -p
+```
+回车后输入密码
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwODU4NjE3OQ==647608586179)
+
+查看当前已有数据库
+```shell
+show databases;
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwODY3ODQ4MA==647608678480)
+
+创建一个数据库
+```shell
+create database ep_local_test;
+```
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwODc5ODc3Nw==647608798777)
+
+### 导入表结构数据
+选择咱刚创建的数据库
+```shell
+use ep_local_test;
+```
+
+查看当前拥有的表
+```shell
+show tables;
+```
+
+导入所需的表 其中`sql文件位置`为本地的后端项目中`docs/sql/auto_create.sql`的绝对路径
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTE5ODYzNA==647609198634)
+
+```shell
+source sql文件位置
+```
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTI0ODAzNQ==647609248035)
+
+完成导入后再查看当前拥有的表
+
+```shell
+show tables;
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTI5MzAyMQ==647609293021)
+
+到此MySQL的本地准备工作准备完毕
+
+接下来在服务端项目中`.env`环境变量中配置MySQL相关值即可
+* MYSQL_DB_NAME=ep_local_test
+* MYSQL_DB_USER=root
+* MYSQL_DB_PWD=你的密码
+
+
+有其它问题可以小群交流
