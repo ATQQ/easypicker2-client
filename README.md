@@ -31,7 +31,16 @@
 
 欢迎[体验](https://ep.sugarat.top)分享
 
-![TIM图片20191015225526-20191015](https://img.cdn.sugarat.top/TIM图片20191015225526-20191015.gif)
+<img width="25%" src="https://img.cdn.sugarat.top/TIM图片20191015225526-20191015.gif"/>
+
+## 赞赏
+如果觉得项目ok，可以动动手指，请作者喝点`饮品`
+
+| 赞赏                                                                                                              | 加微信                                                                           |
+| ----------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| <p align="center"><img width="50%" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc1NTYyOTE5Mw==647755629193"/></p> | <img src="https://img.cdn.sugarat.top/mdImg/MTYxOTE1NTk3MTkyNA==619155971925" /> |
+
+
 
 ## 反馈
 * [问卷反馈](https://www.wenjuan.com/s/UZBZJvA040/)
