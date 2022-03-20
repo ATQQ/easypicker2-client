@@ -27,9 +27,10 @@ export default defineConfig({
         lastUpdated: '最后更新时间',
         nav: [
             { text: '部署', link: '/deploy/' },
+            { text: '支持计划', link: '/plan/todo' },
         ],
-        sidebar: [
-            {
+        sidebar: {
+            'deploy': [{
                 text: '私有化部署',
                 children: [
                     {
@@ -49,8 +50,23 @@ export default defineConfig({
                         link: '/deploy/qiniu',
                     }
                 ],
-            },
-        ],
+            }],
+            'plan': [
+                {
+                    text: '支持计划',
+                    children: [
+                        {
+                            text: '开发进度',
+                            link: '/plan/todo',
+                        },
+                        {
+                            text: '更新日志',
+                            link: '/plan/log',
+                        }
+                    ],
+                },
+            ]
+        },
     },
 
 })
