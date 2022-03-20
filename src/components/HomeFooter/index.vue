@@ -7,14 +7,15 @@
       <li>
         <router-link to="/author">联系作者</router-link>
       </li>
-      <!-- TODO: 补全 -->
-      <!-- <li>
-              <router-link to="/feedback">反馈</router-link>
-      </li>-->
+    </ul>
+    <ul v-if="navs2.length">
+      <li v-for="(item, index) in navs2" :key="index">
+        <a target="_blank" rel="noopener" v-bind:href="item.link">{{ item.title }}</a>
+      </li>
     </ul>
     <p>v{{version}}
       © 2019 - {{ cunnrentYear }} by
-      <a target="_blank" rel="noopener" href="https://sugarat.top">粥里有勺糖</a>
+      <a style="color: aliceblue;" target="_blank" rel="noopener" href="https://sugarat.top">粥里有勺糖</a>
     </p>
   </div>
 </template>
@@ -24,27 +25,18 @@ import { reactive } from 'vue'
 import { version } from '../../../package.json'
 
 const navs = reactive([
-  // {
-  //   title: '使用手册',
-  //   // TODO: ddl 2021-04-30 补全链接
-  //   link: 'https://sugarat.top/',
-  // },
   {
-    title: 'GitHub',
-    link: 'https://github.com/ATQQ/easypicker2-client',
-  },
-  // {
-  //   title: '联系QQ',
-  //   link: 'http://wpa.qq.com/msgrd?v=3&uin=2604395430&site=qq&menu=yes',
-  // },
-  {
-    title: '博客',
-    link: 'https://sugarat.top/',
+    title: '应用介绍',
+    link: 'https://docs.ep.sugarat.top/',
   },
   {
-    title: '反馈',
+    title: '问卷反馈',
     link: 'https://www.wenjuan.com/s/UZBZJvA040/',
   },
+])
+
+const navs2 = reactive([
+
 ])
 
 const cunnrentYear = new Date().getFullYear()
@@ -53,7 +45,7 @@ const cunnrentYear = new Date().getFullYear()
 <style lang="scss" scoped>
 .footer {
   ul {
-    margin: 0 auto;
+    margin: 10px auto;
     display: flex;
     justify-content: center;
     li {
@@ -75,7 +67,7 @@ const cunnrentYear = new Date().getFullYear()
   }
 
   p {
-    margin-top: 20px;
+    margin-top: 40px;
     padding-bottom: 20px;
     color: #ddd;
     a {
