@@ -5,15 +5,17 @@
     "dev": "vite",
     "dev:test": "vite --mode test",
     "build": "vite build",
+    "build:dev": "vite build --mode development",
     "build:test": "vite build --mode test",
     "serve": "vite preview",
     "lint": "eslint src --fix",
-    "compress": "bash ./build/compress.sh",
-    "deploy": "bash ./build/deploy.sh",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs",
-    "docs:deploy": "zx scripts/deploy/index.mjs"
+    "docs:deploy": "zx scripts/deploy/docs.mjs",
+    "deploy:prod": "zx scripts/deploy/prod.mjs",
+    "deploy:test": "zx scripts/deploy/test.mjs",
+    "deploy:dev": "zx scripts/deploy/dev.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^0.2.7",
