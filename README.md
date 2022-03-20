@@ -1,4 +1,11 @@
-# <h1 align="center">EasyPicker2.0:轻取</h1>
+<p align="center">
+ 	<a href="https://ep.sugarat.top">
+		<img width="50%" src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5OTk0NTY1NQ==647699945655"
+			 alt="Status">
+	</a>
+</p>
+
+<h1 align="center">EasyPicker（轻取）</h1>
 
 <p align="center">为提高在线文件收取效率而生</p>
 <p align="center">
@@ -9,11 +16,10 @@
 </p>
 
 
-## 项目简介
+## 简介
+在线文件收取平台，支持[私有化部署](https://docs.ep.sugarat.top/)
 
-在原有[EasyPicker1.0](https://ep.sugarat.top)的功能基础上,使用新技术进行功能的拓展
-
-## 项目背景
+## 背景
 校园学习或者工作场景中会出现以下几个场景:
 * 每次碰到上机课的时候,都会遇到收取实验报告。
 * 需要收取每个人填写的各种电子表格。
@@ -22,67 +28,43 @@
 
 通常的方式是,通过QQ/微信/邮箱等收取,弊端显而易见,太过于麻烦且不方便整理统计。还占用电脑/手机内存。为了解决这个问题,此项目应运而生。
 
-## [开发计划-进度](plan.md)
 
-## 本地运行
-<details>
+欢迎[体验](https://ep.sugarat.top)分享
 
-1. clone仓库到本地
-```sh
-git clone https://github.com/ATQQ/easypicker2-client.git
-```
-2. 安装依赖
-```sh
-yarn
-```
-3. 本地启动
+![TIM图片20191015225526-20191015](https://img.cdn.sugarat.top/TIM图片20191015225526-20191015.gif)
 
-```sh
-yarn dev
-```
+## 反馈
+* [问卷反馈](https://www.wenjuan.com/s/UZBZJvA040/)
+* [提需求](https://ep.sugarat.top/wish)
 
-4. 其它指令
+## 相关文档
+* [开发规划](https://docs.ep.sugarat.top/plan/todo.html)
+* [本地启动&线上部署指南](https://docs.ep.sugarat.top/)
+* [接口文档](https://easy2.w.eolink.com/share/index?shareCode=7SF9Na)
+* [数据库设计文档](https://github.com/ATQQ/easypicker2-server/tree/master/docs)
+* [更新日志](https://docs.ep.sugarat.top/plan/log.html)
 
-|    名称    | 作用             |
-| :--------: | :--------------- |
-|    dev     | 本地启动服务     |
-|   build    | 生产环境打包     |
-| build:test | 测试环境打包     |
-|   serve    | 预览本地构建产物 |
-|    lint    | 代码格式化       |
-
-</details>
-
-## 线上地址
-1. 正式环境：https://ep2.sugarat.top
-2. 测试环境：https://ep2.test.sugarat.top
-
+## 相关地址
 注：两环境数据不互通,新功能会先在测试环境进行实验
 
-## 技术栈
-1. 前端:Vue3,Typescript,Vite - [模板仓库](https://github.com/ATQQ/vite-vue3-template)
-2. 服务端:Typescript,Node.js - [模板仓库](https://github.com/ATQQ/node-server)
+1. 正式环境：
+   * https://ep.sugarat.top
+   * https://ep2.sugarat.top
+2. 测试环境：
+   * https://ep.test.sugarat.top
+   * https://ep.dev.sugarat.top
 
-## 相关仓库
-### [EasyPicker1.0](https://ep.sugarat.top/)
+## 其它信息
+### 技术栈
+* 前端:Vue3,Typescript,Vite - [模板仓库](https://github.com/ATQQ/vite-vue3-template)
+* 服务端:Typescript,Node.js - [模板仓库](https://github.com/ATQQ/node-server)
+### 相关仓库
+#### EasyPicker1.0（已下线）
 1. ~~服务端(Java-已弃用)：https://github.com/ATQQ/EasyPicker~~
 2. 客户端(web) ：https://github.com/ATQQ/EasyPicker-webpack
 3. 服务端（Node.js）：https://github.com/ATQQ/easypicker-server
 
-### [EasyPicker2.0](https://ep2.sugarat.top)
+#### [EasyPicker2.0](https://ep2.sugarat.top)
 1. 客户端(Web):https://github.com/ATQQ/easypicker2-client
 2. 服务端(Node.js):https://github.com/ATQQ/easypicker2-server
 
-## 相关文档
-* 使用手册
-* 更新日志
-* 数据库相关
-* 接口文档
-## 其他链接
-问卷反馈:https://www.wenjuan.com/s/UZBZJvA040/
-<!-- ## 扫码反馈
-
-![图片](https://img.cdn.sugarat.top/mdImg/MTU5Njg5NTE3MTk1Nw==596895171957) -->
-## 欢迎体验分享,反馈Bug
-
-![TIM图片20191015225526-20191015](https://img.cdn.sugarat.top/TIM图片20191015225526-20191015.gif)
