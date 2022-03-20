@@ -58,6 +58,10 @@ export default defineConfig({
                         {
                             text: '开发进度',
                             link: '/plan/todo',
+                        },
+                        {
+                            text: '更新日志',
+                            link: '/plan/log',
                         }
                     ],
                 },
