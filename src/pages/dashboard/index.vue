@@ -118,7 +118,6 @@ onMounted(() => {
   UserApi.checkPower().then((r) => {
     const isSuperAdmin = r.data
     $store.commit('user/setSuperAdmin', isSuperAdmin)
-    console.log(isSuperAdmin)
     if (isSuperAdmin) {
       const superNavs = [
         {
