@@ -1,7 +1,7 @@
 #!/usr/bin/env zx
 
 // user config
-const originName = 'docs.ep'
+const originName = 'ep'
 
 // not care
 const compressPkgName = `${originName}.tar.gz`
@@ -11,8 +11,10 @@ const fullOrigin = `${originName}.${origin}`
 const baseServerDir = '/www/wwwroot'
 const destDir = ''
 
+await $`pnpm build`
+
 await $`echo ==🔧 压缩dist ==`
-await $`cd docs/.vitepress && tar -zvcf ${compressPkgName} dist && rm -rf dist && mv ${compressPkgName} ./../../`
+await $`tar -zvcf ${compressPkgName} dist && rm -rf dist`
 
 await $`echo ==🚀 上传到服务器 ==`
 await $`scp ${compressPkgName} ${user}@${origin}:./`
