@@ -5,9 +5,9 @@
                 <h1>联系作者</h1>
                 <!-- 基本信息 -->
                 <div class="baseinfo">
-                    <span v-for="(info,idx) in baseInfo" :key="idx" class="info-item">
+                    <span v-for="(info, idx) in baseInfo" :key="idx" class="info-item">
                         <el-icon>
-                            <component :is="info.icon"/>
+                            <component :is="info.icon" />
                         </el-icon>
                         <i :class="info.icon"></i>
                         <a target="_blank" :href="info.href">{{ info.text }}</a>
@@ -17,7 +17,7 @@
                 <!-- 一堆二维码 -->
                 <div class="qq-wechat">
                     <ul>
-                        <li v-for="(qrcode,idx) in qrCOdes" :key="idx">
+                        <li v-for="(qrcode, idx) in qrCOdes" :key="idx">
                             <div class="title">{{ qrcode.text }}</div>
                             <div class="content">
                                 <img :src="qrcode.img" />
@@ -66,7 +66,7 @@ const qrCOdes = [
   },
   {
     text: '交流群',
-    img: 'https://img.cdn.sugarat.top/mdImg/MTYxOTE1NjU5NTc5MA==619156595790',
+    img: 'https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MTE2MTE2NA==ep-group.png',
   },
 ]
 
