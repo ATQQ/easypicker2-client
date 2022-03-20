@@ -45,7 +45,7 @@
     inset: 0;
     position: absolute;
     z-index: -1;
-    background: linear-gradient(to top,#330867 0%,#30cfd0 100%);
+    background: url(./bg.png)
   }
   
   main.home{
@@ -54,7 +54,7 @@
 
   main.home {
     background:
-      radial-gradient(ellipse, rgba(var(--bg-gradient),1) 50%, rgba(var(--bg-gradient),0.4) 120%),
+      radial-gradient(ellipse, rgba(var(--bg-gradient),1) 0%, rgba(var(--bg-gradient),0.4) 120%),
       radial-gradient(ellipse at top, rgba(var(--bg-gradient),0.8) 20%, rgba(var(--bg-gradient),0) 100%),
       radial-gradient(ellipse at left, rgba(var(--bg-gradient),0.6) 20%, rgba(var(--bg-gradient),0) 100%),
       radial-gradient(ellipse at right, rgba(var(--bg-gradient),0.6) 20%, rgba(var(--bg-gradient),0) 100%);

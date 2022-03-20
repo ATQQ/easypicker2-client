@@ -20,6 +20,9 @@
           >
             {{ n.title }}
           </div>
+          <div class="nav-item">
+            <a href="https://docs.ep.sugarat.top" target="_blank" rel="noopener noreferrer">应用介绍</a>
+          </div>
         </nav>
       </div>
     </div>

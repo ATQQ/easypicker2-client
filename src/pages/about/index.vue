@@ -49,6 +49,7 @@
                 <h1>相关链接</h1>
                 <h2>应用链接相关</h2>
                 <ul>
+                    <li><a href="https://docs.ep.sugarat.top" target="_blank" rel="noopener noreferrer">私有化部署</a></li>
                     <li><a target="_blank" href="https://ep.sugarat.top">Easypicker1.0</a></li>
                     <li><a target="_blank" href="https://ep2.sugarat.top">Easypicker2.0</a></li>
                 </ul>
