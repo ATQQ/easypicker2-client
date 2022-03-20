@@ -28,6 +28,7 @@ export default defineConfig({
         nav: [
             { text: '部署', link: '/deploy/' },
             { text: '支持计划', link: '/plan/todo' },
+            { text: '联系作者', link: "https://ep.sugarat.top/author" }
         ],
         sidebar: {
             'deploy': [{
