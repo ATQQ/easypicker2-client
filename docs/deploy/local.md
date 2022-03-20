@@ -270,4 +270,6 @@ show tables;
 * MYSQL_DB_PWD=你的密码
 
 
-有其它问题可以小群交流
+有其它问题可以小群交流，方便可以加入及时交流沟通问题: 685446473
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503)

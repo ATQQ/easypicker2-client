@@ -6,14 +6,14 @@ heroImage: /logo.png
 heroAlt: logo.png
 heroText: EasyPicker（轻取）
 tagline: 一款在线文件收取助手
-actionText: Get Started
+actionText: 私有化部署
 actionLink: /deploy/
 features:
-  # - title: Simplicity First
-  #   details: Minimal setup with markdown-centered project structure helps you focus on writing.
-  # - title: Vue-Powered
-  #   details: Enjoy the dev experience of Vue + webpack, use Vue components in markdown, and develop custom themes with Vue.
-  # - title: Performant
-  #   details: VitePress generates pre-rendered static HTML for each page, and runs as an SPA once a page is loaded.
+  - title: 简单
+    details: 操作简单，基于Web技术实现，随时随地即可收取
+  - title: 安全
+    details: 使用七牛云OSS存储所有文件
+  - title: 开源
+    details: 支持个人私有化部署
 footer: 'MIT Licensed | Copyright © 2019-PRESENT 粥里有勺糖'
 ---
