@@ -16,6 +16,9 @@
                     <li v-for="({ href, text }, idx) in links" :key="idx">
                         <router-link :to="href">{{ text }}</router-link>
                     </li>
+                    <li>
+                        <a href="https://github.com/atqq" target="_blank" rel="noopener noreferrer"> GitHub</a>
+                    </li>
                 </ul>
             </div>
         </nav>

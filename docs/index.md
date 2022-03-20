@@ -17,3 +17,5 @@ features:
     details: 支持个人私有化部署
 footer: 'MIT Licensed | Copyright © 2019-PRESENT 粥里有勺糖'
 ---
+
+<Home />
