@@ -166,9 +166,12 @@ const activeTask: TaskApiTypes.TaskItem = reactive({
 const editMore = (item: any) => {
   Object.assign(activeTask, item)
   TaskApi.getTaskMoreInfo(item.key).then((res) => {
-    // todo:先初始化,再赋值
-    Object.assign(taskInfo, res.data)
-    showTaskInfoPanel.value = true
+    // 先初始化,再赋值
+    taskInfo.info = '[]'
+    setTimeout(() => {
+      Object.assign(taskInfo, res.data)
+      showTaskInfoPanel.value = true
+    })
   })
 }
 
