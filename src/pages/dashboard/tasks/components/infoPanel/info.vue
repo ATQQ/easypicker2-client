@@ -18,30 +18,40 @@
     </div>
     <!-- 必填信息区域 -->
     <div>
-      <el-input
-        placeholder="输入内容"
-        class="info-item"
-        v-for="(item, idx) in infos"
-        :key="idx"
-        v-model="item.text"
-        :maxlength="maxInputLength"
-        clearable
-        show-word-limit
-      >
-        <template #prepend>
-          <div class="label">第{{ idx + 1 }}项</div>
-        </template>
-        <template #append v-if="idx > 0">
-          <el-button @click="deleteInfo(idx)">
-            <el-icon color="red">
-              <CircleCloseFilled />
-            </el-icon>
-          </el-button>
-        </template>
-      </el-input>
+      <el-form label-width="40px">
+        <el-form-item v-for="(item, idx) in infos" :key="idx">
+          <template #label>
+            <div class="num-wrapper">
+              <div>{{ idx + 1 }}</div>
+            </div>
+          </template>
+          <el-input
+            placeholder="输入内容"
+            v-model="item.text"
+            :maxlength="maxInputLength"
+            clearable
+            show-word-limit
+          >
+            <template #append v-if="idx > 0">
+              <el-button @click="deleteInfo(idx)">
+                <el-icon color="red">
+                  <CircleCloseFilled />
+                </el-icon>
+              </el-button>
+            </template>
+          </el-input>
+        </el-form-item>
+      </el-form>
     </div>
     <div class="p10">
-      <el-button size="small" type="primary" @click="addInfo" round>添加一项</el-button>
+      <el-button
+        size="small"
+        type="primary"
+        @click="addInfo"
+        round
+        v-if="infos.length < 6
+        "
+      >添加一项</el-button>
       <el-button size="small" type="success" @click="saveInfo" round>保存</el-button>
     </div>
     <div v-if="needSave">有变动，请记得点击保存</div>
@@ -126,11 +136,19 @@ const saveInfo = () => {
   display: flex;
   justify-content: center;
 }
-.info-item {
-  margin-top: 10px;
-  width: 80%;
+:deep(.el-form-item__label) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.info-item .label {
-  min-width: 40px;
+.num-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #000;
+  text-align: center;
 }
 </style>
