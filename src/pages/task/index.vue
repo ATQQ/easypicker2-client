@@ -377,6 +377,7 @@ const submitUpload = () => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
+        draggable: true,
       },
     )
       .then(async ({ value }) => {
@@ -510,6 +511,7 @@ const startWithdraw = () => {
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
+        draggable: true,
       },
     )
       .then(async ({ value }) => {

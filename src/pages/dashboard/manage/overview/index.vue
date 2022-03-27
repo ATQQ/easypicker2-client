@@ -59,7 +59,7 @@
         <el-table-column fixed="right" width="160" prop="msg" label="内容"></el-table-column>
       </el-table>
 
-      <div class="tc p10">
+      <div class="flex fc p10">
         <el-pagination
           :current-page="pageCurrent"
           @current-change="handlePageChange"

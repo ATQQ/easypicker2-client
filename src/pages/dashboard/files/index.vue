@@ -113,7 +113,7 @@
       </el-table>
     </div>
     <!-- 分页 -->
-    <div class="panel tc">
+    <div class="panel flex fc">
       <el-pagination
         :current-page="pageCurrent"
         @current-change="handlePageChange"

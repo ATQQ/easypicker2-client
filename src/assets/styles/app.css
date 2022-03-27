@@ -1,0 +1,52 @@
+/* element ui 重写 */
+.el-progress {
+  margin-top: 0 !important;
+  position: static !important;
+}
+.el-progress__text {
+  top: 8px !important;
+}
+
+.el-dialog {
+  max-width: 666px;
+}
+
+@media screen and (max-width: 700px) {
+  .el-message-box {
+    width: auto;
+  }
+  .el-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .el-pagination > * {
+    margin-bottom: 10px !important;
+  }
+}
+
+/* 一些高频公共样式 */
+.flex {
+  display: flex;
+}
+
+.fc {
+  justify-content: center;
+}
+
+.tc {
+  text-align: center;
+}
+.p10 {
+  padding: 10px;
+}
+
+.ellipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ellipsis label {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
