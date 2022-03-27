@@ -60,4 +60,9 @@ a {
   white-space: nowrap;
   overflow: hidden;
 }
+.ellipsis label{
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
 </style>

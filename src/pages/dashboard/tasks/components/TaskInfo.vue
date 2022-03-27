@@ -40,7 +40,7 @@
         <div class="body">
             <div v-if="item.recentLog.length === 0" class="empty">暂时没有提交记录...</div>
             <ul v-else>
-                <li v-for="(log,idx) in item.recentLog" :key="Number(idx)">
+                <li v-for="(log,idx) in item.recentLog" :key="Number(idx)" class="ellipsis">
                     <span class="time">{{ formatDate(new Date(log.date)) }}</span>
                     <span class="name">{{ log.filename }}</span>
                 </li>
