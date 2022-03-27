@@ -32,7 +32,7 @@
         style="width: 100%"
       >
         <el-table-column prop="account" label="账号" width="120"></el-table-column>
-        <el-table-column prop="phone" label="手机号" width="70"></el-table-column>
+        <el-table-column prop="phone" label="手机号" width="100"></el-table-column>
         <el-table-column sortable prop="login_time" label="最后登录时间" width="190">
           <template
             #default="scope"
@@ -57,7 +57,7 @@
           </template>
         </el-table-column>
       </el-table>
-      <div class="tc p10">
+      <div class="flex fc p10">
         <el-pagination
           :current-page="pageCurrent"
           @current-change="handlePageChange"

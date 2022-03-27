@@ -98,7 +98,9 @@ const handleNav = (idx: number) => {
 }
 
 const handleLogout = () => {
-  ElMessageBox.confirm('确认退出登录？', '登出提示')
+  ElMessageBox.confirm('确认退出登录？', '登出提示', {
+    draggable: true,
+  })
     .then(() => {
       $store.commit('user/setToken', null)
       $router.replace({
