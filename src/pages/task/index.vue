@@ -20,9 +20,10 @@
           >
             {{ n.title }}
           </div>
-          <div class="nav-item">
+          <!-- TODO:重新加导航内容 -->
+          <!-- <div class="nav-item">
             <a href="https://docs.ep.sugarat.top" target="_blank" rel="noopener noreferrer">应用介绍</a>
-          </div>
+          </div>-->
         </nav>
       </div>
     </div>
@@ -39,11 +40,13 @@
       </h1>
       <h2 v-if="ddlStr" class="ddl">
         截止时间:{{ ddlStr }}
-        <span>{{
-          isOver
-            ? '已经结束'
-            : waitTimeStr
-        }}</span>
+        <span>
+          {{
+            isOver
+              ? '已经结束'
+              : waitTimeStr
+          }}
+        </span>
       </h2>
       <!-- 未设置ddl 或者 设置了还未结束 -->
       <div v-if="!ddlStr || !isOver">
@@ -51,22 +54,30 @@
           >必要信息填写</el-divider
         >
         <div class="infos">
-          <el-input
-            :maxlength="maxInputLength"
-            clearable
-            show-word-limit
-            v-for="(info, idx) in infos"
-            :key="idx"
-            :placeholder="`请输入${info.text}`"
-            v-model="info.value"
-          >
-            <template #prepend>{{
-              info.text
-            }}</template>
-          </el-input>
+          <el-form label-width="100px">
+            <el-form-item
+              class="ellipsis"
+              v-for="(
+                info, idx
+              ) in infos"
+              :key="idx"
+              :label="info.text"
+            >
+              <el-input
+                :maxlength="
+                  maxInputLength
+                "
+                clearable
+                show-word-limit
+                :placeholder="`请输入${info.text}`"
+                v-model="info.value"
+              ></el-input>
+            </el-form-item>
+          </el-form>
         </div>
+
         <el-upload
-          action=""
+          action="“"
           ref="fileUpload"
           :on-change="handleChangeFile"
           :before-remove="
@@ -169,7 +180,8 @@ import {
   TaskApi,
 } from '@/apis'
 
-const maxInputLength = +import.meta.env.VITE_APP_INPUT_MAX_LENGTH || 10
+const maxInputLength = +import.meta.env
+  .VITE_APP_INPUT_MAX_LENGTH || 10
 
 // 顶部导航
 const $router = useRouter()
@@ -188,9 +200,7 @@ const handleNav = (idx: number) => {
 
 // 任务基本信息展示
 const taskInfo: any = reactive({})
-const taskMoreInfo: any = reactive(
-  {},
-)
+const taskMoreInfo: any = reactive({})
 const k = ref('')
 
 // 截止日期
@@ -202,15 +212,12 @@ const waitTimeStr = computed(() => {
   let seconds = ~~(
     waitTime.value / 1000
   )
-  let hour = ~~(
-    seconds
-        / (60 * 60)
-  )
+  let hour = ~~(seconds / (60 * 60))
   const day = ~~(hour / 24)
   hour %= 24
   const minute = ~~(
     (seconds % 3600)
-        / 60
+    / 60
   )
   seconds %= 60
   return `剩余${day}天${hour}时${minute}分${seconds}秒`
@@ -244,18 +251,16 @@ const infos: any[] = reactive([])
 // 文件上传部分
 
 // 文件上传
-const fileList: any[] = reactive(
-  [],
-)
+const fileList: any[] = reactive([])
 const fileUpload: any = ref()
 
-const handleRemoveFile:any = (file:any) => ElMessageBox.confirm(
+const handleRemoveFile: any = (
+  file: any,
+) => ElMessageBox.confirm(
   '不影响已经上传成功的，正在上传的将取消上传',
   '确认移除此文件吗',
 ).then(() => {
-  if (
-    file.status === 'uploading'
-  ) {
+  if (file.status === 'uploading') {
     ElMessage.info(
       `取消${file.name}的上传`,
     )
@@ -301,7 +306,7 @@ const submitUpload = () => {
           name = infos
             .map((v) => v.value)
             .join('-')
-                + getFileSuffix(name)
+            + getFileSuffix(name)
         }
         // 替换不合法的字符
         name = filenamify(name, {
@@ -322,17 +327,16 @@ const submitUpload = () => {
                   const { fsize } = data
                   FileApi.addFile({
                     name,
-                    taskKey:
-                          k.value,
+                    taskKey: k.value,
                     taskName:
-                          taskInfo.name,
+                      taskInfo.name,
                     size: fsize,
                     hash: file.md5,
                     info: JSON.stringify(
                       infos,
                     ),
                     people:
-                          peopleName.value,
+                      peopleName.value,
                   }).then(() => {
                     ElMessage.success(
                       `文件:${file.name}提交成功`,
@@ -475,7 +479,7 @@ const startWithdraw = () => {
           name = infos
             .map((v) => v.value)
             .join('-')
-                + getFileSuffix(name)
+            + getFileSuffix(name)
         }
 
         FileApi.withdrawFile({
@@ -483,11 +487,8 @@ const startWithdraw = () => {
           taskName: taskInfo.name,
           filename: name,
           hash: file.md5,
-          info: JSON.stringify(
-            infos,
-          ),
-          peopleName:
-                peopleName.value,
+          info: JSON.stringify(infos),
+          peopleName: peopleName.value,
         })
           .then(() => {
             ElMessage.success(
@@ -552,28 +553,23 @@ const checkSubmitStatus = () => {
     infos,
   ).then((res) => {
     if (res.data.isSubmit) {
-      ElMessage.success(
-        '已经提交过啦',
-      )
+      ElMessage.success('已经提交过啦')
     } else {
-      ElMessage.warning(
-        '还未提交过哟',
-      )
+      ElMessage.warning('还未提交过哟')
     }
   })
 }
 onMounted(() => {
-  k.value = $route.params
-    .key as string
+  k.value = $route.params.key as string
   if (k.value) {
-    TaskApi.getTaskInfo(
-      k.value,
-    ).then((res) => {
-      Object.assign(
-        taskInfo,
-        res.data,
-      )
-    })
+    TaskApi.getTaskInfo(k.value).then(
+      (res) => {
+        Object.assign(
+          taskInfo,
+          res.data,
+        )
+      },
+    )
     TaskApi.getTaskMoreInfo(
       k.value,
     ).then((res) => {
@@ -593,7 +589,6 @@ onMounted(() => {
     refreshWaitTime()
   }
 })
-
 </script>
 <style scoped lang="scss">
 .task-panel {
