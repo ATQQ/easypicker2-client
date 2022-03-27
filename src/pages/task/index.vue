@@ -110,7 +110,6 @@
           >
           <el-button
             @click="checkSubmitStatus"
-            type="text"
             size="small"
             >查询提交情况</el-button
           >
