@@ -19,7 +19,7 @@
     <!-- 必填信息区域 -->
     <div>
       <el-input
-        placeholder="请在此处输入内容"
+        placeholder="输入内容"
         class="info-item"
         v-for="(item, idx) in infos"
         :key="idx"
@@ -44,6 +44,7 @@
       <el-button size="small" type="primary" @click="addInfo" round>添加一项</el-button>
       <el-button size="small" type="success" @click="saveInfo" round>保存</el-button>
     </div>
+    <div v-if="needSave">有变动，请记得点击保存</div>
   </div>
 </template>
 <script lang="ts" setup>
@@ -93,12 +94,17 @@ const hanleChange = (v: boolean) => {
     rewrite: +v,
   })
 }
+
+const needSave = ref(false)
 const addInfo = () => {
   infos.push({ text: '标题' })
+  needSave.value = true
 }
 const deleteInfo = (idx: number) => {
   infos.splice(idx, 1)
+  needSave.value = true
 }
+
 const saveInfo = () => {
   const data: string[] = []
   // eslint-disable-next-line no-restricted-syntax
@@ -112,8 +118,8 @@ const saveInfo = () => {
   updateTaskInfo(props.k, {
     info: JSON.stringify(data),
   })
+  needSave.value = false
 }
-
 </script>
 <style scoped>
 .auto-format {
@@ -124,7 +130,7 @@ const saveInfo = () => {
   margin-top: 10px;
   width: 80%;
 }
-.info-item .label{
+.info-item .label {
   min-width: 40px;
 }
 </style>
