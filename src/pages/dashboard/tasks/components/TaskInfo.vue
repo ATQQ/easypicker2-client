@@ -55,7 +55,7 @@ import {
 
 import { formatDate } from '@/utils/stringUtil'
 
-const props = defineProps({
+defineProps({
   item: {
     type: Object,
     required: true,
