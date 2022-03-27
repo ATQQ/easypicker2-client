@@ -54,4 +54,10 @@ a {
     margin-bottom: 10px !important;
   }
 }
+
+.ellipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
 </style>
