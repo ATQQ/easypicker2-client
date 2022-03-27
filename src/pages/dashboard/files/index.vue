@@ -8,7 +8,7 @@
         <el-select size="default" v-model="selectCategory" filterable placeholder="请选择">
           <el-option label="全部" value="all" />
           <el-option label="默认" value="default" />
-          <el-option v-for="item in categorys" :key="item.k" :label="item.name" :value="item.k"></el-option>
+          <el-option v-for="item in categories" :key="item.k" :label="item.name" :value="item.k"/>
         </el-select>
       </div>
       <div class="item">
@@ -160,7 +160,7 @@ const $store = useStore()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
 // 分类相关
-const categorys = computed(() => $store.state.category.categoryList)
+const categories = computed(() => $store.state.category.categoryList)
 const selectCategory = ref('all')
 // 任务相关
 const tasks = computed<TaskApiTypes.TaskItem[]>(() => $store.state.task.taskList)

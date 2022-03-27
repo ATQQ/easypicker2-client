@@ -11,6 +11,10 @@
   max-width: 666px;
 }
 
+.el-select-dropdown {
+  max-width: 200px;
+}
+
 @media screen and (max-width: 700px) {
   .el-message-box {
     width: auto;
