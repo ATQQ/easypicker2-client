@@ -2,7 +2,7 @@
     <el-card class="task-item">
         <template #header>
             <div class="header">
-                <span>{{ item.name }}</span>
+                <span class="ellipsis">{{ item.name }}</span>
                 <div class="actions">
                     <el-button
                         circle
@@ -40,6 +40,7 @@
         <div class="body">
             <div v-if="item.recentLog.length === 0" class="empty">暂时没有提交记录...</div>
             <ul v-else>
+                <li><strong>近 {{item.recentLog.length}} 条提交记录</strong></li>
                 <li v-for="(log,idx) in item.recentLog" :key="Number(idx)" class="ellipsis">
                     <span class="time">{{ formatDate(new Date(log.date)) }}</span>
                     <span class="name">{{ log.filename }}</span>
@@ -68,9 +69,14 @@ defineProps({
     margin-top: 1em;
     .header {
         overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: nowrap;
         .actions {
-            float: right;
+            min-width: 200px;
             padding: 3px 0;
+            margin-left: 20px;
         }
     }
 
