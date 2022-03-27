@@ -28,7 +28,9 @@
         clearable
         show-word-limit
       >
-        <template #prepend>第{{ idx + 1 }}项</template>
+        <template #prepend>
+          <div class="label">第{{ idx + 1 }}项</div>
+        </template>
         <template #append v-if="idx > 0">
           <el-button @click="deleteInfo(idx)">
             <el-icon color="red">
@@ -121,5 +123,8 @@ const saveInfo = () => {
 .info-item {
   margin-top: 10px;
   width: 80%;
+}
+.info-item .label{
+  min-width: 40px;
 }
 </style>
