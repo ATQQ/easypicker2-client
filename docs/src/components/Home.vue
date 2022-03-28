@@ -15,6 +15,11 @@
             src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354"
         />
         <div>微信赞赏码</div>
+                <img
+            class="feedback"
+            src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503"
+        />
+        <div>反馈交流群</div>
     </div>
 </template>
 
@@ -38,5 +43,9 @@ h2 {
 
 .zanshang {
     width: 200px;
+}
+.feedback{
+    width: 200px;
+    margin: 10px;
 }
 </style>

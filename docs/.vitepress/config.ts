@@ -27,7 +27,7 @@ export default defineConfig({
         lastUpdated: '最后更新时间',
         nav: [
             { text: '部署', link: '/deploy/' },
-            { text: '支持计划', link: '/plan/todo' },
+            { text: '规划', link: '/plan/' },
             { text: '联系作者', link: "https://ep.sugarat.top/author" }
         ],
         sidebar: {
@@ -54,10 +54,14 @@ export default defineConfig({
             }],
             'plan': [
                 {
-                    text: '支持计划',
+                    text: '规划',
                     children: [
                         {
-                            text: '开发进度',
+                            text: '目录',
+                            link: '/plan/',
+                        },
+                        {
+                            text: 'TODO-LIST',
                             link: '/plan/todo',
                         },
                         {
