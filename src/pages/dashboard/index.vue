@@ -142,8 +142,8 @@ onMounted(() => {
   // 动态添加管理页面相关路由
   const isAlreadyAdd = $router.getRoutes().find((r) => r.name === 'manage')
   UserApi.checkPower().then((r) => {
-    const isSuperAdmin = r.data.power
-    userName.value = r.data.name
+    const isSuperAdmin = r.data?.power
+    userName.value = r.data?.name
     $store.commit('user/setSuperAdmin', isSuperAdmin)
     if (isSuperAdmin) {
       const superNavList = [
