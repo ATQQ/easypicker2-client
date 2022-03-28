@@ -28,7 +28,7 @@
     <!-- 任务基本信息维护弹窗 -->
     <el-dialog :fullscreen="isMobile" title="基本信息修改" v-model="showBaseInfoDialog">
       <el-form :model="taskBaseInfo">
-        <el-form-item label="活动名称" label-width="100px">
+        <el-form-item label="任务名称" label-width="100px">
           <el-input v-model="taskBaseInfo.name" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="新的分类" label-width="100px">
@@ -166,9 +166,12 @@ const activeTask: TaskApiTypes.TaskItem = reactive({
 const editMore = (item: any) => {
   Object.assign(activeTask, item)
   TaskApi.getTaskMoreInfo(item.key).then((res) => {
-    // todo:先初始化,再赋值
-    Object.assign(taskInfo, res.data)
-    showTaskInfoPanel.value = true
+    // 先初始化,再赋值
+    taskInfo.info = '[]'
+    setTimeout(() => {
+      Object.assign(taskInfo, res.data)
+      showTaskInfoPanel.value = true
+    })
   })
 }
 

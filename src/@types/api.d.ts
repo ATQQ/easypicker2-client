@@ -61,7 +61,7 @@ declare namespace UserApiTypes {
     type login = ResponseData<{ token?: string, openTime?: string }>
     type codeLogin = ResponseData<{ token?: string, openTime?: string }>
     type resetPwd = ResponseData<{ token?: string, openTime?: string }>
-    type checkPower = ResponseData<boolean>
+    type checkPower = ResponseData<{power:boolean, name:string}>
     type checkLoginStatus = ResponseData<boolean>
 }
 

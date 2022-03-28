@@ -30,7 +30,7 @@
     >
       <el-upload
         accetp="text/plain"
-        action
+        action=""
         class="upload-demo"
         ref="peopleUpload"
         :on-change="handleChangeFile"
@@ -118,7 +118,6 @@
           sortable
           property="name"
           label="姓名"
-          width="100"
         ></el-table-column>
         <el-table-column
           label="提交状态"
@@ -141,7 +140,7 @@
           sortable
           property="lastDate"
           label="最后提交时间"
-          width="180"
+          width="120"
         ></el-table-column>
         <el-table-column
           label="操作"
