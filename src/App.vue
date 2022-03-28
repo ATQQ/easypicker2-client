@@ -21,13 +21,8 @@ onMounted(() => {
 </script>
 
 <style>
-.el-progress{
-  margin-top: 0 !important;
-  position: static !important;
-}
-.el-progress__text{
-  top: 8px !important;
-}
+@import './assets/styles/app.css';
+
 * {
   padding: 0;
   margin: 0;
@@ -35,23 +30,5 @@ onMounted(() => {
 a {
   text-decoration: none;
 }
-.tc {
-  text-align: center;
-}
-.p10 {
-  padding: 10px;
-}
 
-@media screen and (max-width: 700px) {
-  .el-message-box {
-    width: auto;
-  }
-  .el-pagination {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .el-pagination > * {
-    margin-bottom: 10px !important;
-  }
-}
 </style>
