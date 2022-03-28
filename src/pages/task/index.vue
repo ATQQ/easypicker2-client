@@ -99,14 +99,14 @@
             size="small"
             @click="startWithdraw"
             type="warning"
-            >开始撤回</el-button
+            >一键撤回</el-button
           >
           <el-button
             v-else
             size="small"
             @click="submitUpload"
             type="success"
-            >开始上传</el-button
+            >提交文件</el-button
           >
           <el-button
             @click="checkSubmitStatus"
@@ -114,6 +114,10 @@
             >查询提交情况</el-button
           >
         </div>
+        <!-- TODO: -->
+        <!-- <div class="p10 option-tips">
+          {{isWithdraw ? '撤回提示' : '提交提示'}}
+        </div> -->
         <div class="withdraw">
           <el-button
             type="text"
