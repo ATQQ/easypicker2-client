@@ -107,6 +107,12 @@
           placeholder="输入要查询的姓名" v-model="searchName"></el-input>
         </div>
       </div>
+      <!-- 概况信息 -->
+      <div class="tc p10">
+        <span>共: {{peopleSubmitData.length}} 条数据</span>，
+        <span>已提交: {{peopleSubmitData.filter(v=>v.status).length}}</span>，
+        <span>未提交: {{peopleSubmitData.filter(v=>!v.status).length}}</span>
+      </div>
       <!-- 数据部分 -->
       <el-table
         stripe
@@ -114,6 +120,16 @@
         :data="peopleSubmitData"
         height="460px"
       >
+       <el-table-column
+          label="序号"
+          width="60"
+        >
+          <template #default="scope">
+            <div style="text-align: center;">
+              {{scope.$index + 1}}
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column
           sortable
           property="name"
