@@ -168,6 +168,7 @@ const editMore = (item: any) => {
   TaskApi.getTaskMoreInfo(item.key).then((res) => {
     // 先初始化,再赋值
     taskInfo.info = '[]'
+    taskInfo.ddl = ''
     setTimeout(() => {
       Object.assign(taskInfo, res.data)
       showTaskInfoPanel.value = true
