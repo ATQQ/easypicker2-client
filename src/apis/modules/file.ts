@@ -63,7 +63,7 @@ function getCompressDownUrl(key:string):FileApiTypes.getCompressDownUrl {
   })
 }
 function getCompressFileUrl(id:string):Promise<string> {
-  const check = (_r:any) => {
+  const check = (_r:any, _rej) => {
     checkCompressStatus(id).then((r) => {
       const { code, key } = r.data
       if (code === 0) {
@@ -73,14 +73,16 @@ function getCompressFileUrl(id:string):Promise<string> {
         })
       } else {
         setTimeout(() => {
-          check(_r)
+          check(_r, _rej)
         }, 1000)
       }
+    }).catch((err) => {
+      _rej(err)
     })
   }
 
-  return new Promise((resolve) => {
-    check(resolve)
+  return new Promise((resolve, rej) => {
+    check(resolve, rej)
   })
 }
 
