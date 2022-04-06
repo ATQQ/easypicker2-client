@@ -225,18 +225,20 @@ const waitTimeStr = computed(() => {
   seconds %= 60
   return `剩余${day}天${hour}时${minute}分${seconds}秒`
 })
-const refreshWaitTime = () => {
-  setTimeout(() => {
-    if (taskMoreInfo?.ddl) {
-      const date = new Date(
-        taskMoreInfo.ddl,
-      )
-      waitTime.value = date.getTime() - Date.now()
-    } else {
-      waitTime.value = 0
-    }
-    refreshWaitTime()
-  }, 1000)
+const refreshWaitTime = (loop = true) => {
+  if (taskMoreInfo?.ddl) {
+    const date = new Date(
+      taskMoreInfo.ddl,
+    )
+    waitTime.value = date.getTime() - Date.now()
+  } else {
+    waitTime.value = 0
+  }
+  if (loop) {
+    setTimeout(() => {
+      refreshWaitTime()
+    }, 1000)
+  }
 }
 const ddlStr = computed(() => {
   if (taskMoreInfo?.ddl) {
@@ -564,6 +566,7 @@ const checkSubmitStatus = () => {
     }
   })
 }
+
 onMounted(() => {
   k.value = $route.params.key as string
   if (k.value) {
@@ -590,6 +593,7 @@ onMounted(() => {
           value: '',
         })),
       )
+      refreshWaitTime(false)
     })
     refreshWaitTime()
   }
