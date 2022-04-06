@@ -152,7 +152,7 @@ import LinkDialog from '@components/linkDialog.vue'
 import {
   ArrowDown, Refresh, DataAnalysis, Download, Search,
 } from '@element-plus/icons-vue'
-import { formatDate, formatSize } from '@/utils/stringUtil'
+import { copyRes, formatDate, formatSize } from '@/utils/stringUtil'
 import { FileApi } from '@/apis'
 import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
 
@@ -244,6 +244,19 @@ const handleDropdownClick = (e: string) => {
           downloadUrl.value = v
           downLoadByUrl(v, `${Date.now()}.zip`)
           batchDownStart.value = false
+        }).catch((err) => {
+          batchDownStart.value = false
+          ElMessageBox.confirm(err.msg, '错误提示', {
+            draggable: true,
+          })
+            .then(() => {
+              copyRes(err.msg, '错误信息已复制到剪贴板')
+              ElMessage.error('联系开发者协助处理')
+            }).catch(() => {
+              ElMessage.info('取消')
+              copyRes(err.msg, '错误信息已复制到剪贴板')
+              ElMessage.error('联系开发者协助处理')
+            })
         })
       }).catch(() => {
         ElMessage.error('所选文件均已从服务器上移除')
@@ -354,6 +367,7 @@ const handleDownloadTask = () => {
     ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
     return
   }
+  // TODO:待优化重复代码
   FileApi.batchDownload(ids, selectTaskName.value).then((r) => {
     const { k } = r.data
     FileApi.getCompressFileUrl(k).then((v) => {
@@ -361,6 +375,19 @@ const handleDownloadTask = () => {
       downloadUrl.value = v
       downLoadByUrl(v, `${Date.now()}.zip`)
       batchDownStart.value = false
+    }).catch((err) => {
+      batchDownStart.value = false
+      ElMessageBox.confirm(err.msg, '错误提示', {
+        draggable: true,
+      })
+        .then(() => {
+          copyRes(err.msg, '错误信息已复制到剪贴板')
+          ElMessage.error('联系开发者协助处理')
+        }).catch(() => {
+          ElMessage.info('取消')
+          copyRes(err.msg, '错误信息已复制到剪贴板')
+          ElMessage.error('联系开发者协助处理')
+        })
     })
   }).catch(() => {
     ElMessage.error('所选任务中的文件均已从服务器上移除')
