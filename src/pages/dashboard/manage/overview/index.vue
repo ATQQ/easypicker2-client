@@ -46,7 +46,7 @@
         stripe
         border
         :default-sort="{ prop: 'date', order: 'descending' }"
-        :data="pageLogs"
+        :data="filterLogs"
         style="width: 100%;"
       >
         <el-table-column sortable prop="date" label="日期" width="180">
@@ -65,10 +65,10 @@
           @current-change="handlePageChange"
           background
           :page-count="pageCount"
-          :page-sizes="[10, 50, 100, 200]"
+          :page-sizes="[10, 50, 100, 200,500,1000]"
           :page-size="pageSize"
           @size-change="handleSizeChange"
-          :total="filterLogs.length"
+          :total="logSumCount"
           layout="total, sizes, prev, pager, next, jumper"
         ></el-pagination>
       </div>
@@ -76,9 +76,9 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { ElMessage } from 'element-plus'
+// import { ElMessage } from 'element-plus'
 import {
-  computed, onMounted, reactive, ref,
+  computed, onMounted, reactive, ref, watchEffect,
 } from 'vue'
 import {
   User, Document, Tickets, DataBoard, Search, Refresh,
@@ -139,14 +139,6 @@ const refreshCount = () => {
 
 // 日志
 const logs: any[] = reactive([])
-const refreshLogs = () => {
-  ElMessage.success('抓取日志数据成功')
-  SuperOverviewApi.getAllLogMsg().then((res) => {
-    logs.splice(0, logs.length)
-    const d = res.data.logs
-    logs.push(...d)
-  })
-}
 
 function getLogsTypeText(type: string) {
   const logsTypeText: any = {
@@ -186,23 +178,52 @@ const filterLogs = computed(() => logs
     return `${date} ${ip} ${msg}`.includes(searchWord.value)
   }))
 // 分页
+// 页大小
 const pageSize = ref(10)
 const handleSizeChange = (v: number) => {
   pageSize.value = v
 }
+// 总条数
+const logSumCount = ref(0)
 const pageCount = computed(() => {
-  const t = Math.ceil(filterLogs.value.length / pageSize.value)
+  const t = Math.ceil(logSumCount.value / pageSize.value)
   return t
 })
 const pageCurrent = ref(1)
-const pageLogs = computed(() => {
-  const start = (pageCurrent.value - 1) * pageSize.value
-  const end = (pageCurrent.value) * pageSize.value
-  return filterLogs.value.slice(start, end)
-})
+// const pageLogs = computed(() => {
+//   const start = (pageCurrent.value - 1) * pageSize.value
+//   const end = (pageCurrent.value) * pageSize.value
+//   return filterLogs.value.slice(start, end)
+// })
 const handlePageChange = (idx: number) => {
   pageCurrent.value = idx
 }
+
+const refreshLogs = () => {
+  SuperOverviewApi.getLogMsg(pageSize.value, pageCurrent.value, filterLogType.value).then((res) => {
+    logs.splice(0, logs.length)
+    logs.push(...res.data.logs)
+    logSumCount.value = res.data.sum
+    // ElMessage.success('抓取日志数据成功')
+  })
+  // SuperOverviewApi.getAllLogMsg().then((res) => {
+  //   logs.splice(0, logs.length)
+  //   logs.push(...res.data.logs)
+  //   // ElMessage.success('抓取日志数据成功')
+  // })
+}
+watchEffect(() => {
+  if (filterLogType.value) {
+    pageCurrent.value = 1
+  }
+})
+
+watchEffect(() => {
+  if (pageCurrent.value || filterLogType.value || pageSize.value) {
+    refreshLogs()
+  }
+})
+
 onMounted(() => {
   refreshCount()
   refreshLogs()
