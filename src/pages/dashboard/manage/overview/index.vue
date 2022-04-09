@@ -4,7 +4,7 @@
       <div v-for="c in cardList" :key="c.type" class="card">
         <div class="logo">
           <el-icon :color="c.color">
-           <component :is="c.icon"></component>
+            <component :is="c.icon"></component>
           </el-icon>
         </div>
         <div class="content">
@@ -52,11 +52,16 @@
         <el-table-column sortable prop="date" label="日期" width="180">
           <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
         </el-table-column>
-        <el-table-column prop="type" label="类型" width="100">
+        <!-- <el-table-column prop="type" label="类型" width="100">
           <template #default="scope">{{ getLogsTypeText(scope.row.type) }}</template>
+        </el-table-column>-->
+        <el-table-column sortable prop="ip" label="IP" width="100"></el-table-column>
+        <el-table-column min-width="160" prop="msg" label="内容"></el-table-column>
+        <el-table-column fixed="right" label="操作" width="100">
+          <template #default="scope">
+            <el-button @click="handleDetail(scope.row.id)" type="text" size="small">查看详情</el-button>
+          </template>
         </el-table-column>
-        <el-table-column sortable prop="ip" label="地址"></el-table-column>
-        <el-table-column fixed="right" width="160" prop="msg" label="内容"></el-table-column>
       </el-table>
 
       <div class="flex fc p10">
@@ -65,7 +70,7 @@
           @current-change="handlePageChange"
           background
           :page-count="pageCount"
-          :page-sizes="[10, 50, 100, 200,500,1000]"
+          :page-sizes="[10, 50, 100, 200, 500, 1000]"
           :page-size="pageSize"
           @size-change="handleSizeChange"
           :total="logSumCount"
@@ -73,6 +78,22 @@
         ></el-pagination>
       </div>
     </div>
+    <el-dialog v-model="showDetail" title="详细信息" width="50%" center :fullscreen="isMobile">
+    <!-- TODO: 展示优化 -->
+    <pre
+      style="overflow: hidden;"
+    >{{showData}}</pre>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button type="default" @click="handleCopyDetail"
+          >复制</el-button
+        >
+        <el-button type="primary" @click="showDetail = false"
+          >确定</el-button
+        >
+      </span>
+    </template>
+  </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
@@ -83,8 +104,13 @@ import {
 import {
   User, Document, Tickets, DataBoard, Search, Refresh,
 } from '@element-plus/icons-vue'
+import { useStore } from 'vuex'
 import { SuperOverviewApi } from '@/apis'
-import { formatDate } from '@/utils/stringUtil'
+import { copyRes, formatDate } from '@/utils/stringUtil'
+
+const $store = useStore()
+
+const isMobile = computed(() => $store.getters['public/isMobile'])
 
 const cardList = reactive([
   {
@@ -140,15 +166,15 @@ const refreshCount = () => {
 // 日志
 const logs: any[] = reactive([])
 
-function getLogsTypeText(type: string) {
-  const logsTypeText: any = {
-    request: '网络请求',
-    behavior: '用户行为',
-    error: '错误',
-    pv: '页面访问',
-  }
-  return logsTypeText[type]
-}
+// function getLogsTypeText(type: string) {
+//   const logsTypeText: any = {
+//     request: '网络请求',
+//     behavior: '用户行为',
+//     error: '错误',
+//     pv: '页面访问',
+//   }
+//   return logsTypeText[type]
+// }
 // 筛选的日志
 const filterLogType = ref('behavior')
 const searchWord = ref('')
@@ -223,7 +249,17 @@ watchEffect(() => {
     refreshLogs()
   }
 })
-
+const showDetail = ref(false)
+const showData = ref('')
+const handleDetail = (id) => {
+  SuperOverviewApi.getLogMsgDetail(id).then((res) => {
+    showDetail.value = true
+    showData.value = JSON.stringify(res.data, null, 2)
+  })
+}
+const handleCopyDetail = () => {
+  copyRes(showData.value)
+}
 onMounted(() => {
   refreshCount()
   refreshLogs()
