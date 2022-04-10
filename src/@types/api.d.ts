@@ -147,6 +147,8 @@ declare namespace OverviewApiTypes {
         user: CountLog
     }>
     type getAllLogMsg = ResponseData<{ logs: LogItem[] }>
+    type getLogMsg = ResponseData<{ logs: LogItem[], sum:number
+        , pageIndex:number, pageSize:number }>
 }
 
 declare namespace SuperUserApiTypes {

@@ -8,7 +8,18 @@ function getCount():OverviewApiTypes.getCount {
 function getAllLogMsg():OverviewApiTypes.getAllLogMsg {
   return ajax.get(`${baseUrl}/log`)
 }
+
+function getLogMsg(pageSize:number, pageIndex:number, type:string):OverviewApiTypes.getLogMsg {
+  return ajax.post(`${baseUrl}/log`, { pageSize, pageIndex, type })
+}
+
+function getLogMsgDetail(id:string):any {
+  return ajax.get(`${baseUrl}/log/${id}`)
+}
+
 export default {
   getCount,
   getAllLogMsg,
+  getLogMsg,
+  getLogMsgDetail,
 }
