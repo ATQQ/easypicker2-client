@@ -335,7 +335,7 @@ export default defineComponent({
       peopleFileList.forEach((file) => {
         uploadFile(
           file.raw,
-          '/api/public/upload',
+          `${import.meta.env.VITE_APP_AXIOS_BASE_URL}public/upload`,
           {
             success: (e: any) => {
               const { name, type } = e.data
