@@ -4,7 +4,7 @@
       <div v-for="c in cardList" :key="c.type" class="card">
         <div class="logo">
           <el-icon :color="c.color">
-           <component :is="c.icon"></component>
+            <component :is="c.icon"></component>
           </el-icon>
         </div>
         <div class="content">
@@ -46,17 +46,22 @@
         stripe
         border
         :default-sort="{ prop: 'date', order: 'descending' }"
-        :data="pageLogs"
+        :data="filterLogs"
         style="width: 100%;"
       >
         <el-table-column sortable prop="date" label="日期" width="180">
           <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
         </el-table-column>
-        <el-table-column prop="type" label="类型" width="100">
+        <!-- <el-table-column prop="type" label="类型" width="100">
           <template #default="scope">{{ getLogsTypeText(scope.row.type) }}</template>
+        </el-table-column>-->
+        <el-table-column sortable prop="ip" label="IP" width="100"></el-table-column>
+        <el-table-column min-width="160" prop="msg" label="内容"></el-table-column>
+        <el-table-column fixed="right" label="操作" width="100">
+          <template #default="scope">
+            <el-button @click="handleDetail(scope.row.id)" type="text" size="small">查看详情</el-button>
+          </template>
         </el-table-column>
-        <el-table-column sortable prop="ip" label="地址"></el-table-column>
-        <el-table-column fixed="right" width="160" prop="msg" label="内容"></el-table-column>
       </el-table>
 
       <div class="flex fc p10">
@@ -65,26 +70,42 @@
           @current-change="handlePageChange"
           background
           :page-count="pageCount"
-          :page-sizes="[10, 50, 100, 200]"
+          :page-sizes="[10, 50, 100, 200, 500, 1000]"
           :page-size="pageSize"
           @size-change="handleSizeChange"
-          :total="filterLogs.length"
+          :total="logSumCount"
           layout="total, sizes, prev, pager, next, jumper"
         ></el-pagination>
       </div>
     </div>
+    <el-dialog v-model="showDetail" title="详细信息" width="50%" center :fullscreen="isMobile">
+      <!-- TODO: 展示优化 -->
+      <!-- <pre style="overflow: hidden;">{{ showData }}</pre> -->
+      <json-viewer :value="jsonData" :expand-depth="5" copyable boxed sort></json-viewer>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="default" @click="handleCopyDetail">复制</el-button>
+          <el-button type="primary" @click="showDetail = false">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
-import { ElMessage } from 'element-plus'
+// import { ElMessage } from 'element-plus'
 import {
-  computed, onMounted, reactive, ref,
+  computed, onMounted, reactive, ref, watchEffect,
 } from 'vue'
 import {
   User, Document, Tickets, DataBoard, Search, Refresh,
 } from '@element-plus/icons-vue'
+import { useStore } from 'vuex'
 import { SuperOverviewApi } from '@/apis'
-import { formatDate } from '@/utils/stringUtil'
+import { copyRes, formatDate } from '@/utils/stringUtil'
+
+const $store = useStore()
+
+const isMobile = computed(() => $store.getters['public/isMobile'])
 
 const cardList = reactive([
   {
@@ -139,24 +160,16 @@ const refreshCount = () => {
 
 // 日志
 const logs: any[] = reactive([])
-const refreshLogs = () => {
-  ElMessage.success('抓取日志数据成功')
-  SuperOverviewApi.getAllLogMsg().then((res) => {
-    logs.splice(0, logs.length)
-    const d = res.data.logs
-    logs.push(...d)
-  })
-}
 
-function getLogsTypeText(type: string) {
-  const logsTypeText: any = {
-    request: '网络请求',
-    behavior: '用户行为',
-    error: '错误',
-    pv: '页面访问',
-  }
-  return logsTypeText[type]
-}
+// function getLogsTypeText(type: string) {
+//   const logsTypeText: any = {
+//     request: '网络请求',
+//     behavior: '用户行为',
+//     error: '错误',
+//     pv: '页面访问',
+//   }
+//   return logsTypeText[type]
+// }
 // 筛选的日志
 const filterLogType = ref('behavior')
 const searchWord = ref('')
@@ -186,22 +199,68 @@ const filterLogs = computed(() => logs
     return `${date} ${ip} ${msg}`.includes(searchWord.value)
   }))
 // 分页
+// 页大小
 const pageSize = ref(10)
 const handleSizeChange = (v: number) => {
   pageSize.value = v
 }
+// 总条数
+const logSumCount = ref(0)
 const pageCount = computed(() => {
-  const t = Math.ceil(filterLogs.value.length / pageSize.value)
+  const t = Math.ceil(logSumCount.value / pageSize.value)
   return t
 })
 const pageCurrent = ref(1)
-const pageLogs = computed(() => {
-  const start = (pageCurrent.value - 1) * pageSize.value
-  const end = (pageCurrent.value) * pageSize.value
-  return filterLogs.value.slice(start, end)
-})
+// const pageLogs = computed(() => {
+//   const start = (pageCurrent.value - 1) * pageSize.value
+//   const end = (pageCurrent.value) * pageSize.value
+//   return filterLogs.value.slice(start, end)
+// })
 const handlePageChange = (idx: number) => {
   pageCurrent.value = idx
+}
+
+const refreshLogs = () => {
+  SuperOverviewApi.getLogMsg(pageSize.value, pageCurrent.value, filterLogType.value).then((res) => {
+    logs.splice(0, logs.length)
+    logs.push(...res.data.logs)
+    logSumCount.value = res.data.sum
+    // ElMessage.success('抓取日志数据成功')
+  })
+  // SuperOverviewApi.getAllLogMsg().then((res) => {
+  //   logs.splice(0, logs.length)
+  //   logs.push(...res.data.logs)
+  //   // ElMessage.success('抓取日志数据成功')
+  // })
+}
+watchEffect(() => {
+  if (filterLogType.value) {
+    pageCurrent.value = 1
+  }
+})
+
+watchEffect(() => {
+  if (pageCurrent.value || filterLogType.value || pageSize.value) {
+    refreshLogs()
+  }
+})
+const showDetail = ref(false)
+const showData = ref('')
+const handleDetail = (id) => {
+  SuperOverviewApi.getLogMsgDetail(id).then((res) => {
+    showDetail.value = true
+    showData.value = JSON.stringify(res.data, null, 2)
+  })
+}
+const jsonData = computed(() => {
+  try {
+    return JSON.parse(showData.value)
+  } catch (e) {
+    return {}
+  }
+})
+const handleCopyDetail = () => {
+  copyRes(showData.value)
 }
 onMounted(() => {
   refreshCount()
