@@ -1,33 +1,15 @@
 <template>
   <div class="tc">
     <el-button
-      @click="uodateLimitPeople(true)"
+      @click="updateLimitPeople(true)"
       v-if="!people"
       size="default"
       round
       type="success"
-      >打开</el-button
-    >
-    <el-button
-      @click="uodateLimitPeople(false)"
-      v-if="people"
-      size="default"
-      round
-      type="danger"
-      >关闭</el-button
-    >
-    <el-button
-      @click="checkPeople"
-      v-if="people"
-      round
-      size="default"
-      type="primary"
-      >查看提交情况</el-button
-    >
-    <div
-      class="upload-people"
-      v-if="people"
-    >
+    >打开</el-button>
+    <el-button @click="updateLimitPeople(false)" v-if="people" size="default" round type="danger">关闭</el-button>
+    <el-button @click="checkPeople" v-if="people" round size="default" type="primary">查看提交情况</el-button>
+    <div class="upload-people" v-if="people">
       <el-upload
         accetp="text/plain"
         action=""
@@ -41,19 +23,14 @@
         :file-list="peopleFileList"
       >
         <template #trigger>
-          <el-button
-            size="small"
-            type="primary"
-            >选取文件</el-button
-          >
+          <el-button size="small" type="primary">选取文件</el-button>
         </template>
         <el-button
           @click="submitUploadPeople"
           style="margin-left: 10px"
           size="small"
           type="success"
-          >开始上传</el-button
-        >
+        >开始上传</el-button>
         <template #tip>
           <div class="el-upload__tip">
             只能上传 txt
@@ -62,12 +39,8 @@
         </template>
       </el-upload>
     </div>
-    <el-dialog
-      :fullscreen="isMobile"
-      title="提交情况"
-      v-model="showPeopList"
-    >
-    <!-- 上部分的筛选菜单 -->
+    <el-dialog :fullscreen="isMobile" title="提交情况" v-model="showPeopleList">
+      <!-- 上部分的筛选菜单 -->
       <div class="nav">
         <div class="item">
           <el-button
@@ -77,103 +50,60 @@
             type="success"
             size="default"
             @click="handleExportExcel"
-            >导出记录</el-button
-          >
+          >导出记录</el-button>
         </div>
         <div class="item">
-          <el-select
-            size="default"
-            v-model="selectSubmitStatus"
-            filterable
-            placeholder="状态筛选"
-          >
-            <el-option
-              label="全部"
-              value="all"
-            />
-            <el-option
-              label="已提交"
-              value="1"
-            />
-            <el-option
-              label="未提交"
-              value="0"
-            />
+          <el-select size="default" v-model="selectSubmitStatus" filterable placeholder="状态筛选">
+            <el-option label="全部" value="all" />
+            <el-option label="已提交" value="1" />
+            <el-option label="未提交" value="0" />
           </el-select>
         </div>
         <div class="item">
-          <el-input
+          <el-input size="default" placeholder="输入要查询的姓名" v-model="searchName"></el-input>
+        </div>
+        <div class="item">
+          <el-button
+            type="primary"
             size="default"
-          placeholder="输入要查询的姓名" v-model="searchName"></el-input>
+            @click="handleCheckMore"
+          >{{ checkMore ? '隐藏' : '显示' }}详细数据</el-button>
         </div>
       </div>
       <!-- 概况信息 -->
       <div class="tc p10">
-        <span>共: {{peopleSubmitData.length}} 条数据</span>，
-        <span>已提交: {{peopleSubmitData.filter(v=>v.status).length}}</span>，
-        <span>未提交: {{peopleSubmitData.filter(v=>!v.status).length}}</span>
+        <span>共: {{ peopleSubmitData.length }} 条数据</span>，
+        <span>已提交: {{ peopleSubmitData.filter(v => v.status).length }}</span>，
+        <span>未提交: {{ peopleSubmitData.filter(v => !v.status).length }}</span>
+      </div>
+      <div class="tc p10">
+        <tip>"提交数量" 用户实际提交的文件数（不包含撤回）</tip>
+        <template v-if="checkMore">
+          <tip>"现存数量" 还存在于服务器上的文件数（不包含删除）</tip>
+          <tip>"提交次数" 用户实际的提交次数</tip>
+        </template>
       </div>
       <!-- 数据部分 -->
-      <el-table
-        stripe
-        border
-        :data="peopleSubmitData"
-        height="460px"
-      >
-       <el-table-column
-          label="序号"
-          width="60"
-        >
+      <el-table stripe border :data="peopleSubmitData" height="460px">
+        <el-table-column label="序号" width="60">
           <template #default="scope">
-            <div style="text-align: center;">
-              {{scope.$index + 1}}
-            </div>
+            <div style="text-align: center;">{{ scope.$index + 1 }}</div>
           </template>
         </el-table-column>
-        <el-table-column
-          sortable
-          property="name"
-          label="姓名"
-        ></el-table-column>
-        <el-table-column
-          label="提交状态"
-          width="100"
-        >
+        <el-table-column property="name" label="姓名"></el-table-column>
+        <el-table-column label="提交状态" width="100">
           <template #default="scope">
-            <span
-              class="submit-ok"
-              v-if="scope.row.status"
-              >已提交</span
-            >
-            <span
-              class="submit-fail"
-              v-else
-              >未提交</span
-            >
+            <span class="submit-ok" v-if="scope.row.status">已提交</span>
+            <span class="submit-fail" v-else>未提交</span>
           </template>
         </el-table-column>
-        <el-table-column
-          sortable
-          property="count"
-          label="提交次数"
-          width="120"
-        ></el-table-column>
-        <el-table-column
-          sortable
-          property="fileCount"
-          label="文件数量"
-          width="120"
-        ></el-table-column>
-        <el-table-column
-          sortable
-          property="lastDate"
-          label="最后操作时间"
-          width="120"
-        ></el-table-column>
-        <el-table-column
-          label="操作"
-          width="100"
-        >
+        <el-table-column sortable property="submitCount" label="提交数量" width="120"></el-table-column>
+        <el-table-column sortable property="lastDate" label="最后操作时间" width="120"></el-table-column>
+        <template v-if="checkMore">
+          <el-table-column  property="fileCount" label="现存数量" width="94"></el-table-column>
+          <el-table-column  property="count" label="提交次数" width="94"></el-table-column>
+        </template>
+        <el-table-column label="操作" width="100">
           <template #default="scope">
             <el-button
               @click="
@@ -183,8 +113,7 @@
               "
               type="text"
               size="small"
-              >删除</el-button
-            >
+            >删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -211,6 +140,7 @@ import {
 } from '@/utils/networkUtil'
 import { formatDate } from '@/utils/stringUtil'
 import { updateTaskInfo } from '../../public'
+import Tip from './tip.vue'
 
 export default defineComponent({
   props: {
@@ -229,24 +159,24 @@ export default defineComponent({
   },
   name: 'peoplePanel',
   setup(props) {
+    const checkMore = ref(false)
+    const handleCheckMore = () => {
+      checkMore.value = !checkMore.value
+    }
     const people = ref(0)
     watchEffect(() => {
       people.value = props.value as number
     })
     // 限制提交人员
-    const uodateLimitPeople = (
-      limit: boolean,
-    ) => {
+    const updateLimitPeople = (limit: boolean) => {
       updateTaskInfo(props.k, {
         people: +limit,
       })
       people.value = +limit
     }
     // 查看提交情况
-    const showPeopList = ref(false)
-    const peopleList: any = reactive(
-      [],
-    )
+    const showPeopleList = ref(false)
+    const peopleList: any = reactive([])
     const selectSubmitStatus = ref('all')
     const searchName = ref('')
     const filterPeopleBySearchWord = computed(() => {
@@ -262,133 +192,72 @@ export default defineComponent({
       return filterPeopleBySearchWord.value.filter((p) => p.status === +selectSubmitStatus.value)
     })
     const checkPeople = () => {
-      PeopleApi.getPeople(props.k).then(
-        (res) => {
-          peopleList.splice(
-            0,
-            peopleList.length,
-          )
-          peopleList.push(
-            ...res.data.people,
-          )
-          peopleList.forEach((p) => {
-            if (!p.status && p.count === 0) {
-              p.lastDate = '暂无记录'
-            } else {
-              p.lastDate = formatDate(
-                new Date(p.lastDate),
-                'yyyy-MM-dd hh:mm:ss',
-              )
-            }
-          })
-          showPeopList.value = true
-        },
-      )
+      PeopleApi.getPeople(props.k).then((res) => {
+        peopleList.splice(0, peopleList.length)
+        peopleList.push(...res.data.people)
+        peopleList.forEach((p) => {
+          if (!p.status && p.count === 0) {
+            p.lastDate = '暂无记录'
+          } else {
+            p.lastDate = formatDate(new Date(p.lastDate), 'yyyy-MM-dd hh:mm:ss')
+          }
+        })
+        showPeopleList.value = true
+        checkMore.value = false
+      })
     }
-    const handleDeletePeople = (
-      item: any,
-    ) => {
-      ElMessageBox.confirm(
-        '确认删除此人员吗',
-        '提示',
-      )
+    const handleDeletePeople = (item: any) => {
+      ElMessageBox.confirm('确认删除此人员吗', '提示')
         .then(() => {
-          PeopleApi.deletePeople(
-            props.k,
-            item.id,
-          ).then(() => {
-            ElMessage.success(
-              '删除成功',
-            )
-            peopleList.splice(
-              peopleList.findIndex(
-                (v) => v.id === item.id,
-              ),
-              1,
-            )
+          PeopleApi.deletePeople(props.k, item.id).then(() => {
+            ElMessage.success('删除成功')
+            peopleList.splice(peopleList.findIndex((v) => v.id === item.id), 1)
           })
         })
         .catch(() => {
           ElMessage.info('取消删除')
         })
     }
-
     // 文件上传
     const peopleFileList: any[] = reactive([])
     const peopleUpload = ref()
     // 超出选择的文件个数
     const handleExceedFile = () => {
-      ElMessage.error(
-        '只能选择一个文件,可删除后重新选择',
-      )
+      ElMessage.error('只能选择一个文件,可删除后重新选择')
     }
     // 清空文件
     const clearFiles = () => {
-      peopleFileList.splice(
-        0,
-        peopleFileList.length,
-      )
+      peopleFileList.splice(0, peopleFileList.length)
       peopleUpload.value.clearFiles()
     }
     // 开始上传
     const submitUploadPeople = () => {
       peopleFileList.forEach((file) => {
-        uploadFile(
-          file.raw,
-          `${import.meta.env.VITE_APP_AXIOS_BASE_URL}public/upload`,
-          {
-            success: (e: any) => {
-              const { name, type } = e.data
-              PeopleApi.importPeople(
-                props.k,
-                name,
-                type,
-              ).then((res) => {
-                const {
-                  success,
-                  fail,
-                } = res.data
-                ElMessage.success(
-                  `导入完成:${success}成功,${fail.length}失败`,
-                )
-                if (fail.length > 0) {
-                  setTimeout(() => {
-                    ElMessage.info(
-                      '自动开始下载未成功导入名单',
-                    )
-                    tableToExcel(
-                      [
-                        '未成功导入名单',
-                      ],
-                      fail.map(
-                        (v: string) => [
-                          v,
-                        ],
-                      ),
-                      `${
-                        props.name
-                      }_导入失败名单_${formatDate(
-                        new Date(),
-                        'yyyy年MM月日hh时mm分ss秒',
-                      )}.xls`,
-                    )
-                  }, 1000)
-                }
-                clearFiles()
-              })
-            },
+        uploadFile(file.raw, `${import.meta.env.VITE_APP_AXIOS_BASE_URL}public/upload`, {
+          success: (e: any) => {
+            const { name, type } = e.data
+            PeopleApi.importPeople(props.k, name, type).then((res) => {
+              const { success, fail } = res.data
+              ElMessage.success(`导入完成:${success}成功,${fail.length}失败`)
+              if (fail.length > 0) {
+                setTimeout(() => {
+                  ElMessage.info('自动开始下载未成功导入名单')
+                  tableToExcel([
+                    '未成功导入名单',
+                  ], fail.map((v: string) => [
+                    v,
+                  ]), `${props.name}_导入失败名单_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
+                }, 1000)
+              }
+              clearFiles()
+            })
           },
-        )
+        })
       })
     }
-
     // 添加文件
-    const handleChangeFile = (
-      file: any,
-    ) => {
-      if (
-        file.raw.type !== 'text/plain'
-      ) {
+    const handleChangeFile = (file: any) => {
+      if (file.raw.type !== 'text/plain') {
         ElMessage.warning({
           message: '只支持txt文件',
           zIndex: 4000,
@@ -400,65 +269,40 @@ export default defineComponent({
     }
     const handleExportExcel = () => {
       if (peopleSubmitData.value.length === 0) {
-        ElMessage.warning(
-          '表格中没有可导出数据',
-        )
+        ElMessage.warning('表格中没有可导出数据')
         return
       }
       const headers = [
         '姓名',
         '提交状态',
-        '提交次数',
-        '文件数量',
+        '提交数量',
         '最后操作时间',
+        ...(checkMore.value ? ['现存数量', '提交次数'] : []),
       ]
-      const body = peopleSubmitData.value.map(
-        (v) => {
-          const {
-            name,
-            status,
-            lastDate,
-            count,
-            fileCount,
-          } = v
-          return [
-            name,
-            status ? '✔' : 'x',
-            count,
-            fileCount,
-            status
-              ? formatDate(
-                new Date(lastDate),
-              )
-              : '',
-          ]
-        },
-      )
-      tableToExcel(
-        headers,
-        body,
-        `${
-          props.name
-        }_提交情况_${formatDate(
-          new Date(),
-          'yyyy年MM月日hh时mm分ss秒',
-        )}.xls`,
-      )
+      const body = peopleSubmitData.value.map((v) => {
+        const {
+          name, status, lastDate, submitCount, fileCount, count,
+        } = v
+        return [
+          name,
+          status ? '✔' : 'x',
+          submitCount,
+          status
+            ? formatDate(new Date(lastDate))
+            : '',
+          ...(checkMore.value ? [fileCount, count] : []),
+        ]
+      })
+      tableToExcel(headers, body, `${props.name}_提交情况_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
       ElMessage.success('导出成功')
     }
-
     const $store = useStore()
-    const isMobile = computed(
-      () => $store.getters[
-        'public/isMobile'
-      ],
-    )
-
+    const isMobile = computed(() => $store.getters['public/isMobile'])
     return {
       isMobile,
       handleExportExcel,
       people,
-      uodateLimitPeople,
+      updateLimitPeople,
       checkPeople,
       handleExceedFile,
       handleChangeFile,
@@ -466,15 +310,18 @@ export default defineComponent({
       clearFiles,
       peopleFileList,
       peopleUpload,
-      showPeopList,
+      showPeopleList,
       peopleList,
       handleDeletePeople,
       formatDate,
       selectSubmitStatus,
       peopleSubmitData,
       searchName,
+      handleCheckMore,
+      checkMore,
     }
   },
+  components: { Tip },
 })
 </script>
 <style scoped>
