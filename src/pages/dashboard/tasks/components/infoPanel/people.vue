@@ -154,8 +154,20 @@
         </el-table-column>
         <el-table-column
           sortable
+          property="count"
+          label="提交次数"
+          width="120"
+        ></el-table-column>
+        <el-table-column
+          sortable
+          property="fileCount"
+          label="文件数量"
+          width="120"
+        ></el-table-column>
+        <el-table-column
+          sortable
           property="lastDate"
-          label="最后提交时间"
+          label="最后操作时间"
           width="120"
         ></el-table-column>
         <el-table-column
@@ -260,7 +272,7 @@ export default defineComponent({
             ...res.data.people,
           )
           peopleList.forEach((p) => {
-            if (!p.status) {
+            if (!p.status && p.count === 0) {
               p.lastDate = '暂无记录'
             } else {
               p.lastDate = formatDate(
@@ -396,7 +408,9 @@ export default defineComponent({
       const headers = [
         '姓名',
         '提交状态',
-        '最后提交时间',
+        '提交次数',
+        '文件数量',
+        '最后操作时间',
       ]
       const body = peopleSubmitData.value.map(
         (v) => {
@@ -404,10 +418,14 @@ export default defineComponent({
             name,
             status,
             lastDate,
+            count,
+            fileCount,
           } = v
           return [
             name,
             status ? '✔' : 'x',
+            count,
+            fileCount,
             status
               ? formatDate(
                 new Date(lastDate),
