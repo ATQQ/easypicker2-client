@@ -39,6 +39,14 @@
         <span class="item">
           <el-button size="default" :icon="Refresh" @click="refreshLogs">刷新</el-button>
         </span>
+        <span class="item">
+          <el-button
+            size="default"
+            type="primary"
+            :icon="DataAnalysis"
+            @click="exportLogData"
+          >导出日志 {{ filterLogs.length }} 条</el-button>
+        </span>
       </div>
       <el-table
         tooltip-effect="dark"
@@ -97,11 +105,13 @@ import {
   computed, onMounted, reactive, ref, watchEffect,
 } from 'vue'
 import {
-  User, Document, Tickets, DataBoard, Search, Refresh,
+  User, Document, Tickets, DataBoard, Search, Refresh, DataAnalysis,
 } from '@element-plus/icons-vue'
 import { useStore } from 'vuex'
+import { ElMessage } from 'element-plus'
 import { SuperOverviewApi } from '@/apis'
 import { copyRes, formatDate } from '@/utils/stringUtil'
+import { tableToExcel } from '@/utils/networkUtil'
 
 const $store = useStore()
 
@@ -261,6 +271,19 @@ const jsonData = computed(() => {
 })
 const handleCopyDetail = () => {
   copyRes(showData.value)
+}
+
+const exportLogData = () => {
+  if (filterLogs.value.length === 0) {
+    return
+  }
+  const headers = ['日期', 'IP', '内容']
+  const body = filterLogs.value.map((v) => {
+    const { date, ip, msg } = v
+    return [formatDate(new Date(date)), ip, msg]
+  })
+  tableToExcel(headers, body, `导出日志_${filterLogs.value.length}条${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
+  ElMessage.success('导出成功')
 }
 onMounted(() => {
   refreshCount()
