@@ -79,21 +79,16 @@
       </div>
     </div>
     <el-dialog v-model="showDetail" title="详细信息" width="50%" center :fullscreen="isMobile">
-    <!-- TODO: 展示优化 -->
-    <pre
-      style="overflow: hidden;"
-    >{{showData}}</pre>
-    <template #footer>
-      <span class="dialog-footer">
-        <el-button type="default" @click="handleCopyDetail"
-          >复制</el-button
-        >
-        <el-button type="primary" @click="showDetail = false"
-          >确定</el-button
-        >
-      </span>
-    </template>
-  </el-dialog>
+      <!-- TODO: 展示优化 -->
+      <!-- <pre style="overflow: hidden;">{{ showData }}</pre> -->
+      <json-viewer :value="jsonData" :expand-depth="5" copyable boxed sort></json-viewer>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="default" @click="handleCopyDetail">复制</el-button>
+          <el-button type="primary" @click="showDetail = false">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
@@ -257,6 +252,13 @@ const handleDetail = (id) => {
     showData.value = JSON.stringify(res.data, null, 2)
   })
 }
+const jsonData = computed(() => {
+  try {
+    return JSON.parse(showData.value)
+  } catch (e) {
+    return {}
+  }
+})
 const handleCopyDetail = () => {
   copyRes(showData.value)
 }
