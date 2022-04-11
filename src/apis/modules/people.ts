@@ -33,10 +33,8 @@ function updatePeopleStatus(key:string,
 }
 
 function checkPeopleIsExist(key:string, name:string):PeopleApiTypes.checkPeopleIsExist {
-  return ajax.get(`/people/check/${key}`, {
-    params: {
-      name,
-    },
+  return ajax.post(`/people/check/${key}`, {
+    name,
   })
 }
 export default {
