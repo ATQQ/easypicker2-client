@@ -8,90 +8,70 @@
         <el-select size="default" v-model="selectCategory" filterable placeholder="请选择">
           <el-option label="全部" value="all" />
           <el-option label="默认" value="default" />
-          <el-option v-for="item in categories" :key="item.k" :label="item.name" :value="item.k"/>
+          <el-option v-for="item in categories" :key="item.k" :label="item.name" :value="item.k" />
         </el-select>
       </div>
       <div class="item">
         <span class="label">任务</span>
         <el-select size="default" v-model="selectTask" filterable placeholder="请选择">
           <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in filterTasks"
-            :key="item.key"
-            :label="item.name"
-            :value="item.key"
-          ></el-option>
+          <el-option v-for="item in filterTasks" :key="item.key" :label="item.name" :value="item.key"></el-option>
         </el-select>
       </div>
       <div class="item">
-        <el-button
-          :loading="batchDownStart"
-          :disabled="selectTask === 'all'"
-          type="primary"
-          size="default"
-          :icon="Download"
-          @click="handleDownloadTask"
-        >下载任务中的文件</el-button>
+        <el-button :loading="batchDownStart" :disabled="selectTask === 'all'" type="primary" size="default"
+          :icon="Download" @click="handleDownloadTask">下载任务中的文件</el-button>
       </div>
       <div class="item">
-        <el-input
-          size="default"
-          clearable
-          placeholder="请输入要检索的内容"
-          :prefix-icon="Search"
-          v-model="searchWord"
-        ></el-input>
+        <el-input size="default" clearable placeholder="请输入要检索的内容" :prefix-icon="Search" v-model="searchWord">
+        </el-input>
       </div>
     </div>
     <div class="panel">
       <div class="export-btns">
-        <el-dropdown ref="batchDropDown" trigger="contextmenu" @command="handleDropdownClick">
-          <el-button
-            @click="openBatchDropDown"
-            type="primary"
-            :disabled="selectItem.length === 0"
-            size="default"
-          >
-            批量操作
-            <el-icon>
-              <ArrowDown />
+        <el-dropdown trigger="click" @command="handleDropdownClick">
+          <el-button type="primary" size="default">
+            批量操作<el-icon class="el-icon--right">
+              <arrow-down />
             </el-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="download">下载</el-dropdown-item>
-              <el-dropdown-item command="delete">删除</el-dropdown-item>
-              <el-dropdown-item command="excel">导出记录</el-dropdown-item>
+              <el-dropdown-item :disabled="selectItem.length === 0" command="download">下载</el-dropdown-item>
+              <el-dropdown-item :disabled="selectItem.length === 0" command="delete">删除</el-dropdown-item>
+              <el-dropdown-item :disabled="selectItem.length === 0" command="excel">导出记录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <div v-show="false">
+        <!-- 迷惑的解决bug的手段 -->
+          <el-dropdown trigger="click" @command="handleDropdownClick">
+            <el-button type="primary" :disabled="selectItem.length === 0" size="default">
+              批量操作
+              <el-icon>
+                <ArrowDown />
+              </el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="download">下载</el-dropdown-item>
+                <el-dropdown-item command="delete">删除</el-dropdown-item>
+                <el-dropdown-item command="excel">导出记录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
         <el-button size="default" :icon="Refresh" @click="handleRefresh">刷新</el-button>
-        <el-button
-          title="导出表格中所有的数据"
-          type="success"
-          size="default"
-          :icon="DataAnalysis"
-          @click="() => {
-            handleExportExcel(filterFiles,`筛选数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`);
-          }"
-          :disabled="showFilterFiles.length === 0"
-        >导出记录</el-button>
+        <el-button title="导出表格中所有的数据" type="success" size="default" :icon="DataAnalysis" @click="() => {
+          handleExportExcel(filterFiles, `筛选数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`);
+        }" :disabled="showFilterFiles.length === 0">导出记录</el-button>
       </div>
     </div>
     <!-- 主体内容 -->
     <div class="panel">
-      <el-table
-        tooltip-effect="dark"
-        multipleTable
-        ref="multipleTable"
-        @selection-change="handleSelectionChange"
-        stripe
-        border
-        :default-sort="{ prop: 'date', order: 'descending' }"
-        :max-height="666"
-        :data="showFilterFiles"
-        style="width: 100%"
-      >
+      <el-table tooltip-effect="dark" multipleTable ref="multipleTable" @selection-change="handleSelectionChange" stripe
+        border :default-sort="{ prop: 'date', order: 'descending' }" :max-height="666" :data="showFilterFiles"
+        style="width: 100%">
         <el-table-column type="selection" width="55" />
         <el-table-column sortable prop="date" label="提交时间" width="200">
           <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
@@ -99,9 +79,7 @@
         <el-table-column prop="task_name" label="任务" width="150"></el-table-column>
         <el-table-column prop="name" label="文件名" width="200"></el-table-column>
         <el-table-column prop="size" label="大小">
-          <template
-            #default="scope"
-          >{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
+          <template #default="scope">{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="140">
           <template #default="scope">
@@ -116,27 +94,14 @@
     </div>
     <!-- 分页 -->
     <div class="panel flex fc">
-      <el-pagination
-        :current-page="pageCurrent"
-        @current-change="handlePageChange"
-        background
-        :page-count="pageCount"
-        :page-sizes="[6, 10, 50, 100]"
-        :page-size="pageSize"
-        @size-change="handleSizeChange"
-        :total="filterFiles.length"
-        layout="total, sizes, prev, pager, next, jumper"
-      ></el-pagination>
+      <el-pagination :current-page="pageCurrent" @current-change="handlePageChange" background :page-count="pageCount"
+        :page-sizes="[6, 10, 50, 100]" :page-size="pageSize" @size-change="handleSizeChange" :total="filterFiles.length"
+        layout="total, sizes, prev, pager, next, jumper"></el-pagination>
     </div>
     <!-- 信息弹窗 -->
     <el-dialog :fullscreen="isMobile" title="提交填写的信息" v-model="showInfoDialog">
       <el-form>
-        <el-form-item
-          v-for="(info, idx) in infos"
-          :key="idx"
-          :label="info.text"
-          label-width="120px"
-        >
+        <el-form-item v-for="(info, idx) in infos" :key="idx" :label="info.text" label-width="120px">
           <el-input :modelValue="info.value"></el-input>
         </el-form-item>
       </el-form>
@@ -162,12 +127,12 @@ const $store = useStore()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
 // 记录导出
-const handleExportExcel = (files:FileApiTypes.File[], filename?:string) => {
+const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
   if (files.length === 0) {
     ElMessage.warning('表格中没有可导出的内容')
     return
   }
-  const headers:(string|tableItem)[] = ['提交时间', '任务', '文件名', '大小'].map((v) => ({
+  const headers: (string | tableItem)[] = ['提交时间', '任务', '文件名', '大小'].map((v) => ({
     value: v,
     row: 2,
   }))
@@ -264,17 +229,14 @@ const handleSelectionChange = (e: any) => {
   selectItem.push(...e)
 }
 const batchDownStart = ref(false)
-const batchDropDown = ref()
-const openBatchDropDown = () => {
-  batchDropDown.value.handleOpen()
-  setTimeout(() => {
-    batchDropDown.value.handleClose()
-  }, 2500)
-}
 const handleDropdownClick = (e: string) => {
   const ids: number[] = selectItem.map((v) => v.id)
   switch (e) {
     case 'download':
+      if (selectItem.length === 0) {
+        ElMessage.warning('没有选中需要下载的内容')
+        return
+      }
       if (batchDownStart.value) {
         ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
         return
@@ -308,6 +270,10 @@ const handleDropdownClick = (e: string) => {
       ElMessage.info('开始归档选中的文件,请赖心等待,完成后将自动进行下载')
       break
     case 'delete':
+      if (selectItem.length === 0) {
+        ElMessage.warning('没有选中需要删除的内容')
+        return
+      }
       ElMessageBox.confirm('删除后无法恢复', '确认删除吗').then(() => {
         FileApi.batchDel(ids).then(() => {
           files.splice(0, files.length, ...files.filter((v) => !ids.includes(v.id)))
@@ -318,7 +284,6 @@ const handleDropdownClick = (e: string) => {
       })
       break
     case 'excel':
-      // 优化
       if (selectItem.length === 0) {
         ElMessage.warning('没有选中需要导出的内容')
         return
@@ -451,23 +416,28 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   .files {
     margin-top: 70px;
   }
+
   .text-btns {
     display: flex;
     flex-direction: column;
+
     :deep(.el-button) {
       margin-left: 0px;
       margin-bottom: 0px;
     }
   }
+
   .header {
     justify-content: center;
   }
+
   .export-btns {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;
   }
 }
+
 .panel {
   padding: 1em;
   background-color: #fff;
@@ -475,19 +445,23 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   box-sizing: border-box;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   border-radius: 4px;
+
   .label {
     font-size: 12px;
     margin-right: 10px;
   }
 }
+
 .header {
   display: flex;
   flex-wrap: wrap;
+
   .item {
     margin-right: 10px;
     margin-bottom: 10px;
   }
 }
+
 .el-button {
   margin-left: 10px;
   margin-bottom: 10px;
