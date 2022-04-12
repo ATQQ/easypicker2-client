@@ -154,7 +154,7 @@ import {
 } from '@element-plus/icons-vue'
 import { copyRes, formatDate, formatSize } from '@/utils/stringUtil'
 import { FileApi } from '@/apis'
-import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
+import { downLoadByUrl, tableItem, tableToExcel } from '@/utils/networkUtil'
 
 const $store = useStore()
 const showLinkModel = ref(false)
@@ -397,19 +397,43 @@ const handleDownloadTask = () => {
   ElMessage.info('开始归档任务中的文件,请赖心等待,完成后将自动进行下载')
 }
 
+// TODO,抽离成公共方法
 const handlEexportExcell = () => {
   if (filterFiles.value.length === 0) {
     ElMessage.warning('表格中没有可导出的内容')
     return
   }
-  const headers = ['提交时间', '任务', '文件名', '大小', '提交信息']
+  const headers:(string|tableItem)[] = ['提交时间', '任务', '文件名', '大小'].map((v) => ({
+    value: v,
+    row: 2,
+  }))
+
+  const infosHeader = filterFiles.value.reduce((pre, value) => {
+    JSON.parse(value.info).forEach((i: any) => {
+      if (!pre.includes(i.text)) {
+        pre.push(i.text)
+      }
+    })
+    return pre
+  }, [])
+  headers.push({
+    value: '提交信息',
+    col: infosHeader.length,
+  })
+
   const body = filterFiles.value.map(((v) => {
     const {
       date, task_name: taskName, name, size,
     } = v
-    const info = JSON.parse(v.info).map((i: any) => `${i.text}--${i.value}`).join(',')
-    return [formatDate(new Date(date)), taskName, name, formatSize(size), info]
+    const infoObj = JSON.parse(v.info).reduce((pre, v) => {
+      pre[v.text] = v.value
+      return pre
+    }, {})
+    const info = infosHeader.map((v) => (infoObj[v] ?? '-'))
+    const rows = [formatDate(new Date(date)), taskName, name, formatSize(size), ...info]
+    return rows
   }))
+  body.unshift(infosHeader)
   tableToExcel(headers, body, `筛选数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
   ElMessage.success('导出成功')
 }
