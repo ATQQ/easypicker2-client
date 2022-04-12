@@ -9,8 +9,10 @@ function getAllLogMsg():OverviewApiTypes.getAllLogMsg {
   return ajax.get(`${baseUrl}/log`)
 }
 
-function getLogMsg(pageSize:number, pageIndex:number, type:string):OverviewApiTypes.getLogMsg {
-  return ajax.post(`${baseUrl}/log`, { pageSize, pageIndex, type })
+function getLogMsg(pageSize:number, pageIndex:number, type:string, search:string):OverviewApiTypes.getLogMsg {
+  return ajax.post(`${baseUrl}/log`, {
+    pageSize, pageIndex, type, search,
+  })
 }
 
 function getLogMsgDetail(id:string):any {

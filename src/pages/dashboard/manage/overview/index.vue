@@ -202,12 +202,13 @@ const logTypeList = reactive([
 ])
 
 const filterLogs = computed(() => logs
-  .filter((v) => v.type === filterLogType.value)
-  .filter((v) => {
-    const { date, ip, msg } = v
-    if (searchWord.value.length === 0) return true
-    return `${date} ${ip} ${msg}`.includes(searchWord.value)
-  }))
+  .filter((v) => v.type === filterLogType.value))
+// 后端搜索
+// .filter((v) => {
+//   const { date, ip, msg } = v
+//   if (searchWord.value.length === 0) return true
+//   return `${date} ${ip} ${msg}`.includes(searchWord.value)
+// })
 // 分页
 // 页大小
 const pageSize = ref(10)
@@ -230,22 +231,42 @@ const handlePageChange = (idx: number) => {
   pageCurrent.value = idx
 }
 
+// 最简单防抖与节流相结合
+let timer = null
+let time = Date.now()
+let lock = false
+const wait = 500
 const refreshLogs = () => {
-  SuperOverviewApi.getLogMsg(pageSize.value, pageCurrent.value, filterLogType.value).then((res) => {
-    logs.splice(0, logs.length)
-    logs.push(...res.data.logs)
-    logSumCount.value = res.data.sum
-    // ElMessage.success('抓取日志数据成功')
-  })
-  // SuperOverviewApi.getAllLogMsg().then((res) => {
-  //   logs.splice(0, logs.length)
-  //   logs.push(...res.data.logs)
-  //   // ElMessage.success('抓取日志数据成功')
-  // })
+  const callback = () => {
+    lock = true
+    SuperOverviewApi.getLogMsg(pageSize.value, pageCurrent.value, filterLogType.value, searchWord.value).then((res) => {
+      logs.splice(0, logs.length)
+      logs.push(...res.data.logs)
+      logSumCount.value = res.data.sum
+      lock = false
+    })
+  }
+  if (Date.now() > wait + time && !lock) {
+    time = Date.now()
+    timer = null
+  }
+  if (timer) {
+    clearTimeout(timer)
+    timer = setTimeout(callback, wait)
+  } else {
+    callback()
+    timer = 1
+  }
 }
 watchEffect(() => {
   if (filterLogType.value) {
     pageCurrent.value = 1
+  }
+})
+
+watchEffect(() => {
+  if (searchWord.value !== undefined) {
+    refreshLogs()
   }
 })
 
