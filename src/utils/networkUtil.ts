@@ -60,18 +60,29 @@ export function uploadFile(file:File, url:string, options?:UploadFileOptions) {
   xhr.send(form)
 }
 
+export interface tableItem{value:string, col?:number, row?:number}
 /**
   * 导出表格数据为xls
   * @param headers 头部
   * @param body 身体部分数据
   */
-export function tableToExcel(headers:string[], body:any[], filename = 'res.xls') {
+export function tableToExcel(headers:(string|tableItem)[], body:any[], filename = 'res.xls') {
   // 列标题
-  let str = `<tr>${headers.map((v) => `<th>${v}</th>`).join('')}</tr>`
+  let str = `<tr>${headers.map((v) => {
+    if (v instanceof Object) {
+      const { value, col = 1, row = 1 } = v
+      return `<th colspan="${col}" rowspan="${row}">${value}</th>`
+    }
+    return `<th>${v}</th>`
+  }).join('')}</tr>`
   // 循环遍历，每行加入tr标签，每个单元格加td标签
   for (const row of body) {
     str += '<tr>'
     for (const cell of row) {
+      if (cell instanceof Object) {
+        const { value, col = 1, row = 1 } = cell
+        str += `<td colspan="${col}" rowspan="${row}">${value}</td>`
+      }
       // 增加\t为了不让表格显示科学计数法或者其他格式
       str += `<td>${`${cell}\t`}</td>`
     }
