@@ -26,8 +26,11 @@ export default defineConfig({
         editLinkText: '编辑文档',
         lastUpdated: '最后更新时间',
         nav: [
-            { text: '部署', link: '/deploy/' },
-            { text: '规划', link: '/plan/' },
+            { text: '私有化部署', link: '/deploy/' },
+            // { text: '规划', link: '/plan/' },
+            { text: '更新日志', link: '/plan/log' },
+            { text: '近期规划', link: '/plan/todo' },
+            { text: '博客', link: 'https://sugarat.top' },
             { text: '联系作者', link: "https://ep.sugarat.top/author" }
         ],
         sidebar: {

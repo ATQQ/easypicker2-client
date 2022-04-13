@@ -1,7 +1,7 @@
 ---
 home: true
 sidebar: false
-title: 'EasyPicker使用文档'
+title: 'EasyPicker介绍文档'
 heroImage: /logo.png
 heroAlt: logo.png
 heroText: EasyPicker（轻取）
