@@ -98,6 +98,12 @@ function checkSubmitStatus(taskKey:string, info:any):FileApiTypes.checkSubmitSta
     info,
   })
 }
+
+function checkImageFilePreviewUrl(ids:number[]) {
+  return ajax.post('file/image/preview', {
+    ids,
+  })
+}
 export default {
   getUploadToken,
   addFile,
@@ -112,4 +118,5 @@ export default {
   getCompressFileUrl,
   getCompressDownUrl,
   checkSubmitStatus,
+  checkImageFilePreviewUrl,
 }
