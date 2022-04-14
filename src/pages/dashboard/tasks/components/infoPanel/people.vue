@@ -203,7 +203,8 @@ export default defineComponent({
           }
         })
         showPeopleList.value = true
-        checkMore.value = false
+        // 默认展示所有数据
+        checkMore.value = true
       })
     }
     const handleDeletePeople = (item: any) => {
