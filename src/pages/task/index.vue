@@ -106,6 +106,7 @@
             size="small"
             @click="submitUpload"
             type="success"
+            :disabled="!allowUpload"
             >提交文件</el-button
           >
           <el-button
@@ -409,6 +410,18 @@ const submitUpload = () => {
     startUpload()
   }
 }
+
+const allowUpload = computed(() => {
+  const { uploadFiles } = fileUpload.value
+  for (const file of uploadFiles) {
+    if (
+      file.status === 'ready'
+    ) {
+      return true
+    }
+  }
+  return false
+})
 
 // 添加文件
 const handleChangeFile = (
