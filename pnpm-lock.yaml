@@ -25,7 +25,7 @@ specifiers:
   vitepress: ^0.22.3
   vue: ^3.2.31
   vue-json-viewer: '3'
-  vue-router: '4'
+  vue-router: ^4.0.14
   vuex: ^4.0.2
 
 dependencies:
@@ -38,7 +38,7 @@ dependencies:
   vitepress: 0.22.3_sass@1.49.8
   vue: 3.2.31
   vue-json-viewer: 3.0.4_vue@3.2.31
-  vue-router: 4.0.12_vue@3.2.31
+  vue-router: 4.0.14_vue@3.2.31
   vuex: 4.0.2_vue@3.2.31
 
 devDependencies:
@@ -2449,10 +2449,10 @@ packages:
       vue: 3.2.31
     dev: false
 
-  /vue-router/4.0.12_vue@3.2.31:
-    resolution: {integrity: sha512-CPXvfqe+mZLB1kBWssssTiWg4EQERyqJZes7USiqfW9B5N2x+nHlnsM1D3b5CaJ6qgCvMmYJnz+G0iWjNCvXrg==}
+  /vue-router/4.0.14_vue@3.2.31:
+    resolution: {integrity: sha512-wAO6zF9zxA3u+7AkMPqw9LjoUCjSxfFvINQj3E/DceTt6uEz1XZLraDhdg2EYmvVwTBSGlLYsUw8bDmx0754Mw==}
     peerDependencies:
-      vue: ^3.0.0
+      vue: ^3.2.0
     dependencies:
       '@vue/devtools-api': 6.0.12
       vue: 3.2.31
