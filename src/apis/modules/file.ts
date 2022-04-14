@@ -99,7 +99,7 @@ function checkSubmitStatus(taskKey:string, info:any):FileApiTypes.checkSubmitSta
   })
 }
 
-function checkImageFilePreviewUrl(ids:number[]) {
+function checkImageFilePreviewUrl(ids:number[]):FileApiTypes.checkImageFilePreviewUrl {
   return ajax.post('file/image/preview', {
     ids,
   })
