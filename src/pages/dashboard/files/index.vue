@@ -301,7 +301,7 @@ const handleDropdownClick = (e: string) => {
         ElMessage.warning('没有选中需要删除的内容')
         return
       }
-      ElMessageBox.confirm('删除后无法恢复', '确认删除吗').then(() => {
+      ElMessageBox.confirm('删除后无法恢复，是否删除', '数据无价，请谨慎操作').then(() => {
         FileApi.batchDel(ids).then(() => {
           files.splice(0, files.length, ...files.filter((v) => !ids.includes(v.id)))
           ElMessage.success('删除成功')
@@ -347,7 +347,7 @@ const downloadOne = (e: any) => {
 }
 const handleDelete = (e: any) => {
   const idx = files.findIndex((v) => v === e)
-  ElMessageBox.confirm('确认删除此文件吗？', '提示').then(() => {
+  ElMessageBox.confirm('确认删除此文件吗？', '数据无价，请谨慎操作').then(() => {
     FileApi.deleteOneFile(e.id).then(() => {
       ElMessage.success('删除成功')
       files.splice(idx, 1)
