@@ -90,7 +90,7 @@
           <el-table-column label="缩略图" width="120">
             <template #default="scope">
               <el-image preview-teleported :preview-src-list="previewImages" :initial-index="scope.$index" lazy
-                style="width: 100px; height: 100px" :src="scope.row.img" fit="cover">
+                style="width: 100px; height: 100px" :src="scope.row.cover" fit="cover">
                 <template #placeholder>
                   <div class="imageLoading">Loading...</div>
                 </template>
@@ -438,15 +438,14 @@ const refreshFilesCover = () => {
     if (data.length === 0 || data.length !== showFilterFiles.value.length) {
       return
     }
-    showFilterFiles.value.forEach((v: any, idx) => {
-      if (v.img !== data[idx]) {
-        // TODO：添加裁剪参数
-        v.img = data[idx]
-      }
-    })
     previewImages.splice(0, previewImages.length)
+
+    showFilterFiles.value.forEach((v, idx) => {
+      const { cover, preview } = data[idx]
+      v.cover = cover
+      previewImages.push(preview)
+    })
     // 添加裁剪参数
-    previewImages.push(...data)
   })
 }
 watchEffect(() => {
