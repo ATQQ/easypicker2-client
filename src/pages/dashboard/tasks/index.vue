@@ -110,7 +110,7 @@ const filterTasks = computed(() => {
 // 删除任务
 const deleteTask = (k: string) => {
   if (!k) return
-  ElMessageBox.confirm('确认删除此任务吗?', '提示', {
+  ElMessageBox.confirm('确认删除此任务吗?', '数据无价，请谨慎操作', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
   })

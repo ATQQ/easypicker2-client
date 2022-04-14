@@ -9,6 +9,7 @@
           <el-option label="全部" value="all" />
           <el-option label="默认" value="default" />
           <el-option v-for="item in categories" :key="item.k" :label="item.name" :value="item.k" />
+          <el-option label="无关联任务" value="no-task" />
         </el-select>
       </div>
       <div class="item">
@@ -225,6 +226,9 @@ const searchWord = ref('')
 // 用于展示的文件
 // 1. 过滤指定任务
 const filterFiles = computed(() => files.filter((f) => {
+  if (selectCategory.value === 'no-task') {
+    return tasks.value.every((t) => t.key !== f.task_key)
+  }
   if (filterTasks.value.length === 0) {
     return false
   }
@@ -301,7 +305,7 @@ const handleDropdownClick = (e: string) => {
         ElMessage.warning('没有选中需要删除的内容')
         return
       }
-      ElMessageBox.confirm('删除后无法恢复', '确认删除吗').then(() => {
+      ElMessageBox.confirm('删除后无法恢复，是否删除', '数据无价，请谨慎操作').then(() => {
         FileApi.batchDel(ids).then(() => {
           files.splice(0, files.length, ...files.filter((v) => !ids.includes(v.id)))
           ElMessage.success('删除成功')
@@ -347,7 +351,7 @@ const downloadOne = (e: any) => {
 }
 const handleDelete = (e: any) => {
   const idx = files.findIndex((v) => v === e)
-  ElMessageBox.confirm('确认删除此文件吗？', '提示').then(() => {
+  ElMessageBox.confirm('确认删除此文件吗？', '数据无价，请谨慎操作').then(() => {
     FileApi.deleteOneFile(e.id).then(() => {
       ElMessage.success('删除成功')
       files.splice(idx, 1)

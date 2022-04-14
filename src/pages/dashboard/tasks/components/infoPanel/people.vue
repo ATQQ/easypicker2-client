@@ -203,11 +203,12 @@ export default defineComponent({
           }
         })
         showPeopleList.value = true
-        checkMore.value = false
+        // 默认展示所有数据
+        checkMore.value = true
       })
     }
     const handleDeletePeople = (item: any) => {
-      ElMessageBox.confirm('确认删除此人员吗', '提示')
+      ElMessageBox.confirm('确认删除此人员吗', '数据无价，请谨慎操作')
         .then(() => {
           PeopleApi.deletePeople(props.k, item.id).then(() => {
             ElMessage.success('删除成功')
