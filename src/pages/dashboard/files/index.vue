@@ -9,6 +9,7 @@
           <el-option label="全部" value="all" />
           <el-option label="默认" value="default" />
           <el-option v-for="item in categories" :key="item.k" :label="item.name" :value="item.k" />
+          <el-option label="无关联任务" value="no-task" />
         </el-select>
       </div>
       <div class="item">
@@ -225,6 +226,9 @@ const searchWord = ref('')
 // 用于展示的文件
 // 1. 过滤指定任务
 const filterFiles = computed(() => files.filter((f) => {
+  if (selectCategory.value === 'no-task') {
+    return tasks.value.every((t) => t.key !== f.task_key)
+  }
   if (filterTasks.value.length === 0) {
     return false
   }
