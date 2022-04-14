@@ -5,19 +5,11 @@
         <!-- LOGO -->
         <div class="logo">
           <router-link to="/">
-            <img
-              src="./../../assets/i/EasyPicker.png"
-              alt="logo"
-            />
+            <img src="./../../assets/i/EasyPicker.png" alt="logo" />
           </router-link>
         </div>
         <nav>
-          <div
-            class="nav-item"
-            v-for="(n, idx) in pcNavs"
-            :key="idx"
-            @click="handleNav(idx)"
-          >
+          <div class="nav-item" v-for="(n, idx) in pcNavs" :key="idx" @click="handleNav(idx)">
             {{ n.title }}
           </div>
           <!-- TODO:重新加导航内容 -->
@@ -27,14 +19,9 @@
         </nav>
       </div>
     </div>
-    <div
-      class="panel tc"
-      v-if="
-        k &&
-        taskInfo.name &&
-        taskMoreInfo.info
-      "
-    >
+    <div class="panel tc" v-if="
+      k
+    ">
       <h1 class="name">
         {{ taskInfo.name }}
       </h1>
@@ -50,106 +37,47 @@
       </h2>
       <!-- 未设置ddl 或者 设置了还未结束 -->
       <div v-if="!ddlStr || !isOver">
-        <el-divider
-          >必要信息填写</el-divider
-        >
+        <el-divider>必要信息填写</el-divider>
         <div class="infos">
           <el-form label-width="100px">
-            <el-form-item
-              class="ellipsis"
-              v-for="(
+            <el-form-item class="ellipsis" v-for="(
                 info, idx
-              ) in infos"
-              :key="idx"
-              :label="info.text"
-            >
-              <el-input
-                :maxlength="
-                  maxInputLength
-                "
-                clearable
-                show-word-limit
-                :placeholder="`请输入${info.text}`"
-                v-model="info.value"
-              ></el-input>
+              ) in infos" :key="idx" :label="info.text">
+              <el-input :maxlength="
+                maxInputLength
+              " clearable show-word-limit :placeholder="`请输入${info.text}`" v-model="info.value"></el-input>
             </el-form-item>
           </el-form>
         </div>
 
-        <el-upload
-          action="“"
-          ref="fileUpload"
-          :on-change="handleChangeFile"
-          :before-remove="
-            handleRemoveFile
-          "
-          :on-exceed="handleExceed"
-          :auto-upload="false"
-          multiple
-          :limit="limitUploadCount"
-          :file-list="fileList"
-        >
-          <el-button type="primary"
-            >选择文件</el-button
-          >
+        <el-upload action="“" ref="fileUpload" :on-change="handleChangeFile" :before-remove="
+          handleRemoveFile
+        " :on-exceed="handleExceed" :auto-upload="false" multiple :limit="limitUploadCount" :file-list="fileList">
+          <el-button type="primary">选择文件</el-button>
         </el-upload>
         <div class="p10">
-          <el-button
-            v-if="isWithdraw"
-            size="small"
-            @click="startWithdraw"
-            type="warning"
-            >一键撤回</el-button
-          >
-          <el-button
-            v-else
-            size="small"
-            @click="submitUpload"
-            type="success"
-            :disabled="!allowUpload"
-            >提交文件</el-button
-          >
-          <el-button
-            @click="checkSubmitStatus"
-            size="small"
-            >查询提交情况</el-button
-          >
+          <el-button v-if="isWithdraw" size="small" @click="startWithdraw" type="warning">一键撤回</el-button>
+          <el-button v-else size="small" @click="submitUpload" type="success" :disabled="!allowUpload">提交文件</el-button>
+          <el-button @click="checkSubmitStatus" size="small">查询提交情况</el-button>
         </div>
         <!-- TODO: -->
         <!-- <div class="p10 option-tips">
           {{isWithdraw ? '撤回提示' : '提交提示'}}
         </div> -->
         <div class="withdraw">
-          <el-button
-            type="text"
-            style="color: #85ce61"
-            v-if="taskMoreInfo.template"
-            size="small"
-            @click="downloadTemplate"
-            >下载模板</el-button
-          >
-          <el-button
-            v-if="isWithdraw"
-            @click="isWithdraw = false"
-            size="small"
-            type="text"
-            >正常提交</el-button
-          >
-          <el-button
-            v-else
-            size="small"
-            @click="isWithdraw = true"
-            type="text"
-            >我要撤回</el-button
-          >
+          <el-button type="text" style="color: #85ce61" v-if="taskMoreInfo.template" size="small"
+            @click="downloadTemplate">下载模板</el-button>
+          <el-button v-if="isWithdraw" @click="isWithdraw = false" size="small" type="text">正常提交</el-button>
+          <el-button v-else size="small" @click="isWithdraw = true" type="text">我要撤回</el-button>
         </div>
       </div>
     </div>
-    <LinkDialog
-      v-model:value="showLinkModel"
-      title="模板文件下载链接"
-      :link="templateLink"
-    ></LinkDialog>
+    <div class="panel tc" v-else>
+      <h1 class="name">
+        {{ taskInfo.name }}
+      </h1>
+    </div>
+    <LinkDialog v-model:value="showLinkModel" title="模板文件下载链接" :link="templateLink"></LinkDialog>
   </div>
 </template>
 <script lang="ts" setup>
@@ -203,7 +131,7 @@ const handleNav = (idx: number) => {
 }
 
 // 任务基本信息展示
-const taskInfo: any = reactive({})
+const taskInfo: any = reactive({ name: '' })
 const taskMoreInfo: any = reactive({})
 const k = ref('')
 
@@ -412,7 +340,10 @@ const submitUpload = () => {
 }
 
 const allowUpload = computed(() => {
-  const { uploadFiles } = fileUpload.value
+  const { uploadFiles } = fileUpload.value || {}
+  if (!uploadFiles?.length) {
+    return false
+  }
   for (const file of uploadFiles) {
     if (
       file.status === 'ready'
@@ -590,7 +521,14 @@ onMounted(() => {
           res.data,
         )
       },
-    )
+    ).catch((err) => {
+      if (err.code === 4001) {
+        ElMessage.error('任务不存在')
+        k.value = ''
+        taskInfo.name = '任务不存在'
+      }
+    })
+
     TaskApi.getTaskMoreInfo(
       k.value,
     ).then((res) => {
@@ -600,7 +538,7 @@ onMounted(() => {
       )
       infos.push(
         ...JSON.parse(
-          taskMoreInfo.info,
+          (taskMoreInfo?.info) || '[]',
         ).map((v: string) => ({
           text: v,
           value: '',
@@ -617,64 +555,77 @@ onMounted(() => {
   background-color: #f3f6f8;
   padding-bottom: 1rem;
 }
+
 .pc-nav {
   background-color: #fff;
   display: flex;
   padding: 10px;
   justify-content: space-between;
   align-items: center;
+
   .exit {
     cursor: pointer;
   }
+
   .nav {
     display: flex;
+
     nav {
       display: flex;
       align-items: center;
+
       .nav-item {
         font-size: 1rem;
         color: #595959;
         padding: 10px;
         cursor: pointer;
+
         &.active {
           color: #409eff !important;
           font-weight: 600;
         }
       }
     }
+
     .exit {
       color: #595959;
     }
   }
+
   .logo {
     width: 180px;
     margin: 0 10px;
+
     img {
       height: 40px;
     }
   }
 }
+
 .panel {
   max-width: 1024px;
   padding: 1em;
   background-color: #fff;
   margin: 10px auto;
   box-sizing: border-box;
-  box-shadow: 0 2px 12px 0
-    rgb(0 0 0 / 10%);
+  box-shadow: 0 2px 12px 0 rgb(0 0 0 / 10%);
   border-radius: 4px;
+
   .name {
     text-align: center;
   }
+
   .ddl {
     margin-top: 10px;
     color: #919191;
     font-size: 1rem;
   }
+
   .infos {
     max-width: 400px;
     margin: auto;
-    > div {
+
+    >div {
       margin-bottom: 10px;
     }
   }
