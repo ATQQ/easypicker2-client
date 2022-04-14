@@ -19,6 +19,12 @@
           <router-link to="/login">登录</router-link>
         </strong>
       </p>
+      <br>
+      <p class="des">目前需求面板还未开发完成，</p>
+      <p class="des">可先直接加群进行反馈</p>
+      <p style="text-align: center;">
+        <img style="width: 290px;" src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDk2MzQ3OQ==649900963479" alt="QQ群">
+      </p>
     </div>
 
     <el-dialog title="需求信息" v-model="dialogVisible" :fullscreen="isMobile">
