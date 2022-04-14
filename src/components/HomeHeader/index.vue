@@ -17,7 +17,13 @@
                         <router-link :to="href">{{ text }}</router-link>
                     </li>
                     <li>
-                        <a href="https://github.com/atqq" target="_blank" rel="noopener noreferrer"> GitHub</a>
+                        <a href="https://github.com/atqq" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    </li>
+                    <li>
+                        <a href="https://docs.ep.sugarat.top/plan/todo.html" target="_blank" rel="noopener noreferrer">近期规划</a>
+                    </li>
+                    <li>
+                        <a href="https://docs.ep.sugarat.top/plan/log.html" target="_blank" rel="noopener noreferrer">更新日志</a>
                     </li>
                 </ul>
             </div>

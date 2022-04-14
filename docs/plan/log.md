@@ -1,4 +1,22 @@
 # 更新日志
+## v2.1.1
+### Chore
+* 支持日志搜索
+
+## v2.1.0
+### Feature
+* 优化提交记录的Excel导出格式
+  * ![图片](https://img.cdn.sugarat.top/mdImg/MTY0OTgxNTg0MDg1Mg==649815840852)
+
+### Chore
+* 添加[51la](https://v6.51.la/)的的数据统计SDK
+### BugFix
+* 文件面板，批量操作卡顿问题修复
+
+## v2.0.8
+### Bugfix
+* 提交查询权限一定几率的失败
+
 ## v2.0.7
 ### Feature
 * 支持导出日志数据

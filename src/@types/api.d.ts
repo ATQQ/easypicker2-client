@@ -26,6 +26,8 @@ declare namespace FileApiTypes {
         category_key: string
         date: string
         hash: string
+        cover?: string
+        preview?: string
     }
     interface WithdrawFileOptions {
         taskKey: string
@@ -47,6 +49,7 @@ declare namespace FileApiTypes {
     type getCompressDownUrl = ResponseData<{ url: string }>
     type withdrawFile = ResponseData
     type checkSubmitStatus = ResponseData<{ isSubmit: boolean, txt?: string }>
+    type checkImageFilePreviewUrl = ResponseData<{cover:string, preview:string}[]>
 }
 
 declare namespace UserApiTypes {
@@ -61,7 +64,7 @@ declare namespace UserApiTypes {
     type login = ResponseData<{ token?: string, openTime?: string }>
     type codeLogin = ResponseData<{ token?: string, openTime?: string }>
     type resetPwd = ResponseData<{ token?: string, openTime?: string }>
-    type checkPower = ResponseData<{power:boolean, name:string}>
+    type checkPower = ResponseData<{ power: boolean, name: string }>
     type checkLoginStatus = ResponseData<boolean>
 }
 
@@ -147,8 +150,10 @@ declare namespace OverviewApiTypes {
         user: CountLog
     }>
     type getAllLogMsg = ResponseData<{ logs: LogItem[] }>
-    type getLogMsg = ResponseData<{ logs: LogItem[], sum:number
-        , pageIndex:number, pageSize:number }>
+    type getLogMsg = ResponseData<{
+        logs: LogItem[], sum: number
+            , pageIndex: number, pageSize: number
+    }>
 }
 
 declare namespace SuperUserApiTypes {
@@ -162,12 +167,12 @@ declare namespace SuperUserApiTypes {
         phone: string
         status: number
     }
-    type getUserList = ResponseData<{list:UserItem[]}>
+    type getUserList = ResponseData<{ list: UserItem[] }>
     type updateUserStatus = ResponseData
 }
 
 declare namespace WishApiTypes {
-    enum WishStatus{
+    enum WishStatus {
         /**
          * 审核中
          */
@@ -189,9 +194,9 @@ declare namespace WishApiTypes {
          */
         CLOSE
     }
-    interface Wish{
-        id:string
-        userId:number
+    interface Wish {
+        id: string
+        userId: number
         title: string
         /**
          * 详细描述
@@ -200,13 +205,13 @@ declare namespace WishApiTypes {
         /**
          * 联系方式
          */
-        contact?:string
+        contact?: string
         /**
          * 当前进度
          */
         status: WishStatus
-        startDate:Date
-        endDate:Date
+        startDate: Date
+        endDate: Date
     }
     type addWish = ResponseData
 }

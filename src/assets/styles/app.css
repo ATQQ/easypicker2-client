@@ -40,6 +40,10 @@
   justify-content: center;
 }
 
+.fac {
+  align-items: center;
+}
+
 .tc {
   text-align: center;
 }
