@@ -28,7 +28,7 @@
       </div>
     </div>
     <div class="panel">
-      <div class="export-btns">
+      <div class="export-btns flex fac">
         <el-dropdown trigger="click" @command="handleDropdownClick">
           <el-button type="primary" size="default">
             批量操作<el-icon class="el-icon--right">
@@ -44,7 +44,7 @@
           </template>
         </el-dropdown>
         <div v-show="false">
-        <!-- 迷惑的解决bug的手段 -->
+          <!-- 迷惑的解决bug的手段 -->
           <el-dropdown trigger="click" @command="handleDropdownClick">
             <el-button type="primary" :disabled="selectItem.length === 0" size="default">
               批量操作
@@ -65,6 +65,11 @@
         <el-button title="导出表格中所有的数据" type="success" size="default" :icon="DataAnalysis" @click="() => {
           handleExportExcel(filterFiles, `筛选数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`);
         }" :disabled="showFilterFiles.length === 0">导出记录</el-button>
+        <div class="showImgBtn">
+          显示图片
+          <el-switch inline-prompt v-model="showImg" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
+            inactive-text="否" />
+        </div>
       </div>
     </div>
     <!-- 主体内容 -->
@@ -81,6 +86,26 @@
         <el-table-column prop="size" label="大小">
           <template #default="scope">{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
         </el-table-column>
+        <template v-if="showImg">
+          <el-table-column label="缩略图" width="120">
+            <template #default="scope">
+              <el-image preview-teleported :preview-src-list="previewImages" :initial-index="scope.$index" lazy
+                style="width: 100px; height: 100px" :src="scope.row.cover" fit="cover">
+                <template #placeholder>
+                  <div class="imageLoading">Loading...</div>
+                </template>
+                <template #error>
+                  <div class="imageLoading">
+                    不支持
+                    <el-icon>
+                      <Picture />
+                    </el-icon>
+                  </div>
+                </template>
+              </el-image>
+            </template>
+          </el-table-column>
+        </template>
         <el-table-column fixed="right" label="操作" width="140">
           <template #default="scope">
             <div class="text-btns">
@@ -112,12 +137,12 @@
 <script lang="ts" setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  computed, onMounted, reactive, ref,
+  computed, onMounted, reactive, ref, watchEffect,
 } from 'vue'
 import { useStore } from 'vuex'
 import LinkDialog from '@components/linkDialog.vue'
 import {
-  ArrowDown, Refresh, DataAnalysis, Download, Search,
+  ArrowDown, Refresh, DataAnalysis, Download, Search, Picture,
 } from '@element-plus/icons-vue'
 import { copyRes, formatDate, formatSize } from '@/utils/stringUtil'
 import { FileApi } from '@/apis'
@@ -126,6 +151,8 @@ import { downLoadByUrl, tableItem, tableToExcel } from '@/utils/networkUtil'
 const $store = useStore()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
+const showImg = ref(false)
+
 // 记录导出
 const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
   if (files.length === 0) {
@@ -396,6 +423,42 @@ const handleDownloadTask = () => {
   ElMessage.info('开始归档任务中的文件,请赖心等待,完成后将自动进行下载')
 }
 
+const previewImages = reactive([])
+
+let fetching = false
+const refreshFilesCover = () => {
+  const ids = showFilterFiles.value.map((v) => v.id)
+  if (ids.length === 0 || fetching) {
+    return
+  }
+  fetching = true
+  FileApi.checkImageFilePreviewUrl(ids).then((r) => {
+    fetching = false
+    const { data } = r
+    if (data.length === 0 || data.length !== showFilterFiles.value.length) {
+      return
+    }
+    previewImages.splice(0, previewImages.length)
+
+    showFilterFiles.value.forEach((v, idx) => {
+      const { cover, preview } = data[idx]
+      v.cover = cover
+      previewImages.push(preview)
+    })
+    // 添加裁剪参数
+  })
+}
+watchEffect(() => {
+  if (!showImg.value) {
+    return
+  }
+  if (searchWord.value || pageCurrent.value || pageSize.value) {
+    refreshFilesCover()
+    return
+  }
+  refreshFilesCover()
+})
+
 onMounted(() => {
   loadFiles()
   $store.dispatch('category/getCategory')
@@ -445,6 +508,7 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   box-sizing: border-box;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   border-radius: 4px;
+  z-index: 1;
 
   .label {
     font-size: 12px;
@@ -465,5 +529,18 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
 .el-button {
   margin-left: 10px;
   margin-bottom: 10px;
+}
+
+.showImgBtn {
+  margin-left: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.imageLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 </style>
