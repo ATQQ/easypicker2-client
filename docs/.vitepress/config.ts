@@ -26,6 +26,8 @@ export default defineConfig({
         editLinkText: '编辑文档',
         lastUpdated: '最后更新时间',
         nav: [
+            // TODO：名字待定
+            { text: '使用手册', link: '/use/' },
             { text: '私有化部署', link: '/deploy/' },
             // { text: '规划', link: '/plan/' },
             { text: '更新日志', link: '/plan/log' },
@@ -34,6 +36,23 @@ export default defineConfig({
             { text: '联系作者', link: "https://ep.sugarat.top/author" }
         ],
         sidebar: {
+            'use': [{
+                text: '用户手册',
+                children: [
+                    {
+                        text: '🔧 应用介绍',
+                        link: '/use/',
+                    },
+                    {
+                        text: '⭐️ 功能介绍',
+                        link: '/use/feature',
+                    },
+                    {
+                        text: '❓ 常见问题',
+                        link: '/use/faq',
+                    },
+                ],
+            }],
             'deploy': [{
                 text: '私有化部署',
                 children: [
