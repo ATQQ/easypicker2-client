@@ -120,3 +120,30 @@ export function formatSize(size:number, pointLength?:number, units?:string[]) {
   }
   return (unit === 'B' ? size : size.toFixed(pointLength === undefined ? 2 : pointLength)) + unit
 }
+
+/**
+ * 浏览器支持预览的类型
+ */
+function getSupportPreviewType() {
+  const types = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'image/svg+xml', 'application/pdf', 'text/plain', 'video/mp4']
+  const supportTypes = []
+  types.forEach((type) => {
+    if (typeof (FileReader) !== 'undefined' && typeof (FileReader.prototype.readAsDataURL) !== 'undefined') {
+      const fileReader = new FileReader()
+      if (fileReader.readAsDataURL) {
+        try {
+          fileReader.readAsDataURL(new Blob([new ArrayBuffer(1)], { type }))
+          supportTypes.push(type)
+        } catch (e) {
+          // console.log(e)
+        }
+      }
+    }
+  })
+  return supportTypes
+}
+
+export function isSupportPreview(type:string) {
+  const supportTypes = getSupportPreviewType()
+  return supportTypes.includes(type)
+}
