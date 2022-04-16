@@ -41,7 +41,7 @@ declare namespace FileApiTypes {
     type addFile = ResponseData<any>
     type getFileList = ResponseData<{ files: File[] }>
     type getTemplateUrl = ResponseData<{ link: string }>
-    type getOneFileUrl = ResponseData<{ link: string }>
+    type getOneFileUrl = ResponseData<{ link: string, mimeType:string }>
     type deleteOneFile = ResponseData
     type batchDownload = ResponseData<{ k: string }>
     type batchDel = ResponseData
