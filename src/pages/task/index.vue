@@ -67,7 +67,7 @@
         </div>
         <div class="p10 option-tips">
           <template v-if="isWithdraw">
-            <tip>① 须保证选择的文件与提交时的文件一致<br /> ② 填写表单信息一致</tip>
+            <tip>① 须保证选择的文件与提交时的文件一致<br /> ② 填写表单信息一致 <br /> ③ 完全一模一样的文件的提交记录（内容md5+命名），将会一次性全部撤回</tip>
           </template>
           <template v-else>
             <tip>① 选择完文件，点击 ”提交文件“即可 <br/> ② <strong>选择大文件后需要等待一会儿才展示处理</strong></tip>
