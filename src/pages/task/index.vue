@@ -54,16 +54,25 @@
           handleRemoveFile
         " :on-exceed="handleExceed" :auto-upload="false" multiple :limit="limitUploadCount" :file-list="fileList">
           <el-button type="primary">选择文件</el-button>
+          <div class="p10" v-show="!!calculateMd5Count">
+            <tip>还有 {{ calculateMd5Count }} 个文件正在生成校验信息，请稍等(1G通常需要20s)</tip>
+          </div>
         </el-upload>
         <div class="p10">
-          <el-button v-if="isWithdraw" size="small" @click="startWithdraw" type="warning">一键撤回</el-button>
-          <el-button v-else size="small" @click="submitUpload" type="success" :disabled="!allowUpload">提交文件</el-button>
+          <el-button v-if="isWithdraw" size="small" @click="startWithdraw" type="warning"
+            :disabled="!allowWithdraw || !!calculateMd5Count">一键撤回</el-button>
+          <el-button v-else size="small" @click="submitUpload" type="success"
+            :disabled="!allowUpload || !!calculateMd5Count">提交文件</el-button>
           <el-button @click="checkSubmitStatus" size="small">查询提交情况</el-button>
         </div>
-        <!-- TODO: -->
-        <!-- <div class="p10 option-tips">
-          {{isWithdraw ? '撤回提示' : '提交提示'}}
-        </div> -->
+        <div class="p10 option-tips">
+          <template v-if="isWithdraw">
+            <tip>① 须保证选择的文件与提交时的文件一致<br /> ② 填写表单信息一致</tip>
+          </template>
+          <template v-else>
+            <tip>① 选择完文件，点击 ”提交文件“即可 <br/> ② <strong>选择大文件后需要等待一会儿才展示处理</strong></tip>
+          </template>
+        </div>
         <div class="withdraw">
           <el-button type="text" style="color: #85ce61" v-if="taskMoreInfo.template" size="small"
             @click="downloadTemplate">下载模板</el-button>
@@ -111,6 +120,7 @@ import {
   PeopleApi,
   TaskApi,
 } from '@/apis'
+import Tip from '../dashboard/tasks/components/infoPanel/tip.vue'
 
 const maxInputLength = +import.meta.env
   .VITE_APP_INPUT_MAX_LENGTH || 10
@@ -354,17 +364,30 @@ const allowUpload = computed(() => {
   return false
 })
 
+const allowWithdraw = computed(() => {
+  const { uploadFiles } = fileUpload.value || {}
+  if (!uploadFiles?.length) {
+    return false
+  }
+  return true
+})
+
 // 添加文件
+// 是否完成MD5值计算
+const calculateMd5Count = ref(0)
 const handleChangeFile = (
   file: any,
 ) => {
+  calculateMd5Count.value += 1
   // 计算md5 hash
   getFileMd5Hash(file.raw).then(
     (str) => {
       file.md5 = str
+      calculateMd5Count.value -= 1
     },
   )
 }
+// TODO:上传个数限制可设置
 const limitUploadCount = ref(10)
 const handleExceed = () => {
   ElMessage.warning(
