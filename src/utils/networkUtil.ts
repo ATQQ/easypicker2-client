@@ -145,3 +145,56 @@ export function downLoadByUrl(url: string, filename = `${Date.now()}`) {
   a.download = filename
   a.click()
 }
+
+/**
+ * 解决图片被预览的问题
+ * @param url
+ * @param filename
+ */
+export function downLoadByXhr(url: string, filename = `${Date.now()}`, options?: {
+  progress:(loaded:number, total:number)=>void,
+  success:(res)=>void,
+}) {
+  const { progress, success } = options || {}
+  const xhr = new XMLHttpRequest()
+  xhr.open('GET', url)
+  // 设置返回数据的类型为blob
+  xhr.responseType = 'blob'
+
+  // 增加的代码
+  xhr.onprogress = function (e) {
+    const { total, loaded } = e
+    if (typeof progress === 'function') {
+      progress(loaded, total)
+    }
+  }
+
+  // 资源完成下载
+  xhr.onload = function () {
+    let name = filename
+    // 获取响应的blob对象
+    const blob = xhr.response
+    const a = document.createElement('a')
+    // 设置下载的文件名字
+    name = name || blob.name || 'download'
+    a.download = name
+
+    // 解决安全问题，新页面的window.opener 指向前一个页面的window对象
+    // 使用noopener使 window.opener 获取的值为null
+    a.rel = 'noopener'
+
+    // 创建一个DOMString指向这个blob
+    // 简单理解就是为这个blob对象生成一个可访问的链接
+    a.href = URL.createObjectURL(blob)
+
+    // 40s后移除这个临时链接
+    setTimeout(() => { URL.revokeObjectURL(a.href) }, 4E4) // 40s
+    // 触发a标签，执行下载
+    setTimeout(() => {
+      a.dispatchEvent(new MouseEvent('click'))
+      success(xhr)
+    }, 0)
+  }
+  // 发送请求
+  xhr.send()
+}

@@ -73,6 +73,24 @@
         </div>
       </div>
     </div>
+    <div v-show="downloadList.length" class="panel">
+      <tip>此部分 ”只会展示浏览器将直接预览的文件“ 的下载信息，暂不可切换页面，切换后会丢失当前正在下载进度</tip>
+      <div class="progress-list">
+        <div class="progress-item" v-for="(v, idx) in downloadList" :key="idx">
+          <div class="progress">
+            <el-progress text-inside :stroke-width="24" :percentage="v.percentage" :color="customColors">
+            </el-progress>
+            <el-button size="small" disabled type="text">
+              {{ formatSize((v.percentage / 100) * v.size) }}/{{ formatSize(v.size) }}</el-button>
+            <el-button size="small" type="text" @click="copyRes(v.url,'资源链接已复制到剪贴板')">复制链接</el-button>
+          </div>
+          <div class="des flex fc fac">
+            <div class="filename">{{ v.filename }}</div>
+            <div class="mimeType">{{ v.mimeType }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- 主体内容 -->
     <div class="panel">
       <el-table tooltip-effect="dark" multipleTable ref="multipleTable" @selection-change="handleSelectionChange" stripe
@@ -145,9 +163,14 @@ import LinkDialog from '@components/linkDialog.vue'
 import {
   ArrowDown, Refresh, DataAnalysis, Download, Search, Picture,
 } from '@element-plus/icons-vue'
-import { copyRes, formatDate, formatSize } from '@/utils/stringUtil'
+import {
+  copyRes, formatDate, formatSize, isSupportPreview,
+} from '@/utils/stringUtil'
 import { FileApi } from '@/apis'
-import { downLoadByUrl, tableItem, tableToExcel } from '@/utils/networkUtil'
+import {
+  downLoadByUrl, downLoadByXhr, tableItem, tableToExcel,
+} from '@/utils/networkUtil'
+import Tip from '../tasks/components/infoPanel/tip.vue'
 
 const $store = useStore()
 const showLinkModel = ref(false)
@@ -335,12 +358,45 @@ const checkInfo = (e: any) => {
   showInfoDialog.value = true
 }
 
+const customColors = [
+  { color: '#f56c6c', percentage: 30 },
+  { color: '#e6a23c', percentage: 50 },
+  { color: '#409eff', percentage: 100 },
+  { color: '#67c23a', percentage: 100 },
+]
+// 可预览文件下载列表
+const downloadList = reactive<DownloadItem[]>([])
 const downloadOne = (e: any) => {
-  const { id, name } = e
+  const { id, name, size } = e
   FileApi
     .getOneFileUrl(id)
     .then((res) => {
-      const { link } = res.data
+      const { link, mimeType } = res.data
+      if (isSupportPreview(mimeType)) {
+        const fileItem:DownloadItem = reactive<DownloadItem>({
+          filename: name,
+          mimeType,
+          url: link,
+          status: 'ready',
+          size,
+          percentage: 0,
+        })
+        downloadList.push(fileItem)
+        downLoadByXhr(link, name, {
+          progress(loaded, total) {
+            fileItem.status = 'downloading'
+            fileItem.percentage = Math.floor((loaded / total) * 100)
+          },
+          success() {
+            fileItem.percentage = 100
+            fileItem.status = 'done'
+            // showLinkModel.value = true
+            // downloadUrl.value = link
+            ElMessage.success('文件下载成功')
+          },
+        })
+        return
+      }
       showLinkModel.value = true
       downloadUrl.value = link
       downLoadByUrl(link, name)
@@ -546,5 +602,48 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   align-items: center;
   justify-content: center;
   height: 100%;
+}
+
+.progress-list {
+  margin-top: 10px;
+
+  .progress-item {
+
+    margin-bottom: 10px;
+
+    .progress {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 6px;
+
+      .el-progress--line {
+        min-width: 200px;
+        width: 260px;
+      }
+
+      .el-button {
+        margin: 0 6px;
+      }
+    }
+
+    .des {
+      font-size: 12px;
+      .filename{
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        word-break: keep-all;
+        margin-right: 10px;
+      }
+      .mimeType{
+        width: 60px;
+        color: #409EFF;
+      }
+    }
+
+    text-align: center;
+  }
 }
 </style>

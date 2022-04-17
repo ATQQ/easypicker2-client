@@ -1,4 +1,20 @@
 # 更新日志
+## v2.1.4
+### Feature
+* 信息维护面板，简单显示帮助提示信息 + 图例
+  * <img src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mzg4NjUzMw==650183886533" style="height:100px;"/>
+* 文件提交页增加提示文案
+  * <img src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDE0MTE0MA==650184141140" style="height:100px;"/>
+
+### Chore
+* 升级客户端 qiniu-sdk版本
+
+### Bugfix
+* 文件提交页交互缺陷修复
+* 图片/PDF/视频等浏览器支持预览的文件将会直接进行预览
+  * 改由应用去控制此类文件的下载 <img src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDM0Nzg2NA==650184347864" style="height:100px;"/>
+* 批量删除文件的误删
+* 撤回文件误删
 
 ## v2.1.3
 ### Bugfix

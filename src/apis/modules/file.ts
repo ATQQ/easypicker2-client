@@ -92,10 +92,11 @@ function withdrawFile(options:FileApiTypes.WithdrawFileOptions):FileApiTypes.wit
   })
 }
 
-function checkSubmitStatus(taskKey:string, info:any):FileApiTypes.checkSubmitStatus {
+function checkSubmitStatus(taskKey:string, info:any, name = ''):FileApiTypes.checkSubmitStatus {
   return ajax.post('file/submit/people', {
     taskKey,
     info,
+    name,
   })
 }
 
