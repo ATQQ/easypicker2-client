@@ -41,7 +41,7 @@ declare namespace FileApiTypes {
     type addFile = ResponseData<any>
     type getFileList = ResponseData<{ files: File[] }>
     type getTemplateUrl = ResponseData<{ link: string }>
-    type getOneFileUrl = ResponseData<{ link: string, mimeType:string }>
+    type getOneFileUrl = ResponseData<{ link: string, mimeType: string }>
     type deleteOneFile = ResponseData
     type batchDownload = ResponseData<{ k: string }>
     type batchDel = ResponseData
@@ -49,7 +49,7 @@ declare namespace FileApiTypes {
     type getCompressDownUrl = ResponseData<{ url: string }>
     type withdrawFile = ResponseData
     type checkSubmitStatus = ResponseData<{ isSubmit: boolean, txt?: string }>
-    type checkImageFilePreviewUrl = ResponseData<{cover:string, preview:string}[]>
+    type checkImageFilePreviewUrl = ResponseData<{ cover: string, preview: string }[]>
 }
 
 declare namespace UserApiTypes {
@@ -87,12 +87,18 @@ declare namespace TaskApiTypes {
         rewrite?: number
         share?: string
         template?: string
+        name: string, category: string
+    }
+
+    interface TaskFormInfoItem {
+        text: string,
+        value: string
     }
     type getList = ResponseData<{ tasks: TaskItem[] }>
     type create = ResponseData
     type deleteOne = ResponseData
     type updateBaseInfo = ResponseData
-    type getTaskInfo = ResponseData<{ name: string, category: string }>
+    type getTaskInfo = ResponseData<TaskInfo>
     type getTaskMoreInfo = ResponseData<TaskInfo>
     type updateTaskMoreInfo = ResponseData
 }
@@ -152,7 +158,7 @@ declare namespace OverviewApiTypes {
     type getAllLogMsg = ResponseData<{ logs: LogItem[] }>
     type getLogMsg = ResponseData<{
         logs: LogItem[], sum: number
-            , pageIndex: number, pageSize: number
+        , pageIndex: number, pageSize: number
     }>
 }
 
