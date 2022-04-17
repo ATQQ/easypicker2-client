@@ -1,5 +1,10 @@
 <template>
   <div class="tc">
+      <tip
+      :imgs="[
+        'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MjY3MjUxNw==650182672517',
+      ]"
+    >设置的模板文件，可供用户在提交页下载。</tip>
     <el-button
       v-if="template"
       :disabled="!template"
@@ -29,7 +34,7 @@
           style="margin-left: 10px;"
           size="small"
           type="success"
-        >开始上传</el-button>
+        >设为模板</el-button>
         <template #tip>
           <div class="el-upload__tip">选择模板文件,然后点击上传</div>
         </template>
@@ -45,6 +50,7 @@ import {
 import { FileApi } from '@/apis'
 import { qiniuUpload } from '@/utils/networkUtil'
 import { updateTaskInfo } from '../../public'
+import Tip from './tip.vue'
 
 export default defineComponent({
   name: 'templatePanel',
@@ -68,7 +74,6 @@ export default defineComponent({
       }
     })
     const percentage = ref(0)
-
     // 删除模板
     const deleteTemplate = () => {
       if (template.value) {
@@ -92,7 +97,9 @@ export default defineComponent({
     const submitUploadPeople = () => {
       const { uploadFiles } = elUpload.value
       uploadFiles.forEach((file: any) => {
-        if (!props.k) { return }
+        if (!props.k) {
+          return
+        }
         const { name } = file
         const key = `easypicker2/${props.k}_template/${name}`
         if (file.status === 'ready') {
@@ -118,7 +125,6 @@ export default defineComponent({
         }
       })
     }
-
     // 添加文件
     const handleChangeFile = (file: any) => {
       // fileList.push(file)
@@ -135,5 +141,6 @@ export default defineComponent({
       percentage,
     }
   },
+  components: { Tip },
 })
 </script>

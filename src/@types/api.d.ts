@@ -87,7 +87,7 @@ declare namespace TaskApiTypes {
         rewrite?: number
         share?: string
         template?: string
-        name: string, category: string
+        name?: string, category?: string
     }
 
     interface TaskFormInfoItem {
