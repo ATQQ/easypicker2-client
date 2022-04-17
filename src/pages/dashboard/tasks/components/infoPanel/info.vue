@@ -1,5 +1,8 @@
 <template>
   <div class="tc">
+    <tip :imgs="[
+      'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzM3NjUyNg==650183376526',
+    ]">上传文件必填表单信息</tip>
     <div class="auto-format">
       <span>文件自动重命名:</span>
       <el-switch
@@ -64,6 +67,7 @@ import {
 } from 'vue'
 import { CircleCloseFilled } from '@element-plus/icons-vue'
 import { updateTaskInfo } from '../../public'
+import Tip from './tip.vue'
 
 const props = defineProps({
   rewrite: {

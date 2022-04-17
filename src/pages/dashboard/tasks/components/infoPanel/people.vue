@@ -1,40 +1,26 @@
 <template>
   <div class="tc">
-    <el-button
-      @click="updateLimitPeople(true)"
-      v-if="!people"
-      size="default"
-      round
-      type="success"
-    >打开</el-button>
+    <tip :imgs="[
+      'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzEwOTEzOQ==650183109139',
+    ]">只有名单里的成员，才可提交文件</tip>
+    <el-button @click="updateLimitPeople(true)" v-if="!people" size="default" round type="success">打开</el-button>
     <el-button @click="updateLimitPeople(false)" v-if="people" size="default" round type="danger">关闭</el-button>
     <el-button @click="checkPeople" v-if="people" round size="default" type="primary">查看提交情况</el-button>
     <div class="upload-people" v-if="people">
-      <el-upload
-        accetp="text/plain"
-        action=""
-        class="upload-demo"
-        ref="peopleUpload"
-        :on-change="handleChangeFile"
-        :on-exceed="handleExceedFile"
-        :on-remove="clearFiles"
-        :auto-upload="false"
-        :limit="1"
-        :file-list="peopleFileList"
-      >
+      <el-upload accetp="text/plain" action="" class="upload-demo" ref="peopleUpload" :on-change="handleChangeFile"
+        :on-exceed="handleExceedFile" :on-remove="clearFiles" :auto-upload="false" :limit="1"
+        :file-list="peopleFileList">
         <template #trigger>
           <el-button size="small" type="primary">选取文件</el-button>
         </template>
-        <el-button
-          @click="submitUploadPeople"
-          style="margin-left: 10px"
-          size="small"
-          type="success"
-        >开始上传</el-button>
+        <el-button @click="submitUploadPeople" style="margin-left: 10px" size="small" type="success">上传名单</el-button>
         <template #tip>
+
           <div class="el-upload__tip">
-            只能上传 txt
-            文本文件,每行一个名字
+            <tip :imgs="[
+              'https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mjk2NjUxMA==650182966510',
+            ]">只能上传 .txt 文本文件，每行一个名字</tip>
+    <tip>如名字有特殊字符，建议去除</tip>
           </div>
         </template>
       </el-upload>
@@ -43,14 +29,9 @@
       <!-- 上部分的筛选菜单 -->
       <div class="nav">
         <div class="item">
-          <el-button
-            :disabled="
-              peopleList.length === 0
-            "
-            type="success"
-            size="default"
-            @click="handleExportExcel"
-          >导出记录</el-button>
+          <el-button :disabled="
+            peopleList.length === 0
+          " type="success" size="default" @click="handleExportExcel">导出记录</el-button>
         </div>
         <div class="item">
           <el-select size="default" v-model="selectSubmitStatus" filterable placeholder="状态筛选">
@@ -63,11 +44,8 @@
           <el-input size="default" placeholder="输入要查询的姓名" v-model="searchName"></el-input>
         </div>
         <div class="item">
-          <el-button
-            type="primary"
-            size="default"
-            @click="handleCheckMore"
-          >{{ checkMore ? '隐藏' : '显示' }}详细数据</el-button>
+          <el-button type="primary" size="default" @click="handleCheckMore">{{ checkMore ? '隐藏' : '显示' }}详细数据
+          </el-button>
         </div>
       </div>
       <!-- 概况信息 -->
@@ -100,20 +78,16 @@
         <el-table-column sortable property="submitCount" label="提交数量" width="120"></el-table-column>
         <el-table-column sortable property="lastDate" label="最后操作时间" width="120"></el-table-column>
         <template v-if="checkMore">
-          <el-table-column  property="fileCount" label="现存数量" width="94"></el-table-column>
-          <el-table-column  property="count" label="提交次数" width="94"></el-table-column>
+          <el-table-column property="fileCount" label="现存数量" width="94"></el-table-column>
+          <el-table-column property="count" label="提交次数" width="94"></el-table-column>
         </template>
         <el-table-column label="操作" width="100">
           <template #default="scope">
-            <el-button
-              @click="
-                handleDeletePeople(
-                  scope.row
-                )
-              "
-              type="text"
-              size="small"
-            >删除</el-button>
+            <el-button @click="
+              handleDeletePeople(
+                scope.row
+              )
+            " type="text" size="small">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -329,18 +303,22 @@ export default defineComponent({
 .upload-people {
   padding: 10px;
 }
+
 .submit-ok {
   color: #67c23a;
 }
+
 .submit-fail {
   color: #f56c6c;
 }
+
 .nav {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   padding-bottom: 5px;
 }
+
 .nav .item {
   margin-left: 10px;
   margin-top: 5px;
