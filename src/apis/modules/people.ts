@@ -37,10 +37,16 @@ function checkPeopleIsExist(key:string, name:string):PeopleApiTypes.checkPeopleI
     name,
   })
 }
+
+function getUsefulTemplate(key:string):PeopleApiTypes.getUsefulTemplate {
+  return ajax.get(`/people/template/${key}`)
+}
+
 export default {
   importPeople,
   getPeople,
   deletePeople,
   updatePeopleStatus,
   checkPeopleIsExist,
+  getUsefulTemplate,
 }
