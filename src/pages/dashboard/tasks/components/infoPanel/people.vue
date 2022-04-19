@@ -1,5 +1,5 @@
 <template>
-  <div class="tc">
+  <div class="tc info-panel">
     <tip :imgs="[
       'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzEwOTEzOQ==650183109139',
     ]">只有名单里的成员，才可提交文件</tip>
@@ -15,15 +15,17 @@
         </template>
         <el-button @click="submitUploadPeople" style="margin-left: 10px" size="small" type="success">上传名单</el-button>
         <template #tip>
-
           <div class="el-upload__tip">
             <tip :imgs="[
               'https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mjk2NjUxMA==650182966510',
             ]">只能上传 .txt 文本文件，每行一个名字</tip>
-    <tip>如名字有特殊字符，建议去除</tip>
+            <tip>如名字有特殊字符，建议去除</tip>
+            <tip>通过文件导入的方式，为追加导入，不会覆盖已存在数据</tip>
           </div>
         </template>
       </el-upload>
+      <!-- 从其它任务导入 -->
+      <el-button size="small" type="success" @click="openImportPanel">从其它任务导入</el-button>
     </div>
     <el-dialog :fullscreen="isMobile" title="提交情况" v-model="showPeopleList">
       <!-- 上部分的筛选菜单 -->
@@ -92,6 +94,29 @@
         </el-table-column>
       </el-table>
     </el-dialog>
+    <el-dialog :fullscreen="isMobile" title="人员列表导入" v-model="showImportPanel">
+      <el-form :model="importPanelInfo" label-width="100px" label-position="right">
+        <el-form-item label="任务">
+          <el-select v-model="importPanelInfo.taskValue" placeholder="请选择" no-data-text="无可用任务">
+            <el-option v-for="t in importPanelInfo.taskList" :key="t.taskKey" :label="t.name" :value="t.taskKey"></el-option>
+          </el-select>
+        </el-form-item>
+          <tip>{{ ImportTaskTipMsg }}</tip>
+        <el-form-item label="任务">
+          <el-radio-group v-model="importPanelInfo.type">
+            <el-radio label="override">覆盖导入</el-radio>
+            <el-radio label="add">追加导入</el-radio>
+          </el-radio-group>
+        </el-form-item>
+          <tip>{{ importPanelInfo.type === 'override' ? '“覆盖导入” 将会覆盖原来的数据' : '“追加导入” 将只会导入不存在数据' }}</tip>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showImportPanel = false">取 消</el-button>
+          <el-button :disabled="!importPanelInfo.taskValue" type="primary" @click="handleSaveImportInfo">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts">
@@ -148,6 +173,7 @@ export default defineComponent({
       })
       people.value = +limit
     }
+
     // 查看提交情况
     const showPeopleList = ref(false)
     const peopleList: any = reactive([])
@@ -273,7 +299,37 @@ export default defineComponent({
     }
     const $store = useStore()
     const isMobile = computed(() => $store.getters['public/isMobile'])
+    const importPanelInfo = reactive({ taskList: [], type: 'override', taskValue: '' })
+    const showImportPanel = ref(false)
+    const openImportPanel = async () => {
+      const taskKey = props.k
+      // 通过任务Key获取可用任务列表，与概况信息
+      const { data } = (await PeopleApi.getUsefulTemplate(taskKey))
+      importPanelInfo.taskList = data
+      importPanelInfo.taskValue = data[0]?.taskKey || ''
+      showImportPanel.value = true
+    }
+    const ImportTaskTipMsg = computed(() => {
+      const { taskList, taskValue } = importPanelInfo
+      const task = taskList.find((v) => v.taskKey === taskValue)
+      if (!task) {
+        return '无可用任务'
+      }
+      return `${task.count} 条数据`
+    })
+    const handleSaveImportInfo = () => {
+      showImportPanel.value = false
+      // TODO：调用接口导入数据
+    }
+
+    const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
     return {
+      ImportTaskTipMsg,
+      handleSaveImportInfo,
+      importPanelFlexStyle,
+      showImportPanel,
+      openImportPanel,
+      importPanelInfo,
       isMobile,
       handleExportExcel,
       people,
@@ -322,5 +378,9 @@ export default defineComponent({
 .nav .item {
   margin-left: 10px;
   margin-top: 5px;
+}
+
+.info-panel :deep(.el-form-item__label) {
+  flex: v-bind(importPanelFlexStyle);
 }
 </style>
