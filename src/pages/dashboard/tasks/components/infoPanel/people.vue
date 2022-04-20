@@ -20,12 +20,15 @@
               'https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mjk2NjUxMA==650182966510',
             ]">只能上传 .txt 文本文件，每行一个名字</tip>
             <tip>如名字有特殊字符，建议去除</tip>
-            <tip>通过文件导入的方式，为追加导入，不会覆盖已存在数据</tip>
+            <tip>上传文件导入的方式，为追加导入，不会覆盖已存在数据</tip>
           </div>
         </template>
       </el-upload>
       <!-- 从其它任务导入 -->
       <el-button size="small" type="success" @click="openImportPanel">从其它任务导入</el-button>
+      <div class="p10">
+        <tip>支持从已有的任务直接导入名单</tip>
+      </div>
     </div>
     <el-dialog :fullscreen="isMobile" title="提交情况" v-model="showPeopleList">
       <!-- 上部分的筛选菜单 -->
@@ -98,17 +101,18 @@
       <el-form :model="importPanelInfo" label-width="100px" label-position="right">
         <el-form-item label="任务">
           <el-select v-model="importPanelInfo.taskValue" placeholder="请选择" no-data-text="无可用任务">
-            <el-option v-for="t in importPanelInfo.taskList" :key="t.taskKey" :label="t.name" :value="t.taskKey"></el-option>
+            <el-option v-for="t in importPanelInfo.taskList" :key="t.taskKey" :label="t.name" :value="t.taskKey">
+            </el-option>
           </el-select>
         </el-form-item>
-          <tip>{{ ImportTaskTipMsg }}</tip>
+        <tip>{{ ImportTaskTipMsg }}</tip>
         <el-form-item label="任务">
           <el-radio-group v-model="importPanelInfo.type">
             <el-radio label="override">覆盖导入</el-radio>
             <el-radio label="add">追加导入</el-radio>
           </el-radio-group>
         </el-form-item>
-          <tip>{{ importPanelInfo.type === 'override' ? '“覆盖导入” 将会覆盖原来的数据' : '“追加导入” 将只会导入不存在数据' }}</tip>
+        <tip>{{ importPanelInfo.type === 'override' ? '“覆盖导入” 将会覆盖原来的数据' : '“追加导入” 将只会导入不存在数据' }}</tip>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -318,8 +322,22 @@ export default defineComponent({
       return `${task.count} 条数据`
     })
     const handleSaveImportInfo = () => {
-      showImportPanel.value = false
-      // TODO：调用接口导入数据
+      PeopleApi.importPeopleFromTpl(props.k, importPanelInfo.taskValue, importPanelInfo.type).then((res) => {
+        showImportPanel.value = false
+        const { success, fail } = res.data
+        ElMessage.success(`导入成功${success}条,失败${fail.length}条`)
+
+        if (fail.length > 0) {
+          setTimeout(() => {
+            ElMessage.info('自动开始下载未成功导入名单')
+            tableToExcel([
+              '未成功导入名单',
+            ], fail.map((v: string) => [
+              v,
+            ]), `${props.name}_导入失败名单_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
+          }, 1000)
+        }
+      })
     }
 
     const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))

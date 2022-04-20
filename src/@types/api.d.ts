@@ -121,8 +121,8 @@ declare namespace PeopleApiTypes {
     type deletePeople = ResponseData
     type updatePeopleStatus = ResponseData
     type checkPeopleIsExist = ResponseData<{ exist: boolean }>
-
     type getUsefulTemplate = ResponseData<{taskKey:string, name:string, count:number}[]>
+    type importFromTpl = ResponseData<{fail:string[], success:number}>
 }
 
 declare namespace CateGoryApiTypes {
