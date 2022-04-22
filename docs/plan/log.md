@@ -1,10 +1,19 @@
 # 更新日志
+## v2.1.5
+### Feature
+* 支持从其它任务导入限制人员
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDYzODMzNTI5Mw==650638335293" style="height:100px;" />
+* 支持从其它任务导入表单信息
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDYzODU5OTQ2Mg==650638599462" style="width:200px;"/>
+* 支持手动清理OSS上已失效的归档文件，节约存储空间
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDYzODczNzUyMw==650638737523" style="width:200px;"/>
+
 ## v2.1.4
 ### Feature
 * 信息维护面板，简单显示帮助提示信息 + 图例
-  * <img src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mzg4NjUzMw==650183886533" style="height:100px;"/>
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mzg4NjUzMw==650183886533" style="height:100px;"/>
 * 文件提交页增加提示文案
-  * <img src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDE0MTE0MA==650184141140" style="height:100px;"/>
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDE0MTE0MA==650184141140" style="height:100px;"/>
 
 ### Chore
 * 升级客户端 qiniu-sdk版本
@@ -12,7 +21,7 @@
 ### Bugfix
 * 文件提交页交互缺陷修复
 * 图片/PDF/视频等浏览器支持预览的文件将会直接进行预览
-  * 改由应用去控制此类文件的下载 <img src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDM0Nzg2NA==650184347864" style="height:100px;"/>
+  * 改由应用去控制此类文件的下载 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDM0Nzg2NA==650184347864" style="height:100px;"/>
 * 批量删除文件的误删
 * 撤回文件误删
 
@@ -21,7 +30,7 @@
 * 提交文件面板，未选择文件时可点击提交文件并进行后续逻辑
 * 单个文件记录删除，导致关联文件被误删
 * 将无关联任务的文件，单独展示出来
-  * <img src="https://img.cdn.sugarat.top/mdImg/MTY0OTkzNjA2OTY1Ng==649936069656" style="width:200px;"/>
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTkzNjA2OTY1Ng==649936069656" style="width:200px;"/>
 
 ### Chore
 * 优化删除提示文案”数据无价，谨慎操作“
