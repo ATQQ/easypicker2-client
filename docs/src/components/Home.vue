@@ -10,9 +10,9 @@
             <br />可以请作者喝点
             <strong>饮品</strong>
         </div>
-        <Picture class="zanshang" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354" />
+        <Picture style="width: 200px;" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354" />
         <div>微信赞赏码</div>
-        <Picture class="feedback" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503" />
+        <Picture style="width: 200px;margin: 10px;" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503" />
         <div>反馈交流群</div>
     </div>
 </template>
@@ -37,14 +37,5 @@ h2 {
     text-align: center;
     line-height: 26px;
     opacity: 0.6;
-}
-
-.zanshang {
-    width: 200px;
-}
-
-.feedback {
-    width: 200px;
-    margin: 10px;
 }
 </style>
