@@ -162,7 +162,7 @@ const cardList = reactive([
     type: 'compress',
     title: '归档文件',
     value: '0/0KB',
-    supplement: '已过期0个',
+    supplement: '已失效0个',
     icon: Coin,
     color: '#e38013',
   },
@@ -182,7 +182,7 @@ const refreshCount = () => {
     cardList[3].value = `${pv.today.sum}/${pv.today.uv}`
     cardList[3].supplement = `历史: ${pv.all.sum}/${pv.all.uv}`
     cardList[4].value = `${compress.all.sum}/${compress.all.size}`
-    cardList[4].supplement = `已过期 ${compress.expired.sum}/${compress.expired.size}`
+    cardList[4].supplement = `已失效 ${compress.expired.sum}/${compress.expired.size}`
   })
 }
 

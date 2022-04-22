@@ -1,5 +1,5 @@
 <template>
-  <div class="tc info-panel">
+  <div class="tc">
     <tip :imgs="[
       'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzM3NjUyNg==650183376526',
     ]">上传文件必填表单信息</tip>
@@ -44,22 +44,25 @@
       <tip>支持从已有的任务直接导入表单信息</tip>
     </div>
     <div style="color: red;" v-if="needSave">有变动，请记得点击保存</div>
-    <el-dialog :fullscreen="isMobile" title="表单信息导入" v-model="showImportPanel">
-      <el-form :model="importPanelInfo" label-width="100px" label-position="right">
-        <el-form-item label="任务">
-          <el-select filterable v-model="importPanelInfo.taskValue" placeholder="请选择" no-data-text="无可用任务">
-            <el-option v-for="t in importPanelInfo.taskList" :key="t.taskKey" :label="t.name" :value="t.taskKey">
-            </el-option>
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showImportPanel = false">取 消</el-button>
-          <el-button :disabled="!importPanelInfo.taskValue" type="primary" @click="handleSaveImportInfo">确 定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+    <div class="info-panel">
+      <el-dialog :fullscreen="isMobile" title="表单信息导入" v-model="showImportPanel">
+        <el-form :model="importPanelInfo" label-width="100px" label-position="right">
+          <el-form-item label="任务">
+            <el-select filterable v-model="importPanelInfo.taskValue" placeholder="请选择" no-data-text="无可用任务">
+              <el-option v-for="t in importPanelInfo.taskList" :key="t.taskKey" :label="t.name" :value="t.taskKey">
+              </el-option>
+            </el-select>
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="showImportPanel = false">取 消</el-button>
+            <el-button :disabled="!importPanelInfo.taskValue" type="primary" @click="handleSaveImportInfo">确 定
+            </el-button>
+          </span>
+        </template>
+      </el-dialog>
+    </div>
   </div>
 </template>
 <script lang="ts" setup>
