@@ -100,7 +100,7 @@
     <el-dialog :fullscreen="isMobile" title="人员列表导入" v-model="showImportPanel">
       <el-form :model="importPanelInfo" label-width="100px" label-position="right">
         <el-form-item label="任务">
-          <el-select v-model="importPanelInfo.taskValue" placeholder="请选择" no-data-text="无可用任务">
+          <el-select filterable v-model="importPanelInfo.taskValue" placeholder="请选择" no-data-text="无可用任务">
             <el-option v-for="t in importPanelInfo.taskList" :key="t.taskKey" :label="t.name" :value="t.taskKey">
             </el-option>
           </el-select>

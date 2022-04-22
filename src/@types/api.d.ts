@@ -101,6 +101,7 @@ declare namespace TaskApiTypes {
     type getTaskInfo = ResponseData<TaskInfo>
     type getTaskMoreInfo = ResponseData<TaskInfo>
     type updateTaskMoreInfo = ResponseData
+    type getUsefulTemplate = ResponseData<{taskKey:string, name:string, info:string}[]>
 }
 
 declare namespace PublicApiTypes {

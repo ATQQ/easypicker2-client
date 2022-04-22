@@ -34,6 +34,11 @@ function updateTaskMoreInfo(key:string,
   options:TaskApiTypes.TaskInfo):TaskApiTypes.updateTaskMoreInfo {
   return ajax.put(`task_info/${key}`, options)
 }
+
+function getUsefulTemplate(key: string): TaskApiTypes.getUsefulTemplate {
+  return ajax.get(`/task_info/template/${key}`)
+}
+
 export default {
   getList,
   create,
@@ -42,4 +47,5 @@ export default {
   getTaskInfo,
   getTaskMoreInfo,
   updateTaskMoreInfo,
+  getUsefulTemplate,
 }
