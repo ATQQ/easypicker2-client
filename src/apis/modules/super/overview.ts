@@ -19,9 +19,13 @@ function getLogMsgDetail(id:string):any {
   return ajax.get(`${baseUrl}/log/${id}`)
 }
 
+function clearExpiredCompressFile() {
+  return ajax.delete(`${baseUrl}/compress`)
+}
 export default {
   getCount,
   getAllLogMsg,
   getLogMsg,
   getLogMsgDetail,
+  clearExpiredCompressFile,
 }
