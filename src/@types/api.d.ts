@@ -141,6 +141,7 @@ declare namespace OverviewApiTypes {
         sum: number
         recent?: number
         uv?: number
+        size?:string
     }
     interface LogItem {
         date: string
@@ -156,6 +157,10 @@ declare namespace OverviewApiTypes {
             today: CountLog
         }
         user: CountLog
+        compress :{
+            all: CountLog
+            expired: CountLog
+        }
     }>
     type getAllLogMsg = ResponseData<{ logs: LogItem[] }>
     type getLogMsg = ResponseData<{
