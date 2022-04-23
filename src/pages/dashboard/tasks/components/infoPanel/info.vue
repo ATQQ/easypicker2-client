@@ -53,6 +53,7 @@
               </el-option>
             </el-select>
           </el-form-item>
+          <tip>{{ importPanelInfo.taskValue ? "" : "无可用任务" }}</tip>
         </el-form>
         <template #footer>
           <span class="dialog-footer">
@@ -192,5 +193,6 @@ const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
 
 .info-panel :deep(.el-form-item__label) {
   flex: v-bind(importPanelFlexStyle);
+  justify-content: flex-end;
 }
 </style>
