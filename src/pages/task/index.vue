@@ -222,19 +222,24 @@ const fileUpload = ref<UploadInstance>()
 
 const handleRemoveFile: any = (
   file: any,
-) => ElMessageBox.confirm(
-  '不影响已经上传成功的，正在上传的将取消上传',
-  '确认移除此文件吗',
-).then(() => {
-  if (file.status === 'uploading') {
-    ElMessage.info(
-      `取消${file.name}的上传`,
-    )
-    // 取消上传
-    file.subscription.unsubscribe() // 取消上传
+) => {
+  if (file.status === 'uploading' || file.status === 'success') {
+    return ElMessageBox.confirm(
+      '不影响已经上传成功的，正在上传的将取消上传',
+      '确定从列表移除文件吗？',
+    ).then(() => {
+      if (file.status === 'uploading') {
+        ElMessage.info(
+          `取消${file.name}的上传`,
+        )
+        // 取消上传
+        file.subscription.unsubscribe() // 取消上传
+      }
+      return true
+    }).catch(() => false)
   }
   return true
-}).catch(() => false)
+}
 
 // 校验表单填写
 const isWriteFinish = computed(() => infos.every(
