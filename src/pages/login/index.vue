@@ -202,6 +202,10 @@ onMounted(() => {
   div {
     margin-top: 10px;
   }
+  :deep(.el-input-group__append){
+    width: 80px;
+    padding:0 5px 0 15px;
+  }
 }
 // 登录按钮下方链接
 .links {
