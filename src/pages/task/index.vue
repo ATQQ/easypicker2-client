@@ -30,9 +30,9 @@
         截止时间:{{ ddlStr }}
         <span>
           {{
-            isOver
-              ? '已经结束'
-              : waitTimeStr
+              isOver
+                ? '已经结束'
+                : waitTimeStr
           }}
         </span>
       </h2>
@@ -50,14 +50,24 @@
             </el-form-item>
           </el-form>
         </div>
-
-        <el-upload action="“" ref="fileUpload" :on-change="handleChangeFile" :before-remove="
-          handleRemoveFile
-        " :on-exceed="handleExceed" :auto-upload="false" multiple :limit="limitUploadCount" :file-list="fileList">
-          <el-button type="primary">选择文件</el-button>
-          <div class="p10" v-show="!!calculateMd5Count">
-            <tip>还有 {{ calculateMd5Count }} 个文件正在生成校验信息，请稍等(1G通常需要20s)</tip>
-          </div>
+        <el-upload style="max-width: 400px; margin: 0 auto;" :drag="!isMobile" action="" ref="fileUpload"
+          :on-change="handleChangeFile" :before-remove="
+            handleRemoveFile
+          " :on-exceed="handleExceed" :auto-upload="false" multiple :limit="limitUploadCount" :file-list="fileList">
+          <el-button v-if="isMobile" type="primary">选择文件</el-button>
+          <template v-else>
+            <el-icon class="el-icon--upload">
+              <upload-filled />
+            </el-icon>
+            <div class="el-upload__text">
+              将文件拖于此处 or <em>直接选择文件</em>
+            </div>
+          </template>
+          <template #tip>
+            <div class="p10" v-show="!!calculateMd5Count">
+              <tip>还有 {{ calculateMd5Count }} 个文件正在生成校验信息，请稍等(1G通常需要20s)</tip>
+            </div>
+          </template>
         </el-upload>
         <div class="p10">
           <el-button v-if="isWithdraw" size="small" @click="startWithdraw" type="warning"
@@ -98,6 +108,10 @@ import {
   ElMessage,
   ElMessageBox,
 } from 'element-plus'
+import type {
+  UploadUserFile,
+  UploadInstance,
+} from 'element-plus'
 import {
   computed,
   onMounted,
@@ -109,6 +123,8 @@ import {
   useRouter,
 } from 'vue-router'
 import LinkDialog from '@components/linkDialog.vue'
+import { UploadFilled } from '@element-plus/icons-vue'
+import { useStore } from 'vuex'
 import {
   formatDate,
   getFileMd5Hash,
@@ -128,6 +144,8 @@ import Tip from '../dashboard/tasks/components/infoPanel/tip.vue'
 const maxInputLength = +import.meta.env
   .VITE_APP_INPUT_MAX_LENGTH || 10
 
+const $store = useStore()
+const isMobile = computed(() => $store.getters['public/isMobile'])
 // 顶部导航
 const $router = useRouter()
 const $route = useRoute()
@@ -199,8 +217,8 @@ const infos = reactive<TaskApiTypes.TaskFormInfoItem[]>([])
 // 文件上传部分
 
 // 文件上传
-const fileList = reactive([])
-const fileUpload = ref<any>()
+const fileList = reactive<(UploadUserFile & { md5: string, subscription: any })[]>([])
+const fileUpload = ref<UploadInstance>()
 
 const handleRemoveFile: any = (
   file: any,
@@ -216,7 +234,7 @@ const handleRemoveFile: any = (
     file.subscription.unsubscribe() // 取消上传
   }
   return true
-})
+}).catch(() => false)
 
 // 校验表单填写
 const isWriteFinish = computed(() => infos.every(
@@ -240,7 +258,7 @@ const confirmPeopleName = () => ElMessageBox.prompt(
   })
 
 const startUpload = () => {
-  const { uploadFiles } = fileUpload.value
+  const uploadFiles = fileList
   for (const file of uploadFiles) {
     if (!file.md5) {
       ElMessage.info(
@@ -316,7 +334,7 @@ const startUpload = () => {
                 data: any,
                 subscription: any,
               ) {
-                file.percentage = ~~per
+                file.percentage = Math.floor(per)
                 // 挂载取消上传的方法
                 file.subscription = subscription
               },
@@ -360,11 +378,7 @@ const submitUpload = async () => {
 
 // 是否允许上传
 const allowUpload = computed(() => {
-  const { uploadFiles } = fileUpload.value || {}
-  if (!uploadFiles?.length) {
-    return false
-  }
-  for (const file of uploadFiles) {
+  for (const file of fileList) {
     if (
       file.status === 'ready'
     ) {
@@ -376,11 +390,17 @@ const allowUpload = computed(() => {
 
 // 是否允许撤回
 const allowWithdraw = computed(() => {
-  const { uploadFiles } = fileUpload.value || {}
-  if (!uploadFiles?.length) {
-    return false
+  for (const file of fileList) {
+    if (
+      [
+        'success',
+        'ready',
+      ].includes(file.status)
+    ) {
+      return true
+    }
   }
-  return true
+  return false
 })
 
 // 添加文件
@@ -408,7 +428,7 @@ const handleExceed = () => {
 const showLinkModel = ref(false)
 const templateLink = ref('')
 const runWithdraw = () => {
-  const { uploadFiles } = fileUpload.value
+  const uploadFiles = fileList
   for (const file of uploadFiles) {
     if (!file.md5) {
       ElMessage.info(
@@ -420,7 +440,10 @@ const runWithdraw = () => {
         )
       }, 100)
     } else if (
-      file.status !== 'uploading'
+      ![
+        'fail',
+        'uploading',
+      ].includes(file.status)
     ) {
       // 准备开始撤回
       let { name } = file
@@ -430,7 +453,7 @@ const runWithdraw = () => {
         name = infos
           .map((v) => v.value)
           .join('-')
-            + getFileSuffix(name)
+          + getFileSuffix(name)
       }
 
       FileApi.withdrawFile({
@@ -445,6 +468,8 @@ const runWithdraw = () => {
           ElMessage.success(
             `文件:${file.name}撤回成功`,
           )
+          file.name += ' - (已撤回 ✅ )'
+          file.status = 'fail'
         })
         .catch(() => {
           ElMessage.error(
@@ -592,6 +617,18 @@ onMounted(() => {
 })
 </script>
 <style scoped lang="scss">
+.task-panel :deep(ul.el-upload-list) {
+  border: 1px dashed #d4d4d4;
+  padding: 10px;
+
+  &::before {
+    content: '此处展示选择文件列表';
+    font-size: 12px;
+    position: relative;
+    bottom: 4px;
+  }
+}
+
 .task-panel {
   background-color: #f3f6f8;
   padding-bottom: 1rem;
@@ -659,7 +696,7 @@ onMounted(() => {
   .ddl {
     margin-top: 10px;
     color: #919191;
-    font-size: 1rem;
+    font-size: 14px;
   }
 
   .infos {
