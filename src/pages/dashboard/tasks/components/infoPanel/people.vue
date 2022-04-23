@@ -127,6 +127,7 @@
 import {
   ElMessage,
   ElMessageBox,
+  UploadUserFile,
 } from 'element-plus'
 import {
   computed,
@@ -224,7 +225,7 @@ export default defineComponent({
         })
     }
     // 文件上传
-    const peopleFileList: any[] = reactive([])
+    const peopleFileList = reactive<UploadUserFile[]>([])
     const peopleUpload = ref()
     // 超出选择的文件个数
     const handleExceedFile = () => {
@@ -268,9 +269,7 @@ export default defineComponent({
           zIndex: 4000,
         })
         clearFiles()
-        return
       }
-      peopleFileList.push(file)
     }
     const handleExportExcel = () => {
       if (peopleSubmitData.value.length === 0) {
@@ -400,5 +399,8 @@ export default defineComponent({
 
 .info-panel :deep(.el-form-item__label) {
   flex: v-bind(importPanelFlexStyle);
+}
+.info-panel :deep(.el-upload-list__item-name){
+  justify-content:center;
 }
 </style>
