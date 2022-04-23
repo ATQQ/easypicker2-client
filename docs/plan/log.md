@@ -7,6 +7,22 @@
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDYzODU5OTQ2Mg==650638599462" style="width:200px;"/>
 * 支持手动清理OSS上已失效的归档文件，节约存储空间
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDYzODczNzUyMw==650638737523" style="width:200px;"/>
+* 文档支持图片预览
+* PC侧支持拖拽上传
+* 提交信息页支持控制姓名展示
+
+### Chore
+* 移除CNZZ统计
+* UI/UE优化
+* 保存表单信息，添加防抖避免反复触发
+* 升级 Element UI 版本
+
+### UI/UE
+* 优化登录页的UI
+* 优化表单信息设置页的UI
+* DDL面板UI和文案优化
+* 优化任务提交页UI
+* 优化移除未上传文件的交互逻辑
 
 ## v2.1.4
 ### Feature
