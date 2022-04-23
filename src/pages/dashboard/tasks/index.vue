@@ -12,15 +12,8 @@
 
       <!-- 任务列表 -->
       <div class="task-list">
-        <TaskInfo
-          @edit="editBaseInfo"
-          @delete="deleteTask"
-          @share="shareTask"
-          @more="editMore"
-          v-for="item in filterTasks"
-          :key="item.key"
-          :item="item"
-        ></TaskInfo>
+        <TaskInfo @edit="editBaseInfo" @delete="deleteTask" @share="shareTask" @more="editMore"
+          v-for="item in filterTasks" :key="item.key" :item="item"></TaskInfo>
         <el-empty v-if="filterTasks.length === 0" description="此分类下没有任务哟"></el-empty>
       </div>
     </div>
@@ -52,6 +45,9 @@
     <!-- 附加属性编辑弹窗 -->
     <el-dialog :fullscreen="isMobile" title="更多设置" v-model="showTaskInfoPanel" center>
       <div>
+        <h3 class="tc" style="font-size: 14px;color: #9e9e9e;">
+          任务名：<strong style="color:#000000">{{ activeTask.name }}</strong>
+        </h3>
         <el-tabs v-model="activeInfo">
           <el-tab-pane label="截止日期" name="ddl">
             <DDlPanel :ddl="taskInfo.ddl" :k="activeTask.key"></DDlPanel>
@@ -69,11 +65,6 @@
           </el-tab-pane>
         </el-tabs>
       </div>
-      <!-- <template #footer>
-        <span class="dialog-footer">
-          <el-button type="primary" @click="showTaskInfoPanel = false">关闭</el-button>
-        </span>
-      </template>-->
     </el-dialog>
   </div>
 </template>
@@ -162,7 +153,6 @@ const activeInfo = ref('info')
 const activeTask: TaskApiTypes.TaskItem = reactive({
   category: '', key: '', name: '', recentLog: [],
 })
-
 const editMore = (item: any) => {
   Object.assign(activeTask, item)
   TaskApi.getTaskMoreInfo(item.key).then((res) => {
@@ -205,6 +195,10 @@ onMounted(() => {
   max-width: 1024px;
   margin: 0 auto;
   padding-bottom: 2em;
+}
+
+.tasks :deep(.el-dialog__body) {
+  padding-top: 10px;
 }
 
 .panel {

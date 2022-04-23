@@ -204,7 +204,7 @@ onMounted(() => {
   }
   :deep(.el-input-group__append){
     width: 80px;
-    padding:0 5px 0 15px;
+    padding:0 10px;
   }
 }
 // 登录按钮下方链接

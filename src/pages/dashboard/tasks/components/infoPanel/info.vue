@@ -199,9 +199,14 @@ const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
   justify-content: flex-end;
 }
 
+.form-wrapper{
+  max-width: 380px;
+  margin: 0 auto;
+}
 .form-wrapper :deep(.el-input-group__append) {
   background-color: transparent;
   border: none;
+  box-shadow:none;
   padding: 0;
 }
 

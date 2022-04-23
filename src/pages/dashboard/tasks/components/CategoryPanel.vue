@@ -49,7 +49,7 @@
           }}</el-tag
         >
         <span class="list-tip"
-          >列表可横向滑动</span
+          >这块展示的UI设计一言难尽</span
         >
       </div>
       <div class="tag-wrap">
@@ -253,10 +253,19 @@ export default defineComponent({
 }
 .tag-list {
   height: 150px;
-  overflow-x: scroll;
+  overflow-x: hidden;
+  overflow-y: scroll;
   display: flex;
-  overflow-y: hidden;
   flex-wrap: wrap;
-  flex-direction: column;
+  :deep(.el-tag){
+    width: 140px;
+  }
+  :deep(.el-tag__content){
+    width: 100px;
+    text-align: center;
+    text-overflow: ellipsis;
+    word-break: keep-all;
+    overflow: hidden;
+  }
 }
 </style>
