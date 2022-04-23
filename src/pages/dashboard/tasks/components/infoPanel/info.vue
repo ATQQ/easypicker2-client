@@ -13,7 +13,7 @@
       <span style="color: #409EFF;">{{ resFormat }}</span>
     </div>
     <!-- 必填信息区域 -->
-    <div>
+    <div class="form-wrapper">
       <el-form label-width="40px">
         <el-form-item v-for="(item, idx) in infos" :key="idx">
           <template #label>
@@ -22,12 +22,12 @@
             </div>
           </template>
           <el-input placeholder="输入内容" v-model="item.text" :maxlength="maxInputLength" clearable show-word-limit>
-            <template #append v-if="idx > 0">
-              <el-button @click="deleteInfo(idx)">
-                <el-icon color="red">
+            <template #append>
+              <div class="form-item-wrapper">
+                <el-icon :color="infos.length > 1 ? 'red' : 'grey'" @click="deleteInfo(idx)">
                   <CircleCloseFilled />
                 </el-icon>
-              </el-button>
+              </div>
             </template>
           </el-input>
         </el-form-item>
@@ -120,10 +120,13 @@ const hanleChange = (v: boolean) => {
 }
 
 const addInfo = () => {
-  infos.push({ text: '标题' })
+  infos.push({ text: `标题${infos.length + 1}` })
   needSave.value = true
 }
 const deleteInfo = (idx: number) => {
+  if (infos.length === 1) {
+    return
+  }
   infos.splice(idx, 1)
   needSave.value = true
 }
@@ -194,5 +197,18 @@ const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
 .info-panel :deep(.el-form-item__label) {
   flex: v-bind(importPanelFlexStyle);
   justify-content: flex-end;
+}
+
+.form-wrapper :deep(.el-input-group__append) {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+}
+
+.form-item-wrapper {
+  width: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
