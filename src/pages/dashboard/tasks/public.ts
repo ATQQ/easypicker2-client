@@ -1,7 +1,8 @@
 import { ElMessage } from 'element-plus'
 import { TaskApi } from '@/apis'
+import { debounce } from '@/utils/other'
 
-export const updateTaskInfo = (key:string, options: TaskApiTypes.TaskInfo) => {
+export const updateTaskInfo:(key:string, options: TaskApiTypes.TaskInfo)=>void = debounce((key, options) => {
   if (key) {
     TaskApi
       .updateTaskMoreInfo(key, options)
@@ -9,6 +10,7 @@ export const updateTaskInfo = (key:string, options: TaskApiTypes.TaskInfo) => {
         ElMessage.success({
           message: '设置成功',
           zIndex: 4000,
+          duration: 1000,
         })
       })
       .catch(() => {
@@ -18,4 +20,4 @@ export const updateTaskInfo = (key:string, options: TaskApiTypes.TaskInfo) => {
         })
       })
   }
-}
+}, 1000, true)
