@@ -71,6 +71,11 @@
           <el-switch inline-prompt v-model="showImg" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
             inactive-text="否" />
         </div>
+        <div class="showImgBtn">
+          显示提交人姓名
+          <el-switch inline-prompt v-model="showPeople" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
+            inactive-text="否" />
+        </div>
       </div>
     </div>
     <div v-show="downloadList.length" class="panel">
@@ -82,7 +87,7 @@
             </el-progress>
             <el-button size="small" disabled type="text">
               {{ formatSize((v.percentage / 100) * v.size) }}/{{ formatSize(v.size) }}</el-button>
-            <el-button size="small" type="text" @click="copyRes(v.url,'资源链接已复制到剪贴板')">复制链接</el-button>
+            <el-button size="small" type="text" @click="copyRes(v.url, '资源链接已复制到剪贴板')">复制链接</el-button>
           </div>
           <div class="des flex fc fac">
             <div class="filename">{{ v.filename }}</div>
@@ -122,6 +127,13 @@
                   </div>
                 </template>
               </el-image>
+            </template>
+          </el-table-column>
+        </template>
+        <template v-if="showPeople">
+          <el-table-column prop="people" label="姓名">
+            <template #default="scope">
+              {{ scope.row.people || '-' }}
             </template>
           </el-table-column>
         </template>
@@ -176,14 +188,18 @@ const $store = useStore()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
 const showImg = ref(false)
-
+const showPeople = ref(true)
 // 记录导出
 const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
   if (files.length === 0) {
     ElMessage.warning('表格中没有可导出的内容')
     return
   }
-  const headers: (string | tableItem)[] = ['提交时间', '任务', '文件名', '大小'].map((v) => ({
+  const baseHeaders = ['提交时间', '任务', '文件名', '大小']
+  if (showPeople.value) {
+    baseHeaders.push('姓名')
+  }
+  const headers: (string | tableItem)[] = baseHeaders.map((v) => ({
     value: v,
     row: 2,
   }))
@@ -203,14 +219,18 @@ const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
 
   const body = files.map(((v) => {
     const {
-      date, task_name: taskName, name, size,
+      date, task_name: taskName, name, size, people,
     } = v
     const infoObj = JSON.parse(v.info).reduce((pre, v) => {
       pre[v.text] = v.value
       return pre
     }, {})
     const info = infosHeader.map((v) => (infoObj[v] ?? '-'))
-    const rows = [formatDate(new Date(date)), taskName, name, formatSize(size), ...info]
+    const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
+    if (showPeople.value) {
+      rows.push(people || '-')
+    }
+    rows.push(...info)
     return rows
   }))
   body.unshift(infosHeader)
@@ -373,7 +393,7 @@ const downloadOne = (e: any) => {
     .then((res) => {
       const { link, mimeType } = res.data
       if (isSupportPreview(mimeType)) {
-        const fileItem:DownloadItem = reactive<DownloadItem>({
+        const fileItem: DownloadItem = reactive<DownloadItem>({
           filename: name,
           mimeType,
           url: link,
@@ -629,7 +649,8 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
 
     .des {
       font-size: 12px;
-      .filename{
+
+      .filename {
         max-width: 200px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -637,7 +658,8 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
         word-break: keep-all;
         margin-right: 10px;
       }
-      .mimeType{
+
+      .mimeType {
         width: 60px;
         color: #409EFF;
       }

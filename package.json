@@ -1,6 +1,6 @@
 {
   "name": "vite-vue-demo",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "scripts": {
     "dev": "vite",
     "dev:test": "vite --mode test",
@@ -18,10 +18,10 @@
     "deploy:dev": "zx scripts/deploy/dev.mjs"
   },
   "dependencies": {
-    "@element-plus/icons-vue": "^0.2.7",
+    "@element-plus/icons-vue": "^1.1.4",
     "axios": "^0.21.1",
     "clipboard-copy": "^4.0.1",
-    "element-plus": "^2.0.2",
+    "element-plus": "^2.1.10",
     "filenamify": "^4.3.0",
     "spark-md5": "^3.0.1",
     "vitepress": "^0.22.3",

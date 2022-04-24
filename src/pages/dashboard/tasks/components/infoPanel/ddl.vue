@@ -1,23 +1,17 @@
 <template>
   <div class="tc ddl">
-    <tip
-      :imgs="[
-        'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTI4NjU5Nw==649149286597',
-        'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTMxMDEyOQ==649149310129',
-        'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTM3MzgxOA==649149373818'
-      ]"
-    >设置截止日期，截止后将不能再提交文件。</tip>
-    <el-date-picker
-      :editable="false"
-      v-model="newDate"
-      type="datetime"
-      placeholder="点击设置新截止日期"
-      @blur="updateDDL"
-      :default-time="new Date(ddl)"
-    ></el-date-picker>
-    <el-button v-if="newDate" @click="closeDDL">关闭</el-button>
+    <tip :imgs="[
+      'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTI4NjU5Nw==649149286597',
+      'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTMxMDEyOQ==649149310129',
+      'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTM3MzgxOA==649149373818'
+    ]">设置截止日期，截止后将不能再提交文件。</tip>
+    <div class="tc flex fc fac">
+      <el-date-picker :editable="false" v-model="newDate" type="datetime" placeholder="点击设置新截止日期" @blur="updateDDL"
+        :default-time="new Date(ddl)"></el-date-picker>
+      <el-button v-if="newDate" @click="closeDDL">取消</el-button>
+    </div>
     <div style="margin-top: 10px;" v-if="newDate">
-      <tip>{{isOver?'已经截止':`剩余时间: ${waitTimeStr}`}} </tip>
+      <tip>{{ isOver ? '已经截止' : `剩余时间: ${waitTimeStr}` }} </tip>
     </div>
   </div>
 </template>

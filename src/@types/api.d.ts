@@ -101,6 +101,7 @@ declare namespace TaskApiTypes {
     type getTaskInfo = ResponseData<TaskInfo>
     type getTaskMoreInfo = ResponseData<TaskInfo>
     type updateTaskMoreInfo = ResponseData
+    type getUsefulTemplate = ResponseData<{taskKey:string, name:string, info:string}[]>
 }
 
 declare namespace PublicApiTypes {
@@ -121,6 +122,8 @@ declare namespace PeopleApiTypes {
     type deletePeople = ResponseData
     type updatePeopleStatus = ResponseData
     type checkPeopleIsExist = ResponseData<{ exist: boolean }>
+    type getUsefulTemplate = ResponseData<{taskKey:string, name:string, count:number}[]>
+    type importFromTpl = ResponseData<{fail:string[], success:number}>
 }
 
 declare namespace CateGoryApiTypes {
@@ -139,6 +142,7 @@ declare namespace OverviewApiTypes {
         sum: number
         recent?: number
         uv?: number
+        size?:string
     }
     interface LogItem {
         date: string
@@ -154,6 +158,10 @@ declare namespace OverviewApiTypes {
             today: CountLog
         }
         user: CountLog
+        compress :{
+            all: CountLog
+            expired: CountLog
+        }
     }>
     type getAllLogMsg = ResponseData<{ logs: LogItem[] }>
     type getLogMsg = ResponseData<{
