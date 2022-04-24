@@ -4,28 +4,30 @@
     <header>
       <HomeHeader />
     </header>
-    <h1 class="title">需求墙</h1>
-    <p class="des">通过投票决定下一个新功能是什么</p>
-    <p class="des">票数越多优先级越高</p>
-    <p class="des">当然你也可以提出你的需求，让大家来投票</p>
-    <div class="tip-wrap">
-      <p v-if="isLogin" class="des">
-        Go Go Go!
-        <strong @click="handleOpenFeature" class="feature-btn">我要提需求</strong>
-      </p>
-      <p v-else class="des">
-        提需求&投票，请先
-        <strong>
-          <router-link to="/login">登录</router-link>
-        </strong>
-      </p>
-      <br>
-      <p class="des">目前需求面板还未开发完成，</p>
-      <p class="des">可先直接加群进行反馈</p>
-      <p style="text-align: center;">
-        <img style="width: 290px;" src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDk2MzQ3OQ==649900963479" alt="QQ群">
-      </p>
-    </div>
+    <main>
+      <h1 class="title">需求墙</h1>
+      <p class="des">通过投票决定下一个新功能是什么</p>
+      <p class="des">票数越多优先级越高</p>
+      <p class="des">当然你也可以提出你的需求，让大家来投票</p>
+      <div class="tip-wrap">
+        <p v-if="isLogin" class="des">
+          Go Go Go!
+          <strong @click="handleOpenFeature" class="feature-btn">我要提需求</strong>
+        </p>
+        <p v-else class="des">
+          提需求&投票，请先
+          <strong>
+            <router-link to="/login">登录</router-link>
+          </strong>
+        </p>
+        <br>
+        <p class="des">目前需求面板还未开发完成，</p>
+        <p class="des">可先直接加群进行反馈</p>
+        <p style="text-align: center;">
+          <img style="width: 290px;" src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDk2MzQ3OQ==649900963479" alt="QQ群">
+        </p>
+      </div>
+    </main>
 
     <el-dialog title="需求信息" v-model="dialogVisible" :fullscreen="isMobile">
       <el-form :model="formData">
@@ -114,11 +116,16 @@ header {
   display: block;
   overflow: hidden;
 }
+
 .wish {
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   background-image: linear-gradient(to top, #30cfd0 0%, #330867 100%);
   min-height: 100vh;
+  main{
+    min-height: 70vh;
+  }
 }
+
 .title {
   color: aliceblue;
   text-align: center;
@@ -126,23 +133,20 @@ header {
   font-size: 48px;
   padding-top: 5vh;
 }
+
 .des {
   color: aliceblue;
   text-align: center;
   font-weight: lighter;
   font-size: 16px;
   padding: 0 10px 10px 10px;
+
   a {
     color: aliceblue;
   }
 }
+
 .feature-btn {
   cursor: pointer;
-}
-footer {
-  position: absolute;
-  bottom: 20px;
-  left: 0;
-  right: 0;
 }
 </style>

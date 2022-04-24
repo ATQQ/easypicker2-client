@@ -1,6 +1,6 @@
 import ajax from '../ajax'
 
-function importPeople(key: string, filename:string, type:string):PeopleApiTypes.importPeople {
+function importPeople(key: string, filename: string, type: string): PeopleApiTypes.importPeople {
   return ajax.post(
     `/people/${key}`, {
       filename,
@@ -9,11 +9,11 @@ function importPeople(key: string, filename:string, type:string):PeopleApiTypes.
   )
 }
 
-function getPeople(key:string):PeopleApiTypes.getPeople {
+function getPeople(key: string): PeopleApiTypes.getPeople {
   return ajax.get(`/people/${key}`)
 }
 
-function deletePeople(key:string, id:number):PeopleApiTypes.deletePeople {
+function deletePeople(key: string, id: number): PeopleApiTypes.deletePeople {
   return ajax.delete(`/people/${key}`, {
     params: {
       id,
@@ -21,10 +21,10 @@ function deletePeople(key:string, id:number):PeopleApiTypes.deletePeople {
   })
 }
 
-function updatePeopleStatus(key:string,
-  filename:string,
-  name:string,
-  hash:string):PeopleApiTypes.updatePeopleStatus {
+function updatePeopleStatus(key: string,
+  filename: string,
+  name: string,
+  hash: string): PeopleApiTypes.updatePeopleStatus {
   return ajax.put(`/people/${key}`, {
     filename,
     name,
@@ -32,15 +32,31 @@ function updatePeopleStatus(key:string,
   })
 }
 
-function checkPeopleIsExist(key:string, name:string):PeopleApiTypes.checkPeopleIsExist {
+function checkPeopleIsExist(key: string, name: string): PeopleApiTypes.checkPeopleIsExist {
   return ajax.post(`/people/check/${key}`, {
     name,
   })
 }
+
+function getUsefulTemplate(key: string): PeopleApiTypes.getUsefulTemplate {
+  return ajax.get(`/people/template/${key}`)
+}
+
+function importPeopleFromTpl(taskKey: string, tplKey: string, type:string): PeopleApiTypes.importFromTpl {
+  return ajax.put(
+    `/people/template/${taskKey}`, {
+      key: tplKey,
+      type,
+    },
+  )
+}
+
 export default {
+  importPeopleFromTpl,
   importPeople,
   getPeople,
   deletePeople,
   updatePeopleStatus,
   checkPeopleIsExist,
+  getUsefulTemplate,
 }

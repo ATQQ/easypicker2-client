@@ -47,6 +47,15 @@
             @click="exportLogData"
           >导出日志 {{ filterLogs.length }} 条</el-button>
         </span>
+        <span class="item">
+          <el-button
+            size="default"
+            type="danger"
+            :icon="TakeawayBox"
+            :disabled="disableDelete"
+            @click="clearExpiredCompressFile"
+          >清理无效压缩包</el-button>
+        </span>
       </div>
       <el-table
         tooltip-effect="dark"
@@ -100,12 +109,11 @@
   </div>
 </template>
 <script lang="ts" setup>
-// import { ElMessage } from 'element-plus'
 import {
   computed, onMounted, reactive, ref, watchEffect,
 } from 'vue'
 import {
-  User, Document, Tickets, DataBoard, Search, Refresh, DataAnalysis,
+  User, Document, Tickets, DataBoard, Search, Refresh, DataAnalysis, Coin, TakeawayBox,
 } from '@element-plus/icons-vue'
 import { useStore } from 'vuex'
 import { ElMessage } from 'element-plus'
@@ -150,12 +158,20 @@ const cardList = reactive([
     icon: DataBoard,
     color: '#34bfa3',
   },
+  {
+    type: 'compress',
+    title: '归档文件',
+    value: '0/0KB',
+    supplement: '已失效0个',
+    icon: Coin,
+    color: '#e38013',
+  },
 ])
 // 刷新记录条数
 const refreshCount = () => {
   SuperOverviewApi.getCount().then((res) => {
     const {
-      user, file, log, pv,
+      user, file, log, pv, compress,
     } = res.data
     cardList[0].value = `${user.sum}`
     cardList[0].supplement = `较昨日 +${user.recent}`
@@ -165,6 +181,20 @@ const refreshCount = () => {
     cardList[2].supplement = `较昨日 +${log.recent}`
     cardList[3].value = `${pv.today.sum}/${pv.today.uv}`
     cardList[3].supplement = `历史: ${pv.all.sum}/${pv.all.uv}`
+    cardList[4].value = `${compress.all.sum}/${compress.all.size}`
+    cardList[4].supplement = `已失效 ${compress.expired.sum}/${compress.expired.size}`
+  })
+}
+
+const disableDelete = ref(false)
+const clearExpiredCompressFile = () => {
+  disableDelete.value = true
+  SuperOverviewApi.clearExpiredCompressFile().then((res) => {
+    setTimeout(() => {
+      ElMessage.success('清理成功，数据同步可能有延迟')
+      disableDelete.value = false
+      refreshCount()
+    }, 2000)
   })
 }
 

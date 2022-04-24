@@ -1,5 +1,5 @@
 <template>
-  <div class="tc">
+  <div class="tc info-panel">
       <tip
       :imgs="[
         'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MjY3MjUxNw==650182672517',
@@ -19,7 +19,6 @@
         accetp="text/plain"
         action=""
         ref="elUpload"
-        :on-change="handleChangeFile"
         :on-exceed="handleExceedFile"
         :on-remove="clearFiles"
         :auto-upload="false"
@@ -43,7 +42,7 @@
   </div>
 </template>
 <script lang="ts">
-import { ElMessage } from 'element-plus'
+import { ElMessage, UploadUserFile } from 'element-plus'
 import {
   defineComponent, reactive, ref, watchEffect,
 } from 'vue'
@@ -83,7 +82,7 @@ export default defineComponent({
       }
     }
     // 文件上传
-    const fileList: any[] = reactive([])
+    const fileList = reactive<UploadUserFile[]>([])
     const elUpload = ref()
     // 超出选择的文件个数
     const handleExceedFile = () => {
@@ -95,8 +94,7 @@ export default defineComponent({
     }
     // 开始上传
     const submitUploadPeople = () => {
-      const { uploadFiles } = elUpload.value
-      uploadFiles.forEach((file: any) => {
+      fileList.forEach((file) => {
         if (!props.k) {
           return
         }
@@ -125,10 +123,6 @@ export default defineComponent({
         }
       })
     }
-    // 添加文件
-    const handleChangeFile = (file: any) => {
-      // fileList.push(file)
-    }
     return {
       template,
       deleteTemplate,
@@ -136,7 +130,6 @@ export default defineComponent({
       handleExceedFile,
       clearFiles,
       submitUploadPeople,
-      handleChangeFile,
       elUpload,
       percentage,
     }
@@ -144,3 +137,9 @@ export default defineComponent({
   components: { Tip },
 })
 </script>
+
+<style lang="scss" scoped>
+.info-panel :deep(.el-upload-list__item-name){
+  justify-content:center;
+}
+</style>
