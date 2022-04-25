@@ -130,15 +130,15 @@ const cardList = reactive([
     type: 'user',
     title: '用户数量',
     value: '0',
-    supplement: '较昨日 +10',
+    supplement: '较昨日 +0',
     icon: User,
     color: '#40c9c6',
   },
   {
     type: 'file',
-    title: '文件数量',
+    title: '记录/OSS',
     value: '0',
-    supplement: '较昨日 +10',
+    supplement: '记录较昨日 +0',
     icon: Document,
     color: '#36a3f7',
   },
@@ -146,7 +146,7 @@ const cardList = reactive([
     type: 'log',
     title: '日志数量',
     value: '0',
-    supplement: '较昨日 +10',
+    supplement: '较昨日 +0',
     icon: Tickets,
     color: '#f4516c',
   },
@@ -175,8 +175,8 @@ const refreshCount = () => {
     } = res.data
     cardList[0].value = `${user.sum}`
     cardList[0].supplement = `较昨日 +${user.recent}`
-    cardList[1].value = `${file.sum}`
-    cardList[1].supplement = `较昨日 +${file.recent}`
+    cardList[1].value = `${file.server.sum}/${file.oss.sum}`
+    cardList[1].supplement = `记录较昨日 +${file.server.recent}`
     cardList[2].value = `${log.sum}`
     cardList[2].supplement = `较昨日 +${log.recent}`
     cardList[3].value = `${pv.today.sum}/${pv.today.uv}`

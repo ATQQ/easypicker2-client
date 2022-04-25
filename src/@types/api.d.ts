@@ -151,7 +151,10 @@ declare namespace OverviewApiTypes {
         type: string
     }
     type getCount = ResponseData<{
-        file: CountLog
+        file: {
+            server:CountLog
+            oss:CountLog
+        }
         log: CountLog
         pv: {
             all: CountLog
