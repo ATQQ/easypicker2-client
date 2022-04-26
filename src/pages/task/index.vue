@@ -633,6 +633,18 @@ onMounted(() => {
     bottom: 4px;
   }
 }
+.task-panel :deep(.el-upload-list__item-name) {
+  display: block;
+  overflow: hidden;
+  max-width: 290px;
+  text-overflow: ellipsis;
+  word-break: keep-all;
+}
+
+.task-panel :deep(.is-ready .el-icon--close) {
+  display: block;
+  color: black;
+}
 
 .task-panel {
   background-color: #f3f6f8;
