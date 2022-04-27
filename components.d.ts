@@ -37,6 +37,7 @@ declare module 'vue' {
     ElUpload: typeof import('element-plus/es')['ElUpload']
     HomeFooter: typeof import('./src/components/HomeFooter/index.vue')['default']
     HomeHeader: typeof import('./src/components/HomeHeader/index.vue')['default']
+    InfosForm: typeof import('./src/components/InfosForm/index.vue')['default']
     LinkDialog: typeof import('./src/components/linkDialog.vue')['default']
     LoginPanel: typeof import('./src/components/loginPanel.vue')['default']
     QrCode: typeof import('./src/components/QrCode.vue')['default']
