@@ -14,7 +14,7 @@
     </div>
     <!-- 必填信息区域 -->
     <div class="form-wrapper">
-      <InfosForm v-if="openPreview" :infos="infos" :disabled="openPreview"/>
+      <InfosForm v-if="openPreview" :infos="infos" :disabled="openPreview" />
       <el-form v-else label-width="100px">
         <el-form-item v-for="(item, idx) in infos" :key="idx">
           <template #label>
@@ -22,7 +22,7 @@
               <div class="num-wrapper">
                 <div>{{ idx + 1 }}</div>
               </div>
-              <div class="form-item-type">{{ getTypeDes(item.type) }}</div>
+              <div class="form-item-type" :class="item.type">{{ getTypeDes(item.type) }}</div>
             </div>
           </template>
           <el-input placeholder="输入内容" v-model="item.text" :maxlength="maxInputLength" clearable show-word-limit>
@@ -58,21 +58,21 @@
     <div class="p10" v-if="showAddInfo">
       <el-button size="small" type="primary" @click="() => {
         addInfo()
-      }" round >添加一项</el-button>
+      }" round>添加一项</el-button>
       <el-select style="margin:0 10px" size="small" v-model="selectType" placeholder="选择添加的类型">
         <el-option v-for="(v, idx) in infoTypeList" :key="idx" :label="v.label" :value="v.value" />
       </el-select>
     </div>
     <div>
       预览
-    <el-switch v-model="openPreview" inline-prompt active-text="是" inactive-text="否" active-color="#13ce66"
-      inactive-color="#ff4949" />
+      <el-switch v-model="openPreview" inline-prompt active-text="是" inactive-text="否" active-color="#13ce66"
+        inactive-color="#ff4949" />
     </div>
     <!-- 从其它任务导入 -->
     <el-button size="small" type="warning" @click="openImportPanel">从其它任务导入</el-button>
     <div class="p10">
       <tip>支持从已有的任务直接导入表单信息</tip>
-      <el-button v-show="needSave" type="success" @click="saveInfo" style="width: 200px;">保存</el-button>
+      <el-button type="success" @click="saveInfo" style="width: 200px;">保存</el-button>
     </div>
     <div style="color: red;" v-if="needSave">有变动，请记得点击保存</div>
     <div class="info-panel">
@@ -196,7 +196,7 @@ const deleteInfo = (idx: number, infoList?: InfoItem[], minLen = 1) => {
   list.splice(idx, 1)
   needSave.value = true
 }
-const judgeInfoForm = (items:InfoItem[]) => items.every((v) => v.text.trim() && judgeInfoForm(v.children || []))
+const judgeInfoForm = (items: InfoItem[]) => items.every((v) => v.text.trim() && judgeInfoForm(v.children || []))
 const saveInfo = () => {
   if (!judgeInfoForm(infos)) {
     ElMessage.error('请完整填写表单信息')
@@ -235,7 +235,7 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
 const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
 
 </script>
-<style scoped>
+<style scoped lang="scss">
 .auto-format {
   display: flex;
   justify-content: center;
@@ -288,6 +288,16 @@ const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
   font-size: 12px;
   width: 48px;
   text-align: left;
+  // TODO：待定颜色
+  // &.input{
+  //   color: black;
+  // }
+  // &.text{
+  //   color: #000000;
+  // }
+  // &.radio{
+  //   color: #999;
+  // }
 }
 
 .radio-list {
