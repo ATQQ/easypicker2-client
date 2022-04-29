@@ -74,12 +74,18 @@
             <tip>① 须保证选择的文件与提交时的文件一致<br /> ② 填写表单信息一致 <br /> ③ 完全一模一样的文件的提交记录（内容md5+命名），将会一次性全部撤回</tip>
           </template>
           <template v-else>
-            <tip>① 选择完文件，点击 ”提交文件“即可 <br /> ② <strong>选择大文件后需要等待一会儿才展示处理</strong></tip>
+            <tip>① 选择完文件，点击 ”提交文件“即可 <br />
+              ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
+              <template v-if="taskMoreInfo.template"><br /> ③ <strong>
+                  <el-button type="text" style="color: #85ce61" size="small" @click="downloadTemplate">右下角可 “查看提交示例”
+                  </el-button>
+                </strong></template>
+            </tip>
           </template>
         </div>
         <div class="withdraw">
           <el-button type="text" style="color: #85ce61" v-if="taskMoreInfo.template" size="small"
-            @click="downloadTemplate">下载模板</el-button>
+            @click="downloadTemplate">查看提交示例</el-button>
           <el-button v-if="isWithdraw" @click="isWithdraw = false" size="small" type="text">正常提交</el-button>
           <el-button v-else size="small" @click="isWithdraw = true" type="text">我要撤回</el-button>
         </div>
@@ -91,7 +97,7 @@
         {{ taskInfo.name }}
       </h1>
     </div>
-    <LinkDialog v-model:value="showLinkModel" title="模板文件下载链接" :link="templateLink"></LinkDialog>
+    <LinkDialog v-model:value="showLinkModel" title="示例文件下载链接" :link="templateLink"></LinkDialog>
   </div>
 </template>
 <script lang="ts" setup>
@@ -621,6 +627,7 @@ onMounted(() => {
     bottom: 4px;
   }
 }
+
 .task-panel :deep(.el-upload-list__item-name) {
   display: block;
   overflow: hidden;
