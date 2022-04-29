@@ -12,6 +12,11 @@
       预期格式:
       <span style="color: #409EFF;">{{ resFormat }}</span>
     </div>
+    <div>
+      预览
+      <el-switch v-model="openPreview" inline-prompt active-text="是" inactive-text="否" active-color="#13ce66"
+        inactive-color="#ff4949" />
+    </div>
     <!-- 必填信息区域 -->
     <div class="form-wrapper">
       <InfosForm v-if="openPreview" :infos="infos" :disabled="openPreview" />
@@ -31,10 +36,13 @@
                 <el-icon :color="infos.length > 1 ? 'red' : 'grey'" @click="deleteInfo(idx)">
                   <CircleCloseFilled />
                 </el-icon>
+                <el-icon color="#000" style="margin-left: 6px;" v-if="idx > 0" @click="moveInfoUp(idx)">
+                  <Top />
+                </el-icon>
               </div>
             </template>
           </el-input>
-          <div v-if="item.type === 'radio'" class="radio-list">
+          <div v-if="item.type === 'radio' || item.type === 'select'" class="radio-list">
             <el-input size="small" v-for="(v, idx) in item.children" :key="idx" placeholder="输入内容" v-model="v.text"
               :maxlength="maxInputLength" clearable show-word-limit>
               <template #append>
@@ -44,7 +52,7 @@
                     <CircleCloseFilled />
                   </el-icon>
                   <template v-if="idx + 1 === item.children.length">
-                    <el-icon style="margin-left: 10px;" color="#67C23A" @click="addInfo(item.children, 'radio')">
+                    <el-icon style="margin-left: 10px;" color="#67C23A" @click="addInfo(item.children, item.type)">
                       <CirclePlusFilled />
                     </el-icon>
                   </template>
@@ -62,11 +70,6 @@
       <el-select style="margin:0 10px" size="small" v-model="selectType" placeholder="选择添加的类型">
         <el-option v-for="(v, idx) in infoTypeList" :key="idx" :label="v.label" :value="v.value" />
       </el-select>
-    </div>
-    <div>
-      预览
-      <el-switch v-model="openPreview" inline-prompt active-text="是" inactive-text="否" active-color="#13ce66"
-        inactive-color="#ff4949" />
     </div>
     <!-- 从其它任务导入 -->
     <el-button size="small" type="warning" @click="openImportPanel">从其它任务导入</el-button>
@@ -102,12 +105,13 @@ import { ElMessage } from 'element-plus'
 import {
   computed, reactive, ref, watch, watchEffect,
 } from 'vue'
-import { CircleCloseFilled, CirclePlusFilled } from '@element-plus/icons-vue'
+import { CircleCloseFilled, CirclePlusFilled, Top } from '@element-plus/icons-vue'
 import { useStore } from 'vuex'
 import { updateTaskInfo } from '../../public'
 import Tip from './tip.vue'
 import { TaskApi } from '@/apis'
 import InfosForm from '@/components/InfosForm/index.vue'
+import { parseInfo } from '@/utils/stringUtil'
 
 const props = defineProps({
   rewrite: {
@@ -124,7 +128,7 @@ const props = defineProps({
   },
 })
 const openPreview = ref(false)
-const infoTypeList = reactive([
+const infoTypeList = reactive<{ label: string, value: InfoItemType }[]>([
   {
     label: '输入框',
     value: 'input',
@@ -137,10 +141,14 @@ const infoTypeList = reactive([
     label: '单选框',
     value: 'radio',
   },
+  {
+    label: '下拉选择',
+    value: 'select',
+  },
 ])
 const getTypeDes = (type: string) => infoTypeList.find((v) => v.value === type)?.label
 
-const selectType = ref('input')
+const selectType = ref<InfoItemType>('input')
 
 const maxInputLength = +import.meta.env.VITE_APP_INPUT_MAX_LENGTH || 10
 
@@ -153,13 +161,6 @@ watch(() => props.info, () => {
   infos.splice(0, infos.length)
   selectType.value = 'input'
   openPreview.value = false
-})
-
-const parseInfo = (info: string) => JSON.parse(info).map((v: string | InfoItem) => {
-  if (typeof v === 'string') {
-    return { type: 'input', text: v }
-  }
-  return v
 })
 // 负责更新
 watchEffect(() => {
@@ -178,11 +179,11 @@ const handleChange = (v: boolean) => {
   })
 }
 
-const addInfo = (infoList?: InfoItem[], type?: string) => {
+const addInfo = (infoList?: InfoItem[], type?: InfoItemType) => {
   const list = infoList || infos
   const t = type || selectType.value
-  const item: InfoItem = { text: `标题${list.length + 1}`, type: t }
-  if (t === 'radio') {
+  const item: InfoItem = { text: `标题${list.length + 1}`, type: t, value: '' }
+  if (t === 'radio' || t === 'select') {
     item.children = [{ text: '选项1' }, { text: '选项2' }]
   }
   list.push(item)
@@ -206,9 +207,22 @@ const saveInfo = () => {
     return
   }
   updateTaskInfo(props.k, {
-    info: JSON.stringify(infos),
+    info: JSON.stringify(infos.map((v) => {
+      // 特殊处理固定值的内容
+      if (v.type === 'text') {
+        v.value = v.text
+      }
+      return v
+    })),
   })
   needSave.value = false
+}
+
+const moveInfoUp = (idx: number) => {
+  if (idx === 0) return
+  const temp = infos[idx - 1]
+  infos.splice(idx - 1, 1)
+  infos.splice(idx, 0, temp)
 }
 
 const importPanelInfo = reactive({ taskList: [], taskValue: '' })

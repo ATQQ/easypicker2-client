@@ -90,10 +90,6 @@ declare namespace TaskApiTypes {
         name?: string, category?: string
     }
 
-    interface TaskFormInfoItem {
-        text: string,
-        value: string
-    }
     type getList = ResponseData<{ tasks: TaskItem[] }>
     type create = ResponseData
     type deleteOne = ResponseData

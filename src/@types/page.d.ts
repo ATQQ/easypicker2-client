@@ -7,8 +7,9 @@ interface DownloadItem {
     size: number,
 }
 
+type InfoItemType = 'input' | 'radio' | 'text' | 'select'
 interface InfoItem {
-    type?: 'input' | 'radio' | 'text' | string,
+    type?: InfoItemType,
     // 描述信息
     text?: string,
     // 表单项的值

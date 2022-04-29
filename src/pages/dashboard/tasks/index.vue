@@ -46,7 +46,8 @@
     <el-dialog :fullscreen="isMobile" title="更多设置" v-model="showTaskInfoPanel" center>
       <div>
         <h3 class="tc" style="font-size: 14px;color: #9e9e9e;">
-          任务名：<strong style="color:#000000">{{ activeTask.name }}</strong>
+          任务名：<strong style="color:#000000">{{ activeTask.name }}</strong>，
+          <el-button type="text" @click="openTaskPage">去查看效果</el-button>
         </h3>
         <el-tabs v-model="activeInfo">
           <el-tab-pane label="截止日期" name="ddl">
@@ -189,6 +190,10 @@ onMounted(() => {
   $store.dispatch('category/getCategory')
   $store.dispatch('task/getTask')
 })
+
+const openTaskPage = () => {
+  window.open(`/task/${activeTask.key}`)
+}
 </script>
 <style scoped lang="scss">
 .tasks {
