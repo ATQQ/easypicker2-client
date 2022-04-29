@@ -156,11 +156,7 @@
     </div>
     <!-- 信息弹窗 -->
     <el-dialog :fullscreen="isMobile" title="提交填写的信息" v-model="showInfoDialog">
-      <el-form>
-        <el-form-item v-for="(info, idx) in infos" :key="idx" :label="info.text" label-width="120px">
-          <el-input :modelValue="info.value"></el-input>
-        </el-form-item>
-      </el-form>
+      <InfosForm :infos="infos" :disabled="true"/>
     </el-dialog>
     <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
   </div>
@@ -176,13 +172,14 @@ import {
   ArrowDown, Refresh, DataAnalysis, Download, Search, Picture,
 } from '@element-plus/icons-vue'
 import {
-  copyRes, formatDate, formatSize, isSupportPreview,
+  copyRes, formatDate, formatSize, isSupportPreview, parseInfo,
 } from '@/utils/stringUtil'
 import { FileApi } from '@/apis'
 import {
   downLoadByUrl, downLoadByXhr, tableItem, tableToExcel,
 } from '@/utils/networkUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
+import InfosForm from '@/components/InfosForm/index.vue'
 
 const $store = useStore()
 const showLinkModel = ref(false)
@@ -374,7 +371,7 @@ const showInfoDialog = ref(false)
 const infos: any[] = reactive([])
 const checkInfo = (e: any) => {
   infos.splice(0, infos.length)
-  infos.push(...JSON.parse(e.info))
+  infos.push(...parseInfo(e.info))
   showInfoDialog.value = true
 }
 

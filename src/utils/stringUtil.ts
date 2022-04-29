@@ -150,8 +150,13 @@ export function isSupportPreview(type: string) {
 
 export function parseInfo(info: string): InfoItem[] {
   return JSON.parse(info).map((v: string | InfoItem) => {
+    // 兼容旧表单数据
     if (typeof v === 'string') {
       return { type: 'input', text: v, value: '' }
+    }
+    // 兼容旧数据展示
+    if (!v.type) {
+      v.type = 'input'
     }
     v.value = v.value || ''
     return v

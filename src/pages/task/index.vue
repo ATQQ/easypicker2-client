@@ -40,15 +40,7 @@
       <div v-if="!ddlStr || !isOver">
         <el-divider>必要信息填写</el-divider>
         <div class="infos">
-          <el-form label-width="100px">
-            <el-form-item class="ellipsis" v-for="(
-                info, idx
-              ) in infos" :key="idx" :label="info.text">
-              <el-input :maxlength="
-                maxInputLength
-              " clearable show-word-limit :placeholder="`请输入${info.text}`" v-model="info.value"></el-input>
-            </el-form-item>
-          </el-form>
+          <InfosForm :infos="infos" :disabled="disableForm"></InfosForm>
         </div>
         <el-upload style="max-width: 400px; margin: 0 auto;" :drag="!isMobile" action="" ref="fileUpload"
           :on-change="handleChangeFile" :before-remove="
@@ -129,6 +121,7 @@ import {
   formatDate,
   getFileMd5Hash,
   getFileSuffix,
+  parseInfo,
 } from '@/utils/stringUtil'
 import {
   downLoadByUrl,
@@ -140,9 +133,7 @@ import {
   TaskApi,
 } from '@/apis'
 import Tip from '../dashboard/tasks/components/infoPanel/tip.vue'
-
-const maxInputLength = +import.meta.env
-  .VITE_APP_INPUT_MAX_LENGTH || 10
+import InfosForm from '@/components/InfosForm/index.vue'
 
 const $store = useStore()
 const isMobile = computed(() => $store.getters['public/isMobile'])
@@ -212,14 +203,14 @@ const ddlStr = computed(() => {
 })
 
 // 必填信息
-const infos = reactive<TaskApiTypes.TaskFormInfoItem[]>([])
+const infos = reactive<InfoItem[]>([])
 
 // 文件上传部分
 
 // 文件上传
 const fileList = reactive<(UploadUserFile & { md5: string, subscription: any })[]>([])
 const fileUpload = ref<UploadInstance>()
-
+const disableForm = computed(() => fileList.filter((item) => item.status === 'uploading').length > 0)
 const handleRemoveFile: any = (
   file: any,
 ) => {
@@ -608,12 +599,9 @@ onMounted(() => {
         res.data,
       )
       infos.push(
-        ...JSON.parse(
-          (taskMoreInfo?.info) || '[]',
-        ).map((v: string) => ({
-          text: v,
-          value: '',
-        })),
+        ...parseInfo(
+          taskMoreInfo.info,
+        ),
       )
       refreshWaitTime(false)
     })
