@@ -98,7 +98,7 @@
     </div>
     <!-- 主体内容 -->
     <div class="panel">
-      <el-table tooltip-effect="dark" multipleTable ref="multipleTable" @selection-change="handleSelectionChange" stripe
+      <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable ref="multipleTable" @selection-change="handleSelectionChange" stripe
         border :default-sort="{ prop: 'date', order: 'descending' }" :max-height="666" :data="showFilterFiles"
         style="width: 100%">
         <el-table-column type="selection" width="55" />
@@ -252,12 +252,16 @@ const selectTaskName = computed(() => {
   const t = filterTasks.value.find((v) => v.key === selectTask.value)
   return t?.name
 })
+
+const isLoadingData = ref(false)
 // 提交的所有文件
 const files: FileApiTypes.File[] = reactive([])
 const loadFiles = () => {
+  isLoadingData.value = true
   files.splice(0, files.length)
   FileApi.getFileList().then((res) => {
     files.push(...res.data.files)
+    isLoadingData.value = false
   })
 }
 const multipleTable: any = ref()
@@ -458,7 +462,6 @@ const handlePageChange = (idx: number) => {
 
 const handleRefresh = () => {
   loadFiles()
-  ElMessage.success('刷新成功')
 }
 const handleDownloadTask = () => {
   const ids: number[] = files.filter((f) => f.task_key === selectTask.value).map((v) => v.id)

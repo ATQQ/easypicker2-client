@@ -1,6 +1,6 @@
 <template>
   <div class="overview">
-    <div class="card-list">
+    <div class="card-list" v-loading="isLoadingOverview" element-loading-text="Loading...">
       <div v-for="c in cardList" :key="c.type" class="card">
         <div class="logo">
           <el-icon :color="c.color">
@@ -19,53 +19,27 @@
         <span class="item">
           <span class="label">类型</span>
           <el-select v-model="filterLogType" size="default" placeholder="请选择日志类型">
-            <el-option
-              v-for="(item, idx) in logTypeList"
-              :key="idx"
-              :label="item.label"
-              :value="item.type"
-            ></el-option>
+            <el-option v-for="(item, idx) in logTypeList" :key="idx" :label="item.label" :value="item.type"></el-option>
           </el-select>
         </span>
         <span class="item">
-          <el-input
-            size="default"
-            clearable
-            placeholder="请输入要检索的内容"
-            :prefix-icon="Search"
-            v-model="searchWord"
-          ></el-input>
+          <el-input size="default" clearable placeholder="请输入要检索的内容" :prefix-icon="Search" v-model="searchWord">
+          </el-input>
         </span>
         <span class="item">
           <el-button size="default" :icon="Refresh" @click="refreshLogs">刷新</el-button>
         </span>
         <span class="item">
-          <el-button
-            size="default"
-            type="primary"
-            :icon="DataAnalysis"
-            @click="exportLogData"
-          >导出日志 {{ filterLogs.length }} 条</el-button>
+          <el-button size="default" type="primary" :icon="DataAnalysis" @click="exportLogData">导出日志 {{ filterLogs.length
+          }} 条</el-button>
         </span>
         <span class="item">
-          <el-button
-            size="default"
-            type="danger"
-            :icon="TakeawayBox"
-            :disabled="disableDelete"
-            @click="clearExpiredCompressFile"
-          >清理无效压缩包</el-button>
+          <el-button size="default" type="danger" :icon="TakeawayBox" :disabled="disableDelete"
+            @click="clearExpiredCompressFile">清理无效压缩包</el-button>
         </span>
       </div>
-      <el-table
-        tooltip-effect="dark"
-        height="400"
-        stripe
-        border
-        :default-sort="{ prop: 'date', order: 'descending' }"
-        :data="filterLogs"
-        style="width: 100%;"
-      >
+      <el-table tooltip-effect="dark" height="400" stripe border :default-sort="{ prop: 'date', order: 'descending' }"
+        :data="filterLogs" style="width: 100%;">
         <el-table-column sortable prop="date" label="日期" width="180">
           <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
         </el-table-column>
@@ -82,17 +56,9 @@
       </el-table>
 
       <div class="flex fc p10">
-        <el-pagination
-          :current-page="pageCurrent"
-          @current-change="handlePageChange"
-          background
-          :page-count="pageCount"
-          :page-sizes="[10, 50, 100, 200, 500, 1000]"
-          :page-size="pageSize"
-          @size-change="handleSizeChange"
-          :total="logSumCount"
-          layout="total, sizes, prev, pager, next, jumper"
-        ></el-pagination>
+        <el-pagination :current-page="pageCurrent" @current-change="handlePageChange" background :page-count="pageCount"
+          :page-sizes="[10, 50, 100, 200, 500, 1000]" :page-size="pageSize" @size-change="handleSizeChange"
+          :total="logSumCount" layout="total, sizes, prev, pager, next, jumper"></el-pagination>
       </div>
     </div>
     <el-dialog v-model="showDetail" title="详细信息" width="50%" center :fullscreen="isMobile">
@@ -125,6 +91,7 @@ const $store = useStore()
 
 const isMobile = computed(() => $store.getters['public/isMobile'])
 
+const isLoadingOverview = ref(false)
 const cardList = reactive([
   {
     type: 'user',
@@ -169,13 +136,14 @@ const cardList = reactive([
 ])
 // 刷新记录条数
 const refreshCount = () => {
+  isLoadingOverview.value = true
   SuperOverviewApi.getCount().then((res) => {
     const {
       user, file, log, pv, compress,
     } = res.data
     cardList[0].value = `${user.sum}`
     cardList[0].supplement = `较昨日 +${user.recent}`
-    cardList[1].value = `${file.server.sum}/${file.oss.sum}`
+    cardList[1].value = `${file.server.sum}/${file.oss.sum} (${file.oss.size})`
     cardList[1].supplement = `记录较昨日 +${file.server.recent}`
     cardList[2].value = `${log.sum}`
     cardList[2].supplement = `较昨日 +${log.recent}`
@@ -183,6 +151,7 @@ const refreshCount = () => {
     cardList[3].supplement = `历史: ${pv.all.sum}/${pv.all.uv}`
     cardList[4].value = `${compress.all.sum}/${compress.all.size}`
     cardList[4].supplement = `已失效 ${compress.expired.sum}/${compress.expired.size}`
+    isLoadingOverview.value = false
   })
 }
 
@@ -348,25 +317,29 @@ onMounted(() => {
   .card-list {
     margin-top: 40px;
   }
+
   .card {
     min-width: 300px;
   }
+
   .log-filter {
     justify-content: center;
   }
 }
+
 .overview {
   margin: 0 auto;
 }
+
 .card-list {
   display: flex;
   margin-top: 20px;
   justify-content: center;
   flex-wrap: wrap;
 }
+
 .card {
   margin: 10px;
-  height: 108px;
   cursor: pointer;
   font-size: 12px;
   position: relative;
@@ -376,36 +349,46 @@ onMounted(() => {
   box-shadow: 4px 4px 40px rgb(0 0 0 / 5%);
   border-color: rgba(0, 0, 0, 0.05);
   width: 260px;
+
   .logo {
     float: left;
-    margin: 16px 10px 0 10px;
+    margin: 4px 10px 0 10px;
     -webkit-transition: all 0.38s ease-out;
     transition: all 0.38s ease-out;
     border-radius: 6px;
     font-size: 48px;
+
     i {
       padding: 10px;
     }
   }
+
   .content {
     float: right;
     font-weight: 700;
-    margin: 26px;
+    margin: 10px;
     margin-left: 0;
+
     .title {
       line-height: 18px;
       color: rgba(0, 0, 0, 0.45);
-      font-size: 16px;
+      font-size: 14px;
+      text-align: right;
     }
+
     .text {
-      font-size: 20px;
+      font-size: 16px;
+      text-align: right;
     }
+
     .supplement {
       font-size: 12px;
       font-weight: lighter;
+      text-align: right;
     }
   }
 }
+
 .panel {
   max-width: 1024px;
   padding: 1em;
@@ -415,12 +398,15 @@ onMounted(() => {
   box-shadow: 0 2px 12px 0 rgb(0 0 0 / 10%);
   border-radius: 4px;
 }
+
 .log-filter {
   display: flex;
   flex-wrap: wrap;
+
   .item {
     margin-right: 10px;
     margin-bottom: 10px;
+
     .label {
       margin-right: 10px;
       font-size: 12px;
