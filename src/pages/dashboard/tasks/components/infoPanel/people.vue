@@ -49,7 +49,7 @@
           <el-input size="default" placeholder="输入要查询的姓名" v-model="searchName"></el-input>
         </div>
         <div class="item">
-          <el-button type="primary" size="default" @click="handleCheckMore">{{ checkMore ? '隐藏' : '显示' }}提交数量
+          <el-button type="primary" size="default" @click="handleCheckMore">{{ checkMore ? '隐藏' : '显示' }}详细提交情况
           </el-button>
         </div>
       </div>
@@ -61,8 +61,8 @@
       </div>
       <div class="tc p10">
         <tip>"提交次数" 用户实际的提交次数</tip>
-        <tip>"现存数量" 还存在于服务器上的文件数（不包含删除）</tip>
-        <tip>"提交数量" 用户实际提交的文件数（不包含撤回）--- 慢查询</tip>
+        <tip>"现存数量" 还存在于服务器上的文件数 (不包含删除) --- 慢查询</tip>
+        <tip>"提交数量" 用户实际提交的文件数 (不包含撤回) --- 慢查询</tip>
       </div>
       <!-- 数据部分 -->
       <el-table v-loading="isLoadingPeopleData" element-loading-text="Loading..." stripe border :data="peopleSubmitData"
@@ -80,9 +80,9 @@
           </template>
         </el-table-column>
         <el-table-column property="count" label="提交次数" width="94"></el-table-column>
-        <el-table-column property="fileCount" label="现存数量" width="94"></el-table-column>
         <el-table-column sortable property="lastDate" label="最后操作时间" width="120"></el-table-column>
         <template v-if="checkMore">
+          <el-table-column property="fileCount" label="现存数量" width="94"></el-table-column>
           <el-table-column sortable property="submitCount" label="提交数量" width="120"></el-table-column>
         </template>
         <el-table-column label="操作" width="100">
