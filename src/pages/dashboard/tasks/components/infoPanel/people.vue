@@ -49,7 +49,7 @@
           <el-input size="default" placeholder="输入要查询的姓名" v-model="searchName"></el-input>
         </div>
         <div class="item">
-          <el-button type="primary" size="default" @click="handleCheckMore">{{ checkMore ? '隐藏' : '显示' }}详细数据
+          <el-button type="primary" size="default" @click="handleCheckMore">{{ checkMore ? '隐藏' : '显示' }}提交数量
           </el-button>
         </div>
       </div>
@@ -60,14 +60,13 @@
         <span>未提交: {{ peopleSubmitData.filter(v => !v.status).length }}</span>
       </div>
       <div class="tc p10">
-        <tip>"提交数量" 用户实际提交的文件数（不包含撤回）</tip>
-        <template v-if="checkMore">
-          <tip>"现存数量" 还存在于服务器上的文件数（不包含删除）</tip>
-          <tip>"提交次数" 用户实际的提交次数</tip>
-        </template>
+        <tip>"提交次数" 用户实际的提交次数</tip>
+        <tip>"现存数量" 还存在于服务器上的文件数（不包含删除）</tip>
+        <tip>"提交数量" 用户实际提交的文件数（不包含撤回）--- 慢查询</tip>
       </div>
       <!-- 数据部分 -->
-      <el-table stripe border :data="peopleSubmitData" height="460px">
+      <el-table v-loading="isLoadingPeopleData" element-loading-text="Loading..." stripe border :data="peopleSubmitData"
+        height="460px">
         <el-table-column label="序号" width="60">
           <template #default="scope">
             <div style="text-align: center;">{{ scope.$index + 1 }}</div>
@@ -80,11 +79,11 @@
             <span class="submit-fail" v-else>未提交</span>
           </template>
         </el-table-column>
-        <el-table-column sortable property="submitCount" label="提交数量" width="120"></el-table-column>
+        <el-table-column property="count" label="提交次数" width="94"></el-table-column>
+        <el-table-column property="fileCount" label="现存数量" width="94"></el-table-column>
         <el-table-column sortable property="lastDate" label="最后操作时间" width="120"></el-table-column>
         <template v-if="checkMore">
-          <el-table-column property="fileCount" label="现存数量" width="94"></el-table-column>
-          <el-table-column property="count" label="提交次数" width="94"></el-table-column>
+          <el-table-column sortable property="submitCount" label="提交数量" width="120"></el-table-column>
         </template>
         <el-table-column label="操作" width="100">
           <template #default="scope">
@@ -164,9 +163,7 @@ export default defineComponent({
   name: 'peoplePanel',
   setup(props) {
     const checkMore = ref(false)
-    const handleCheckMore = () => {
-      checkMore.value = !checkMore.value
-    }
+
     const people = ref(0)
     watchEffect(() => {
       people.value = props.value as number
@@ -196,8 +193,10 @@ export default defineComponent({
       }
       return filterPeopleBySearchWord.value.filter((p) => p.status === +selectSubmitStatus.value)
     })
-    const checkPeople = () => {
-      PeopleApi.getPeople(props.k).then((res) => {
+    const isLoadingPeopleData = ref(false)
+    const refreshSubmitData = () => {
+      isLoadingPeopleData.value = true
+      PeopleApi.getPeople(props.k, `${+checkMore.value}`).then((res) => {
         peopleList.splice(0, peopleList.length)
         peopleList.push(...res.data.people)
         peopleList.forEach((p) => {
@@ -207,10 +206,20 @@ export default defineComponent({
             p.lastDate = formatDate(new Date(p.lastDate), 'yyyy-MM-dd hh:mm:ss')
           }
         })
-        showPeopleList.value = true
-        // 默认展示所有数据
-        checkMore.value = true
+        isLoadingPeopleData.value = false
       })
+    }
+    const handleCheckMore = () => {
+      checkMore.value = !checkMore.value
+      if (checkMore.value) {
+        refreshSubmitData()
+      }
+    }
+    const checkPeople = () => {
+      showPeopleList.value = true
+      // 默认不展示提交数量
+      checkMore.value = false
+      refreshSubmitData()
     }
     const handleDeletePeople = (item: any) => {
       ElMessageBox.confirm('确认删除此人员吗', '数据无价，请谨慎操作')
@@ -367,6 +376,7 @@ export default defineComponent({
       searchName,
       handleCheckMore,
       checkMore,
+      isLoadingPeopleData,
     }
   },
   components: { Tip },
@@ -400,7 +410,8 @@ export default defineComponent({
 .info-panel :deep(.el-form-item__label) {
   flex: v-bind(importPanelFlexStyle);
 }
-.info-panel :deep(.el-upload-list__item-name){
-  justify-content:center;
+
+.info-panel :deep(.el-upload-list__item-name) {
+  justify-content: center;
 }
 </style>

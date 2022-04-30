@@ -9,8 +9,12 @@ function importPeople(key: string, filename: string, type: string): PeopleApiTyp
   )
 }
 
-function getPeople(key: string): PeopleApiTypes.getPeople {
-  return ajax.get(`/people/${key}`)
+function getPeople(key: string, detail = '0'): PeopleApiTypes.getPeople {
+  return ajax.get(`/people/${key}`, {
+    params: {
+      detail,
+    },
+  })
 }
 
 function deletePeople(key: string, id: number): PeopleApiTypes.deletePeople {

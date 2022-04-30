@@ -18,7 +18,7 @@
       </div>
     </div>
     <!-- 有效 -->
-    <div class="panel tc" v-if="
+    <div v-loading="isLoadingData" element-loading-text="Loading..." class="panel tc" v-if="
       k
     ">
       <!-- 任务名 -->
@@ -578,10 +578,12 @@ const checkSubmitStatus = async () => {
     }
   })
 }
+const isLoadingData = ref(false)
 
 onMounted(() => {
   k.value = $route.params.key as string
   if (k.value) {
+    isLoadingData.value = true
     TaskApi.getTaskInfo(k.value).then(
       (res) => {
         Object.assign(
@@ -610,6 +612,7 @@ onMounted(() => {
         ),
       )
       refreshWaitTime(false)
+      isLoadingData.value = false
     })
     refreshWaitTime()
   }
