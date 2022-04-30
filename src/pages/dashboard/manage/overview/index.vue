@@ -348,7 +348,7 @@ onMounted(() => {
   background: #fff;
   box-shadow: 4px 4px 40px rgb(0 0 0 / 5%);
   border-color: rgba(0, 0, 0, 0.05);
-  width: 260px;
+  min-width: 300px;
 
   .logo {
     float: left;
