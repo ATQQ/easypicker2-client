@@ -101,7 +101,6 @@
   </div>
 </template>
 <script lang="ts" setup>
-import filenamify from 'filenamify'
 import {
   ElMessage,
   ElMessageBox,
@@ -127,6 +126,7 @@ import {
   formatDate,
   getFileMd5Hash,
   getFileSuffix,
+  normalizeFileName,
   parseInfo,
 } from '@/utils/stringUtil'
 import {
@@ -286,10 +286,7 @@ const startUpload = () => {
           + getFileSuffix(name)
       }
       // 替换不合法的字符
-      name = filenamify(name, {
-        replacement: '_',
-      })
-
+      name = normalizeFileName(name)
       const key = `easypicker2/${k.value}/${file.md5}/${name}`
 
       FileApi.getUploadToken().then(
