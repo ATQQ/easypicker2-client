@@ -3,7 +3,7 @@
         <main>
             <div class="panel">
                 <router-link to="/">
-                    <img class="logo" src="../../assets/i/EasyPicker.png">
+                    <img class="logo" src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png">
                 </router-link>
             </div>
             <div class="panel">

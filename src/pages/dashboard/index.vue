@@ -5,7 +5,7 @@
         <!-- LOGO -->
         <div class="logo">
           <router-link to="/">
-            <img src="./../../assets/i/EasyPicker.png" alt="logo" />
+            <img src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png" alt="logo" />
           </router-link>
         </div>
         <input type="checkbox" id="navActive" />
