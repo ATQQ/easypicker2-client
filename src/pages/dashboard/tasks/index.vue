@@ -14,7 +14,7 @@
       <div class="task-list">
         <TaskInfo @edit="editBaseInfo" @delete="deleteTask" @share="shareTask" @more="editMore"
           v-for="item in filterTasks" :key="item.key" :item="item"></TaskInfo>
-        <el-empty v-if="filterTasks.length === 0" description="此分类下没有任务哟"></el-empty>
+        <el-empty v-if="filterTasks.length === 0" description="此分类下没有任务哟，快去创建吧"></el-empty>
       </div>
     </div>
 
@@ -51,18 +51,19 @@
         </h3>
         <el-tabs v-model="activeInfo">
           <el-tab-pane label="截止日期" name="ddl">
-            <DDlPanel :ddl="taskInfo.ddl" :k="activeTask.key"></DDlPanel>
+            <DDlPanel :ddl="taskInfo.ddl" :k="activeTask.key" />
           </el-tab-pane>
-          <el-tab-pane label="模板文件" name="template">
-            <TemplatePanel :value="taskInfo.template" :k="activeTask.key"></TemplatePanel>
+          <el-tab-pane label="批注信息" name="tip">
+            <TipInfoPanel :rewrite="taskInfo.rewrite" :tip="taskInfo.tip" :k="activeTask.key" />
           </el-tab-pane>
           <el-tab-pane label="限制人员" name="people">
-            <PeoplePanel :name="activeTask.name" :value="taskInfo.people" :k="activeTask.key">
-            </PeoplePanel>
+            <PeoplePanel :name="activeTask.name" :value="taskInfo.people" :k="activeTask.key" />
           </el-tab-pane>
           <el-tab-pane label="必填信息" name="info">
-            <InfoPanel :rewrite="taskInfo.rewrite" :info="taskInfo.info" :k="activeTask.key">
-            </InfoPanel>
+            <InfoPanel :rewrite="taskInfo.rewrite" :info="taskInfo.info" :k="activeTask.key" />
+          </el-tab-pane>
+          <el-tab-pane label="模板文件" name="template">
+            <TemplatePanel :value="taskInfo.template" :k="activeTask.key" />
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -85,6 +86,7 @@ import DDlPanel from './components/infoPanel/ddl.vue'
 import PeoplePanel from './components/infoPanel/people.vue'
 import TemplatePanel from './components/infoPanel/template.vue'
 import InfoPanel from './components/infoPanel/info.vue'
+import TipInfoPanel from './components/infoPanel/tipInfo.vue'
 
 const $store = useStore()
 const isMobile = computed(() => $store.getters['public/isMobile'])
@@ -160,6 +162,7 @@ const editMore = (item: any) => {
     // 先初始化,再赋值
     taskInfo.info = '[]'
     taskInfo.ddl = ''
+    taskInfo.tip = ''
     setTimeout(() => {
       Object.assign(taskInfo, res.data)
       showTaskInfoPanel.value = true

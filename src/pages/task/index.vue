@@ -5,7 +5,8 @@
         <!-- LOGO -->
         <div class="logo">
           <router-link to="/">
-            <img style="height: 40px;width: 170px;" src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png" alt="logo" />
+            <img style="height: 40px;width: 170px;" src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png"
+              alt="logo" />
           </router-link>
         </div>
         <nav>
@@ -26,16 +27,19 @@
         {{ taskInfo.name }}
       </h1>
       <!-- 截止时间字符串 -->
-      <h2 v-if="ddlStr" class="ddl">
-        截止时间:{{ ddlStr }}
-        <span>
-          {{
-              isOver
-                ? '已经结束'
-                : waitTimeStr
-          }}
-        </span>
-      </h2>
+      <template v-if="ddlStr">
+        <el-divider>截止时间</el-divider>
+        <h2 class="ddl">
+          {{ ddlStr }}
+          <span>
+            {{
+                isOver
+                  ? '已经结束'
+                  : waitTimeStr
+            }}
+          </span>
+        </h2>
+      </template>
       <!-- 未设置ddl 或者 设置了还未结束 -->
       <div v-if="!ddlStr || !isOver">
         <el-divider>必要信息填写</el-divider>
