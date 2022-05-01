@@ -5,7 +5,7 @@
         <!-- LOGO -->
         <div class="logo">
           <router-link to="/">
-            <img src="./../../assets/i/EasyPicker.png" alt="logo" />
+            <img style="height: 40px;width: 170px;" src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png" alt="logo" />
           </router-link>
         </div>
         <nav>

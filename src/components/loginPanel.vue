@@ -4,7 +4,7 @@
         <div class="pannel">
             <div class="logo">
                 <router-link to="/">
-                    <img src="../assets/i/EasyPicker.png" />
+                    <img src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png" />
                 </router-link>
                 <p class="name">{{ title }}</p>
                 <p class="introduce">{{ introduce }}</p>
