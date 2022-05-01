@@ -162,3 +162,10 @@ export function parseInfo(info: string): InfoItem[] {
     return v
   })
 }
+
+/**
+ * 文件名合法化
+ */
+export function normalizeFileName(name: string) {
+  return name.replace(/[\\/:*?"<>|]/g, '-')
+}
