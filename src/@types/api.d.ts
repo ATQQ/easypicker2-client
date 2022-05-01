@@ -87,7 +87,9 @@ declare namespace TaskApiTypes {
         rewrite?: number
         share?: string
         template?: string
-        name?: string, category?: string
+        name?: string,
+        category?: string
+        tip?: string
     }
 
     type getList = ResponseData<{ tasks: TaskItem[] }>
@@ -97,7 +99,7 @@ declare namespace TaskApiTypes {
     type getTaskInfo = ResponseData<TaskInfo>
     type getTaskMoreInfo = ResponseData<TaskInfo>
     type updateTaskMoreInfo = ResponseData
-    type getUsefulTemplate = ResponseData<{taskKey:string, name:string, info:string}[]>
+    type getUsefulTemplate = ResponseData<{ taskKey: string, name: string, info: string }[]>
 }
 
 declare namespace PublicApiTypes {
@@ -118,8 +120,8 @@ declare namespace PeopleApiTypes {
     type deletePeople = ResponseData
     type updatePeopleStatus = ResponseData
     type checkPeopleIsExist = ResponseData<{ exist: boolean }>
-    type getUsefulTemplate = ResponseData<{taskKey:string, name:string, count:number}[]>
-    type importFromTpl = ResponseData<{fail:string[], success:number}>
+    type getUsefulTemplate = ResponseData<{ taskKey: string, name: string, count: number }[]>
+    type importFromTpl = ResponseData<{ fail: string[], success: number }>
 }
 
 declare namespace CateGoryApiTypes {
@@ -138,7 +140,7 @@ declare namespace OverviewApiTypes {
         sum: number
         recent?: number
         uv?: number
-        size?:string
+        size?: string
     }
     interface LogItem {
         date: string
@@ -148,8 +150,8 @@ declare namespace OverviewApiTypes {
     }
     type getCount = ResponseData<{
         file: {
-            server:CountLog
-            oss:CountLog
+            server: CountLog
+            oss: CountLog
         }
         log: CountLog
         pv: {
@@ -157,7 +159,7 @@ declare namespace OverviewApiTypes {
             today: CountLog
         }
         user: CountLog
-        compress :{
+        compress: {
             all: CountLog
             expired: CountLog
         }
