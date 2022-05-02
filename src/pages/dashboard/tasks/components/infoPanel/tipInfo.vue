@@ -1,8 +1,8 @@
 <template>
     <div class="tc ddl">
         <tip :imgs="[
-            'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTI4NjU5Nw==649149286597',
-        ]">设置批注信息，供用户提交时查看。</tip>
+          'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241'
+        ]">设置注意事项，供用户提交时查看</tip>
         <div class="tc flex fc fac">
             <el-input v-model="textValue" :rows="4" clearable :max="500" show-word-limit type="textarea"
                 placeholder="请输入要展示的批注信息" />

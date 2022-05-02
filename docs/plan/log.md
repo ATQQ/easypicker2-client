@@ -5,6 +5,9 @@
   * 记录即`提交记录数量`
   * OSS即`云上实际存在的文件数量`
 * 上传表单信息支持`单选`，`下拉选择`，`固定内容`
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjU2ODcyNg==651496568726" style="height:100px;" />
+* 任务支持设置批注
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241" style="height:100px;" />
 
 ### Chore
 * 提交面板默认展示删除文件icon

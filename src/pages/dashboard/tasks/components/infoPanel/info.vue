@@ -2,6 +2,7 @@
   <div class="tc">
     <tip :imgs="[
       'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzM3NjUyNg==650183376526',
+      'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjU2ODcyNg==651496568726',
     ]">上传文件必填表单信息</tip>
     <div class="auto-format">
       <span>文件自动重命名:</span>
