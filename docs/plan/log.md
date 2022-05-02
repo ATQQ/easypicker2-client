@@ -8,6 +8,7 @@
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjU2ODcyNg==651496568726" style="height:100px;" />
 * 任务支持设置批注
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241" style="height:100px;" />
+* 上传的文件支持查看原文件名
 
 ### Chore
 * 提交面板默认展示删除文件icon
@@ -20,6 +21,7 @@
 * 重命名文件后缀从头开始读取，兼容 `.d.ts`,`.tar.gz` 等情况
 * 上传时可修改表单内容
 * 未正确处理文件名中特殊字符`?`
+* PC/H5来回切换导航栏展示异常
 
 ## v2.1.5
 ### Feature

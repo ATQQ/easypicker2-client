@@ -8,7 +8,7 @@
             <img src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png" alt="logo" />
           </router-link>
         </div>
-        <input type="checkbox" id="navActive" />
+        <input v-if="isMobile" type="checkbox" id="navActive" />
         <nav>
           <label v-if="isMobile" for="navActive" class="nav-item">
             <span>Hello💐，</span>
@@ -82,7 +82,7 @@ import {
 } from '@element-plus/icons-vue'
 
 import {
-  onMounted, reactive, ref, computed,
+  onMounted, reactive, ref, computed, watch,
 } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
@@ -97,7 +97,7 @@ const isMobile = computed(
     'public/isMobile'
   ],
 )
-const navList: any[] = reactive([
+const navList = reactive<{title:string, path:string, isExternal?:boolean}[]>([
   {
     title: '文件管理',
     path: '/dashboard/files',
@@ -114,12 +114,19 @@ const handleNav = (idx: number) => {
     $router.push({
       path: n.path,
     })
-    navActiveIdx.value = idx
   }
   if (n.isExternal) {
     window.open(n.path, '_blank')
   }
 }
+
+// 自动切换激活的标题栏
+watch(() => $route.path, (path: string) => {
+  const idx = navList.findIndex((n) => path.startsWith(n.path))
+  if (idx !== -1) {
+    navActiveIdx.value = idx
+  }
+})
 
 const handleLogout = () => {
   ElMessageBox.confirm('确认退出登录？', '登出提示', {
