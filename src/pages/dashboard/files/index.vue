@@ -66,17 +66,17 @@
         <el-button title="导出表格中所有的数据" type="success" size="default" :icon="DataAnalysis" @click="() => {
           handleExportExcel(filterFiles, `筛选数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`);
         }" :disabled="showFilterFiles.length === 0">导出记录</el-button>
-        <div class="showImgBtn">
+        <div class="control-item">
           显示图片
           <el-switch inline-prompt v-model="showImg" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
             inactive-text="否" />
         </div>
-        <div class="showImgBtn">
+        <div class="control-item">
           展示原文件名
           <el-switch inline-prompt v-model="showOriginName" active-color="#13ce66" inactive-color="#ff4949"
             active-text="是" inactive-text="否" />
         </div>
-        <div class="showImgBtn">
+        <div class="control-item">
           显示提交人姓名
           <el-switch inline-prompt v-model="showPeople" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
             inactive-text="否" />
@@ -103,6 +103,10 @@
     </div>
     <!-- 主体内容 -->
     <div class="panel">
+      <Tip>占用空间：{{ filterFileSize }} / {{ fileListSize }}</Tip>
+      <!-- TODO:待完善提示弹窗 -->
+      <Tip>请作者喝咖啡<el-button @click="openPraise" style="margin:0 0 2px 10px;" size="small" type="text">Why❓</el-button>
+      </Tip>
       <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
         ref="multipleTable" @selection-change="handleSelectionChange" stripe border
         :default-sort="{ prop: 'date', order: 'descending' }" :max-height="666" :data="showFilterFiles"
@@ -172,6 +176,18 @@
       <InfosForm :infos="infos" :disabled="true" />
     </el-dialog>
     <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
+
+    <!-- 赞赏弹窗 -->
+    <el-dialog v-model="showPraise" title="😄 嘻嘻 😄" :fullscreen="isMobile">
+      <!-- TODO:完善 -->
+      <p>目前的服务主要开销在 “文件存储” 与 "资源下载"两方面</p>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="success" @click="Thanks">这次一定</el-button>
+          <el-button type="default" @click="NextPraise">下次一定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
@@ -182,7 +198,7 @@ import {
 import { useStore } from 'vuex'
 import LinkDialog from '@components/linkDialog.vue'
 import {
-  ArrowDown, Refresh, DataAnalysis, Download, Search, Picture,
+  ArrowDown, Refresh, DataAnalysis, Download, Search, Picture, Check,
 } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import {
@@ -202,6 +218,30 @@ const downloadUrl = ref('')
 const showImg = ref(false)
 const showPeople = ref(true)
 const showOriginName = ref(false)
+const showPraise = ref(false)
+const openPraise = () => {
+  showPraise.value = true
+}
+
+const Thanks = () => {
+  ElMessageBox.alert(`
+  <p class="tc">
+    <img width="140px" src="https://img.cdn.sugarat.top/mdImg/MTY1MTUwNjkwNDc4OQ==thanks.gif" />
+  </p>
+  <p class="tc">
+    <img width="240px" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354" />
+  </p>
+  `, '💐 谢谢老板 💐', {
+    confirmButtonText: '不客气',
+    dangerouslyUseHTMLString: true,
+  })
+}
+
+const NextPraise = () => {
+  showPraise.value = false
+  ElMessage.success('下次一定！下次一定！')
+}
+
 // 记录导出
 const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
   if (files.length === 0) {
@@ -313,9 +353,10 @@ const filterFiles = computed(() => files.filter((f) => {
   t.task_name,
   // eslint-disable-next-line no-useless-escape
   t.info]).replace(/[:'"\{\},\[\]]/g, '').includes(searchWord.value) : true)))
+
 /**
-     * 清空所有选项
-     */
+* 清空所有选项
+*/
 const clearSelection = () => {
   multipleTable.value.clearSelection()
 }
@@ -476,6 +517,9 @@ const showFilterFiles = computed(() => {
   const end = (pageCurrent.value) * pageSize.value
   return filterFiles.value.slice(start, end)
 })
+
+const filterFileSize = computed(() => formatSize(filterFiles.value.reduce((acc, cur) => acc + cur.size, 0)))
+const fileListSize = computed(() => formatSize(files.reduce((acc, cur) => acc + cur.size, 0)))
 const handlePageChange = (idx: number) => {
   pageCurrent.value = idx
 }
@@ -633,7 +677,7 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   margin-bottom: 10px;
 }
 
-.showImgBtn {
+.control-item {
   margin-left: 10px;
   margin-bottom: 10px;
   font-size: 14px;
