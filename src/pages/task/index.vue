@@ -291,7 +291,7 @@ const startUpload = () => {
       // 开始上传
       file.status = 'uploading'
       let { name } = file
-
+      const originName = name
       // 如果开启了自动重命名,这里重命名一下
       if (taskMoreInfo.rewrite) {
         name = infos
@@ -313,6 +313,7 @@ const startUpload = () => {
               success(data: any) {
                 const { fsize } = data
                 FileApi.addFile({
+                  originName,
                   name,
                   taskKey: k.value,
                   taskName:

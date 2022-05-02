@@ -8,6 +8,7 @@ declare namespace FileApiTypes {
         size: number
         taskKey: string
         taskName: string
+        originName: string
         categoryKey?: string
         name: string
         info: string
