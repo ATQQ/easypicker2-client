@@ -72,6 +72,11 @@
             inactive-text="否" />
         </div>
         <div class="showImgBtn">
+          展示原文件名
+          <el-switch inline-prompt v-model="showOriginName" active-color="#13ce66" inactive-color="#ff4949"
+            active-text="是" inactive-text="否" />
+        </div>
+        <div class="showImgBtn">
           显示提交人姓名
           <el-switch inline-prompt v-model="showPeople" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
             inactive-text="否" />
@@ -98,15 +103,23 @@
     </div>
     <!-- 主体内容 -->
     <div class="panel">
-      <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable ref="multipleTable" @selection-change="handleSelectionChange" stripe
-        border :default-sort="{ prop: 'date', order: 'descending' }" :max-height="666" :data="showFilterFiles"
+      <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
+        ref="multipleTable" @selection-change="handleSelectionChange" stripe border
+        :default-sort="{ prop: 'date', order: 'descending' }" :max-height="666" :data="showFilterFiles"
         style="width: 100%">
         <el-table-column type="selection" width="55" />
         <el-table-column sortable prop="date" label="提交时间" width="200">
           <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
         </el-table-column>
         <el-table-column prop="task_name" label="任务" width="150"></el-table-column>
-        <el-table-column prop="name" label="文件名" width="200"></el-table-column>
+        <el-table-column sortable prop="name" label="文件名" width="200"></el-table-column>
+        <template v-if="showOriginName">
+          <el-table-column sortable prop="origin_name" label="原文件名" width="200">
+            <template #default="scope">
+              {{ scope.row.origin_name || '-' }}
+            </template>
+          </el-table-column>
+        </template>
         <el-table-column prop="size" label="大小">
           <template #default="scope">{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
         </el-table-column>
@@ -156,7 +169,7 @@
     </div>
     <!-- 信息弹窗 -->
     <el-dialog :fullscreen="isMobile" title="提交填写的信息" v-model="showInfoDialog">
-      <InfosForm :infos="infos" :disabled="true"/>
+      <InfosForm :infos="infos" :disabled="true" />
     </el-dialog>
     <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
   </div>
@@ -186,6 +199,7 @@ const showLinkModel = ref(false)
 const downloadUrl = ref('')
 const showImg = ref(false)
 const showPeople = ref(true)
+const showOriginName = ref(false)
 // 记录导出
 const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
   if (files.length === 0) {
