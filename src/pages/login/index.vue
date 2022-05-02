@@ -124,6 +124,16 @@ const getCode = () => {
     time.value = 120
     refreshCodeText()
     ElMessage.success('获取成功,请注意查看手机短信')
+  }).catch((err) => {
+    const { code: c } = err
+    const msg = '注册失败,未知错误'
+    const options: any = {
+      1001: '账号已存在',
+      1002: '手机号已被注册',
+      1003: '验证码不正确',
+      1006: '手机号格式不正确',
+    }
+    ElMessage.error(options[c] || msg)
   })
 }
 

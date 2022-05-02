@@ -5,6 +5,7 @@
         </div>
         <div v-if="imgs?.length" class="preview">
             <el-image
+                hide-on-click-modal
                 class="img-container"
                 :src="imgs[0]"
                 :preview-src-list="imgs"
