@@ -95,7 +95,7 @@ const categorys = computed(() => $store.state.category.categoryList)
 
 // 任务相关
 const selectCategory = ref('default')
-const tasks = computed<any[]>(() => $store.state.task.taskList)
+const tasks = computed<TaskApiTypes.TaskItem[]>(() => $store.state.task.taskList)
 const filterTasks = computed(() => {
   const t = tasks.value.filter((v) => v.category === selectCategory.value)
   return t

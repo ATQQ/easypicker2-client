@@ -9,6 +9,7 @@
 * 任务支持设置批注
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241" style="height:100px;" />
 * 上传的文件支持查看原文件名
+* 支持直接从任务卡片跳转到文件面板展示对应任务数据
 
 ### Chore
 * 提交面板默认展示删除文件icon
