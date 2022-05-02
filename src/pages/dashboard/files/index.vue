@@ -184,6 +184,7 @@ import LinkDialog from '@components/linkDialog.vue'
 import {
   ArrowDown, Refresh, DataAnalysis, Download, Search, Picture,
 } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
 import {
   copyRes, formatDate, formatSize, isSupportPreview, parseInfo,
 } from '@/utils/stringUtil'
@@ -195,6 +196,7 @@ import Tip from '../tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
 
 const $store = useStore()
+const $route = useRoute()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
 const showImg = ref(false)
@@ -265,6 +267,12 @@ const filterTasks = computed(() => {
 const selectTaskName = computed(() => {
   const t = filterTasks.value.find((v) => v.key === selectTask.value)
   return t?.name
+})
+
+watchEffect(() => {
+  if (tasks.value.length && tasks.value.some((v) => v.key === $route.query.task)) {
+    selectTask.value = `${$route.query.task}`
+  }
 })
 
 const isLoadingData = ref(false)
