@@ -2,6 +2,7 @@
   <div class="tc info-panel">
     <tip :imgs="[
       'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzEwOTEzOQ==650183109139',
+      'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjY3MTUyMw==651496671523',
     ]">只有名单里的成员，才可提交文件</tip>
     <el-button @click="updateLimitPeople(true)" v-if="!people" size="default" round type="success">打开</el-button>
     <el-button @click="updateLimitPeople(false)" v-if="people" size="default" round type="danger">关闭</el-button>

@@ -27,6 +27,15 @@
         {{ taskInfo.name }}
       </h1>
       <!-- 截止时间字符串 -->
+      <template v-if="taskMoreInfo.tip">
+        <el-divider>⚠️ 注意事项 ⚠️</el-divider>
+        <Tip>
+          <div class="tip-wrapper">
+            <p v-for="(t, i) in taskMoreInfo.tip.split('\n')" :key="i">{{ t.replace(/\s/g,'&nbsp;') }}</p>
+          </div>
+        </Tip>
+      </template>
+      <!-- 截止时间字符串 -->
       <template v-if="ddlStr">
         <el-divider>截止时间</el-divider>
         <h2 class="ddl">
@@ -116,6 +125,7 @@ import type {
 import {
   computed,
   onMounted,
+  onUnmounted,
   reactive,
   ref,
 } from 'vue'
@@ -301,7 +311,6 @@ const startUpload = () => {
             key,
             {
               success(data: any) {
-                file.status = 'success'
                 const { fsize } = data
                 FileApi.addFile({
                   name,
@@ -316,6 +325,7 @@ const startUpload = () => {
                   people:
                     peopleName.value,
                 }).then(() => {
+                  file.status = 'success'
                   ElMessage.success(
                     `文件:${file.name}提交成功`,
                   )
@@ -580,7 +590,47 @@ const checkSubmitStatus = async () => {
   })
 }
 const isLoadingData = ref(false)
-
+const readyRefresh = ref(false)
+const isEqualInfos = (a: InfoItem[] = [], b: InfoItem[] = []) => {
+  if (a.length !== b.length) {
+    return false
+  }
+  return a.every((v, i) => (v.type === b[i].type && v.text === b[i].text && isEqualInfos(v.children, b[i].children)))
+}
+const refreshTaskMoreInfo = (hot = false) => {
+  TaskApi.getTaskMoreInfo(
+    k.value,
+  ).then((res) => {
+    Object.assign(
+      taskMoreInfo,
+      res.data,
+    )
+    if (!isEqualInfos(infos, parseInfo(
+      taskMoreInfo.info,
+    ))) {
+      infos.splice(0, infos.length)
+      infos.push(
+        ...parseInfo(
+          taskMoreInfo.info,
+        ),
+      )
+      if (hot) {
+        ElMessage.success('表单信息有更新')
+      }
+    }
+    refreshWaitTime(false)
+    isLoadingData.value = false
+  })
+}
+const handleBlur = () => {
+  readyRefresh.value = true
+}
+const handleFocus = () => {
+  if (readyRefresh.value && !disableForm.value) {
+    readyRefresh.value = false
+    refreshTaskMoreInfo(true)
+  }
+}
 onMounted(() => {
   k.value = $route.params.key as string
   if (k.value) {
@@ -599,24 +649,21 @@ onMounted(() => {
         taskInfo.name = '任务不存在'
       }
     })
-
-    TaskApi.getTaskMoreInfo(
-      k.value,
-    ).then((res) => {
-      Object.assign(
-        taskMoreInfo,
-        res.data,
-      )
-      infos.push(
-        ...parseInfo(
-          taskMoreInfo.info,
-        ),
-      )
-      refreshWaitTime(false)
-      isLoadingData.value = false
-    })
+    refreshTaskMoreInfo()
     refreshWaitTime()
   }
+  // 页面隐藏
+  window.addEventListener('blur', handleBlur)
+
+  // 页面展示
+  window.addEventListener('focus', handleFocus)
+})
+
+onUnmounted(() => {
+  // 页面隐藏
+  window.removeEventListener('blur', handleBlur)
+  // 页面展示
+  window.removeEventListener('focus', handleFocus)
 })
 </script>
 <style scoped lang="scss">
@@ -727,5 +774,17 @@ onMounted(() => {
 
 .withdraw {
   text-align: right;
+}
+
+.tip-wrapper {
+  line-height: 20px;
+  text-align: left;
+  word-break: break-all;
+  max-height: 100px;
+  overflow: hidden;
+  padding: 0 20px;
+  color: #E6A23C;
+  max-width: 320px;
+  font-size: 14px;
 }
 </style>
