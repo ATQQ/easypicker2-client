@@ -69,7 +69,7 @@ export function formatDate(d: Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
 }
 
 export function getFileSuffix(str: string) {
-  const startIndex = str.indexOf('.')
+  const startIndex = str.lastIndexOf('.')
   return startIndex >= 0 ? str.slice(startIndex) : ''
 }
 
