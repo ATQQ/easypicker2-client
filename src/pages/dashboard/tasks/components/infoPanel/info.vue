@@ -13,6 +13,7 @@
       预期格式:
       <span style="color: #409EFF;">{{ resFormat }}</span>
     </div>
+    <tip v-if="autoRewrite" style="color:red">开启自动重命名后，重点关注文件名格式是否符合预期</tip>
     <div>
       预览
       <el-switch v-model="openPreview" inline-prompt active-text="是" inactive-text="否" active-color="#13ce66"
@@ -71,6 +72,7 @@
       <el-select style="margin:0 10px" size="small" v-model="selectType" placeholder="选择添加的类型">
         <el-option v-for="(v, idx) in infoTypeList" :key="idx" :label="v.label" :value="v.value" />
       </el-select>
+      <el-button type="text" @click="showHelp">提示❓</el-button>
     </div>
     <!-- 从其它任务导入 -->
     <el-button size="small" type="warning" @click="openImportPanel">从其它任务导入</el-button>
@@ -102,7 +104,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   computed, reactive, ref, watch, watchEffect,
 } from 'vue'
@@ -249,6 +251,9 @@ const $store = useStore()
 const isMobile = computed(() => $store.getters['public/isMobile'])
 const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
 
+const showHelp = () => {
+  ElMessageBox.alert('<p>固定内容主要用于重命名中，固定的部分，如“活动名”，“班级名”</p><p>如要设置注意事项，请使用 <strong>批注</strong> 功能</p>', '注意事项', { dangerouslyUseHTMLString: true })
+}
 </script>
 <style scoped lang="scss">
 .auto-format {
