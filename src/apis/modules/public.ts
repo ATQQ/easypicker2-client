@@ -23,7 +23,19 @@ function reportPv(path:string):PublicApiTypes.reportPv {
     },
   )
 }
+
+function checkPhone(phone:string):PublicApiTypes.checkPhone {
+  return ajax.get<any, BaseResponse>(
+    'public/check/phone',
+    {
+      params: {
+        phone,
+      },
+    },
+  )
+}
 export default {
   getCode,
   reportPv,
+  checkPhone,
 }

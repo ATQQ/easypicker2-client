@@ -5,70 +5,43 @@
         <span class="item">
           <span class="label">状态</span>
           <el-select v-model="filterLogType" size="default" placeholder="请选择日志类型">
-            <el-option
-              v-for="(item,idx) in logTypeList"
-              :key="idx"
-              :label="item.label"
-              :value="item.type"
-            ></el-option>
+            <el-option v-for="(item, idx) in logTypeList" :key="idx" :label="item.label" :value="item.type"></el-option>
           </el-select>
         </span>
         <span class="item">
-          <el-input
-            size="default"
-            clearable
-            placeholder="请输入要检索的内容"
-            :prefix-icon="Search"
-            v-model="searchWord"
-          ></el-input>
+          <el-input size="default" clearable placeholder="请输入要检索的内容" :prefix-icon="Search" v-model="searchWord">
+          </el-input>
         </span>
       </div>
-      <el-table
-        height="550"
-        stripe
-        border
-        :default-sort="{ prop: 'date', order: 'descending' }"
-        :data="pageUsers"
-        style="width: 100%"
-      >
+      <el-table height="550" stripe border :default-sort="{ prop: 'date', order: 'descending' }" :data="pageUsers"
+        style="width: 100%">
         <el-table-column prop="account" label="账号" width="120"></el-table-column>
         <el-table-column prop="phone" label="手机号" width="100"></el-table-column>
         <el-table-column sortable prop="login_time" label="最后登录时间" width="190">
-          <template
-            #default="scope"
-          >{{ scope.row.login_time && formatDate(new Date(scope.row.login_time)) }}</template>
+          <template #default="scope">{{ scope.row.login_time && formatDate(new Date(scope.row.login_time)) }}</template>
         </el-table-column>
         <el-table-column prop="join_time" label="注册时间" width="190">
           <template #default="scope">{{ formatDate(new Date(scope.row.join_time)) }}</template>
         </el-table-column>
         <el-table-column sortable prop="login_count" label="登录次数"></el-table-column>
         <el-table-column prop="open_time" label="解封时间" v-if="filterLogType === 1">
-          <template
-            #default="scope"
-          >{{ scope.row.open_time && formatDate(new Date(scope.row.open_time)) }}</template>
+          <template #default="scope">{{ scope.row.open_time && formatDate(new Date(scope.row.open_time)) }}</template>
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
-            <el-button
-              @click="handleChangeStatus(scope.row.id, scope.row.status, scope.row.open_time)"
-              type="text"
-              size="small"
-            >修改状态</el-button>
+            <div class="text-btn-list">
+              <el-button @click="handleChangeStatus(scope.row.id, scope.row.status, scope.row.open_time)" type="text"
+                size="small">修改状态</el-button>
+              <el-button @click="handleResetPassword(scope.row.id)" type="text" size="small">重置密码</el-button>
+              <el-button @click="handleBindPhone(scope.row.id)" type="text" size="small">绑定手机号</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
       <div class="flex fc p10">
-        <el-pagination
-          :current-page="pageCurrent"
-          @current-change="handlePageChange"
-          background
-          :page-count="pageCount"
-          :page-sizes="[10, 50, 100, 200]"
-          :page-size="pageSize"
-          @size-change="handleSizeChange"
-          :total="filterUsers.length"
-          layout="total, sizes, prev, pager, next, jumper"
-        ></el-pagination>
+        <el-pagination :current-page="pageCurrent" @current-change="handlePageChange" background :page-count="pageCount"
+          :page-sizes="[10, 50, 100, 200]" :page-size="pageSize" @size-change="handleSizeChange"
+          :total="filterUsers.length" layout="total, sizes, prev, pager, next, jumper"></el-pagination>
       </div>
     </div>
     <!-- 用户状态修改弹窗 -->
@@ -88,18 +61,65 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 重置密码 -->
+    <el-dialog :fullscreen="isMobile" center title="密码重置" v-model="showResetPasswordDialog">
+      <div class="tc">
+        <el-form :model="pwdForm" label-width="80px">
+          <el-form-item label="新密码">
+            <el-input show-word-limit clearable v-model="pwdForm.pwd1" placeholder="请输入新密码" maxlength="16"
+              minlength="6" />
+          </el-form-item>
+          <el-form-item>
+            <el-input show-word-limit clearable v-model="pwdForm.pwd2" placeholder="请再次输入" maxlength="16"
+              minlength="6" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showResetPasswordDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSavePassword">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 重绑定手机号 -->
+    <el-dialog :fullscreen="isMobile" center title="绑定手机号" v-model="showPhoneDialog">
+      <div class="tc">
+        <el-form :model="phoneForm" label-width="60px">
+          <el-form-item label="手机号">
+            <el-input show-word-limit clearable v-model="phoneForm.phone" placeholder="请输入手机号" maxlength="11">
+              <template #append>
+                <!-- 获取验证码 -->
+                <el-button :disabled="time !== 0" @click="getCode">{{ codeText }}</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-input show-word-limit clearable v-model="phoneForm.code" placeholder="请输入验证码" maxlength="4" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showPhoneDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSavePhone">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   computed, onMounted, reactive, ref,
 } from 'vue'
 import { useStore } from 'vuex'
 import { Search } from '@element-plus/icons-vue'
-import { SuperUserApi } from '@/apis'
+import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate } from '@/utils/stringUtil'
+import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 
 const $store = useStore()
 // 用户
@@ -112,15 +132,6 @@ const refreshUsers = () => {
   })
 }
 
-function getLogsTypeText(type: string) {
-  const logsTypeText: any = {
-    request: '网络请求',
-    behavior: '用户行为',
-    error: '错误',
-    pv: '页面访问',
-  }
-  return logsTypeText[type]
-}
 // 筛选用户状态
 const filterLogType = ref(USER_STATUS.NORMAL)
 const searchWord = ref('')
@@ -195,6 +206,126 @@ const handleSaveStatus = () => {
   SuperUserApi.updateUserStatus(user.id, user.status, user.open_time)
   ElMessage.success('修改成功')
 }
+
+// 重置密码
+const showResetPasswordDialog = ref(false)
+const pwdForm = reactive({
+  pwd1: '',
+  pwd2: '',
+})
+const handleResetPassword = (userId: number) => {
+  selectUserId.value = userId
+  showResetPasswordDialog.value = true
+  pwdForm.pwd1 = ''
+  pwdForm.pwd2 = ''
+}
+
+const checkPwdForm = () => {
+  if (!rPassword.test(pwdForm.pwd1)) {
+    ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
+    return false
+  }
+  if (pwdForm.pwd1 !== pwdForm.pwd2) {
+    ElMessage.warning('两次输入的密码不一致')
+    return false
+  }
+
+  return true
+}
+
+const handleSavePassword = () => {
+  if (!checkPwdForm()) return
+  ElMessageBox.confirm('此操作不可逆，请谨慎操作', '确定要重置用户的密码吗?', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(() => {
+    SuperUserApi.resetPassword(selectUserId.value, pwdForm.pwd1).then(() => {
+      ElMessage.success('重置成功')
+      showResetPasswordDialog.value = false
+    })
+  }).catch(() => {
+    //
+  })
+}
+
+// 绑定手机号
+const showPhoneDialog = ref(false)
+const phoneForm = reactive({
+  phone: '',
+  code: '',
+})
+const codeText = ref('获取验证码')
+const time = ref(0)
+const refreshCodeText = () => {
+  if (time.value === 0) {
+    codeText.value = '获取验证码'
+    return
+  }
+  codeText.value = `${time.value}s`
+  time.value -= 1
+  setTimeout(refreshCodeText, 1000)
+}
+const getCode = () => {
+  if (!rMobilePhone.test(phoneForm.phone)) {
+    ElMessage.warning('手机号格式不正确')
+    return
+  }
+  // check是否可用
+  PublicApi.checkPhone(phoneForm.phone).then(() => {
+    PublicApi.getCode(phoneForm.phone).then(() => {
+      time.value = 120
+      refreshCodeText()
+      ElMessage.success('获取成功,请注意查看手机短信')
+    })
+  }).catch((err) => {
+    // TODO:编写通用方法处理失败信息弹窗回掉
+    const { code: c } = err
+    const msg = '注册失败,未知错误'
+    const options: any = {
+      1002: '手机号已被注册',
+      1006: '手机号格式不正确',
+    }
+    ElMessage.error(options[c] || msg)
+  })
+}
+const checkPhoneForm = () => {
+  if (!rMobilePhone.test(phoneForm.phone)) {
+    ElMessage.warning('手机号格式不正确')
+    return false
+  }
+  if (!rVerCode.test(phoneForm.code)) {
+    ElMessage.warning('验证码格式不正确')
+    return false
+  }
+
+  return true
+}
+const handleBindPhone = (id:number) => {
+  selectUserId.value = id
+  showPhoneDialog.value = true
+}
+const handleSavePhone = async () => {
+  if (!checkPhoneForm()) {
+    return
+  }
+  // 调用API更新，验证码 不正确判断
+  SuperUserApi.resetPhone(selectUserId.value, phoneForm.phone, phoneForm.code).then(() => {
+    ElMessage.success('绑定成功')
+    showPhoneDialog.value = false
+    phoneForm.code = ''
+    phoneForm.phone = ''
+    refreshUsers()
+  }).catch((err) => {
+    const { code: c } = err
+    const msg = '绑定失败,未知错误'
+    const options: any = {
+      1002: '手机号已被注册',
+      1003: '验证码不正确',
+    }
+    ElMessage.error(options[c] || msg)
+  })
+}
 onMounted(() => {
   refreshUsers()
 })
@@ -207,10 +338,12 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   .user {
     margin-top: 40px !important;
   }
+
   .log-filter {
     justify-content: center;
   }
 }
+
 .user {
   margin: 0 auto;
 }
@@ -224,16 +357,28 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   box-shadow: 0 2px 12px 0 rgb(0 0 0 / 10%);
   border-radius: 4px;
 }
+
 .log-filter {
   display: flex;
   flex-wrap: wrap;
+
   .item {
     margin-right: 10px;
     margin-bottom: 10px;
+
     .label {
       margin-right: 10px;
       font-size: 12px;
     }
+  }
+}
+
+.text-btn-list {
+  display: flex;
+  flex-wrap: wrap;
+
+  button {
+    margin-left: 0;
   }
 }
 </style>

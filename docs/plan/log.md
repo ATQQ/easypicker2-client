@@ -1,4 +1,36 @@
 # 更新日志
+## v2.1.6
+### Feature
+* 管理面板中将 "文件数量" 调整为 "记录/OSS"
+  * 记录即`提交记录数量`
+  * OSS即`云上实际存在的文件数量`
+* 上传表单信息支持`单选`，`下拉选择`，`固定内容`
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjU2ODcyNg==651496568726" style="height:100px;" />
+* 任务支持设置批注
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241" style="height:100px;" />
+* 上传的文件支持查看原文件名
+* 支持直接从任务卡片跳转到文件面板展示对应任务数据
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTU2MzY3MTQzMA==651563671430" style="height:100px;" />
+* 支持查看已收集文件的大小
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTU2MzU2ODk4Mg==651563568982" style="width:200px;" />
+* 添加赞赏入口
+* 管理端支持直接重置密码/换绑手机号
+
+### Chore
+* 提交面板默认展示删除文件icon
+* 更新模板下载提示文案
+* 慢查询优化
+* 列表数据增加`Loading`状态优化交互
+
+### Bugfix
+* 验证码登录不支持19x，放开对手机号的严格限制
+* 上传时可修改表单内容
+* 未正确处理文件名中特殊字符`?`
+* PC/H5来回切换导航栏展示异常
+* H5侧删除弹窗展示异常
+
+<!-- * ~ 重命名文件后缀从头开始读取，兼容 `.d.ts`,`.tar.gz` 等情况 ~
+  * 部分文件包含较多无用信息 -->
 ## v2.1.5
 ### Feature
 * 支持从其它任务导入限制人员

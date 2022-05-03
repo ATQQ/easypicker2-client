@@ -5,7 +5,8 @@
         <!-- LOGO -->
         <div class="logo">
           <router-link to="/">
-            <img src="./../../assets/i/EasyPicker.png" alt="logo" />
+            <img style="height: 40px;width: 170px;" src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png"
+              alt="logo" />
           </router-link>
         </div>
         <nav>
@@ -18,7 +19,7 @@
       </div>
     </div>
     <!-- 有效 -->
-    <div class="panel tc" v-if="
+    <div v-loading="isLoadingData" element-loading-text="Loading..." class="panel tc" v-if="
       k
     ">
       <!-- 任务名 -->
@@ -26,29 +27,33 @@
         {{ taskInfo.name }}
       </h1>
       <!-- 截止时间字符串 -->
-      <h2 v-if="ddlStr" class="ddl">
-        截止时间:{{ ddlStr }}
-        <span>
-          {{
-              isOver
-                ? '已经结束'
-                : waitTimeStr
-          }}
-        </span>
-      </h2>
+      <template v-if="taskMoreInfo.tip">
+        <el-divider>⚠️ 注意事项 ⚠️</el-divider>
+        <Tip>
+          <div class="tip-wrapper">
+            <p v-for="(t, i) in taskMoreInfo.tip.split('\n')" :key="i">{{ t.replace(/\s/g,'&nbsp;') }}</p>
+          </div>
+        </Tip>
+      </template>
+      <!-- 截止时间字符串 -->
+      <template v-if="ddlStr">
+        <el-divider>截止时间</el-divider>
+        <h2 class="ddl">
+          {{ ddlStr }}
+          <span>
+            {{
+                isOver
+                  ? '已经结束'
+                  : waitTimeStr
+            }}
+          </span>
+        </h2>
+      </template>
       <!-- 未设置ddl 或者 设置了还未结束 -->
       <div v-if="!ddlStr || !isOver">
         <el-divider>必要信息填写</el-divider>
         <div class="infos">
-          <el-form label-width="100px">
-            <el-form-item class="ellipsis" v-for="(
-                info, idx
-              ) in infos" :key="idx" :label="info.text">
-              <el-input :maxlength="
-                maxInputLength
-              " clearable show-word-limit :placeholder="`请输入${info.text}`" v-model="info.value"></el-input>
-            </el-form-item>
-          </el-form>
+          <InfosForm :infos="infos" :disabled="disableForm"></InfosForm>
         </div>
         <el-upload style="max-width: 400px; margin: 0 auto;" :drag="!isMobile" action="" ref="fileUpload"
           :on-change="handleChangeFile" :before-remove="
@@ -82,12 +87,18 @@
             <tip>① 须保证选择的文件与提交时的文件一致<br /> ② 填写表单信息一致 <br /> ③ 完全一模一样的文件的提交记录（内容md5+命名），将会一次性全部撤回</tip>
           </template>
           <template v-else>
-            <tip>① 选择完文件，点击 ”提交文件“即可 <br /> ② <strong>选择大文件后需要等待一会儿才展示处理</strong></tip>
+            <tip>① 选择完文件，点击 ”提交文件“即可 <br />
+              ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
+              <template v-if="taskMoreInfo.template"><br /> ③ <strong>
+                  <el-button type="text" style="color: #85ce61" size="small" @click="downloadTemplate">右下角可 “查看提交示例”
+                  </el-button>
+                </strong></template>
+            </tip>
           </template>
         </div>
         <div class="withdraw">
           <el-button type="text" style="color: #85ce61" v-if="taskMoreInfo.template" size="small"
-            @click="downloadTemplate">下载模板</el-button>
+            @click="downloadTemplate">查看提交示例</el-button>
           <el-button v-if="isWithdraw" @click="isWithdraw = false" size="small" type="text">正常提交</el-button>
           <el-button v-else size="small" @click="isWithdraw = true" type="text">我要撤回</el-button>
         </div>
@@ -99,11 +110,10 @@
         {{ taskInfo.name }}
       </h1>
     </div>
-    <LinkDialog v-model:value="showLinkModel" title="模板文件下载链接" :link="templateLink"></LinkDialog>
+    <LinkDialog v-model:value="showLinkModel" title="示例文件下载链接" :link="templateLink"></LinkDialog>
   </div>
 </template>
 <script lang="ts" setup>
-import filenamify from 'filenamify'
 import {
   ElMessage,
   ElMessageBox,
@@ -115,6 +125,7 @@ import type {
 import {
   computed,
   onMounted,
+  onUnmounted,
   reactive,
   ref,
 } from 'vue'
@@ -129,6 +140,8 @@ import {
   formatDate,
   getFileMd5Hash,
   getFileSuffix,
+  normalizeFileName,
+  parseInfo,
 } from '@/utils/stringUtil'
 import {
   downLoadByUrl,
@@ -140,9 +153,7 @@ import {
   TaskApi,
 } from '@/apis'
 import Tip from '../dashboard/tasks/components/infoPanel/tip.vue'
-
-const maxInputLength = +import.meta.env
-  .VITE_APP_INPUT_MAX_LENGTH || 10
+import InfosForm from '@/components/InfosForm/index.vue'
 
 const $store = useStore()
 const isMobile = computed(() => $store.getters['public/isMobile'])
@@ -212,14 +223,14 @@ const ddlStr = computed(() => {
 })
 
 // 必填信息
-const infos = reactive<TaskApiTypes.TaskFormInfoItem[]>([])
+const infos = reactive<InfoItem[]>([])
 
 // 文件上传部分
 
 // 文件上传
 const fileList = reactive<(UploadUserFile & { md5: string, subscription: any })[]>([])
 const fileUpload = ref<UploadInstance>()
-
+const disableForm = computed(() => fileList.filter((item) => item.status === 'uploading').length > 0)
 const handleRemoveFile: any = (
   file: any,
 ) => {
@@ -280,7 +291,7 @@ const startUpload = () => {
       // 开始上传
       file.status = 'uploading'
       let { name } = file
-
+      const originName = name
       // 如果开启了自动重命名,这里重命名一下
       if (taskMoreInfo.rewrite) {
         name = infos
@@ -289,10 +300,7 @@ const startUpload = () => {
           + getFileSuffix(name)
       }
       // 替换不合法的字符
-      name = filenamify(name, {
-        replacement: '_',
-      })
-
+      name = normalizeFileName(name)
       const key = `easypicker2/${k.value}/${file.md5}/${name}`
 
       FileApi.getUploadToken().then(
@@ -303,9 +311,9 @@ const startUpload = () => {
             key,
             {
               success(data: any) {
-                file.status = 'success'
                 const { fsize } = data
                 FileApi.addFile({
+                  originName,
                   name,
                   taskKey: k.value,
                   taskName:
@@ -318,6 +326,7 @@ const startUpload = () => {
                   people:
                     peopleName.value,
                 }).then(() => {
+                  file.status = 'success'
                   ElMessage.success(
                     `文件:${file.name}提交成功`,
                   )
@@ -581,10 +590,52 @@ const checkSubmitStatus = async () => {
     }
   })
 }
-
+const isLoadingData = ref(false)
+const readyRefresh = ref(false)
+const isEqualInfos = (a: InfoItem[] = [], b: InfoItem[] = []) => {
+  if (a.length !== b.length) {
+    return false
+  }
+  return a.every((v, i) => (v.type === b[i].type && v.text === b[i].text && isEqualInfos(v.children, b[i].children)))
+}
+const refreshTaskMoreInfo = (hot = false) => {
+  TaskApi.getTaskMoreInfo(
+    k.value,
+  ).then((res) => {
+    Object.assign(
+      taskMoreInfo,
+      res.data,
+    )
+    if (!isEqualInfos(infos, parseInfo(
+      taskMoreInfo.info,
+    ))) {
+      infos.splice(0, infos.length)
+      infos.push(
+        ...parseInfo(
+          taskMoreInfo.info,
+        ),
+      )
+      if (hot) {
+        ElMessage.success('表单信息有更新')
+      }
+    }
+    refreshWaitTime(false)
+    isLoadingData.value = false
+  })
+}
+const handleBlur = () => {
+  readyRefresh.value = true
+}
+const handleFocus = () => {
+  if (readyRefresh.value && !disableForm.value) {
+    readyRefresh.value = false
+    refreshTaskMoreInfo(true)
+  }
+}
 onMounted(() => {
   k.value = $route.params.key as string
   if (k.value) {
+    isLoadingData.value = true
     TaskApi.getTaskInfo(k.value).then(
       (res) => {
         Object.assign(
@@ -599,26 +650,21 @@ onMounted(() => {
         taskInfo.name = '任务不存在'
       }
     })
-
-    TaskApi.getTaskMoreInfo(
-      k.value,
-    ).then((res) => {
-      Object.assign(
-        taskMoreInfo,
-        res.data,
-      )
-      infos.push(
-        ...JSON.parse(
-          (taskMoreInfo?.info) || '[]',
-        ).map((v: string) => ({
-          text: v,
-          value: '',
-        })),
-      )
-      refreshWaitTime(false)
-    })
+    refreshTaskMoreInfo()
     refreshWaitTime()
   }
+  // 页面隐藏
+  window.addEventListener('blur', handleBlur)
+
+  // 页面展示
+  window.addEventListener('focus', handleFocus)
+})
+
+onUnmounted(() => {
+  // 页面隐藏
+  window.removeEventListener('blur', handleBlur)
+  // 页面展示
+  window.removeEventListener('focus', handleFocus)
 })
 </script>
 <style scoped lang="scss">
@@ -632,6 +678,19 @@ onMounted(() => {
     position: relative;
     bottom: 4px;
   }
+}
+
+.task-panel :deep(.el-upload-list__item-name) {
+  display: block;
+  overflow: hidden;
+  max-width: 290px;
+  text-overflow: ellipsis;
+  word-break: keep-all;
+}
+
+.task-panel :deep(.is-ready .el-icon--close) {
+  display: block;
+  color: black;
 }
 
 .task-panel {
@@ -716,5 +775,17 @@ onMounted(() => {
 
 .withdraw {
   text-align: right;
+}
+
+.tip-wrapper {
+  line-height: 20px;
+  text-align: left;
+  word-break: break-all;
+  max-height: 100px;
+  overflow: hidden;
+  padding: 0 20px;
+  color: #E6A23C;
+  max-width: 320px;
+  font-size: 14px;
 }
 </style>
