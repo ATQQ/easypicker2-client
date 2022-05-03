@@ -38,8 +38,11 @@
         <h2 class="h2">赞赏</h2>
         <div class="description">
             如果你觉得项目不错
-            <br />可以请作者喝点
-            <strong>饮品</strong>
+            <br />
+            <span>
+                可以
+                <Praise style="color: #3f9eff;">请作者喝 <strong>🍵</strong></Praise>
+            </span>
         </div>
         <Picture style="width: 200px;" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354" />
         <div>微信赞赏码</div>
@@ -52,6 +55,7 @@
 import { ElButton, ElIcon } from 'element-plus'
 import { UploadFilled, MostlyCloudy, CollectionTag } from '@element-plus/icons-vue'
 import Picture from './Picture.vue'
+import Praise from './Praise.vue'
 import pkg from '../../../package.json'
 </script>
 
@@ -71,7 +75,6 @@ import pkg from '../../../package.json'
     margin-top: 10px;
     text-align: center;
     line-height: 26px;
-    opacity: 0.6;
 }
 
 .action-link+.action-link {

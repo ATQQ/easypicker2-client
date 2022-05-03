@@ -10,6 +10,10 @@
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241" style="height:100px;" />
 * 上传的文件支持查看原文件名
 * 支持直接从任务卡片跳转到文件面板展示对应任务数据
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTU2MzY3MTQzMA==651563671430" style="height:100px;" />
+* 支持查看已收集文件的大小
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTU2MzU2ODk4Mg==651563568982" style="width:200px;" />
+* 添加赞赏入口
 
 ### Chore
 * 提交面板默认展示删除文件icon
