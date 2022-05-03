@@ -10,7 +10,20 @@ function updateUserStatus(id:number, status:number, openTime:string) {
     id, status, openTime,
   })
 }
+function resetPassword(id:number, password:string) {
+  return ajax.put(`${baseUrl}/password`, {
+    id, password,
+  })
+}
+
+function resetPhone(id:number, phone:string, code:string) {
+  return ajax.put(`${baseUrl}/phone`, {
+    id, phone, code,
+  })
+}
 export default {
   getUserList,
   updateUserStatus,
+  resetPassword,
+  resetPhone,
 }

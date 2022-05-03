@@ -8,6 +8,7 @@ declare namespace FileApiTypes {
         size: number
         taskKey: string
         taskName: string
+        originName: string
         categoryKey?: string
         name: string
         info: string
@@ -87,13 +88,11 @@ declare namespace TaskApiTypes {
         rewrite?: number
         share?: string
         template?: string
-        name?: string, category?: string
+        name?: string,
+        category?: string
+        tip?: string
     }
 
-    interface TaskFormInfoItem {
-        text: string,
-        value: string
-    }
     type getList = ResponseData<{ tasks: TaskItem[] }>
     type create = ResponseData
     type deleteOne = ResponseData
@@ -101,12 +100,13 @@ declare namespace TaskApiTypes {
     type getTaskInfo = ResponseData<TaskInfo>
     type getTaskMoreInfo = ResponseData<TaskInfo>
     type updateTaskMoreInfo = ResponseData
-    type getUsefulTemplate = ResponseData<{taskKey:string, name:string, info:string}[]>
+    type getUsefulTemplate = ResponseData<{ taskKey: string, name: string, info: string }[]>
 }
 
 declare namespace PublicApiTypes {
     type getCode = ResponseData
     type reportPv = ResponseData
+    type checkPhone = ResponseData
 }
 
 declare namespace PeopleApiTypes {
@@ -122,8 +122,8 @@ declare namespace PeopleApiTypes {
     type deletePeople = ResponseData
     type updatePeopleStatus = ResponseData
     type checkPeopleIsExist = ResponseData<{ exist: boolean }>
-    type getUsefulTemplate = ResponseData<{taskKey:string, name:string, count:number}[]>
-    type importFromTpl = ResponseData<{fail:string[], success:number}>
+    type getUsefulTemplate = ResponseData<{ taskKey: string, name: string, count: number }[]>
+    type importFromTpl = ResponseData<{ fail: string[], success: number }>
 }
 
 declare namespace CateGoryApiTypes {
@@ -142,7 +142,7 @@ declare namespace OverviewApiTypes {
         sum: number
         recent?: number
         uv?: number
-        size?:string
+        size?: string
     }
     interface LogItem {
         date: string
@@ -151,14 +151,17 @@ declare namespace OverviewApiTypes {
         type: string
     }
     type getCount = ResponseData<{
-        file: CountLog
+        file: {
+            server: CountLog
+            oss: CountLog
+        }
         log: CountLog
         pv: {
             all: CountLog
             today: CountLog
         }
         user: CountLog
-        compress :{
+        compress: {
             all: CountLog
             expired: CountLog
         }

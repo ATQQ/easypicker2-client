@@ -66,12 +66,17 @@
         <el-button title="导出表格中所有的数据" type="success" size="default" :icon="DataAnalysis" @click="() => {
           handleExportExcel(filterFiles, `筛选数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`);
         }" :disabled="showFilterFiles.length === 0">导出记录</el-button>
-        <div class="showImgBtn">
+        <div class="control-item">
           显示图片
           <el-switch inline-prompt v-model="showImg" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
             inactive-text="否" />
         </div>
-        <div class="showImgBtn">
+        <div class="control-item">
+          展示原文件名
+          <el-switch inline-prompt v-model="showOriginName" active-color="#13ce66" inactive-color="#ff4949"
+            active-text="是" inactive-text="否" />
+        </div>
+        <div class="control-item">
           显示提交人姓名
           <el-switch inline-prompt v-model="showPeople" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
             inactive-text="否" />
@@ -98,15 +103,29 @@
     </div>
     <!-- 主体内容 -->
     <div class="panel">
-      <el-table tooltip-effect="dark" multipleTable ref="multipleTable" @selection-change="handleSelectionChange" stripe
-        border :default-sort="{ prop: 'date', order: 'descending' }" :max-height="666" :data="showFilterFiles"
+      <Tip>占用空间：{{ filterFileSize }} / {{ fileListSize }}</Tip>
+      <Tip>请作者喝茶 🍵
+        <Praise>
+          <el-button style="margin:0 0 2px;" size="small" type="text">Go！Go！❓</el-button>
+        </Praise>
+      </Tip>
+      <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
+        ref="multipleTable" @selection-change="handleSelectionChange" stripe border
+        :default-sort="{ prop: 'date', order: 'descending' }" :max-height="666" :data="showFilterFiles"
         style="width: 100%">
         <el-table-column type="selection" width="55" />
         <el-table-column sortable prop="date" label="提交时间" width="200">
           <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
         </el-table-column>
         <el-table-column prop="task_name" label="任务" width="150"></el-table-column>
-        <el-table-column prop="name" label="文件名" width="200"></el-table-column>
+        <el-table-column sortable prop="name" label="文件名" width="200"></el-table-column>
+        <template v-if="showOriginName">
+          <el-table-column sortable prop="origin_name" label="原文件名" width="200">
+            <template #default="scope">
+              {{ scope.row.origin_name || '-' }}
+            </template>
+          </el-table-column>
+        </template>
         <el-table-column prop="size" label="大小">
           <template #default="scope">{{ scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size) }}</template>
         </el-table-column>
@@ -156,11 +175,7 @@
     </div>
     <!-- 信息弹窗 -->
     <el-dialog :fullscreen="isMobile" title="提交填写的信息" v-model="showInfoDialog">
-      <el-form>
-        <el-form-item v-for="(info, idx) in infos" :key="idx" :label="info.text" label-width="120px">
-          <el-input :modelValue="info.value"></el-input>
-        </el-form-item>
-      </el-form>
+      <InfosForm :infos="infos" :disabled="true" />
     </el-dialog>
     <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
   </div>
@@ -175,20 +190,62 @@ import LinkDialog from '@components/linkDialog.vue'
 import {
   ArrowDown, Refresh, DataAnalysis, Download, Search, Picture,
 } from '@element-plus/icons-vue'
+import { useRoute } from 'vue-router'
 import {
-  copyRes, formatDate, formatSize, isSupportPreview,
+  copyRes, formatDate, formatSize, isSupportPreview, parseInfo,
 } from '@/utils/stringUtil'
 import { FileApi } from '@/apis'
 import {
   downLoadByUrl, downLoadByXhr, tableItem, tableToExcel,
 } from '@/utils/networkUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
+import InfosForm from '@/components/InfosForm/index.vue'
+import Praise from '@/components/Praise/index.vue'
 
 const $store = useStore()
+const $route = useRoute()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
 const showImg = ref(false)
 const showPeople = ref(true)
+const showOriginName = ref(false)
+const showPraise = ref(false)
+const openPraise = () => {
+  showPraise.value = true
+}
+
+const praiseImg = reactive([
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQ0MjMzNA==651547442334',
+    title: '微信',
+  },
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY0Nzc1NTYyOTE5Mw==647755629193',
+    title: '微信赞赏',
+  },
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQyOTg0OA==651547429848',
+    title: '支付宝',
+  },
+])
+const Thanks = () => {
+  ElMessageBox.alert(`
+  <p class="tc">
+    <img width="140px" src="https://img.cdn.sugarat.top/mdImg/MTY1MTUwNjkwNDc4OQ==thanks.gif" />
+  </p>
+  <p class="tc">
+    <img width="240px" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354" />
+  </p>
+  `, '💐 谢谢老板 💐', {
+    confirmButtonText: '不客气',
+    dangerouslyUseHTMLString: true,
+  })
+}
+const NextPraise = () => {
+  showPraise.value = false
+  ElMessage.success('下次一定！下次一定！')
+}
+
 // 记录导出
 const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
   if (files.length === 0) {
@@ -255,12 +312,22 @@ const selectTaskName = computed(() => {
   const t = filterTasks.value.find((v) => v.key === selectTask.value)
   return t?.name
 })
+
+watchEffect(() => {
+  if (tasks.value.length && tasks.value.some((v) => v.key === $route.query.task)) {
+    selectTask.value = `${$route.query.task}`
+  }
+})
+
+const isLoadingData = ref(false)
 // 提交的所有文件
 const files: FileApiTypes.File[] = reactive([])
 const loadFiles = () => {
+  isLoadingData.value = true
   files.splice(0, files.length)
   FileApi.getFileList().then((res) => {
     files.push(...res.data.files)
+    isLoadingData.value = false
   })
 }
 const multipleTable: any = ref()
@@ -290,9 +357,10 @@ const filterFiles = computed(() => files.filter((f) => {
   t.task_name,
   // eslint-disable-next-line no-useless-escape
   t.info]).replace(/[:'"\{\},\[\]]/g, '').includes(searchWord.value) : true)))
+
 /**
-     * 清空所有选项
-     */
+* 清空所有选项
+*/
 const clearSelection = () => {
   multipleTable.value.clearSelection()
 }
@@ -374,7 +442,7 @@ const showInfoDialog = ref(false)
 const infos: any[] = reactive([])
 const checkInfo = (e: any) => {
   infos.splice(0, infos.length)
-  infos.push(...JSON.parse(e.info))
+  infos.push(...parseInfo(e.info))
   showInfoDialog.value = true
 }
 
@@ -453,6 +521,9 @@ const showFilterFiles = computed(() => {
   const end = (pageCurrent.value) * pageSize.value
   return filterFiles.value.slice(start, end)
 })
+
+const filterFileSize = computed(() => formatSize(filterFiles.value.reduce((acc, cur) => acc + cur.size, 0)))
+const fileListSize = computed(() => formatSize(files.reduce((acc, cur) => acc + cur.size, 0)))
 const handlePageChange = (idx: number) => {
   pageCurrent.value = idx
 }
@@ -461,7 +532,6 @@ const handlePageChange = (idx: number) => {
 
 const handleRefresh = () => {
   loadFiles()
-  ElMessage.success('刷新成功')
 }
 const handleDownloadTask = () => {
   const ids: number[] = files.filter((f) => f.task_key === selectTask.value).map((v) => v.id)
@@ -611,7 +681,7 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   margin-bottom: 10px;
 }
 
-.showImgBtn {
+.control-item {
   margin-left: 10px;
   margin-bottom: 10px;
   font-size: 14px;

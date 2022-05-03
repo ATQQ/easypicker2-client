@@ -6,7 +6,7 @@ import { jsonp } from './networkUtil'
 * 将结果写入的剪贴板
 * @param {String} text
 */
-export function copyRes(text:string, msg = '结果已成功复制到剪贴板') {
+export function copyRes(text: string, msg = '结果已成功复制到剪贴板') {
   // 自定义
   // const input = document.createElement('input')
   // document.body.appendChild(input)
@@ -33,7 +33,7 @@ export function copyRes(text:string, msg = '结果已成功复制到剪贴板') 
 * 生成短地址
 * @param url
 */
-export function getShortUrl(text:string):Promise<string> {
+export function getShortUrl(text: string): Promise<string> {
   return new Promise((resolve, reject) => {
     jsonp(`https://api.suowo.cn/api.htm?format=jsonp&url=${encodeURIComponent(text)}&key=5ec8a001be96bd79a37f19b8@bf33c7483d0c6900bb7bc90a0e6dfdf0&expireDate=2030-03-31&domain=0`, 'shortLink', (res) => {
       const { url, err } = res
@@ -45,15 +45,15 @@ export function getShortUrl(text:string):Promise<string> {
   })
 }
 
-export function base64(s:string) {
+export function base64(s: string) {
   return window.btoa(unescape(encodeURIComponent(s)))
 }
 
-export function formatDate(d:Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
+export function formatDate(d: Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
   if (!(d instanceof Date)) {
     d = new Date(d)
   }
-  const o:any = {
+  const o: any = {
     'M+': d.getMonth() + 1, // 月份
     'd+': d.getDate(), // 日
     'h+': d.getHours(), // 小时
@@ -68,12 +68,12 @@ export function formatDate(d:Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
   return fmt
 }
 
-export function getFileSuffix(str:string) {
-  const lastIndex = str.lastIndexOf('.')
-  return str.lastIndexOf('.') >= 0 ? str.slice(lastIndex) : ''
+export function getFileSuffix(str: string) {
+  const startIndex = str.lastIndexOf('.')
+  return startIndex >= 0 ? str.slice(startIndex) : ''
 }
 
-export function getFileMd5Hash(file:File) {
+export function getFileMd5Hash(file: File) {
   return new Promise((resolve, reject) => {
     const blobSlice = File.prototype.slice
     const chunkSize = 2097152 // Read in chunks of 2MB
@@ -111,7 +111,7 @@ export function getFileMd5Hash(file:File) {
   })
 }
 
-export function formatSize(size:number, pointLength?:number, units?:string[]) {
+export function formatSize(size: number, pointLength?: number, units?: string[]) {
   let unit
   units = units || ['B', 'K', 'M', 'G', 'TB']
   // eslint-disable-next-line no-cond-assign
@@ -143,7 +143,29 @@ function getSupportPreviewType() {
   return supportTypes
 }
 
-export function isSupportPreview(type:string) {
+export function isSupportPreview(type: string) {
   const supportTypes = getSupportPreviewType()
   return supportTypes.includes(type)
+}
+
+export function parseInfo(info: string): InfoItem[] {
+  return JSON.parse(info).map((v: string | InfoItem) => {
+    // 兼容旧表单数据
+    if (typeof v === 'string') {
+      return { type: 'input', text: v, value: '' }
+    }
+    // 兼容旧数据展示
+    if (!v.type) {
+      v.type = 'input'
+    }
+    v.value = v.value || ''
+    return v
+  })
+}
+
+/**
+ * 文件名合法化
+ */
+export function normalizeFileName(name: string) {
+  return name.replace(/[\\/:*?"<>|]/g, '-')
 }
