@@ -10,7 +10,13 @@ function updateUserStatus(id:number, status:number, openTime:string) {
     id, status, openTime,
   })
 }
+function resetPassword(id:number, password:string) {
+  return ajax.put(`${baseUrl}/password`, {
+    id, password,
+  })
+}
 export default {
   getUserList,
   updateUserStatus,
+  resetPassword,
 }
