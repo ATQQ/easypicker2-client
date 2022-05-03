@@ -15,8 +15,15 @@ function resetPassword(id:number, password:string) {
     id, password,
   })
 }
+
+function resetPhone(id:number, phone:string, code:string) {
+  return ajax.put(`${baseUrl}/phone`, {
+    id, phone, code,
+  })
+}
 export default {
   getUserList,
   updateUserStatus,
   resetPassword,
+  resetPhone,
 }

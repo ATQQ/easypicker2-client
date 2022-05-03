@@ -33,7 +33,7 @@
               <el-button @click="handleChangeStatus(scope.row.id, scope.row.status, scope.row.open_time)" type="text"
                 size="small">修改状态</el-button>
               <el-button @click="handleResetPassword(scope.row.id)" type="text" size="small">重置密码</el-button>
-              <el-button type="text" size="small">绑定手机号</el-button>
+              <el-button @click="handleBindPhone(scope.row.id)" type="text" size="small">绑定手机号</el-button>
             </div>
           </template>
         </el-table-column>
@@ -83,6 +83,30 @@
         </span>
       </template>
     </el-dialog>
+    <!-- 重绑定手机号 -->
+    <el-dialog :fullscreen="isMobile" center title="绑定手机号" v-model="showPhoneDialog">
+      <div class="tc">
+        <el-form :model="phoneForm" label-width="60px">
+          <el-form-item label="手机号">
+            <el-input show-word-limit clearable v-model="phoneForm.phone" placeholder="请输入手机号" maxlength="11">
+              <template #append>
+                <!-- 获取验证码 -->
+                <el-button :disabled="time !== 0" @click="getCode">{{ codeText }}</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-input show-word-limit clearable v-model="phoneForm.code" placeholder="请输入验证码" maxlength="4" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showPhoneDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSavePhone">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
@@ -92,10 +116,10 @@ import {
 } from 'vue'
 import { useStore } from 'vuex'
 import { Search } from '@element-plus/icons-vue'
-import { SuperUserApi } from '@/apis'
+import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate } from '@/utils/stringUtil'
-import { rPassword } from '@/utils/regExp'
+import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 
 const $store = useStore()
 // 用户
@@ -225,6 +249,83 @@ const handleSavePassword = () => {
   })
 }
 
+// 绑定手机号
+const showPhoneDialog = ref(false)
+const phoneForm = reactive({
+  phone: '',
+  code: '',
+})
+const codeText = ref('获取验证码')
+const time = ref(0)
+const refreshCodeText = () => {
+  if (time.value === 0) {
+    codeText.value = '获取验证码'
+    return
+  }
+  codeText.value = `${time.value}s`
+  time.value -= 1
+  setTimeout(refreshCodeText, 1000)
+}
+const getCode = () => {
+  if (!rMobilePhone.test(phoneForm.phone)) {
+    ElMessage.warning('手机号格式不正确')
+    return
+  }
+  // check是否可用
+  PublicApi.checkPhone(phoneForm.phone).then(() => {
+    PublicApi.getCode(phoneForm.phone).then(() => {
+      time.value = 120
+      refreshCodeText()
+      ElMessage.success('获取成功,请注意查看手机短信')
+    })
+  }).catch((err) => {
+    // TODO:编写通用方法处理失败信息弹窗回掉
+    const { code: c } = err
+    const msg = '注册失败,未知错误'
+    const options: any = {
+      1002: '手机号已被注册',
+      1006: '手机号格式不正确',
+    }
+    ElMessage.error(options[c] || msg)
+  })
+}
+const checkPhoneForm = () => {
+  if (!rMobilePhone.test(phoneForm.phone)) {
+    ElMessage.warning('手机号格式不正确')
+    return false
+  }
+  if (!rVerCode.test(phoneForm.code)) {
+    ElMessage.warning('验证码格式不正确')
+    return false
+  }
+
+  return true
+}
+const handleBindPhone = (id:number) => {
+  selectUserId.value = id
+  showPhoneDialog.value = true
+}
+const handleSavePhone = async () => {
+  if (!checkPhoneForm()) {
+    return
+  }
+  // 调用API更新，验证码 不正确判断
+  SuperUserApi.resetPhone(selectUserId.value, phoneForm.phone, phoneForm.code).then(() => {
+    ElMessage.success('绑定成功')
+    showPhoneDialog.value = false
+    phoneForm.code = ''
+    phoneForm.phone = ''
+    refreshUsers()
+  }).catch((err) => {
+    const { code: c } = err
+    const msg = '绑定失败,未知错误'
+    const options: any = {
+      1002: '手机号已被注册',
+      1003: '验证码不正确',
+    }
+    ElMessage.error(options[c] || msg)
+  })
+}
 onMounted(() => {
   refreshUsers()
 })

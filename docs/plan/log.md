@@ -14,6 +14,7 @@
 * 支持查看已收集文件的大小
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTU2MzU2ODk4Mg==651563568982" style="width:200px;" />
 * 添加赞赏入口
+* 管理端支持直接重置密码/换绑手机号
 
 ### Chore
 * 提交面板默认展示删除文件icon
