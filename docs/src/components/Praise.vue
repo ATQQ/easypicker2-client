@@ -2,7 +2,7 @@
     <span class="praise" @click="openPraise">
         <!-- 赞赏弹窗 -->
         <slot />
-        <el-dialog append-to-body v-model="showPraise" title="😄 嘻嘻 😄" :fullscreen="isMobile">
+        <el-dialog v-model="showPraise" title="😄 嘻嘻 😄" :fullscreen="isMobile">
             <p class="praise-line">目前的服务开销主要在 “文件存储” 与 "资源下载"两方面</p>
             <p class="praise-line">存储 0.15 元/GB/月，下载0.29 元/GB</p>
             <p class="praise-line">如果你觉得应用不错，可以支持一下👍🏻</p>
@@ -37,7 +37,9 @@ import { computed } from '@vue/reactivity'
 import {
   ElMessageBox, ElMessage, ElDialog, ElButton, ElImage,
 } from 'element-plus'
-import { onMounted, reactive, ref } from 'vue'
+import {
+  onMounted, onUnmounted, reactive, ref,
+} from 'vue'
 
 const showPraise = ref(false)
 const openPraise = () => {
@@ -85,6 +87,10 @@ const isMobile = computed(() => clientWIdth.value < 768)
 onMounted(() => {
   window.addEventListener('load', refreshWidth)
   window.addEventListener('resize', refreshWidth)
+})
+onUnmounted(() => {
+  window.removeEventListener('load', refreshWidth)
+  window.removeEventListener('resize', refreshWidth)
 })
 </script>
 <style scoped>
