@@ -106,6 +106,7 @@ declare namespace TaskApiTypes {
 declare namespace PublicApiTypes {
     type getCode = ResponseData
     type reportPv = ResponseData
+    type checkPhone = ResponseData
 }
 
 declare namespace PeopleApiTypes {

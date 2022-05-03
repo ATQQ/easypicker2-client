@@ -127,10 +127,7 @@ const getCode = () => {
   }).catch((err) => {
     const { code: c } = err
     const msg = '注册失败,未知错误'
-    const options: any = {
-      1001: '账号已存在',
-      1002: '手机号已被注册',
-      1003: '验证码不正确',
+    const options = {
       1006: '手机号格式不正确',
     }
     ElMessage.error(options[c] || msg)
