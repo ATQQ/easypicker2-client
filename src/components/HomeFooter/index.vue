@@ -6,6 +6,7 @@
       </li>
       <li>
         <router-link to="/author">联系作者</router-link>
+        <a style="position: relative;left: 20px;"><Praise>👍🏻</Praise></a>
       </li>
     </ul>
     <ul v-if="navs2.length">
@@ -23,6 +24,7 @@
 <script lang="ts" setup>
 import { reactive } from 'vue'
 import { version } from '../../../package.json'
+import Praise from '../Praise/index.vue'
 
 const navs = reactive([
   {

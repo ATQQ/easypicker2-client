@@ -104,8 +104,10 @@
     <!-- 主体内容 -->
     <div class="panel">
       <Tip>占用空间：{{ filterFileSize }} / {{ fileListSize }}</Tip>
-      <!-- TODO:待完善提示弹窗 -->
-      <Tip>请作者喝咖啡<el-button @click="openPraise" style="margin:0 0 2px 10px;" size="small" type="text">Why❓</el-button>
+      <Tip>请作者喝茶 🍵
+        <Praise>
+          <el-button style="margin:0 0 2px;" size="small" type="text">Go！Go！❓</el-button>
+        </Praise>
       </Tip>
       <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
         ref="multipleTable" @selection-change="handleSelectionChange" stripe border
@@ -176,18 +178,6 @@
       <InfosForm :infos="infos" :disabled="true" />
     </el-dialog>
     <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
-
-    <!-- 赞赏弹窗 -->
-    <el-dialog v-model="showPraise" title="😄 嘻嘻 😄" :fullscreen="isMobile">
-      <!-- TODO:完善 -->
-      <p>目前的服务主要开销在 “文件存储” 与 "资源下载"两方面</p>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button type="success" @click="Thanks">这次一定</el-button>
-          <el-button type="default" @click="NextPraise">下次一定</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
@@ -198,7 +188,7 @@ import {
 import { useStore } from 'vuex'
 import LinkDialog from '@components/linkDialog.vue'
 import {
-  ArrowDown, Refresh, DataAnalysis, Download, Search, Picture, Check,
+  ArrowDown, Refresh, DataAnalysis, Download, Search, Picture,
 } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import {
@@ -210,6 +200,7 @@ import {
 } from '@/utils/networkUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
+import Praise from '@/components/Praise/index.vue'
 
 const $store = useStore()
 const $route = useRoute()
@@ -223,6 +214,20 @@ const openPraise = () => {
   showPraise.value = true
 }
 
+const praiseImg = reactive([
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQ0MjMzNA==651547442334',
+    title: '微信',
+  },
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY0Nzc1NTYyOTE5Mw==647755629193',
+    title: '微信赞赏',
+  },
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQyOTg0OA==651547429848',
+    title: '支付宝',
+  },
+])
 const Thanks = () => {
   ElMessageBox.alert(`
   <p class="tc">
@@ -236,7 +241,6 @@ const Thanks = () => {
     dangerouslyUseHTMLString: true,
   })
 }
-
 const NextPraise = () => {
   showPraise.value = false
   ElMessage.success('下次一定！下次一定！')

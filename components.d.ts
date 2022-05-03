@@ -41,6 +41,7 @@ declare module 'vue' {
     LinkDialog: typeof import('./src/components/linkDialog.vue')['default']
     Loading: typeof import('element-plus/es')['ElLoadingDirective']
     LoginPanel: typeof import('./src/components/loginPanel.vue')['default']
+    Praise: typeof import('./src/components/Praise/index.vue')['default']
     QrCode: typeof import('./src/components/QrCode.vue')['default']
   }
 }
