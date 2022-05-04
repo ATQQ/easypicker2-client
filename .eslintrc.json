@@ -42,7 +42,6 @@
         "import/prefer-default-export":"off",
         "no-param-reassign":"warn",
         "import/no-extraneous-dependencies":"off",
-        "max-len":"warn",
         "no-restricted-syntax":"off",
         "no-bitwise":"off",
         "camelcase":"off",
