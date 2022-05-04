@@ -33,12 +33,11 @@
     </span>
 </template>
 <script setup lang="ts">
-import { computed } from '@vue/reactivity'
 import {
   ElMessageBox, ElMessage, ElDialog, ElButton, ElImage,
 } from 'element-plus'
 import {
-  onMounted, onUnmounted, reactive, ref,
+  onMounted, onUnmounted, reactive, ref, computed,
 } from 'vue'
 
 const showPraise = ref(false)
