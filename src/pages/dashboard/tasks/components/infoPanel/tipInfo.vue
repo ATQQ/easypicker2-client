@@ -17,9 +17,8 @@
     </div>
 </template>
 <script lang="ts" setup>
-import { computed } from '@vue/reactivity'
 import {
-  ref, watchEffect,
+  ref, watchEffect, computed,
 } from 'vue'
 import { updateTaskInfo } from '../../public'
 import Tip from './tip.vue'
