@@ -14,8 +14,11 @@ node -v
 ```
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MDQ3MjM1OA==647480472358)
 
-建议安装大于等于`14.8`版本的
+建议安装大于等于`14.19`版本的
 
+多版本管理可以使用 [nvm](https://github.com/nvm-sh/nvm) 
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1MTY0OTU1NzUyNw==651649557527)
 ### 切换镜像源
 其中`npm`是随Node一起安装的包管理工具，通过切换到国内的镜像源，有助于加快安装速度
 
