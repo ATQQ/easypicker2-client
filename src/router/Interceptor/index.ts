@@ -1,15 +1,16 @@
 import { Router } from 'vue-router'
-import { PublicApi } from '@/apis'
+import $store from '@/store'
+import { PublicApi, UserApi } from '@/apis'
 
 declare module 'vue-router' {
-    interface RouteMeta {
-        // 是可选的
-        isAdmin?: boolean
-        // 是否需要登录
-        requireLogin?: boolean
-        // 路由title
-        title?:string
-    }
+  interface RouteMeta {
+    // 是否管理员页面
+    isAdmin?: boolean
+    // 是否需要登录
+    requireLogin?: boolean
+    // 路由title
+    title?: string
+  }
 }
 
 function registerRouteGuard(router: Router) {
@@ -34,12 +35,16 @@ function registerRouteGuard(router: Router) {
   })
 
   /**
-     * 全局解析守卫
-     */
+  * 全局解析守卫
+  */
   router.beforeResolve(async (to) => {
     if (to.meta.isAdmin) {
       try {
-        console.log(to)
+        const isAdmin = (await UserApi.checkPower()).data.power
+        $store.commit('user/setSuperAdmin', isAdmin)
+        return isAdmin || {
+          name: '404',
+        }
       } catch (error) {
         // if (error instanceof NotAllowedError) {
         //     // ... 处理错误，然后取消导航
@@ -49,8 +54,10 @@ function registerRouteGuard(router: Router) {
         //     throw error
         // }
         console.error(error)
+        return false
       }
     }
+    return true
   })
 
   /**
