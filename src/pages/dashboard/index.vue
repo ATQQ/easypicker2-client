@@ -142,12 +142,13 @@ const handleLogout = () => {
     })
 }
 const userName = ref('World')
-onMounted(() => {
-  // 动态修改active的项
-  navActiveIdx.value = navList.findIndex((v) => v.path === $route.path)
 
-  // 动态添加管理页面相关路由
-  const isAlreadyAdd = $router.getRoutes().find((r) => r.name === 'manage')
+const refreshActiveTab = () => {
+  // 动态修改active的项
+  navActiveIdx.value = navList.findIndex((v) => $route.path.startsWith(v.path))
+}
+onMounted(() => {
+  // 动态添加管理页面入口
   UserApi.checkPower().then((r) => {
     const isSuperAdmin = r.data?.power
     userName.value = r.data?.name
@@ -164,37 +165,8 @@ onMounted(() => {
           isExternal: true,
         }]
       navList.push(...superNavList)
-      if (isAlreadyAdd) return
-      const Manage = () => import('@/pages/dashboard/manage/index.vue')
-      const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
-      const User = () => import('@/pages/dashboard/manage/user/index.vue')
-      $router.addRoute('dashboard', {
-        name: 'manage',
-        path: 'manage',
-        component: Manage,
-        redirect: {
-          name: 'overview',
-        },
-        children: [
-          {
-            name: 'overview',
-            path: 'overview',
-            component: Overview,
-            meta: {
-              title: '应用概况',
-            },
-          },
-          {
-            name: 'user',
-            path: 'user',
-            component: User,
-            meta: {
-              title: '用户列表',
-            },
-          },
-        ],
-      })
     }
+    refreshActiveTab()
   })
 })
 
