@@ -75,11 +75,11 @@
           </template>
         </el-upload>
         <div class="p10">
-          <el-button v-if="isWithdraw" size="small" @click="startWithdraw" type="warning"
+          <el-button v-if="isWithdraw" size="default" @click="startWithdraw" type="warning"
             :disabled="!allowWithdraw || !!calculateMd5Count">一键撤回</el-button>
-          <el-button v-else size="small" @click="submitUpload" type="success"
+          <el-button v-else size="default" @click="submitUpload" type="success"
             :disabled="!allowUpload || !!calculateMd5Count">提交文件</el-button>
-          <el-button @click="checkSubmitStatus" size="small">查询提交情况</el-button>
+          <el-button @click="checkSubmitStatus" size="default">查询提交情况</el-button>
         </div>
         <!-- 提示信息 -->
         <div class="p10 option-tips">

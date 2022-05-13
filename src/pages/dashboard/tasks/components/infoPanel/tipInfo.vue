@@ -3,8 +3,9 @@
         <tip :imgs="[
           'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241'
         ]">设置注意事项，供用户提交时查看</tip>
+        <tip >注意控制字数和换行，避免展示异常，建议内容不超过5行</tip>
         <div class="tc flex fc fac">
-            <el-input v-model="textValue" :rows="4" clearable :max="500" show-word-limit type="textarea"
+            <el-input v-model="textValue" :rows="5" clearable :max="500" show-word-limit type="textarea"
                 placeholder="请输入要展示的批注信息" />
         </div>
         <div class="p10">

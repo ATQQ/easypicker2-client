@@ -12,9 +12,9 @@ const Feedback = () => import('@/pages/feedback/index.vue')
 const Dashboard = () => import('@/pages/dashboard/index.vue')
 const Files = () => import('@/pages/dashboard/files/index.vue')
 const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
-// const Manage = () => import('@/pages/dashboard/manage/index.vue')
-// const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
-// const User = () => import('@/pages/dashboard/manage/user/index.vue')
+const Manage = () => import('@/pages/dashboard/manage/index.vue')
+const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
+const User = () => import('@/pages/dashboard/manage/user/index.vue')
 const Task = () => import('@/pages/task/index.vue')
 
 const routes: RouteRecordRaw[] = [
@@ -123,29 +123,34 @@ const routes: RouteRecordRaw[] = [
           title: '任务列表',
         },
       },
-      // {
-      //   name: 'manage',
-      //   path: 'manage',
-      //   component: Manage,
-      //   meta: requireLogin,
-      //   redirect: {
-      //     name: 'overview',
-      //   },
-      //   children: [
-      //     {
-      //       name: 'overview',
-      //       path: 'overview',
-      //       component: Overview,
-      //       meta: requireLogin,
-      //     },
-      //     {
-      //       name: 'user',
-      //       path: 'user',
-      //       component: User,
-      //       meta: requireLogin,
-      //     },
-      //   ],
-      // },
+      {
+        name: 'manage',
+        path: 'manage',
+        component: Manage,
+        redirect: {
+          name: 'overview',
+        },
+        children: [
+          {
+            name: 'overview',
+            path: 'overview',
+            component: Overview,
+            meta: {
+              title: '应用概况',
+              isAdmin: true,
+            },
+          },
+          {
+            name: 'user',
+            path: 'user',
+            component: User,
+            meta: {
+              title: '用户列表',
+              isAdmin: true,
+            },
+          },
+        ],
+      },
     ],
   },
 ]

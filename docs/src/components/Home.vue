@@ -7,13 +7,18 @@
         </a>
         <div class="actions">
             <a href="/deploy/" class="action-link">
-                <el-button type="primary" size="large" :icon="UploadFilled">
+                <el-button type="primary" size="default" :icon="UploadFilled">
                     私有化部署
                 </el-button>
             </a>
-            <a href="https://ep.sugarat.top" target="_blank" class="action-link">
-                <el-button type="success" size="large" :icon="MostlyCloudy">
-                    线上体验
+            <a href="https://ep2.sugarat.top" target="_blank" class="action-link">
+                <el-button type="success" size="default" :icon="MostlyCloudy">
+                    立即体验
+                </el-button>
+            </a>
+            <a href="https://ep2.sugarat.top/task/627bd3b18a567f1b47bcdace" target="_blank" class="action-link">
+                <el-button type="warning" size="default" :icon="MostlyCloudy">
+                    提交示例
                 </el-button>
             </a>
         </div>
@@ -123,5 +128,13 @@ import pkg from '../../../package.json'
     opacity: 0.5;
     display: flex;
     align-items: center;
+}
+.actions{
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    a{
+        margin:10px
+    }
 }
 </style>
