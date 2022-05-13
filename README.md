@@ -17,9 +17,15 @@
 
 
 ## 简介
-在线文件收取平台，支持[私有化部署](https://docs.ep.sugarat.top/)
+[在线文件收取平台](https://ep.sugarat.top)
 
-## 背景
+应用开源，支持[私有化部署](https://docs.ep.sugarat.top/)
+
+## 快速体验
+* [应用主页](https://ep2.sugarat.top)
+* [提交文件](https://ep2.sugarat.top/task/627bd3b18a567f1b47bcdace)
+
+## 项目背景
 校园学习或者工作场景中会出现以下几个场景:
 * 每次碰到上机课的时候,都会遇到收取实验报告。
 * 需要收取每个人填写的各种电子表格。
