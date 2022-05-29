@@ -24,15 +24,15 @@
         </div>
         <div class="features">
             <section class="feature">
-                <h2 class="title">简单</h2>
-                <p class="details">操作简单，基于Web技术实现，随时随地即可收取</p>
+                <h2 class="title">快速上手</h2>
+                <p class="details">基于Web技术实现，随时随地即可收取，操作简单</p>
             </section>
             <section class="feature">
-                <h2 class="title">安全</h2>
-                <p class="details">使用七牛云OSS存储所有文件</p>
+                <h2 class="title">安全高效</h2>
+                <p class="details">使用 <a href="https://www.qiniu.com/products/kodo" target="_blank">七牛云OSS</a> 存储所有文件，无空间限制，无上传下载速度限制</p>
             </section>
             <section class="feature">
-                <h2 class="title">开源</h2>
+                <h2 class="title">开源&免费</h2>
                 <p class="details">支持个人私有化部署</p>
             </section>
         </div>
