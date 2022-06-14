@@ -6,7 +6,9 @@
       </li>
       <li>
         <router-link to="/author">联系作者</router-link>
-        <a style="position: relative;left: 20px;"><Praise>👍🏻</Praise></a>
+      </li>
+      <li style="width:26px;">
+        <a><Praise>👍🏻</Praise></a>
       </li>
     </ul>
     <ul v-if="navs2.length">
