@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitepress'
-
+import Pkg from './../../package.json'
 export default defineConfig({
     title: 'EasyPicker | 轻取',
     description: '在线文件收集平台',
@@ -18,25 +18,32 @@ export default defineConfig({
         }
     },
     themeConfig: {
-        repo: 'atqq/easypicker2-client',
+        footer: {
+            message: `MIT Licensed | ${Pkg.version}`,
+            copyright: 'Copyright © 2019-PRESENT 粥里有勺糖'
+        },
         logo: '/logo.png',
-        docsDir: 'docs',
-        docsBranch: 'main',
-        editLinks: true,
-        editLinkText: '编辑文档',
-        lastUpdated: '最后更新时间',
+        editLink: {
+            pattern: "https://github.com/ATQQ/easypicker2-client/edit/main/docs/:path",
+            text: '去 GitHub 上编辑内容'
+        },
         nav: [
             { text: '私有化部署', link: '/deploy/' },
-            // { text: '规划', link: '/plan/' },
-            { text: '更新日志', link: '/plan/log' },
-            { text: '近期规划', link: '/plan/todo' },
-            { text: '博客', link: 'https://sugarat.top' },
+            {
+                text: `v${Pkg.version}`,
+                items: [
+                    { text: '更新日志', link: '/plan/log' },
+                    { text: '近期规划', link: '/plan/todo' },
+                ],
+                activeMatch:'/plan/'
+            },
+            { text: '作者博客', link: 'https://sugarat.top' },
             { text: '联系作者', link: "https://ep.sugarat.top/author" }
         ],
         sidebar: {
             'deploy': [{
                 text: '私有化部署',
-                children: [
+                items: [
                     {
                         text: 'Getting Started',
                         link: '/deploy/',
@@ -58,13 +65,9 @@ export default defineConfig({
             'plan': [
                 {
                     text: '规划',
-                    children: [
+                    items: [
                         {
-                            text: '目录',
-                            link: '/plan/',
-                        },
-                        {
-                            text: 'TODO-LIST',
+                            text: '🥔TODO-LIST',
                             link: '/plan/todo',
                         },
                         {
@@ -75,6 +78,9 @@ export default defineConfig({
                 },
             ]
         },
+        socialLinks: [
+            { icon: 'github', link: 'https://github.com/ATQQ/easypicker2-client' },
+        ]
     },
 
 })

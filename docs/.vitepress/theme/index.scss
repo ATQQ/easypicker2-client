@@ -1,0 +1,39 @@
+.VPHome {
+  .VPHero {
+    .container {
+      .main {
+        span.clip {
+          background: -webkit-linear-gradient(
+            315deg,
+            #42d392 25%,
+            #647eff
+          );
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .VPButton.docs {
+          border-color: rgb(
+            160,
+            207,
+            255
+          );
+          color: rgb(64, 158, 255);
+          background-color: rgb(
+            236,
+            245,
+            255
+          );
+        }
+        .VPButton.docs:hover {
+          color: rgb(236, 245, 255);
+          background-color: rgb(
+            64,
+            158,
+            255
+          );
+        }
+      }
+    }
+  }
+}

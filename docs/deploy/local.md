@@ -61,7 +61,7 @@ pnpm -v
 ```
 
 ## 2. 获取客户端源码
-Github如果没有梯子，下载&访问可能会很慢，Gitee是国内的一个代码托管平台，速度相对快
+GitHub如果没有梯子，下载&访问可能会很慢，Gitee是国内的一个代码托管平台，速度相对快
 
 ### 方式1：通过GIT
 确保电脑安装有`Git`
@@ -69,7 +69,7 @@ Github如果没有梯子，下载&访问可能会很慢，Gitee是国内的一�
 
 在终端工具适当的目录运行
 ```shell
-# from Github
+# from GitHub
 git clone https://github.com/ATQQ/easypicker2-client.git
 
 #or from  Gitee
@@ -77,13 +77,13 @@ git clone https://github.com/ATQQ/easypicker2-client.git
 git clone https://gitee.com/sugarjl/easypicker2-client.git
 ```
 地址来源
-* [Github](https://github.com/ATQQ/easypicker2-client): ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTQ2NjkzMA==647481466930)
+* [GitHub](https://github.com/ATQQ/easypicker2-client): ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTQ2NjkzMA==647481466930)
 * [Gitee](https://gitee.com/sugarjl/easypicker2-client): ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTcxMzU1MQ==647481713551)
 
 
 ### 方式2：压缩包
 
-* [Github](https://github.com/ATQQ/easypicker2-client): ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg1OTMzOQ==647481859339)
+* [GitHub](https://github.com/ATQQ/easypicker2-client): ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg1OTMzOQ==647481859339)
 * [Gitee](https://gitee.com/sugarjl/easypicker2-client): ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg3NzIwMA==647481877200)
 
 ## 3. 启动客户端
@@ -143,7 +143,7 @@ pnpm dev
 ## 4. 获取服务端源码
 ### 方式1: 通过Git拉取
 ```shell
-# from Github
+# from GitHub
 git clone https://github.com/ATQQ/easypicker2-server.git
 
 #or from  Gitee
@@ -151,7 +151,7 @@ git clone https://github.com/ATQQ/easypicker2-server.git
 git clone https://gitee.com/sugarjl/easypicker2-server.git
 ```
 ### 方式2: 下载源码压缩包
-* [Github](https://github.com/ATQQ/easypicker2-server)
+* [GitHub](https://github.com/ATQQ/easypicker2-server)
 * [Gitee](https://gitee.com/sugarjl/easypicker2-server)
 
 参照客户端源码下载图示，找到下载位置
