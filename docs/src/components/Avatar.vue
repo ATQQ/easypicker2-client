@@ -26,6 +26,7 @@
 .logo {
     width: 100px;
     border-radius: 50%;
+    margin: 0 auto;
 }
 
 .name {
