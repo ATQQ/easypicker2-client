@@ -1,4 +1,14 @@
 # 更新日志
+## v2.1.8(beta)
+### Chore
+* fix首页👍🏻展示问题
+* 优化日志面板的重复查询请求
+* 文档站 `vitepress` 版本升级
+* 后端[服务框架](https://github.com/ATQQ/flash-wolves)升级
+* 慢查询接口优化
+* 文档更新，添加FAQ
+* 七牛OSS存储区域配置提升到`.env`配置里
+
 ## v2.1.7
 ### Bugfix
 * 管理面板有权限的情况下刷新404

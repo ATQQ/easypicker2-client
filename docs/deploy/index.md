@@ -5,4 +5,5 @@
 ## 目录
 * [本地启动](./local.md)
 * [线上部署 - 宝塔面板](./online.md)
-* [七牛云OSS服务创建](./qiniu.md)
+* [七牛云OSS服务创建 - 七牛云相关配置](./qiniu.md)
+* [FAQ&常见问题](./faq.md)
