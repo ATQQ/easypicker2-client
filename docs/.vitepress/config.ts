@@ -10,6 +10,8 @@ export default defineConfig({
         ['meta', { name: 'author', content: '粥里有勺糖' }],
         ['link', { rel: 'mask-icon', href: '/favicon.ico', color: '#ffffff' }],
         ['link', { rel: 'apple-touch-icon', href: '/favicon.ico', sizes: '180x180' }],
+        ['script', { charset: 'UTF-8', id: 'LA_COLLECT', src: '//sdk.51.la/js-sdk-pro.min.js' }],
+        ['script', {},'LA.init({id: "JiqK2jS5HmnB4s8G",ck: "JiqK2jS5HmnB4s8G",hashMode:true})'],
     ],
     vite: {
         server: {
