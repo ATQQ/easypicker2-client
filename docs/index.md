@@ -15,6 +15,9 @@ hero:
     - theme: alt
       text: 提交示例
       link: https://ep2.sugarat.top/task/627bd3b18a567f1b47bcdace
+    - theme: alt
+      text: 更新日志
+      link: /plan/log
 
 features:
   - icon: ⚡️ 

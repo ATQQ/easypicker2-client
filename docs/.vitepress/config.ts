@@ -59,14 +59,18 @@ export default defineConfig({
                         link: '/deploy/online',
                     },
                     {
-                        text: '七牛云OSS服务创建',
+                        text: '接入七牛云OSS服务',
                         link: '/deploy/qiniu',
+                    },
+                    {
+                        text: '常见问题❓',
+                        link: '/deploy/faq',
                     }
                 ],
             }],
             'plan': [
                 {
-                    text: '规划',
+                    text: '近期动态',
                     items: [
                         {
                             text: '🥔TODO-LIST',
