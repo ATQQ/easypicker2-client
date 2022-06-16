@@ -17,7 +17,9 @@ export default defineConfig({
             host: '0.0.0.0'
         }
     },
+    lastUpdated: true,
     themeConfig: {
+        lastUpdatedText: '上次更新于',
         footer: {
             message: `MIT Licensed | ${Pkg.version}`,
             copyright: 'Copyright © 2019-PRESENT 粥里有勺糖'
