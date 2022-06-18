@@ -11,7 +11,7 @@ export default defineConfig({
         ['link', { rel: 'mask-icon', href: '/favicon.ico', color: '#ffffff' }],
         ['link', { rel: 'apple-touch-icon', href: '/favicon.ico', sizes: '180x180' }],
         ['script', { charset: 'UTF-8', id: 'LA_COLLECT', src: '//sdk.51.la/js-sdk-pro.min.js' }],
-        ['script', {},'LA.init({id: "JiqK2jS5HmnB4s8G",ck: "JiqK2jS5HmnB4s8G",hashMode:true})'],
+        ['script', {}, 'LA.init({id: "JiqK2jS5HmnB4s8G",ck: "JiqK2jS5HmnB4s8G",hashMode:true})'],
     ],
     vite: {
         server: {
@@ -32,17 +32,42 @@ export default defineConfig({
             text: '去 GitHub 上编辑内容'
         },
         nav: [
-            { text: '私有化部署', link: '/deploy/' },
+            {
+                text: '私有化部署',
+                items: [
+                    {
+                        text: '本地启动',
+                        link: '/deploy/local',
+                    },
+                    {
+                        text: '线上部署',
+                        link: '/deploy/online',
+                    },
+                    {
+                        text: '接入七牛云OSS',
+                        link: '/deploy/qiniu',
+                    },
+                    {
+                        text: '常见问题❓',
+                        link: '/deploy/faq',
+                    }
+                ],
+                activeMatch: '/deploy/'
+            },
             {
                 text: `v${Pkg.version}`,
                 items: [
                     { text: '更新日志', link: '/plan/log' },
                     { text: '近期规划', link: '/plan/todo' },
                 ],
-                activeMatch:'/plan/'
+                activeMatch: '/plan/'
             },
-            { text: '作者博客', link: 'https://sugarat.top' },
-            { text: '联系作者', link: "https://ep.sugarat.top/author" }
+            {
+                text: '作者信息', link: '/author',
+            },
+            {
+                text: '打赏', link: '/praise/index',
+            },
         ],
         sidebar: {
             'deploy': [{
