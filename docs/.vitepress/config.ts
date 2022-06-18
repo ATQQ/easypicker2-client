@@ -109,6 +109,30 @@ export default defineConfig({
                         }
                     ],
                 },
+            ],
+            'introduction': [
+                {
+                    text: '关于',
+                    items: [
+                        {
+                            text: '应用介绍',
+                            link: '/introduction/about/index',
+                        },
+                        {
+                            text: '相关源码',
+                            link: '/introduction/about/code',
+                        }
+                    ]
+                },
+                {
+                    text: '功能',
+                    items: [
+                        {
+                            text: '现有功能',
+                            link: '/introduction/feature/index',
+                        }
+                    ]
+                }
             ]
         },
         socialLinks: [

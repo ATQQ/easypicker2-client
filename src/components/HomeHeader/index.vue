@@ -17,7 +17,7 @@
                         <router-link :to="href">{{ text }}</router-link>
                     </li>
                     <li>
-                        <a href="https://github.com/atqq" target="_blank" rel="noopener noreferrer">GitHub</a>
+                        <a href="https://github.com/ATQQ/easypicker2-client" target="_blank" rel="noopener noreferrer">GitHub</a>
                     </li>
                     <li>
                         <a href="https://docs.ep.sugarat.top/plan/todo.html" target="_blank" rel="noopener noreferrer">近期规划</a>
