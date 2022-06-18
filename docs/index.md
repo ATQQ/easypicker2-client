@@ -12,6 +12,9 @@ hero:
     - theme: docs
       text: 私有化部署
       link: /deploy/
+    - theme: docs
+      text: 应用介绍
+      link: /introduction/about/index
     - theme: alt
       text: 提交示例
       link: https://ep2.sugarat.top/task/627bd3b18a567f1b47bcdace
