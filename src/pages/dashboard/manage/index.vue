@@ -9,7 +9,7 @@
       >
         <el-menu-item index="overview">
           <el-icon>
-            <data-board/>
+            <DataAnalysis/>
           </el-icon>
           <template #title>概况</template>
         </el-menu-item>
@@ -18,6 +18,12 @@
             <User/>
           </el-icon>
           <template #title>用户管理</template>
+        </el-menu-item>
+        <el-menu-item index="wish">
+          <el-icon>
+            <DataBoard/>
+          </el-icon>
+          <template #title>需求管理</template>
         </el-menu-item>
       </el-menu>
     </div>
@@ -29,7 +35,7 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { User, DataBoard } from '@element-plus/icons-vue'
+import { User, DataBoard, DataAnalysis } from '@element-plus/icons-vue'
 
 const defaultActive = ref('overview')
 const isCollapse = ref(false)

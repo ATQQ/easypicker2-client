@@ -213,7 +213,6 @@ declare namespace WishApiTypes {
     }
     interface Wish {
         id: string
-        userId: number
         title: string
         /**
          * 详细描述
@@ -230,5 +229,13 @@ declare namespace WishApiTypes {
         startDate: Date
         endDate: Date
     }
+
     type addWish = ResponseData
+
+    type WishItem = Wish & {
+        createDate:number
+    }
+    type allWishData = ResponseData<WishItem[]>
+
+    type updateWish = ResponseData
 }
