@@ -17,6 +17,9 @@
                         <router-link :to="href">{{ text }}</router-link>
                     </li>
                     <li>
+                        <a href="https://docs.ep.sugarat.top/introduction/about/index.html" target="_blank" rel="noopener noreferrer">关于</a>
+                    </li>
+                    <li>
                         <a href="https://github.com/ATQQ/easypicker2-client" target="_blank" rel="noopener noreferrer">GitHub</a>
                     </li>
                     <li>
@@ -56,10 +59,10 @@ onMounted(() => {
       href: '/wish',
       text: '需求墙',
     },
-    {
-      href: '/about',
-      text: '关于',
-    },
+    // {
+    //   href: '/about',
+    //   text: '关于',
+    // },
   ]
   for (const nav of navList) {
     if (nav.href !== path) {
