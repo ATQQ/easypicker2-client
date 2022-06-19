@@ -9,6 +9,7 @@ declare module 'vue' {
     Home: typeof import('./src/components/Home.vue')['default']
     Picture: typeof import('./src/components/Picture.vue')['default']
     Praise: typeof import('./src/components/Praise.vue')['default']
+    WishBtn: typeof import('./src/components/WishBtn.vue')['default']
   }
 }
 

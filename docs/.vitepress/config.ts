@@ -50,6 +50,10 @@ export default defineConfig({
                     {
                         text: '常见问题❓',
                         link: '/deploy/faq',
+                    },
+                    {
+                        text: '相关设计',
+                        link: '/deploy/design/index',
                     }
                 ],
                 activeMatch: '/deploy/'
@@ -57,8 +61,9 @@ export default defineConfig({
             {
                 text: `v${Pkg.version}`,
                 items: [
-                    { text: '更新日志', link: '/plan/log' },
-                    { text: '近期规划', link: '/plan/todo' },
+                    { text: '⭐️ 需求墙', link: '/plan/wish' },
+                    { text: '🥔 近期规划', link: '/plan/todo' },
+                    { text: '📅 更新日志', link: '/plan/log' },
                 ],
                 activeMatch: '/plan/'
             },
@@ -68,39 +73,63 @@ export default defineConfig({
             {
                 text: '打赏', link: '/praise/index',
             },
+            { text: '⭐️ 需求墙', link: '/plan/wish' },
         ],
         sidebar: {
-            'deploy': [{
-                text: '私有化部署',
-                items: [
-                    {
-                        text: 'Getting Started',
-                        link: '/deploy/',
-                    },
-                    {
-                        text: '本地启动',
-                        link: '/deploy/local',
-                    },
-                    {
-                        text: '线上部署 - 使用宝塔面板',
-                        link: '/deploy/online',
-                    },
-                    {
-                        text: '接入七牛云OSS服务',
-                        link: '/deploy/qiniu',
-                    },
-                    {
-                        text: '常见问题❓',
-                        link: '/deploy/faq',
-                    }
-                ],
-            }],
-            'plan': [
+            'deploy': [
                 {
-                    text: '近期动态',
+                    text: '私有化部署',
                     items: [
                         {
-                            text: '🥔TODO-LIST',
+                            text: 'Getting Started',
+                            link: '/deploy/',
+                        },
+                        {
+                            text: '本地启动',
+                            link: '/deploy/local',
+                        },
+                        {
+                            text: '线上部署 - 使用宝塔面板',
+                            link: '/deploy/online',
+                        },
+                        {
+                            text: '接入七牛云OSS服务',
+                            link: '/deploy/qiniu',
+                        },
+                        {
+                            text: '常见问题❓',
+                            link: '/deploy/faq',
+                        }
+                    ],
+                },
+                {
+                    text: '相关设计',
+                    items: [
+                        {
+                            text: '概述',
+                            link: '/deploy/design/index',
+                        },
+                        {
+                            text: '数据库设计',
+                            link: '/deploy/design/db',
+                        },
+                        {
+                            text: '接口设计',
+                            link: '/deploy/design/api',
+                        },
+                    ],
+                }
+            ],
+            'plan': [
+                {
+                    text: '应用动态',
+                    items: [
+                        {
+                            text: '⭐️ 需求墙',
+                            link: '/plan/wish',
+                        },
+                        {
+                            text: '🥔 TODO-LIST',
                             link: '/plan/todo',
                         },
                         {
