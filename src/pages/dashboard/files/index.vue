@@ -103,11 +103,12 @@
     </div>
     <!-- 主体内容 -->
     <div class="panel">
-      <Tip>占用空间：{{ filterFileSize }} / {{ fileListSize }}</Tip>
-      <Tip>请作者喝茶 🍵
-        <Praise>
+      <Tip>空间使用情况：{{ filterFileSize }} / {{ fileListSize }}</Tip>
+      <Tip>↑ 仅供使用者参考，应用无存储空间上限，也不收费</Tip>
+      <Tip><strong>如果你绝应用不错，<a style="color: #409eff;" href="http://docs.ep.sugarat.top/praise/index.html" target="_blank" rel="noopener noreferrer">请作者喝茶 🍵</a></strong>
+        <!-- <Praise>
           <el-button style="margin:0 0 2px;" size="small" type="text">Go！Go！❓</el-button>
-        </Praise>
+        </Praise> -->
       </Tip>
       <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
         ref="multipleTable" @selection-change="handleSelectionChange" stripe border
