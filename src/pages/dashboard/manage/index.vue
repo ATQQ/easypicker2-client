@@ -2,7 +2,7 @@
   <div class="monitor">
     <div class="navs">
       <el-menu
-        default-active="overview"
+        :default-active="defaultActive"
         class="el-menu-nav"
         :collapse="isCollapse"
         @select="handleSelect"
@@ -27,10 +27,11 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { User, DataBoard } from '@element-plus/icons-vue'
 
+const defaultActive = ref('overview')
 const isCollapse = ref(false)
 const $router = useRouter()
 const $route = useRoute()
@@ -42,7 +43,10 @@ const handleSelect = (path:string) => {
     path,
   })
 }
-
+onMounted(() => {
+  const value = $route.path.split('/').slice(-1)[0]
+  defaultActive.value = value
+})
 </script>
 
 <style scoped>
