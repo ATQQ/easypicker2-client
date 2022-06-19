@@ -5,7 +5,7 @@
         <a target="_blank" rel="noopener" v-bind:href="item.link">{{ item.title }}</a>
       </li>
       <li>
-        <router-link to="/author">联系作者</router-link>
+        <a href="https://docs.ep.sugarat.top/author.html" target="_blank">联系作者</a>
       </li>
       <li style="width:26px;">
         <a><Praise>👍🏻</Praise></a>
