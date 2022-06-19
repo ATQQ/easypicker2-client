@@ -163,10 +163,14 @@ const $route = useRoute()
 const pcNavs = reactive([
   {
     title: '我也要收集',
-    path: '/',
+    path: 'https://docs.ep.sugarat.top/',
   },
 ])
 const handleNav = (idx: number) => {
+  if (pcNavs[idx].path.startsWith('http')) {
+    window.location.href = pcNavs[idx].path
+    return
+  }
   $router.push({
     path: pcNavs[idx].path,
   })

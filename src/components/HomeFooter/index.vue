@@ -8,7 +8,8 @@
         <a href="https://docs.ep.sugarat.top/author.html" target="_blank">联系作者</a>
       </li>
       <li style="width:26px;">
-        <a><Praise>👍🏻</Praise></a>
+        <a href="https://docs.ep.sugarat.top/praise/index.html" target="_blank">👍🏻</a>
+        <!-- <a><Praise>👍🏻</Praise></a> -->
       </li>
     </ul>
     <ul v-if="navs2.length">
@@ -18,7 +19,7 @@
     </ul>
     <p>v{{version}}
       © 2019 - {{ cunnrentYear }} by
-      <a style="color: aliceblue;" target="_blank" rel="noopener" href="https://sugarat.top">粥里有勺糖</a>
+      <a style="color: aliceblue;" target="_blank" rel="noopener" href="https://docs.ep.sugarat.top/author.html">粥里有勺糖</a>
     </p>
   </div>
 </template>
@@ -26,7 +27,7 @@
 <script lang="ts" setup>
 import { reactive } from 'vue'
 import { version } from '../../../package.json'
-import Praise from '../Praise/index.vue'
+// import Praise from '../Praise/index.vue'
 
 const navs = reactive([
   {
