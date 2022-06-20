@@ -1,3 +1,4 @@
+import { WishStatus } from '@/constants'
 import ajax from '../ajax'
 
 function addWish(wish:Partial<WishApiTypes.Wish>):WishApiTypes.addWish {
@@ -12,13 +13,20 @@ function findAllWish():WishApiTypes.allWishData {
   )
 }
 
-function updateWishStatus(id:string, status:WishApiTypes.WishStatus):WishApiTypes.updateWish {
+function updateWishStatus(id:string, status:WishStatus):WishApiTypes.updateWish {
   return ajax.put(
     '/wish/update', { id, status },
+  )
+}
+
+function updateWishDes(id:string, title:string, des:string):WishApiTypes.updateWish {
+  return ajax.put(
+    `/wish/update/${id}`, { title, des },
   )
 }
 export default {
   addWish,
   findAllWish,
   updateWishStatus,
+  updateWishDes,
 }

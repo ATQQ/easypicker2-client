@@ -32,6 +32,10 @@
             <div class="text-btn-list">
               <el-button @click="handleChangeStatus(scope.row.id, scope.row.status)" type="text" size="small">修改状态
               </el-button>
+              <el-button @click="handleRewriteDes(scope.row.id, scope.row.title, scope.row.des)" type="text"
+                size="small">
+                修改描述
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -57,6 +61,23 @@
       </template>
     </el-dialog>
 
+    <!-- 需求描述更新弹窗 -->
+    <el-dialog title="需求信息" v-model="desVisible" :fullscreen="isMobile">
+      <el-form :model="formData">
+        <el-form-item label="需求" :label-width="formLabelWidth">
+          <el-input placeholder="一句简单明了的话概括一下" v-model="formData.title"></el-input>
+        </el-form-item>
+        <el-form-item label="详细描述" :label-width="formLabelWidth">
+          <el-input placeholder="用朴素的话语进一步描述你的需求" type="textarea" v-model="formData.des"></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="desVisible = false">取 消</el-button>
+          <el-button type="primary" @click="handleUpdateWish">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
@@ -151,6 +172,27 @@ const handleSaveStatus = () => {
   ElMessage.success('修改成功')
 }
 
+// 描述信息修改
+const formLabelWidth = '80px'
+const desVisible = ref(false)
+const formData = reactive({
+  title: '',
+  des: '',
+})
+const handleRewriteDes = (id: string, title: string, des: string) => {
+  selectWishId.value = id
+  formData.title = title
+  formData.des = des
+  desVisible.value = true
+}
+const handleUpdateWish = () => {
+  const wish = wishes.find((v) => v.id === selectWishId.value)
+  desVisible.value = false
+  WishApi.updateWishDes(selectWishId.value, formData.title, formData.des)
+  wish.title = formData.title
+  wish.des = formData.des
+  ElMessage.success('修改成功')
+}
 onMounted(() => {
   refreshWishes()
 })
