@@ -20,13 +20,18 @@
           <template #default="scope">{{ scope.row.createDate && formatDate(new Date(scope.row.createDate)) }}</template>
         </el-table-column>
         <el-table-column prop="title" label="标题" width="120"></el-table-column>
-        <el-table-column prop="des" label="详细描述" ></el-table-column>
-        <el-table-column prop="contact" label="联系方式" ></el-table-column>
+        <el-table-column prop="des" label="详细描述"></el-table-column>
+        <el-table-column prop="contact" label="联系方式"></el-table-column>
+        <el-table-column prop="status" label="状态">
+          <template #default="scope">
+            {{ logTypeList.find(v => v.type === scope.row.status).label }}
+          </template>
+        </el-table-column>
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
             <div class="text-btn-list">
-              <el-button @click="handleChangeStatus(scope.row.id, scope.row.status)" type="text"
-                size="small">修改状态</el-button>
+              <el-button @click="handleChangeStatus(scope.row.id, scope.row.status)" type="text" size="small">修改状态
+              </el-button>
             </div>
           </template>
         </el-table-column>
@@ -63,6 +68,7 @@ import { useStore } from 'vuex'
 import { Search } from '@element-plus/icons-vue'
 import { WishApi } from '@/apis'
 import { formatDate } from '@/utils/stringUtil'
+import { WishStatus } from '@/constants'
 
 const $store = useStore()
 const wishes = reactive<WishApiTypes.WishItem[]>([])
@@ -78,23 +84,23 @@ const searchWord = ref('')
 const logTypeList = reactive([
   {
     label: '待审核',
-    type: WishApiTypes.WishStatus.REVIEW,
+    type: WishStatus.REVIEW,
   },
   {
     label: '待开始',
-    type: WishApiTypes.WishStatus.WAIT,
+    type: WishStatus.WAIT,
   },
   {
     label: '关闭',
-    type: WishApiTypes.WishStatus.CLOSE,
+    type: WishStatus.CLOSE,
   },
   {
     label: '已上线',
-    type: WishApiTypes.WishStatus.END,
+    type: WishStatus.END,
   },
   {
     label: '开发中',
-    type: WishApiTypes.WishStatus.START,
+    type: WishStatus.START,
   },
 ])
 
@@ -130,9 +136,9 @@ const handlePageChange = (idx: number) => {
 // 状态修改
 const showWishStatusDialog = ref(false)
 const selectWishId = ref('')
-const selectStatus = ref(WishApiTypes.WishStatus.REVIEW)
+const selectStatus = ref(WishStatus.REVIEW)
 const wishStatusList = logTypeList
-const handleChangeStatus = (wishId: string, status: WishApiTypes.WishStatus) => {
+const handleChangeStatus = (wishId: string, status: WishStatus) => {
   selectWishId.value = wishId
   selectStatus.value = status
   showWishStatusDialog.value = true
