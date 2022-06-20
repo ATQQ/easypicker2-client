@@ -1,8 +1,9 @@
 # 更新日志
 ## v2.1.8(beta)
+### Feature
+* 添加需求管理面板
+
 ### Chore
-* fix首页👍🏻展示问题
-* 优化日志面板的重复查询请求
 * 后端[服务框架](https://github.com/ATQQ/flash-wolves)升级
   * 自动发现可用端口，端口被占用也不阻塞服务启动
 * 慢查询接口优化
@@ -11,8 +12,13 @@
   * 文档站 `vitepress` 版本升级 => UI 全面升级
   * 添加FAQ
   * 将展示信息页面导向文档站
-  * 在文档站中展示 [⭐️需求墙](https://docs.ep.sugarat.top/plan/wish.html)
+  * 在文档站中展示 [⭐️需求墙](./wish.md)
   * and more
+
+### Bugfix
+* fix首页👍🏻展示问题
+* fix管理面板的导航，高亮Tab状态异常
+* 日志面板的重复查询请求
 
 ## v2.1.7
 ### Bugfix
