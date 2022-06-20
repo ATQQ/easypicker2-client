@@ -189,28 +189,6 @@ declare namespace SuperUserApiTypes {
 }
 
 declare namespace WishApiTypes {
-    enum WishStatus {
-        /**
-         * 审核中
-         */
-        REVIEW,
-        /**
-         * 待开始
-         */
-        WAIT,
-        /**
-         * 开发中
-         */
-        START,
-        /**
-         * 已上线
-         */
-        END,
-        /**
-         * 关闭
-         */
-        CLOSE
-    }
     interface Wish {
         id: string
         title: string
@@ -225,7 +203,7 @@ declare namespace WishApiTypes {
         /**
          * 当前进度
          */
-        status: WishStatus
+        status: number
         startDate: Date
         endDate: Date
     }
