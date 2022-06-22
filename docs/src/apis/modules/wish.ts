@@ -6,6 +6,15 @@ function addWish(wish:Partial<WishApiTypes.Wish>):WishApiTypes.addWish {
   )
 }
 
+function getDocsWish():WishApiTypes.allDocsWishData {
+  return ajax.get('wish/all/docs')
+}
+
+function praiseWish(id:string) {
+  return ajax.post(`wish/praise/${id}`)
+}
 export default {
   addWish,
+  getDocsWish,
+  praiseWish,
 }

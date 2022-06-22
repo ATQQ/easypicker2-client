@@ -10,9 +10,8 @@
 
 <wish-btn />
 
-需求的展示，以及投票功能还在开发中...
+<wish-panel />
 
-可以先加群进行反馈↓
 ## 其它方式
 
 | 加群反馈                                                                                                            | [问卷反馈](https://www.wenjuan.com/s/UZBZJvA040/#《轻取（EasyPicker）用户意见收集》，快来参与吧。【问卷网提供支持】) |

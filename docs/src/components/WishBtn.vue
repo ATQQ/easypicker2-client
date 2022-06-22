@@ -18,7 +18,7 @@
             </el-form-item>
         </el-form>
         <div class="btn-list" v-show="dialogVisible">
-            <el-button type="primary" @click="handleAddFeature">提交</el-button>
+            <el-button type="success" @click="handleAddFeature">提交</el-button>
         </div>
     </div>
 </template>

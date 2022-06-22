@@ -216,4 +216,16 @@ declare namespace WishApiTypes {
     type allWishData = ResponseData<WishItem[]>
 
     type updateWish = ResponseData
+
+    type DocsWishItem = {
+        id: string
+        title: string
+        des: string
+        status: number
+        startDate?: string
+        count: number
+        alreadyPraise:boolean
+    }
+    type allDocsWishData = ResponseData<DocsWishItem[]>
+
 }

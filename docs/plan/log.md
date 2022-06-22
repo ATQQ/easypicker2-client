@@ -2,6 +2,7 @@
 ## v2.1.8(beta)
 ### Feature
 * 添加需求管理面板
+* 在文档站中展示 [⭐️需求墙](./wish.md)
 
 ### Chore
 * 后端[服务框架](https://github.com/ATQQ/flash-wolves)升级
@@ -12,7 +13,6 @@
   * 文档站 `vitepress` 版本升级 => UI 全面升级
   * 添加FAQ
   * 将展示信息页面导向文档站
-  * 在文档站中展示 [⭐️需求墙](./wish.md)
   * and more
 
 ### Bugfix
