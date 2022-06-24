@@ -51,7 +51,7 @@
       </template>
       <!-- 未设置ddl 或者 设置了还未结束 -->
       <div v-if="!ddlStr || !isOver">
-        <div v-if="taskMoreInfo.people">
+        <div v-if="showValidForm">
           <el-divider>身份核验</el-divider>
           <Tip>在参与名单里才能正常提交</Tip>
           <div class="infos">
@@ -278,6 +278,8 @@ const isWriteFinish = computed(() => infos.every(
 // 提交文件
 
 // 身份核验表单
+const isSameFieldName = computed(() => infos.find((v) => v.text === '姓名'))
+const showValidForm = computed(() => taskMoreInfo.people && !isSameFieldName.value)
 const validModal = reactive({
   peopleName: '',
 })
@@ -304,9 +306,19 @@ const validModalRef = ref<FormInstance>()
 const validModalRules = reactive({
   peopleName: [{ validator: validatePeopleName, trigger: 'blur' }],
 })
-const confirmPeopleName = () => validModalRef.value.validate(
-  (isValid: boolean) => (isValid),
-)
+const confirmPeopleName = () => {
+  // 处理表单必填项含有姓名的情况
+  if (isSameFieldName.value) {
+    const value = infos.find((v) => v.text === '姓名')?.value
+    validModal.peopleName = value || ''
+    return new Promise((resolve) => {
+      validatePeopleName(null, value, resolve)
+    }).then((v) => !v)
+  }
+  return validModalRef.value.validate(
+    (isValid: boolean) => (isValid),
+  )
+}
 
 const startUpload = () => {
   const uploadFiles = fileList
