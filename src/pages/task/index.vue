@@ -31,7 +31,7 @@
         <el-divider>⚠️ 注意事项 ⚠️</el-divider>
         <Tip>
           <div class="tip-wrapper">
-            <p v-for="(t, i) in taskMoreInfo.tip.split('\n')" :key="i">{{ t.replace(/\s/g,'&nbsp;') }}</p>
+            <p v-for="(t, i) in taskMoreInfo.tip.split('\n')" :key="i">{{ t.replace(/\s/g, '&nbsp;') }}</p>
           </div>
         </Tip>
       </template>
@@ -51,6 +51,20 @@
       </template>
       <!-- 未设置ddl 或者 设置了还未结束 -->
       <div v-if="!ddlStr || !isOver">
+        <div v-if="taskMoreInfo.people">
+          <el-divider>身份核验</el-divider>
+          <Tip>在参与名单里才能正常提交</Tip>
+          <div class="infos">
+            <el-form ref="validModalRef" :rules="validModalRules" status-icon :model="validModal"
+              :disabled="disableForm" label-width="100px">
+              <el-form-item prop="peopleName" required label="姓名">
+                <el-input :maxlength="
+                  14
+                " clearable show-word-limit placeholder="参与者填写" v-model="validModal.peopleName"></el-input>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
         <el-divider>必要信息填写</el-divider>
         <div class="infos">
           <InfosForm :infos="infos" :disabled="disableForm"></InfosForm>
@@ -121,6 +135,7 @@ import {
 import type {
   UploadUserFile,
   UploadInstance,
+  FormInstance,
 } from 'element-plus'
 import {
   computed,
@@ -261,21 +276,37 @@ const isWriteFinish = computed(() => infos.every(
   (item) => item.value,
 ))
 // 提交文件
-const peopleName = ref('')
-const confirmPeopleName = () => ElMessageBox.prompt(
-  '请输入你的姓名',
-  '姓名核验',
-  {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    draggable: true,
-  },
-)
-  .then(({ value }) => value)
-  .catch(() => {
-    ElMessage.info('取消')
-    return ''
+
+// 身份核验表单
+const validModal = reactive({
+  peopleName: '',
+})
+
+const validatePeopleName = (rule: any, value: any, callback: any) => {
+  if (!value) {
+    callback(new Error('请输入姓名'))
+    ElMessage.error('请输入姓名')
+    return
+  }
+  // 异步校验
+  PeopleApi.checkPeopleIsExist(
+    k.value,
+    value,
+  ).then((res) => {
+    if (!res.data.exist) {
+      ElMessage.error('你不在此次提交名单中,如有疑问请联系管理员')
+    }
+    callback(res.data.exist ? undefined : new Error('你不在此次提交名单中,如有疑问请联系管理员'))
   })
+}
+
+const validModalRef = ref<FormInstance>()
+const validModalRules = reactive({
+  peopleName: [{ validator: validatePeopleName, trigger: 'blur' }],
+})
+const confirmPeopleName = () => validModalRef.value.validate(
+  (isValid: boolean) => (isValid),
+)
 
 const startUpload = () => {
   const uploadFiles = fileList
@@ -327,8 +358,7 @@ const startUpload = () => {
                   info: JSON.stringify(
                     infos,
                   ),
-                  people:
-                    peopleName.value,
+                  people: validModal.peopleName,
                 }).then(() => {
                   file.status = 'success'
                   ElMessage.success(
@@ -341,7 +371,7 @@ const startUpload = () => {
                     PeopleApi.updatePeopleStatus(
                       k.value,
                       name,
-                      peopleName.value,
+                      validModal.peopleName,
                       file.md5,
                     )
                   }
@@ -373,23 +403,10 @@ const submitUpload = async () => {
   }
 
   if (taskMoreInfo.people) {
-    const name = await confirmPeopleName()
-    if (!name) {
+    const isValid = await confirmPeopleName()
+    if (!isValid) {
       return
     }
-    const {
-      data: { exist },
-    } = await PeopleApi.checkPeopleIsExist(
-      k.value,
-      name,
-    )
-    if (!exist) {
-      ElMessage.warning(
-        '你不在此次提交名单中,如有疑问请联系管理员',
-      )
-      return
-    }
-    peopleName.value = name
   }
   startUpload()
 }
@@ -480,7 +497,7 @@ const runWithdraw = () => {
         filename: name,
         hash: file.md5,
         info: JSON.stringify(infos),
-        peopleName: peopleName.value,
+        peopleName: validModal.peopleName,
       })
         .then(() => {
           ElMessage.success(
@@ -529,23 +546,10 @@ const startWithdraw = async () => {
     return
   }
   if (taskMoreInfo.people) {
-    const name = await confirmPeopleName()
-    if (!name) {
+    const isValid = await confirmPeopleName()
+    if (!isValid) {
       return
     }
-    const {
-      data: { exist },
-    } = await PeopleApi.checkPeopleIsExist(
-      k.value,
-      name,
-    )
-    if (!exist) {
-      ElMessage.warning(
-        '你不在此次提交名单中,如有疑问请联系管理员',
-      )
-      return
-    }
-    peopleName.value = name
   }
   runWithdraw()
 }
@@ -561,31 +565,15 @@ const checkSubmitStatus = async () => {
   }
   // 卡控人员限制
   if (taskMoreInfo.people) {
-    const name = await confirmPeopleName()
-    if (!name) {
-      ElMessage.warning(
-        '请填写有效的姓名',
-      )
+    const isValid = await confirmPeopleName()
+    if (!isValid) {
       return
     }
-    const {
-      data: { exist },
-    } = await PeopleApi.checkPeopleIsExist(
-      k.value,
-      name,
-    )
-    if (!exist) {
-      ElMessage.warning(
-        '你不在此次提交名单中,如有疑问请联系管理员',
-      )
-      return
-    }
-    peopleName.value = name
   }
   FileApi.checkSubmitStatus(
     k.value,
     infos,
-    peopleName.value,
+    validModal.peopleName,
   ).then((res) => {
     if (res.data.isSubmit) {
       ElMessage.success('已经提交过啦')
@@ -770,10 +758,7 @@ onUnmounted(() => {
   .infos {
     max-width: 400px;
     margin: auto;
-
-    >div {
-      margin-bottom: 10px;
-    }
+    overflow: hidden;
   }
 }
 
