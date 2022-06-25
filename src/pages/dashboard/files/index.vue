@@ -201,7 +201,6 @@ import {
 } from '@/utils/networkUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
-import Praise from '@/components/Praise/index.vue'
 
 const $store = useStore()
 const $route = useRoute()
@@ -210,42 +209,6 @@ const downloadUrl = ref('')
 const showImg = ref(false)
 const showPeople = ref(true)
 const showOriginName = ref(false)
-const showPraise = ref(false)
-const openPraise = () => {
-  showPraise.value = true
-}
-
-const praiseImg = reactive([
-  {
-    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQ0MjMzNA==651547442334',
-    title: '微信',
-  },
-  {
-    url: 'https://img.cdn.sugarat.top/mdImg/MTY0Nzc1NTYyOTE5Mw==647755629193',
-    title: '微信赞赏',
-  },
-  {
-    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQyOTg0OA==651547429848',
-    title: '支付宝',
-  },
-])
-const Thanks = () => {
-  ElMessageBox.alert(`
-  <p class="tc">
-    <img width="140px" src="https://img.cdn.sugarat.top/mdImg/MTY1MTUwNjkwNDc4OQ==thanks.gif" />
-  </p>
-  <p class="tc">
-    <img width="240px" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354" />
-  </p>
-  `, '💐 谢谢老板 💐', {
-    confirmButtonText: '不客气',
-    dangerouslyUseHTMLString: true,
-  })
-}
-const NextPraise = () => {
-  showPraise.value = false
-  ElMessage.success('下次一定！下次一定！')
-}
 
 // 记录导出
 const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
@@ -254,6 +217,9 @@ const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
     return
   }
   const baseHeaders = ['提交时间', '任务', '文件名', '大小']
+  if (showOriginName.value) {
+    baseHeaders.push('原文件名')
+  }
   if (showPeople.value) {
     baseHeaders.push('姓名')
   }
@@ -285,6 +251,9 @@ const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
     }, {})
     const info = infosHeader.map((v) => (infoObj[v] ?? '-'))
     const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
+    if (showOriginName.value) {
+      rows.push(v.origin_name || '-')
+    }
     if (showPeople.value) {
       rows.push(people || '-')
     }
