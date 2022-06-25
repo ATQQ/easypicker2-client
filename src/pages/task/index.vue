@@ -53,12 +53,14 @@
       <div v-if="!ddlStr || !isOver">
         <el-divider>必要信息填写</el-divider>
         <div class="infos">
+          <div v-show="taskMoreInfo.people">
+              <Tip>“姓名”在参与名单里才能正常提交</Tip>
+          </div>
           <div v-if="showValidForm">
-            <Tip>在参与名单里才能正常提交</Tip>
             <div class="infos">
               <el-form ref="validModalRef" :rules="validModalRules" status-icon :model="validModal"
                 :disabled="disableForm" label-width="100px">
-                <el-form-item prop="peopleName" required label="姓名">
+                <el-form-item prop="peopleName" label="姓名">
                   <el-input :maxlength="
                     14
                   " clearable show-word-limit placeholder="参与者填写" v-model="validModal.peopleName"></el-input>
