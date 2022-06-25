@@ -25,6 +25,7 @@ declare namespace FileApiTypes {
         task_name: string
         user_id: number
         category_key: string
+        origin_name: string
         date: string
         hash: string
         cover?: string
