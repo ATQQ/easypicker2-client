@@ -17,7 +17,7 @@
 
 
 ## 简介
-[在线文件收取平台](https://ep.sugarat.top)
+[在线文件收取平台](https://docs.ep.sugarat.top/)
 
 应用开源，支持[私有化部署](https://docs.ep.sugarat.top/)
 

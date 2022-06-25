@@ -69,7 +69,7 @@
                 <h2>作者 <span style="color:grey;font-size:0.8rem;">(夹带私货)</span></h2>
                 <ul>
                     <li><a target="_blank" href="https://sugarat.top">博客</a></li>
-                    <li><a target="_blank" href="https://github.com/ATQQ">Github</a></li>
+                    <li><a target="_blank" href="https://github.com/ATQQ">GitHub</a></li>
                     <li><a target="_blank" href="https://juejin.cn/user/1028798615918983">掘金</a></li>
                 </ul>
             </div>

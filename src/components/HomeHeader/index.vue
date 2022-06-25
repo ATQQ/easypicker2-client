@@ -17,7 +17,13 @@
                         <router-link :to="href">{{ text }}</router-link>
                     </li>
                     <li>
-                        <a href="https://github.com/atqq" target="_blank" rel="noopener noreferrer">GitHub</a>
+                        <a href="https://docs.ep.sugarat.top/plan/wish.html" target="_blank" rel="noopener noreferrer">需求墙</a>
+                    </li>
+                    <li>
+                        <a href="https://docs.ep.sugarat.top/introduction/about/index.html" target="_blank" rel="noopener noreferrer">关于</a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/ATQQ/easypicker2-client" target="_blank" rel="noopener noreferrer">GitHub</a>
                     </li>
                     <li>
                         <a href="https://docs.ep.sugarat.top/plan/todo.html" target="_blank" rel="noopener noreferrer">近期规划</a>
@@ -52,14 +58,14 @@ onMounted(() => {
       href: '/register',
       text: '快速注册',
     },
-    {
-      href: '/wish',
-      text: '需求墙',
-    },
-    {
-      href: '/about',
-      text: '关于',
-    },
+    // {
+    //   href: '/wish',
+    //   text: '需求墙',
+    // },
+    // {
+    //   href: '/about',
+    //   text: '关于',
+    // },
   ]
   for (const nav of navList) {
     if (nav.href !== path) {

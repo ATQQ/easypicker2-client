@@ -19,6 +19,6 @@
       "@components/":["src/components/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "docs/**/*.ts", "docs/**/*.d.ts"],
   "exclude": ["vite.config.ts"]
 }

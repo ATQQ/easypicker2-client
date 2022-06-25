@@ -5,9 +5,12 @@
 declare module 'vue' {
   export interface GlobalComponents {
     Avatar: typeof import('./src/components/Avatar.vue')['default']
+    Callme: typeof import('./src/components/callme/index.vue')['default']
     Home: typeof import('./src/components/Home.vue')['default']
     Picture: typeof import('./src/components/Picture.vue')['default']
     Praise: typeof import('./src/components/Praise.vue')['default']
+    WishBtn: typeof import('./src/components/WishBtn.vue')['default']
+    WishPanel: typeof import('./src/components/WishPanel.vue')['default']
   }
 }
 

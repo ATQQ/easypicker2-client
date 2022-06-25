@@ -25,6 +25,7 @@ declare namespace FileApiTypes {
         task_name: string
         user_id: number
         category_key: string
+        origin_name: string
         date: string
         hash: string
         cover?: string
@@ -189,31 +190,8 @@ declare namespace SuperUserApiTypes {
 }
 
 declare namespace WishApiTypes {
-    enum WishStatus {
-        /**
-         * 审核中
-         */
-        REVIEW,
-        /**
-         * 待开始
-         */
-        WAIT,
-        /**
-         * 开发中
-         */
-        START,
-        /**
-         * 已上线
-         */
-        END,
-        /**
-         * 关闭
-         */
-        CLOSE
-    }
     interface Wish {
         id: string
-        userId: number
         title: string
         /**
          * 详细描述
@@ -226,9 +204,29 @@ declare namespace WishApiTypes {
         /**
          * 当前进度
          */
-        status: WishStatus
+        status: number
         startDate: Date
         endDate: Date
     }
+
     type addWish = ResponseData
+
+    type WishItem = Wish & {
+        createDate:number
+    }
+    type allWishData = ResponseData<WishItem[]>
+
+    type updateWish = ResponseData
+
+    type DocsWishItem = {
+        id: string
+        title: string
+        des: string
+        status: number
+        startDate?: string
+        count: number
+        alreadyPraise:boolean
+    }
+    type allDocsWishData = ResponseData<DocsWishItem[]>
+
 }
