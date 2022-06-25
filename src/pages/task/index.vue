@@ -51,22 +51,21 @@
       </template>
       <!-- 未设置ddl 或者 设置了还未结束 -->
       <div v-if="!ddlStr || !isOver">
-        <div v-if="showValidForm">
-          <el-divider>身份核验</el-divider>
-          <Tip>在参与名单里才能正常提交</Tip>
-          <div class="infos">
-            <el-form ref="validModalRef" :rules="validModalRules" status-icon :model="validModal"
-              :disabled="disableForm" label-width="100px">
-              <el-form-item prop="peopleName" required label="姓名">
-                <el-input :maxlength="
-                  14
-                " clearable show-word-limit placeholder="参与者填写" v-model="validModal.peopleName"></el-input>
-              </el-form-item>
-            </el-form>
-          </div>
-        </div>
         <el-divider>必要信息填写</el-divider>
         <div class="infos">
+          <div v-if="showValidForm">
+            <Tip>在参与名单里才能正常提交</Tip>
+            <div class="infos">
+              <el-form ref="validModalRef" :rules="validModalRules" status-icon :model="validModal"
+                :disabled="disableForm" label-width="100px">
+                <el-form-item prop="peopleName" required label="姓名">
+                  <el-input :maxlength="
+                    14
+                  " clearable show-word-limit placeholder="参与者填写" v-model="validModal.peopleName"></el-input>
+                </el-form-item>
+              </el-form>
+            </div>
+          </div>
           <InfosForm :infos="infos" :disabled="disableForm"></InfosForm>
         </div>
         <el-upload style="max-width: 400px; margin: 0 auto;" :drag="!isMobile" action="" ref="fileUpload"
