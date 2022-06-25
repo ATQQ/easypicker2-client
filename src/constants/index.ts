@@ -15,3 +15,26 @@ export enum USER_STATUS {
      */
     BAN
 }
+
+export enum WishStatus {
+    /**
+     * 审核中
+     */
+    REVIEW,
+    /**
+     * 待开始
+     */
+    WAIT,
+    /**
+     * 开发中
+     */
+    START,
+    /**
+     * 已上线
+     */
+    END,
+    /**
+     * 关闭
+     */
+    CLOSE
+}

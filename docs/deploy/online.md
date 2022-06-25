@@ -135,7 +135,7 @@ pnpm build
 ### 添加配置防止路由404
 在对应网站设置面板，点击`配置文件`,加入以下配置
 
-```conf
+```sh
 # vue-router
 location / {
    try_files $uri $uri/ /index.html;
@@ -156,6 +156,7 @@ location / {
 
 部署完成后，可以点击右上角开启`强制HTTPS`
 
+网站使用HTTPS
 ## 4. 创建MySQL数据库
 ### 新增数据库
 在数据库面板，点击添加数据库

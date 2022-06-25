@@ -30,7 +30,7 @@
           <el-button size="default" :icon="Refresh" @click="refreshLogs">刷新</el-button>
         </span>
         <span class="item">
-          <el-button size="default" type="primary" :icon="DataAnalysis" @click="exportLogData">导出日志 {{ filterLogs.length
+          <el-button size="default" type="primary" :icon="DataAnalysis" @click="exportLogData">导出日志 {{ logs.length
           }} 条</el-button>
         </span>
         <span class="item">
@@ -39,7 +39,7 @@
         </span>
       </div>
       <el-table tooltip-effect="dark" height="400" stripe border :default-sort="{ prop: 'date', order: 'descending' }"
-        :data="filterLogs" style="width: 100%;">
+        :data="logs" style="width: 100%;">
         <el-table-column sortable prop="date" label="日期" width="180">
           <template #default="scope">{{ formatDate(new Date(scope.row.date)) }}</template>
         </el-table-column>
@@ -86,6 +86,7 @@ import { ElMessage } from 'element-plus'
 import { SuperOverviewApi } from '@/apis'
 import { copyRes, formatDate } from '@/utils/stringUtil'
 import { tableToExcel } from '@/utils/networkUtil'
+import { debounce } from '@/utils/other'
 
 const $store = useStore()
 
@@ -200,14 +201,6 @@ const logTypeList = reactive([
   },
 ])
 
-const filterLogs = computed(() => logs
-  .filter((v) => v.type === filterLogType.value))
-// 后端搜索
-// .filter((v) => {
-//   const { date, ip, msg } = v
-//   if (searchWord.value.length === 0) return true
-//   return `${date} ${ip} ${msg}`.includes(searchWord.value)
-// })
 // 分页
 // 页大小
 const pageSize = ref(10)
@@ -221,42 +214,18 @@ const pageCount = computed(() => {
   return t
 })
 const pageCurrent = ref(1)
-// const pageLogs = computed(() => {
-//   const start = (pageCurrent.value - 1) * pageSize.value
-//   const end = (pageCurrent.value) * pageSize.value
-//   return filterLogs.value.slice(start, end)
-// })
 const handlePageChange = (idx: number) => {
   pageCurrent.value = idx
 }
 
-// 最简单防抖与节流相结合
-let timer = null
-let time = Date.now()
-let lock = false
-const wait = 500
-const refreshLogs = () => {
-  const callback = () => {
-    lock = true
-    SuperOverviewApi.getLogMsg(pageSize.value, pageCurrent.value, filterLogType.value, searchWord.value).then((res) => {
-      logs.splice(0, logs.length)
-      logs.push(...res.data.logs)
-      logSumCount.value = res.data.sum
-      lock = false
-    })
-  }
-  if (Date.now() > wait + time && !lock) {
-    time = Date.now()
-    timer = null
-  }
-  if (timer) {
-    clearTimeout(timer)
-    timer = setTimeout(callback, wait)
-  } else {
-    callback()
-    timer = 1
-  }
-}
+const refreshLogs = debounce(() => {
+  SuperOverviewApi.getLogMsg(pageSize.value, pageCurrent.value, filterLogType.value, searchWord.value).then((res) => {
+    logs.splice(0, logs.length)
+    logs.push(...res.data.logs)
+    logSumCount.value = res.data.sum
+  })
+}, 100, false)
+
 watchEffect(() => {
   if (filterLogType.value) {
     pageCurrent.value = 1
@@ -270,10 +239,17 @@ watchEffect(() => {
 })
 
 watchEffect(() => {
-  if (pageCurrent.value || filterLogType.value || pageSize.value) {
+  if (filterLogType.value) {
     refreshLogs()
   }
 })
+
+watchEffect(() => {
+  if (pageCurrent.value || pageSize.value) {
+    refreshLogs()
+  }
+})
+
 const showDetail = ref(false)
 const showData = ref('')
 const handleDetail = (id) => {
@@ -294,20 +270,19 @@ const handleCopyDetail = () => {
 }
 
 const exportLogData = () => {
-  if (filterLogs.value.length === 0) {
+  if (logs.length === 0) {
     return
   }
   const headers = ['日期', 'IP', '内容']
-  const body = filterLogs.value.map((v) => {
+  const body = logs.map((v) => {
     const { date, ip, msg } = v
     return [formatDate(new Date(date)), ip, msg]
   })
-  tableToExcel(headers, body, `导出日志_${filterLogs.value.length}条${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
+  tableToExcel(headers, body, `导出日志_${logs.length}条${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xls`)
   ElMessage.success('导出成功')
 }
 onMounted(() => {
   refreshCount()
-  refreshLogs()
 })
 
 </script>

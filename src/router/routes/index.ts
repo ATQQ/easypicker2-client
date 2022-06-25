@@ -2,7 +2,7 @@ import { RouteRecordRaw } from 'vue-router'
 import Home from '@/pages/home/index.vue'
 import Login from '@/pages/login/index.vue'
 import Register from '@/pages/register/index.vue'
-import Wish from '@/pages/wish/index.vue'
+// import Wish from '@/pages/wish/index.vue'
 
 const NotFind = () => import('@/pages/404/index.vue')
 const Reset = () => import('@/pages/reset/index.vue')
@@ -15,6 +15,7 @@ const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
 const Manage = () => import('@/pages/dashboard/manage/index.vue')
 const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
 const User = () => import('@/pages/dashboard/manage/user/index.vue')
+const Wish = () => import('@/pages/dashboard/manage/wish/index.vue')
 const Task = () => import('@/pages/task/index.vue')
 
 const routes: RouteRecordRaw[] = [
@@ -35,14 +36,14 @@ const routes: RouteRecordRaw[] = [
       title: '首页',
     },
   },
-  {
-    path: '/wish',
-    name: 'wish',
-    component: Wish,
-    meta: {
-      title: '需求墙',
-    },
-  },
+  // {
+  //   path: '/wish',
+  //   name: 'wish',
+  //   component: Wish,
+  //   meta: {
+  //     title: '需求墙',
+  //   },
+  // },
   {
     path: '/login',
     name: 'login',
@@ -146,6 +147,15 @@ const routes: RouteRecordRaw[] = [
             component: User,
             meta: {
               title: '用户列表',
+              isAdmin: true,
+            },
+          },
+          {
+            name: 'wish',
+            path: 'wish',
+            component: Wish,
+            meta: {
+              title: '需求管理',
               isAdmin: true,
             },
           },
