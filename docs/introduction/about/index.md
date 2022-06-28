@@ -12,7 +12,8 @@
 
 这给笔者开发 `轻取` 带来了契机，在19年3月28日，码下了第一行代码
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NTU2NDk1NzU3NQ==655564957575)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NTU2NDk1NzU3NQ==655564957575" />
+
 :::
 
 校园学习或者工作场景中会有以下几个场景:
