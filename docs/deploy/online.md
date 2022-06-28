@@ -22,7 +22,7 @@
 
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MzM3ODE4Mw==647483378183)
 
-## 2. 安装必要依赖
+## 2. 安装必要环境
 ### 安装Node
 
 使用PM2面板安装，
@@ -40,7 +40,22 @@ node -v
 
 建议安装大于等于`14.19`版本的
 
-### 切换镜像源
+### 执行环境初始化脚本
+:::tip
+可重复执行，用于检查环境，不会重复安装已有库
+:::
+
+```shell
+curl https://script.sugarat.top/shell/ep/init-env.sh | bash
+```
+自动完成`zx`,`node`,`nrm`,`镜像源配置`,`pnpm`等等等安装与环境检查
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjMzMDIyNTg5MA==656330225890)
+
+
+:::details 我想手动一步步配置
+### 设置镜像源
+
 其中`npm`是随Node一起安装的包管理工具，通过切换到国内的镜像源，有助于加快安装速度
 
 安装`nrm`（切换镜像源工具）
@@ -68,6 +83,7 @@ npm config get registry
 ### 安装PNPM
 #### 方式1
 使用 `npm` 安装
+
 ```shell
 npm install -g pnpm
 ```
@@ -76,25 +92,13 @@ npm install -g pnpm
 参看 [pnpm官方中文文档](https://pnpm.io/zh/installation)
 
 #### 验证是否安装成功
+
 ```shell
 pnpm -v
 ```
+:::
 
 ## 3. 部署网站
-### 构建产物
-参考[本地部署-启动客户端](./local.md#_3-启动客户端)
-
-在完成依赖安装后,执行`build`,构建产物
-```shell
-pnpm build
-```
-
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjkxMzU1MA==647612913550)
-
-此时构建产物，都在项目的`dist`目录中
-
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjk3OTkzOQ==647612979939)
-
 ### 创建网站
 点击`添加站点`
 
@@ -113,6 +117,53 @@ pnpm build
 
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5Mjk1NDI4OA==647692954288)
 
+### 执行自动化部署脚本
+定位到网站所在目录，然后点击终端，执行下述指令
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjMzOTI2ODAzMw==656339268033)
+
+:::tip
+此后应用版本有新版本，更新操作也可使用此脚本进行自动更新
+:::
+
+```shell
+curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s github
+```
+
+演示视频如下
+
+<video src="https://img.cdn.sugarat.top/mdImg/MTY1NjM0MDcwMjIyNA==deploy-client.mp4" preload controls="controls">
+您的浏览器不支持 video 标签。
+</video>
+
+:::tip
+如果卡在Git，请换用下面的脚本，从`gitee`拉取代码
+```shell
+curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s gitee
+```
+:::
+
+:::warning
+如果由于目录冲突，导致脚本执行失败，请手动删除`dist`与`easypicker2-client` 目录
+:::
+
+:::details 我想手动一步步配置
+
+### 构建产物
+参考[本地部署-启动客户端](./local.md#_3-启动客户端)
+
+在完成依赖安装后,执行`build`,构建产物
+
+```shell
+pnpm build
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjkxMzU1MA==647612913550)
+
+此时构建产物，都在项目的`dist`目录中
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjk3OTkzOQ==647612979939)
+
 ### 上传产物
 点击前往创建的目录
 
@@ -126,11 +177,19 @@ pnpm build
 
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzY2MzU3Mw==647613663573)
 
+:::
+
 ### 修改网站访问目录
 
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzc3ODEwNA==647613778104)
 
 访问 `http://ep.test.sugarat.top`测试,就看到咱们的前端应用了
+
+此时访问可以看到，页面会有一个报错提示
+
+那是因为我们还没有配置后端服务，后面会有配置的流程
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM0MTg1MDgwNQ==656341850805)
 
 ### 添加配置防止路由404
 在对应网站设置面板，点击`配置文件`,加入以下配置
@@ -159,6 +218,8 @@ location / {
 网站使用HTTPS
 ## 4. 创建MySQL数据库
 ### 新增数据库
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM4MTUzNDExMA==656381534110)
+
 在数据库面板，点击添加数据库
 
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MjU0MDYwNg==647652540606)
@@ -188,6 +249,39 @@ location / {
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzI1MDUzNQ==647653250535)
 
 ## 5. 部署后端服务
+
+### 执行自动化部署脚本
+定位到网站所在目录，然后点击终端，执行下述指令
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjMzOTI2ODAzMw==656339268033)
+
+:::tip
+此后应用版本有新版本，更新操作也可使用此脚本进行自动更新
+:::
+
+```shell
+curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s github
+```
+
+演示视频如下，补充视频
+
+<!-- TODO:待完善 -->
+<!-- <video src="https://img.cdn.sugarat.top/mdImg/MTY1NjM0MDcwMjIyNA==deploy-client.mp4" preload controls="controls">
+您的浏览器不支持 video 标签。
+</video> -->
+
+:::tip
+如果卡在Git，请换用下面的脚本，从`gitee`拉取代码
+```shell
+curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s gitee
+```
+:::
+
+:::warning
+如果由于目录冲突，导致脚本执行失败，请手动删除`server`与`easypicker2-server` 目录
+:::
+
+:::details 我想手动一步步配置
 ### 本地构建源码
 参照[本地启动-后端服务](./local.md#_5-启动后端服务)，进行依赖安装和构建
 
@@ -218,6 +312,7 @@ pnpm build
 ```shell
 pnpm install
 ```
+:::
 
 ### 修改环境变量
 双击 `.env` 文件进行修改
@@ -275,10 +370,57 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY2Njc0Nzg4Mw==647666747883)
 
+
+:::danger 重要提示
 代理名称随便填
 * 代理目录`/api/`
 * 目标URL填`自己的后端服务地址`
 * 内容替换`/api`,第二个留空
+:::
+
+::: details 如果提示XX已存在，无法添加，请戳这里查看解法
+
+进入此目录找到反向代理的配置文件
+```sh
+/www/server/panel/vhost/nginx/proxy/你的域名
+```
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM4MjE4Mzc1Mw==656382183753)
+
+示例配置
+```sh
+#PROXY-START/api
+
+location ^~ /api/
+{
+    proxy_pass http://localhost:3004/;
+    proxy_set_header Host localhost;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header REMOTE-HOST $remote_addr;
+    
+    add_header X-Cache $upstream_cache_status;
+    
+    #Set Nginx Cache
+
+    #proxy_set_header Accept-Encoding "";
+	  sub_filter "/api" "";
+    sub_filter_once off;
+    
+    
+    set $static_file6DkW7ygY 0;
+    if ( $uri ~* "\.(gif|png|jpg|css|js|woff|woff2)$" )
+    {
+    	set $static_file6DkW7ygY 1;
+    	expires 12h;
+        }
+    if ( $static_file6DkW7ygY = 0 )
+    {
+    add_header Cache-Control no-cache;
+    }
+}
+#PROXY-END/api
+```
+:::
 
 ## 6. 其余功能
 ### 开启内容压缩
