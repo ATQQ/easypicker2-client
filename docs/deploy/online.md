@@ -244,7 +244,7 @@ curl https://script.sugarat.top/shell/ep/init-db.sh | bash -s ep-shell-test ep-s
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjQyOTI2NzI0OQ==656429267249" />
 
-这样`6`张表，就直接初始化完成，比手动执行方便得底盘
+这样`6`张表，就直接初始化完成，比手动执行方便得多
 
 :::details 我想手动创建（不推荐）
 
@@ -517,9 +517,9 @@ location ^~ /api/
 * 管理用户账号
 
 
-| 添加前                                                                            | 添加后                                                                         |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDAzOTMxNg==647694039316) | ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDMxMDE1OA==647694310158" /> |
+| 添加前                                                                               | 添加后                                                                               |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDAzOTMxNg==647694039316" /> | <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDMxMDE1OA==647694310158" /> |
 
 
 打开对应的数据库
