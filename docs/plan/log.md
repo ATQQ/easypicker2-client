@@ -126,7 +126,7 @@
 ## v2.1.0
 ### Feature
 * 优化提交记录的Excel导出格式
-  * ![图片](https://img.cdn.sugarat.top/mdImg/MTY0OTgxNTg0MDg1Mg==649815840852)
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTgxNTg0MDg1Mg==649815840852" />
 
 ### Chore
 * 添加[51la](https://v6.51.la/)的的数据统计SDK

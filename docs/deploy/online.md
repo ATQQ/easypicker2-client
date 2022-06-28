@@ -16,22 +16,22 @@
 * phpMyAdmin
 * PHP
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MzMwMzg2OQ==647483303869)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MzMwMzg2OQ==647483303869" />
 
 安装完后，可以把常用的加至首页
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MzM3ODE4Mw==647483378183)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MzM3ODE4Mw==647483378183" />
 
 ## 2. 安装必要环境
 ### 安装Node
 
 使用PM2面板安装，
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MzQ0MjUzMg==647483442532)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MzQ0MjUzMg==647483442532" />
 
 此部分的`shell`指令无特殊说明，都是在宝塔面板的终端工具中运行
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjU3OTk2NA==647612579964)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjU3OTk2NA==647612579964" />
 
 测试是否正常安装，终端工具运行如下指令
 ```shell
@@ -50,7 +50,7 @@ curl https://script.sugarat.top/shell/ep/init-env.sh | bash
 ```
 自动完成`zx`,`node`,`nrm`,`镜像源配置`,`pnpm`等等等安装与环境检查
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjMzMDIyNTg5MA==656330225890)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjMzMDIyNTg5MA==656330225890" />
 
 
 :::details 我想手动一步步配置（不推荐）
@@ -102,25 +102,25 @@ pnpm -v
 ### 创建网站
 点击`添加站点`
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzAzMTExMg==647613031112)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzAzMTExMg==647613031112" />
 
 输入要绑定的域名，选择纯静态，没有域名可以联系我，给你绑定个`sugarat.top`下的3||4级域名
 
 或者直接使用IP访问，这里就输入`你的机器IP加一个端口号`,格式`ip:port`，例如`39.156.66.18:3333`
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzI5NTU2NQ==647613295565)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzI5NTU2NQ==647613295565" />
 
 #### 使用IP+端口注意事项
 需在自己服务器的`防火墙`中开放使用的端口
 
 例如`笔者`的腾讯云
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5Mjk1NDI4OA==647692954288)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5Mjk1NDI4OA==647692954288" />
 
 ### 执行自动化部署脚本
 定位到网站所在目录，然后点击终端，执行下述指令
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjMzOTI2ODAzMw==656339268033)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjMzOTI2ODAzMw==656339268033" />
 
 :::tip
 此后应用版本有新版本，更新操作也可使用此脚本进行自动更新
@@ -160,30 +160,31 @@ curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s gitee
 pnpm build
 ```
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjkxMzU1MA==647612913550)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjkxMzU1MA==647612913550" />
 
 此时构建产物，都在项目的`dist`目录中
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjk3OTkzOQ==647612979939)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjk3OTkzOQ==647612979939" />
 
 ### 上传产物
 点击前往创建的目录
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzQ3OTEwNQ==647613479105)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzQ3OTEwNQ==647613479105" />
 
 点击上传，将我们刚才构建生成的`dist`目录拖到上传面板
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzU1NDU4Mw==647613554583)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzU1NDU4Mw==647613554583" />
 
 上传完成
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzY2MzU3Mw==647613663573)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzY2MzU3Mw==647613663573" />
 
 :::
 
 ### 修改网站访问目录
+修改访问目录为 `dist`
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzc3ODEwNA==647613778104)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxMzc3ODEwNA==647613778104" />
 
 访问 `http://ep.test.sugarat.top`测试,就看到咱们的前端应用了
 
@@ -191,7 +192,7 @@ pnpm build
 
 那是因为我们还没有配置后端服务，后面会有配置的流程
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM0MTg1MDgwNQ==656341850805)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjM0MTg1MDgwNQ==656341850805" />
 
 ### 添加配置防止路由404
 在对应网站设置面板，点击`配置文件`,加入以下配置
@@ -203,13 +204,13 @@ location / {
 }
 ```
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5MzExMDgyMw==647693110823)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5MzExMDgyMw==647693110823" />
 
 
 ### 开启HTTPS(可选)
 为网站添加`SSL`证书
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1Mzc4OTkzNQ==647653789935)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1Mzc4OTkzNQ==647653789935" />
 
 宝塔提供免费SSL证书点击申请即可
 
@@ -220,11 +221,11 @@ location / {
 网站使用HTTPS
 ## 4. 创建MySQL数据库
 ### 新增数据库
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM4MTUzNDExMA==656381534110)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjM4MTUzNDExMA==656381534110" />
 
 在数据库面板，点击添加数据库
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MjU0MDYwNg==647652540606)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1MjU0MDYwNg==647652540606" />
 
 **密码使用随机的，输入数据库名字即可（账号默认和数据库名一致）**
 
@@ -232,30 +233,30 @@ location / {
 ### 导入表结构
 管理创建的数据库
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MjY5MjQzNA==647652692434)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1MjY5MjQzNA==647652692434" />
 
 跳转到`phpMyAdmin`面板,选择导入
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1Mjg2NDcxNw==647652864717)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1Mjg2NDcxNw==647652864717" />
 
 选择服务端项目中 [docs/sql/auto_create.sql](https://github.com/ATQQ/easypicker2-server/blob/master/docs/sql/auto_create.sql) 进行上传
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzA2NjE5MQ==647653066191)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzA2NjE5MQ==647653066191" />
 
 选择文件后点击执行
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzE2OTExNw==647653169117)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzE2OTExNw==647653169117" />
 
 再次来到结构面板，即可看到完成了 6 张表的创建
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzI1MDUzNQ==647653250535)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzI1MDUzNQ==647653250535" />
 
 ## 5. 部署后端服务
 
 ### 执行自动化部署脚本
 定位到网站所在目录，然后点击终端，执行下述指令
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjMzOTI2ODAzMw==656339268033)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjMzOTI2ODAzMw==656339268033" />
 
 :::tip
 此后应用版本有新版本，更新操作也可使用此脚本进行自动更新
@@ -285,7 +286,7 @@ curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s gitee
 ### 修改.env.local配置文件
 进入`easypicker2-server`目录双击 `.env.local` 文件进行修改
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM5NDQwMTA1OQ==656394401059)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjM5NDQwMTA1OQ==656394401059" />
 
 每个变量的释义参看源码中的 [src/types/env.d.ts](https://github.com/ATQQ/easypicker2-server/blob/master/src/types/env.d.ts)
 
@@ -313,7 +314,7 @@ curl https://script.sugarat.top/shell/ep/run-server.sh | bash -s ep-server
 ```
 其中 `ep-server`,可以换成自己的服务名（主要用于服务的管理）
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM5NDg2ODI2NQ==656394868265)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjM5NDg2ODI2NQ==656394868265" />
 
 ### 查看服务日志
 ```sh
@@ -321,7 +322,7 @@ pm2 logs ep-server
 ```
 在服务日志里，可以看到服务监听的端口，和运行打印的log日志情况
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM5NTA0Mzg4Ng==656395043886)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjM5NTA0Mzg4Ng==656395043886" />
 
 :::tip 提示
 后续 如果代码有更新，只需要重新进行`代码部署`和`启动服务`这个步骤即可，即执行**2**行脚本
@@ -340,21 +341,21 @@ pnpm install
 pnpm build
 ```
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDEwMTIyMw==647614101223)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDEwMTIyMw==647614101223" />
 
 ### 上传构建产物
 咱们再上面创建网站的目录下，创建一个`server`目录
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDI4MDc2OA==647614280768)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDI4MDc2OA==647614280768" />
 
 进入这个目录，上传我们的产物以及一些配置文件（共4个文件）
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDU5MTY2Mw==647614591663)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDU5MTY2Mw==647614591663" />
 
 ### 安装依赖
 在当前目录下打开宝塔终端工具执行
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDg5MDkyMg==647614890922)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxNDg5MDkyMg==647614890922" />
 ```shell
 pnpm install
 ```
@@ -362,7 +363,7 @@ pnpm install
 ### 修改环境变量
 双击 `.env` 文件进行修改
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzYxNTIzNzAzMg==647615237032)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYxNTIzNzAzMg==647615237032" />
 
 每个变量的释义参看源码中的 [src/types/env.d.ts](https://github.com/ATQQ/easypicker2-server/blob/master/src/types/env.d.ts)
 
@@ -391,7 +392,7 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 
 在PM2面板点击添加项目
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1NTQxMTAzOQ==647655411039)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1NTQxMTAzOQ==647655411039" />
 
 * 启动文件输入 `npm`
 * 运行目录选择 前面创建的 `server`所在目录
@@ -403,7 +404,7 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 ### 查看运行日志
 点击对应服务的 运行/错误 查看相关日志，从面板能看到最终服务启动所在的端口
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY1NjM4MzI3Mw==647656383273)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1NjM4MzI3Mw==647656383273" />
 
 到此服务端启动算完成了
 
@@ -414,7 +415,7 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 
 打开网站的设置面板，点击添加反向代理，勾选`高级功能`
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY2Njc0Nzg4Mw==647666747883)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY2Njc0Nzg4Mw==647666747883" />
 
 
 :::danger 重要提示
@@ -430,7 +431,7 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 ```sh
 /www/server/panel/vhost/nginx/proxy/你的域名
 ```
-![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM4MjE4Mzc1Mw==656382183753)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjM4MjE4Mzc1Mw==656382183753" />
 
 示例配置
 ```sh
@@ -474,11 +475,11 @@ location ^~ /api/
 
 添加`#`注释或者删掉 `proxy_set_header Accept-Encoding "";`
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5MzM2MDI3OQ==647693360279)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5MzM2MDI3OQ==647693360279" />
 
 这样返回的内容会进行压缩，响应速度会有所提升
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5Mzg3MDc2NA==647693870764)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5Mzg3MDc2NA==647693870764" />
 
 ### 配置管理员权限
 
@@ -487,29 +488,29 @@ location ^~ /api/
 * 管理用户账号
 
 
-| 添加前                                                                      | 添加后                                                                      |
-| --------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDAzOTMxNg==647694039316) | ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDMxMDE1OA==647694310158) |
+| 添加前                                                                            | 添加后                                                                         |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDAzOTMxNg==647694039316) | ![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDMxMDE1OA==647694310158" /> |
 
 
 打开对应的数据库
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDE5NTQyMA==647694195420)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDE5NTQyMA==647694195420" />
 
 选择`user`表
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDI0NjM5Ng==647694246396)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDI0NjM5Ng==647694246396" />
 
 修改账号的`power`字段值为`0`
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDE1NTczMg==647694155732)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDE1NTczMg==647694155732" />
 
 然后重新登录账号，就能看到入口了
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDMxMDE1OA==647694310158)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDMxMDE1OA==647694310158" />
 
 大功告成
 
 有其它问题可以小群交流，方便可以加入及时交流沟通问题: 685446473
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503" />

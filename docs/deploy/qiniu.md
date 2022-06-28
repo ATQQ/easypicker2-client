@@ -17,11 +17,11 @@
 
 戳页面上的立即使用
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTQ5MzAyNg==647569493026)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTQ5MzAyNg==647569493026" />
 
 新建空间，输入一些必要的数据
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTYwOTY3Nw==647569609677)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTYwOTY3Nw==647569609677" />
 
 其中**访问控制**一定记得选私有，避免文件不通过鉴权就被下载
 
@@ -41,14 +41,14 @@
 
 创建成功提示，测试域名有**30天**有效期
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTc1ODczNA==647569758734)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTc1ODczNA==647569758734" />
 
 如果需要长期使用，建议绑定一个自定义域名，当然如果你没有域名，可以联系我，给你提供一个`.sugarat.top`下的3级，4级域名
 
 ## 3. 获取到域名
 进入我们创建的空间`easypicker-test`,就能看到提供的测试域名
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTk3NjcwMQ==647569976702)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTk3NjcwMQ==647569976702" />
 
 :::tip
 域名即为后端服务中`.env`中`QINIU_BUCKET_DOMAIN`的值
@@ -59,7 +59,7 @@
 * 注意：这里的值需要加上协议`http://你的域名`
   * 如果升级了https，这里对应填入https
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0Nzc0NTM4MzMzOQ==647745383339)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc0NTM4MzMzOQ==647745383339" />
 ## 4. 获取ack与sek
 
 :::warning
@@ -74,11 +74,11 @@
 
 控制面板右上角，的秘钥管理
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU3MDI3MDQwMw==647570270403)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU3MDI3MDQwMw==647570270403" />
 
 接下来就能看到
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzU3MDM1MTUxOA==647570351518)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU3MDM1MTUxOA==647570351518" />
 
 
 :::tip
@@ -98,7 +98,7 @@
 ## 5. 设置图片样式（可选）
 现在手机拍摄的图片往往都很大，动辄10几兆，为了加快图片的预览与节省服务带宽可以配置七牛云的图片样式进行裁剪
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTE5NDY5Mw==649901194693)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTE5NDY5Mw==649901194693" />
 
 点击新建图片样式，然后根据指引操作，完成创建
 
@@ -111,7 +111,7 @@
 
 设置样式分隔符
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTc1MzA1OQ==649901753059)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTc1MzA1OQ==649901753059" />
 
 
 将创建好的样式名和分隔符，填入到服务端的环境变量中
@@ -119,13 +119,13 @@
   * 不同存储空间之间的样式不互通
   * 填入格式是分隔符+样式名
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTgwOTI3NQ==649901809275)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTgwOTI3NQ==649901809275" />
 
 完成配置后重启服务即可
 ## 6. 绑定自定义域名（可选）
 在存储空间里找到`域名管理`，点击绑定域名即可
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDUwNTkzNw==647694505937)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDUwNTkzNw==647694505937" />
 
 
 域名输入一个自己域名对应的2/3/4级域名均可
@@ -134,7 +134,7 @@
   * 4级域名: `ep.test.sugarat.top`
   * 5级: `ep.test.file.sugarat.top`
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjY5ODk5NA==647752698994)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjY5ODk5NA==647752698994" />
 
 填写完成后点击`创建`即可，然后按照要求添加域名解析
 
@@ -142,4 +142,4 @@
 
 有其它问题可以小群交流，方便可以加入及时交流沟通问题: 685446473
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503" />

@@ -4,7 +4,7 @@
 
 目前就职于 🛵美团🛵（Base 北京）
 
-![图片](https://img.cdn.sugarat.top/mdImg/MTYwNDcyMTQ4NTMyOA==604721485328)
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTYwNDcyMTQ4NTMyOA==604721485328" />
 
 ## 联系作者
 <callme/>
