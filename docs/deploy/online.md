@@ -306,6 +306,14 @@ curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s gitee
 #### MySQL 相关
 MySQL 的账号密码在数据库面板获取，即前面创建的数据库账号密码
 
+#### 监听端口
+默认启动监听端口为3000，如与其它服务有冲突可以修改`SERVER_PORT`为其它值（推荐 3000 => 65535）
+
+#### 七牛云
+参考[七牛云OSS服务创建](./qiniu.md)部分的文章，获取七牛云相关的几个环境变量
+
+到此准备工作算完成了，接下来启动我们的后端服务即可
+
 ### 启动服务
 进入`easypicker2-server` 目录执行如下脚本即可
 
