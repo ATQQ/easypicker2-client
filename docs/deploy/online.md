@@ -230,7 +230,26 @@ location / {
 **密码使用随机的，输入数据库名字即可（账号默认和数据库名一致）**
 
 **数据库名记得小写**
+
+### 自动创建表数据
+执行如下脚本
+```sh
+curl https://script.sugarat.top/shell/ep/init-db.sh | bash -s 数据库名 账号 数据库密码
+```
+
+例如下图中示例
+```sh
+curl https://script.sugarat.top/shell/ep/init-db.sh | bash -s ep-shell-test ep-shell-test ep-shell-test
+```
+
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjQyOTI2NzI0OQ==656429267249" />
+
+这样`6`张表，就直接初始化完成，比手动执行方便得底盘
+
+:::details 我想手动创建（不推荐）
+
 ### 导入表结构
+
 管理创建的数据库
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1MjY5MjQzNA==647652692434" />
@@ -250,6 +269,8 @@ location / {
 再次来到结构面板，即可看到完成了 6 张表的创建
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY1MzI1MDUzNQ==647653250535" />
+
+:::
 
 ## 5. 部署后端服务
 
