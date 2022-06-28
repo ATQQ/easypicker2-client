@@ -53,7 +53,7 @@ curl https://script.sugarat.top/shell/ep/init-env.sh | bash
 ![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjMzMDIyNTg5MA==656330225890)
 
 
-:::details 我想手动一步步配置
+:::details 我想手动一步步配置（不推荐）
 ### 设置镜像源
 
 其中`npm`是随Node一起安装的包管理工具，通过切换到国内的镜像源，有助于加快安装速度
@@ -130,12 +130,6 @@ pnpm -v
 curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s github
 ```
 
-演示视频如下
-
-<video src="https://img.cdn.sugarat.top/mdImg/MTY1NjM0MDcwMjIyNA==deploy-client.mp4" preload controls="controls">
-您的浏览器不支持 video 标签。
-</video>
-
 :::tip
 如果卡在Git，请换用下面的脚本，从`gitee`拉取代码
 ```shell
@@ -143,11 +137,19 @@ curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s gitee
 ```
 :::
 
+
+演示视频如下
+
+<video src="https://img.cdn.sugarat.top/mdImg/MTY1NjM0MDcwMjIyNA==deploy-client.mp4" preload controls="controls">
+您的浏览器不支持 video 标签。
+</video>
+
+
 :::warning
 如果由于目录冲突，导致脚本执行失败，请手动删除`dist`与`easypicker2-client` 目录
 :::
 
-:::details 我想手动一步步配置
+:::details 我想手动一步步配置（不推荐）
 
 ### 构建产物
 参考[本地部署-启动客户端](./local.md#_3-启动客户端)
@@ -263,13 +265,6 @@ location / {
 curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s github
 ```
 
-演示视频如下，补充视频
-
-<!-- TODO:待完善 -->
-<!-- <video src="https://img.cdn.sugarat.top/mdImg/MTY1NjM0MDcwMjIyNA==deploy-client.mp4" preload controls="controls">
-您的浏览器不支持 video 标签。
-</video> -->
-
 :::tip
 如果卡在Git，请换用下面的脚本，从`gitee`拉取代码
 ```shell
@@ -277,11 +272,62 @@ curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s gitee
 ```
 :::
 
+演示视频如下
+
+<video src="https://img.cdn.sugarat.top/mdImg/MTY1NjM5NDEzNDQ1MQ==deploy-serveer.mp4" preload controls="controls">
+您的浏览器不支持 video 标签。
+</video>
+
 :::warning
-如果由于目录冲突，导致脚本执行失败，请手动删除`server`与`easypicker2-server` 目录
+如果由于目录冲突，导致脚本执行失败，请手动删除`easypicker2-server` 目录后重试
 :::
 
-:::details 我想手动一步步配置
+### 修改.env.local配置文件
+进入`easypicker2-server`目录双击 `.env.local` 文件进行修改
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM5NDQwMTA1OQ==656394401059)
+
+每个变量的释义参看源码中的 [src/types/env.d.ts](https://github.com/ATQQ/easypicker2-server/blob/master/src/types/env.d.ts)
+
+通常情况下只需要关心一下
+* 服务相关
+  * SERVER_PORT: 服务启动的端口，默认3000，无特殊需求可以不修改
+* MySql相关
+  * MYSQL_DB_NAME: 数据库名
+  * MYSQL_DB_USER: 账号
+  * MYSQL_DB_PWD:  密码
+* MongoDB相关
+  * MONGO_DB_NAME: 数据库名（随便使用小写字母组合）
+    * 例如：`ep-prod`，`my-ep-db`
+* 七牛云相关：OSS - 文件存储，上传/下载文件依赖其提供服务
+* 腾讯云相关：短信服务，不接入短信不用配
+
+#### MySQL 相关
+MySQL 的账号密码在数据库面板获取，即前面创建的数据库账号密码
+
+### 启动服务
+进入`easypicker2-server` 目录执行如下脚本即可
+
+```sh
+curl https://script.sugarat.top/shell/ep/run-server.sh | bash -s ep-server
+```
+其中 `ep-server`,可以换成自己的服务名（主要用于服务的管理）
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM5NDg2ODI2NQ==656394868265)
+
+### 查看服务日志
+```sh
+pm2 logs ep-server
+```
+在服务日志里，可以看到服务监听的端口，和运行打印的log日志情况
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY1NjM5NTA0Mzg4Ng==656395043886)
+
+:::tip 提示
+后续 如果代码有更新，只需要重新进行`代码部署`和`启动服务`这个步骤即可，即执行**2**行脚本
+:::
+
+:::details 我想手动一步步配置（不推荐）
 ### 本地构建源码
 参照[本地启动-后端服务](./local.md#_5-启动后端服务)，进行依赖安装和构建
 
@@ -312,7 +358,6 @@ pnpm build
 ```shell
 pnpm install
 ```
-:::
 
 ### 修改环境变量
 双击 `.env` 文件进行修改
@@ -364,6 +409,7 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 
 只差最后一步了
 
+:::
 ## 5. 配置反向代理
 
 打开网站的设置面板，点击添加反向代理，勾选`高级功能`
