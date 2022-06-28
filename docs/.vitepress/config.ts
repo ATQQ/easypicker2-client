@@ -106,6 +106,10 @@ export default defineConfig({
                     text: '相关设计',
                     items: [
                         {
+                            text: '自动部署脚本',
+                            link: '/deploy/design/shell',
+                        },
+                        {
                             text: '概述',
                             link: '/deploy/design/index',
                         },

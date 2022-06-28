@@ -72,8 +72,7 @@ GitHub如果没有梯子，下载&访问可能会很慢，Gitee是国内的一�
 # from GitHub
 git clone https://github.com/ATQQ/easypicker2-client.git
 
-#or from  Gitee
-
+# or from  Gitee
 git clone https://gitee.com/sugarjl/easypicker2-client.git
 ```
 地址来源
@@ -146,8 +145,7 @@ pnpm dev
 # from GitHub
 git clone https://github.com/ATQQ/easypicker2-server.git
 
-#or from  Gitee
-
+# or from  Gitee
 git clone https://gitee.com/sugarjl/easypicker2-server.git
 ```
 ### 方式2: 下载源码压缩包
