@@ -1,6 +1,4 @@
 # 本地启动
-
-测试内容
 ## 1. 准备工作
 ### 安装Node
 * [中文官网](https://nodejs.org/zh-cn/download/)

@@ -43,7 +43,11 @@
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTc1ODczNA==647569758734" />
 
-如果需要长期使用，建议绑定一个自定义域名，当然如果你没有域名，可以联系我，给你提供一个`.sugarat.top`下的3级，4级域名
+如果需要长期使用，建议绑定一个自定义域名，
+
+:::tip 我没有域名怎么办
+当然如果你没有域名，可以[联系作者](../author.md)，提供一个`.sugarat.top`下的3级，4级域名
+:::
 
 ## 3. 获取到域名
 进入我们创建的空间`easypicker-test`,就能看到提供的测试域名
@@ -60,9 +64,10 @@
   * 如果升级了https，这里对应填入https
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc0NTM4MzMzOQ==647745383339" />
+
 ## 4. 获取ack与sek
 
-:::warning
+:::warning 重要提示！！！
 **这两个东西千万不要泄露!!!**
 
 **这两个东西千万不要泄露!!!**
@@ -86,14 +91,14 @@
 * `SC` 对应`.env`中的 `QINIU_SECRET_KEY`
 :::
 
-到此七牛云相关的几个需要的环境变量我们都拿到了
+到此七牛云相关的 **5** 个必要需要的环境变量我们都拿到了
 * QINIU_BUCKET_ZONE
 * QINIU_BUCKET_NAME
 * QINIU_BUCKET_DOMAIN
 * QINIU_ACCESS_KEY
 * QINIU_SECRET_KEY
   
-填写到，后端服务中`.env`中对应位置即可，然后重启服务即可
+填写到，后端服务中`.env`中对应位置，然后重启服务即可
 
 ## 5. 设置图片样式（可选）
 现在手机拍摄的图片往往都很大，动辄10几兆，为了加快图片的预览与节省服务带宽可以配置七牛云的图片样式进行裁剪
@@ -138,7 +143,7 @@
 
 填写完成后点击`创建`即可，然后按照要求添加域名解析
 
-可以自行阅读七牛云[提供的文档即可](https://developer.qiniu.com/kodo/8527/kodo-domain-name-management)
+可以自行阅读[七牛云提供的域名绑定文档](https://developer.qiniu.com/kodo/8527/kodo-domain-name-management)完成
 
 有其它问题可以小群交流，方便可以加入及时交流沟通问题: 685446473
 
