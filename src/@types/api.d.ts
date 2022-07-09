@@ -63,10 +63,10 @@ declare namespace UserApiTypes {
         code?: string
     }
     type register = ResponseData<{ token?: string }>
-    type login = ResponseData<{ token?: string, openTime?: string }>
+    type login = ResponseData<{ token?: string, openTime?: string, system:boolean }>
     type codeLogin = ResponseData<{ token?: string, openTime?: string }>
     type resetPwd = ResponseData<{ token?: string, openTime?: string }>
-    type checkPower = ResponseData<{ power: boolean, name: string }>
+    type checkPower = ResponseData<{ power: boolean, name: string, system:boolean }>
     type checkLoginStatus = ResponseData<boolean>
 }
 

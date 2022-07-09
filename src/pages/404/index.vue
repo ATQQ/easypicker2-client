@@ -5,7 +5,7 @@
           糟糕页面走丢了
         </h2>
         <h3>
-          {{time}}s后<router-link to="/">回到首页</router-link>
+          {{time}}s后<a @click="handleToHome">回到首页</a>
         </h3>
     </div>
 </template>
@@ -14,13 +14,16 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const time = ref(3)
-
+const timer = ref(null)
+const router = useRouter()
+const handleToHome = () => {
+  clearInterval(timer.value)
+  router.replace('/')
+}
 onMounted(() => {
-  const router = useRouter()
-  const timer = setInterval(() => {
+  timer.value = setInterval(() => {
     if (time.value === 1) {
-      clearInterval(timer)
-
+      clearInterval(timer.value)
       router.replace('/')
     }
     time.value -= 1

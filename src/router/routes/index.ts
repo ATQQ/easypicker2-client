@@ -11,6 +11,7 @@ const Author = () => import('@/pages/callme/index.vue')
 const Feedback = () => import('@/pages/feedback/index.vue')
 const Dashboard = () => import('@/pages/dashboard/index.vue')
 const Files = () => import('@/pages/dashboard/files/index.vue')
+const Config = () => import('@/pages/dashboard/config/index.vue')
 const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
 const Manage = () => import('@/pages/dashboard/manage/index.vue')
 const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
@@ -108,6 +109,15 @@ const routes: RouteRecordRaw[] = [
       name: 'tasks',
     },
     children: [
+      {
+        name: 'config',
+        path: 'config',
+        component: Config,
+        meta: {
+          title: '服务状态维护',
+          isSystem: true,
+        },
+      },
       {
         name: 'files',
         path: 'files',
