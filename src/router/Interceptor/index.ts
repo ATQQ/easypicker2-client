@@ -6,6 +6,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     // 是否管理员页面
     isAdmin?: boolean
+    isSystem?: boolean
     // 是否需要登录
     requireLogin?: boolean
     // 路由title
@@ -38,12 +39,21 @@ function registerRouteGuard(router: Router) {
   * 全局解析守卫
   */
   router.beforeResolve(async (to) => {
-    if (to.meta.isAdmin) {
+    if (to.meta.isAdmin || to.meta.isSystem) {
       try {
-        const isAdmin = (await UserApi.checkPower()).data.power
-        $store.commit('user/setSuperAdmin', isAdmin)
-        return isAdmin || {
-          name: '404',
+        const powerData = (await UserApi.checkPower()).data
+        $store.commit('user/setSuperAdmin', powerData.power)
+        $store.commit('user/setSystem', powerData.system)
+        if (to.meta.isSystem) {
+          return powerData.system || {
+            name: '404',
+          }
+        }
+
+        if (to.meta.isAdmin) {
+          return powerData.power || {
+            name: '404',
+          }
         }
       } catch (error) {
         // if (error instanceof NotAllowedError) {

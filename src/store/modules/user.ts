@@ -5,6 +5,7 @@ interface State {
   token: string,
   isSuperAdmin: boolean
   isLogin: boolean
+  system: boolean
 }
 
 const store: Module<State, unknown> = {
@@ -14,6 +15,7 @@ const store: Module<State, unknown> = {
       token: localStorage.getItem('token') as string,
       isSuperAdmin: false,
       isLogin: false,
+      system: localStorage.getItem('token') === 'true',
     }
   },
   // 只能同步
@@ -24,6 +26,14 @@ const store: Module<State, unknown> = {
         localStorage.setItem('token', payload)
       } else {
         localStorage.removeItem('token')
+      }
+    },
+    setSystem(state, payload) {
+      state.system = payload
+      if (payload) {
+        localStorage.setItem('system', payload)
+      } else {
+        localStorage.removeItem('system')
       }
     },
     setSuperAdmin(state, payload) {

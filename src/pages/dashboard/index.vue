@@ -166,6 +166,14 @@ onMounted(() => {
         }]
       navList.push(...superNavList)
     }
+    const isSystem = r.data?.system
+    if (isSystem) {
+      navList.splice(0, navList.length)
+      navList.push({
+        title: '系统管理',
+        path: '/dashboard/config',
+      })
+    }
     refreshActiveTab()
   })
 })

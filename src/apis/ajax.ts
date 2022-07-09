@@ -46,6 +46,7 @@ instance.interceptors.response.use((v) => {
     }
     if (v.data?.code === 3004) {
       localStorage.removeItem('token')
+      localStorage.removeItem('system')
       if (redirectHome) {
         redirectHome = false
         ElMessage.error('登录过期,跳转首页')
