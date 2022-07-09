@@ -230,3 +230,16 @@ declare namespace WishApiTypes {
     type allDocsWishData = ResponseData<DocsWishItem[]>
 
 }
+
+declare namespace ConfigServiceAPITypes {
+    interface ServiceOverviewItem{
+        status:boolean
+    }
+    type getServiceOverview = ResponseData<{
+        qiniu:ServiceOverviewItem
+        tx:ServiceOverviewItem
+        redis:ServiceOverviewItem
+        mysql:ServiceOverviewItem
+        mongodb:ServiceOverviewItem
+    }>
+}

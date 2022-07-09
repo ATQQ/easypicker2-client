@@ -5,7 +5,9 @@
       <div>
         <h1>
           <span>服务概况</span>
-          <el-icon @click="refreshStatus" style="cursor:pointer;margin-left: 10px;">
+          <el-icon :class="{
+            loading,
+          }" @click="refreshStatus" style="cursor:pointer;margin-left: 10px;">
             <Refresh />
           </el-icon>
         </h1>
@@ -19,6 +21,9 @@
             </p>
             <el-button v-if="service.status" type="success" size="small" :icon="Select" circle />
             <el-button v-else type="danger" size="small" :icon="CloseBold" circle />
+            <p v-if="!service.status && service.error">
+              <Tip>{{ service.error }}</Tip>
+            </p>
           </div>
         </div>
       </div>
@@ -34,7 +39,7 @@ import {
 } from 'vue'
 import { useStore } from 'vuex'
 import { Select, CloseBold, Refresh } from '@element-plus/icons-vue'
-import { WishApi } from '@/apis'
+import { ConfigServiceAPI } from '@/apis'
 import { formatDate } from '@/utils/stringUtil'
 import { WishStatus } from '@/constants'
 import Tip from '../tasks/components/infoPanel/tip.vue'
@@ -56,7 +61,7 @@ const serviceList = reactive([
   },
   {
     name: 'MongoDB',
-    key: 'mongo',
+    key: 'mongodb',
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTA4OTc3Nw==657359089777',
     status: false,
     des: '用户数据与日志',
@@ -66,7 +71,8 @@ const serviceList = reactive([
     key: 'redis',
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1ODgyNzM1MA==657358827350',
     status: false,
-    des: '登录信息，缓存数据',
+    des: '持久化缓存数据',
+    error: '确保安装redis，且监听端口6379',
   },
   {
     name: '腾讯云',
@@ -74,11 +80,23 @@ const serviceList = reactive([
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTE1MzQzOQ==657359153439',
     status: false,
     des: '短信服务',
+    error: '请在下方正确配置相关参数',
   },
 ])
 const $store = useStore()
+const loading = ref(false)
 const refreshStatus = () => {
-  ElMessage.success('服务状态刷新完成')
+  loading.value = true
+  ConfigServiceAPI
+    .getServiceOverview()
+    .then((v) => {
+      const { data } = v
+      serviceList.forEach((item) => {
+        item.status = data[item.key].status
+      })
+      ElMessage.success('服务状态刷新完成')
+      loading.value = false
+    })
 }
 onMounted(() => {
   refreshStatus()
@@ -143,4 +161,18 @@ h1 {
     font-size: 14px;
   }
 }
+
+@keyframes rotate {
+  0%{
+    transform: rotate(0deg);
+  }
+  100%{
+    transform: rotate(360deg);
+  }
+}
+.loading{
+  margin-left: 10px;
+  animation: rotate 1s linear infinite;
+}
+
 </style>
