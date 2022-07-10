@@ -15,7 +15,7 @@
         <div class="service-list">
           <div v-for="service in serviceList" :key="service.key" class="service-item">
             <img :src="service.logo" :alt="service.name">
-            <p>{{ service.name }}</p>
+            <!-- <p>{{ service.name }}</p> -->
             <p>
               <Tip>{{ service.des }}</Tip>
             </p>
@@ -26,6 +26,10 @@
             </p>
           </div>
         </div>
+      </div>
+      <div v-show="showErrorList.length" class="error-panel">
+        <h1>错误信息</h1>
+        <p v-for="err in showErrorList" :key="err.key"><strong>{{err.name}}:</strong> <span class="error">{{err.errMsg}}</span></p>
       </div>
       <!-- MYSQL -->
       <!-- 七牛云 -->
@@ -51,6 +55,7 @@ const serviceList = reactive([
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTAyMjIwNA==657359022204',
     status: false,
     des: '存储用户数据',
+    errMsg: '',
   },
   {
     name: '七牛云',
@@ -85,14 +90,19 @@ const serviceList = reactive([
 ])
 const $store = useStore()
 const loading = ref(false)
+const activeError = ref(['1'])
+const showErrorList = computed(() => serviceList.filter((item) => item.errMsg))
 const refreshStatus = () => {
+  if (loading.value) return
   loading.value = true
   ConfigServiceAPI
     .getServiceOverview()
     .then((v) => {
       const { data } = v
       serviceList.forEach((item) => {
-        item.status = data[item.key].status
+        const { status, errMsg } = data[item.key]
+        item.status = status
+        item.errMsg = errMsg
       })
       ElMessage.success('服务状态刷新完成')
       loading.value = false
@@ -163,16 +173,26 @@ h1 {
 }
 
 @keyframes rotate {
-  0%{
+  0% {
     transform: rotate(0deg);
   }
-  100%{
+
+  100% {
     transform: rotate(360deg);
   }
 }
-.loading{
+
+.loading {
   margin-left: 10px;
   animation: rotate 1s linear infinite;
 }
-
+.error-panel{
+  padding: 0 20px;
+  p{
+    .error{
+      color: red;
+    }
+    margin-bottom: 10px;
+  }
+}
 </style>
