@@ -85,7 +85,6 @@ const serviceList = reactive([
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTE1MzQzOQ==657359153439',
     status: false,
     des: '短信服务',
-    error: '请在下方正确配置相关参数',
   },
 ])
 const $store = useStore()
