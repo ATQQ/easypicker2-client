@@ -21,6 +21,12 @@ export default defineConfig({
     },
     lastUpdated: true,
     themeConfig: {
+        algolia :{
+            appId:'GPX84VDH91',
+            apiKey: '150dda0b943087c4e6a04d54af1d7391',
+            indexName: 'sugarat',
+            placeholder: '请输入要搜索的内容...',
+        },
         lastUpdatedText: '上次更新于',
         footer: {
             message: `MIT Licensed | ${Pkg.version}`,
