@@ -22,7 +22,7 @@ specifiers:
   unplugin-vue-components: ^0.17.18
   vite: ^2.9.13
   vite-plugin-chunk-split: ^0.2.2
-  vitepress: ^1.0.0-alpha.2
+  vitepress: ^1.0.0-alpha.4
   vue: ^3.2.37
   vue-json-viewer: '3'
   vue-router: ^4.0.14
@@ -34,7 +34,7 @@ dependencies:
   clipboard-copy: 4.0.1
   element-plus: 2.1.10_vue@3.2.37
   spark-md5: 3.0.2
-  vitepress: 1.0.0-alpha.2_sass@1.49.8
+  vitepress: 1.0.0-alpha.4_sass@1.49.8
   vue: 3.2.37
   vue-json-viewer: 3.0.4_vue@3.2.37
   vue-router: 4.0.14_vue@3.2.37
@@ -2594,8 +2594,8 @@ packages:
     optionalDependencies:
       fsevents: 2.3.2
 
-  /vitepress/1.0.0-alpha.2_sass@1.49.8:
-    resolution: {integrity: sha512-twSsmx2DI/3XgZZ8KLyRAH8RgK2Zj4kJx/kwhZhimwndYqQDrtcIaAcuV+P3FKukZ+cYtm9yt9qohz631jKx4A==}
+  /vitepress/1.0.0-alpha.4_sass@1.49.8:
+    resolution: {integrity: sha512-bOAA4KW6vYGlkbcrPLZLTKWTgXVroObU+o9xj9EENyEl6yg26WWvfN7DGA4BftjdM5O8nR93Z5khPQ3W/tFE7Q==}
     engines: {node: '>=14.6.0'}
     hasBin: true
     dependencies:
