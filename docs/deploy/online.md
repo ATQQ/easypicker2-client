@@ -515,7 +515,10 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 
 location ^~ /api/
 {
-    proxy_pass http://localhost:3004/;
+    # 此处的服务端口改成你的服务地址，可能3000也可能是3001
+    # 此处的服务端口改成你的服务地址，通过 pm2 logs指令 查看服务启动监听的端口
+    # 此处的服务端口改成你的服务地址
+    proxy_pass http://localhost:3000/;
     proxy_set_header Host localhost;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
