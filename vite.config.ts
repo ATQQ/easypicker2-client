@@ -5,7 +5,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import ElementPlus from 'unplugin-element-plus/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { chunkSplitPlugin } from 'vite-plugin-chunk-split'
+// import { chunkSplitPlugin } from 'vite-plugin-chunk-split'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -20,9 +20,9 @@ export default defineConfig({
     ElementPlus({
       defaultLocale: 'zh-cn',
     }),
-    chunkSplitPlugin({
-      strategy: 'single-vendor',
-    }),
+    // chunkSplitPlugin({
+    //   strategy: 'single-vendor',
+    // }),
   ],
   optimizeDeps: {
     include: [
