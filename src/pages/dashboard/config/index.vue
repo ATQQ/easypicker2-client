@@ -10,6 +10,7 @@
           }" @click="refreshStatus" style="cursor:pointer;margin-left: 10px;">
             <Refresh />
           </el-icon>
+          <span v-show="loading">数据加载中...</span>
         </h1>
         <Tip>查看各个服务的运行情况</Tip>
         <div class="service-list">
@@ -29,10 +30,24 @@
       </div>
       <div v-show="showErrorList.length" class="error-panel">
         <h1>错误信息</h1>
-        <p v-for="err in showErrorList" :key="err.key"><strong>{{err.name}}:</strong> <span class="error">{{err.errMsg}}</span></p>
+        <p v-for="err in showErrorList" :key="err.key"><strong>{{ err.name }}:</strong> <span class="error">{{
+            err.errMsg
+        }}</span></p>
       </div>
-      <!-- MYSQL -->
-      <!-- 七牛云 -->
+      <div class="config-panel" v-for="serverItem in serverConfig" :key="serverItem.title">
+        <h2>
+          {{ serverItem.title }}
+        </h2>
+        <el-form :label-position="'right'" label-width="100px" style="max-width: 460px;margin: 0 auto;;">
+          <el-form-item :label-width="'auto'" v-for="cfgItem in serverItem.data" :label="cfgItem.label || cfgItem.key" :key="cfgItem.key">
+          <div class="flex" style="flex:1">
+            <el-input :disabled="cfgItem.disabled" v-model="cfgItem.value" />
+            <el-button v-if="cfgItem.disabled" @click="cfgItem.disabled=false" type="primary" text>更新</el-button>
+            <el-button v-else @click="updateCfg(cfgItem)" type="success" text>完成</el-button>
+          </div>
+          </el-form-item>
+        </el-form>
+      </div>
     </div>
   </div>
 </template>
@@ -44,8 +59,6 @@ import {
 import { useStore } from 'vuex'
 import { Select, CloseBold, Refresh } from '@element-plus/icons-vue'
 import { ConfigServiceAPI } from '@/apis'
-import { formatDate } from '@/utils/stringUtil'
-import { WishStatus } from '@/constants'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 
 const serviceList = reactive([
@@ -89,7 +102,6 @@ const serviceList = reactive([
 ])
 const $store = useStore()
 const loading = ref(false)
-const activeError = ref(['1'])
 const showErrorList = computed(() => serviceList.filter((item) => item.errMsg))
 const refreshStatus = () => {
   if (loading.value) return
@@ -107,8 +119,33 @@ const refreshStatus = () => {
       loading.value = false
     })
 }
+
+const serverConfig = ref([])
+const getServiceConfig = () => {
+  ConfigServiceAPI
+    .getServiceConfig()
+    .then((v) => {
+      // console.log(v.data)
+      v.data.forEach((v) => {
+        v.data.forEach((v) => {
+          v.disabled = true
+        })
+      })
+      serverConfig.value = v.data
+    })
+}
+const updateCfg = (item:ConfigServiceAPITypes.ServiceConfigItem) => {
+  ConfigServiceAPI
+    .updateCfg(item)
+    .then(() => {
+      item.disabled = true
+      ElMessage.success('更新成功')
+      refreshStatus()
+    })
+}
 onMounted(() => {
   refreshStatus()
+  getServiceConfig()
 })
 const isMobile = computed(() => $store.getters['public/isMobile'])
 
@@ -185,12 +222,23 @@ h1 {
   margin-left: 10px;
   animation: rotate 1s linear infinite;
 }
-.error-panel{
+
+.error-panel {
   padding: 0 20px;
-  p{
-    .error{
+
+  p {
+    .error {
       color: red;
     }
+
+    margin-bottom: 10px;
+  }
+}
+
+.config-panel {
+  h2 {
+    text-align: center;
+    font-size: 16px;
     margin-bottom: 10px;
   }
 }
