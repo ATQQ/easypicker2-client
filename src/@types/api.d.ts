@@ -242,4 +242,17 @@ declare namespace ConfigServiceAPITypes {
         mysql:ServiceOverviewItem
         mongodb:ServiceOverviewItem
     }>
+
+    interface ServiceConfigItem{
+        key:string
+        value:string
+        type:string
+        disabled?:boolean
+        label?:string
+    }
+    interface ConfigData{
+        title:string
+        data:ServiceConfigItem[]
+    }
+    type getServiceConfig = ResponseData<ConfigData[]>
 }

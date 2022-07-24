@@ -6,10 +6,14 @@ import Components from 'unplugin-vue-components/vite'
 import ElementPlus from 'unplugin-element-plus/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 // import { chunkSplitPlugin } from 'vite-plugin-chunk-split'
+import legacy from '@vitejs/plugin-legacy'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
+    legacy({
+      targets: ['defaults', 'not IE 11'],
+    }),
     vue(),
     AutoImport({
       resolvers: [ElementPlusResolver()],
@@ -39,7 +43,6 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 8080,
     proxy: {
       '/api/': {
         target: 'http://localhost:3000',
