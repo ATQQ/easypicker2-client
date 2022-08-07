@@ -34,19 +34,32 @@
             err.errMsg
         }}</span></p>
       </div>
-      <div class="config-panel" v-for="serverItem in serverConfig" :key="serverItem.title">
-        <h2>
-          {{ serverItem.title }}
-        </h2>
-        <el-form :label-position="'right'" label-width="100px" style="max-width: 460px;margin: 0 auto;;">
-          <el-form-item :label-width="'auto'" v-for="cfgItem in serverItem.data" :label="cfgItem.label || cfgItem.key" :key="cfgItem.key">
-          <div class="flex" style="flex:1">
-            <el-input :disabled="cfgItem.disabled" v-model="cfgItem.value" />
-            <el-button v-if="cfgItem.disabled" @click="cfgItem.disabled=false" type="primary" text>更新</el-button>
-            <el-button v-else @click="updateCfg(cfgItem)" type="success" text>完成</el-button>
-          </div>
-          </el-form-item>
-        </el-form>
+      <div>
+        <h1>
+          服务相关配置
+        </h1>
+        <Tip>
+          在此面板，配置服务器运行相关参数
+          <!-- TODO：待补齐地址 -->
+          <el-button type="primary" link="">配置手册?</el-button>
+        </Tip>
+      </div>
+      <div class="config-container">
+        <div class="config-panel" v-for="serverItem in serverConfig" :key="serverItem.title">
+          <h2>
+            {{ serverItem.title }}
+          </h2>
+          <el-form :label-position="'right'" label-width="100px" style="max-width: 400px;margin: 0 auto;;">
+            <el-form-item :label-width="'auto'" v-for="cfgItem in serverItem.data" :label="cfgItem.label || cfgItem.key"
+              :key="cfgItem.key">
+              <div class="flex" style="flex:1">
+                <el-input :disabled="cfgItem.disabled" v-model="cfgItem.value" />
+                <el-button v-if="cfgItem.disabled" @click="cfgItem.disabled = false" type="primary" text>更新</el-button>
+                <el-button v-else @click="updateCfg(cfgItem)" type="success" text>完成</el-button>
+              </div>
+            </el-form-item>
+          </el-form>
+        </div>
       </div>
     </div>
   </div>
@@ -134,7 +147,7 @@ const getServiceConfig = () => {
       serverConfig.value = v.data
     })
 }
-const updateCfg = (item:ConfigServiceAPITypes.ServiceConfigItem) => {
+const updateCfg = (item: ConfigServiceAPITypes.ServiceConfigItem) => {
   ConfigServiceAPI
     .updateCfg(item)
     .then(() => {
@@ -233,6 +246,12 @@ h1 {
 
     margin-bottom: 10px;
   }
+}
+
+.config-container {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
 }
 
 .config-panel {
