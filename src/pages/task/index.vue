@@ -73,7 +73,7 @@
         <el-upload style="max-width: 400px; margin: 0 auto;" :drag="!isMobile" action="" ref="fileUpload"
           :on-change="handleChangeFile" :before-remove="
             handleRemoveFile
-          " :on-exceed="handleExceed" :auto-upload="false" multiple :limit="limitUploadCount" :file-list="fileList">
+          " :on-exceed="handleExceed" :auto-upload="false" multiple :limit="limitUploadCount" v-model:file-list="fileList">
           <el-button v-if="isMobile" type="primary">选择文件</el-button>
           <template v-else>
             <el-icon class="el-icon--upload">
@@ -105,17 +105,17 @@
             <tip>① 选择完文件，点击 ”提交文件“即可 <br />
               ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
               <template v-if="taskMoreInfo.template"><br /> ③ <strong>
-                  <el-button type="text" style="color: #85ce61" size="small" @click="downloadTemplate">右下角可 “查看提交示例”
+                  <el-button type="primary" text style="color: #85ce61" size="small" @click="downloadTemplate">右下角可 “查看提交示例”
                   </el-button>
                 </strong></template>
             </tip>
           </template>
         </div>
         <div class="withdraw">
-          <el-button type="text" style="color: #85ce61" v-if="taskMoreInfo.template" size="small"
+          <el-button type="primary" text style="color: #85ce61" v-if="taskMoreInfo.template" size="small"
             @click="downloadTemplate">查看提交示例</el-button>
-          <el-button v-if="isWithdraw" @click="isWithdraw = false" size="small" type="text">正常提交</el-button>
-          <el-button v-else size="small" @click="isWithdraw = true" type="text">我要撤回</el-button>
+          <el-button v-if="isWithdraw" @click="isWithdraw = false" size="small" type="primary" text>正常提交</el-button>
+          <el-button v-else size="small" @click="isWithdraw = true" type="primary" text>我要撤回</el-button>
         </div>
       </div>
     </div>
@@ -248,9 +248,9 @@ const infos = reactive<InfoItem[]>([])
 // 文件上传部分
 
 // 文件上传
-const fileList = reactive<(UploadUserFile & { md5: string, subscription: any })[]>([])
+const fileList = ref<(UploadUserFile & { md5: string, subscription: any })[]>([])
 const fileUpload = ref<UploadInstance>()
-const disableForm = computed(() => fileList.filter((item) => item.status === 'uploading').length > 0)
+const disableForm = computed(() => fileList.value.filter((item) => item.status === 'uploading').length > 0)
 const handleRemoveFile: any = (
   file: any,
 ) => {
@@ -322,7 +322,7 @@ const confirmPeopleName = () => {
 }
 
 const startUpload = () => {
-  const uploadFiles = fileList
+  const uploadFiles = fileList.value
   for (const file of uploadFiles) {
     if (!file.md5) {
       ElMessage.info(
@@ -426,7 +426,7 @@ const submitUpload = async () => {
 
 // 是否允许上传
 const allowUpload = computed(() => {
-  for (const file of fileList) {
+  for (const file of fileList.value) {
     if (
       file.status === 'ready'
     ) {
@@ -438,7 +438,7 @@ const allowUpload = computed(() => {
 
 // 是否允许撤回
 const allowWithdraw = computed(() => {
-  for (const file of fileList) {
+  for (const file of fileList.value) {
     if (
       [
         'success',
@@ -476,7 +476,7 @@ const handleExceed = () => {
 const showLinkModel = ref(false)
 const templateLink = ref('')
 const runWithdraw = () => {
-  const uploadFiles = fileList
+  const uploadFiles = fileList.value
   for (const file of uploadFiles) {
     if (!file.md5) {
       ElMessage.info(

@@ -10,7 +10,7 @@
     <div class="upload-people" v-if="people">
       <el-upload accetp="text/plain" action="" class="upload-demo" ref="peopleUpload" :on-change="handleChangeFile"
         :on-exceed="handleExceedFile" :on-remove="clearFiles" :auto-upload="false" :limit="1"
-        :file-list="peopleFileList">
+        v-model:file-list="peopleFileList">
         <template #trigger>
           <el-button size="small" type="primary">选取文件</el-button>
         </template>
@@ -92,7 +92,7 @@
               handleDeletePeople(
                 scope.row
               )
-            " type="text" size="small">删除</el-button>
+            " type="primary" text size="small">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -235,7 +235,7 @@ export default defineComponent({
         })
     }
     // 文件上传
-    const peopleFileList = reactive<UploadUserFile[]>([])
+    const peopleFileList = ref<UploadUserFile[]>([])
     const peopleUpload = ref()
     // 超出选择的文件个数
     const handleExceedFile = () => {
@@ -243,12 +243,14 @@ export default defineComponent({
     }
     // 清空文件
     const clearFiles = () => {
-      peopleFileList.splice(0, peopleFileList.length)
+      peopleFileList.value.splice(0, peopleFileList.value.length)
       peopleUpload.value.clearFiles()
     }
     // 开始上传
     const submitUploadPeople = () => {
-      peopleFileList.forEach((file) => {
+      peopleFileList.value.forEach((file) => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         uploadFile(file.raw, `${import.meta.env.VITE_APP_AXIOS_BASE_URL}public/upload`, {
           success: (e: any) => {
             const { name, type } = e.data
@@ -273,6 +275,7 @@ export default defineComponent({
     }
     // 添加文件
     const handleChangeFile = (file: any) => {
+      console.log(file)
       if (file.raw.type !== 'text/plain') {
         ElMessage.warning({
           message: '只支持txt文件',

@@ -23,7 +23,7 @@
         :on-remove="clearFiles"
         :auto-upload="false"
         :limit="1"
-        :file-list="fileList"
+        v-model:file-list="fileList"
       >
         <template #trigger>
           <el-button size="small" type="primary">选取文件</el-button>
@@ -44,7 +44,7 @@
 <script lang="ts">
 import { ElMessage, UploadUserFile } from 'element-plus'
 import {
-  defineComponent, reactive, ref, watchEffect,
+  defineComponent, ref, watchEffect,
 } from 'vue'
 import { FileApi } from '@/apis'
 import { qiniuUpload } from '@/utils/networkUtil'
@@ -82,7 +82,7 @@ export default defineComponent({
       }
     }
     // 文件上传
-    const fileList = reactive<UploadUserFile[]>([])
+    const fileList = ref<UploadUserFile[]>([])
     const elUpload = ref()
     // 超出选择的文件个数
     const handleExceedFile = () => {
@@ -94,7 +94,7 @@ export default defineComponent({
     }
     // 开始上传
     const submitUploadPeople = () => {
-      fileList.forEach((file) => {
+      fileList.value.forEach((file) => {
         if (!props.k) {
           return
         }
@@ -105,7 +105,7 @@ export default defineComponent({
           // qiniu上传
           FileApi.getUploadToken().then((res) => {
             qiniuUpload(res.data.token, file.raw, key, {
-              success(data: any) {
+              success() {
                 ElMessage.success('上传成功')
                 updateTaskInfo(props.k, { template: name })
                 // 清理上传完成的

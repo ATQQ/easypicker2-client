@@ -40,7 +40,7 @@
         "import/no-unresolved":"off",
         "todo-ddl/diy": "warn",
         "import/prefer-default-export":"off",
-        "no-param-reassign":"warn",
+        "no-param-reassign":"off",
         "import/no-extraneous-dependencies":"off",
         "no-restricted-syntax":"off",
         "no-bitwise":"off",
