@@ -1,4 +1,21 @@
 # 更新日志
+## v2.1.9-beta.0 (2022/08/07)
+
+### Feature
+* 文档站支持全文的内容搜素，Power By [Algolia](https://www.algolia.com/developers/?utm_content=powered_by&utm_source=localhost&utm_medium=referral&utm_campaign=docsearch)
+* 新增单独的服务配置面板，降低服务部署成本，对应路由 `dashboard/config`
+  * 支持直接修改各种数据库配置（后续将会提供更多服务运维相关的操作）
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTg2ODY2MjY3NQ==659868662675" style="height:100px;" />
+
+### BugFix
+* 引导文案的校对
+* 404页面重复跳转
+
+### Chore
+* [Vite]升级(https://vitejs.dev/) Use 3.x
+* [element UI](https://element-plus.gitee.io/zh-CN/component/button.html) 升级，部分API调整
+* 其它依赖库升级
+
 ## v2.1.8
 ### Feature
 * 添加需求管理面板
