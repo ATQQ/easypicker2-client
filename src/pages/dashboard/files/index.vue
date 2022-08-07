@@ -90,9 +90,9 @@
           <div class="progress">
             <el-progress text-inside :stroke-width="24" :percentage="v.percentage" :color="customColors">
             </el-progress>
-            <el-button size="small" disabled type="text">
+            <el-button size="small" disabled type="primary" text>
               {{ formatSize((v.percentage / 100) * v.size) }}/{{ formatSize(v.size) }}</el-button>
-            <el-button size="small" type="text" @click="copyRes(v.url, '资源链接已复制到剪贴板')">复制链接</el-button>
+            <el-button size="small" type="primary" text @click="copyRes(v.url, '资源链接已复制到剪贴板')">复制链接</el-button>
           </div>
           <div class="des flex fc fac">
             <div class="filename">{{ v.filename }}</div>
@@ -107,7 +107,7 @@
       <Tip>↑ 仅供使用者参考，应用无存储空间上限，也不收费</Tip>
       <Tip><strong>如果你觉得应用不错，<a style="color: #409eff;" href="http://docs.ep.sugarat.top/praise/index.html" target="_blank" rel="noopener noreferrer">请作者喝茶 🍵</a></strong>
         <!-- <Praise>
-          <el-button style="margin:0 0 2px;" size="small" type="text">Go！Go！❓</el-button>
+          <el-button style="margin:0 0 2px;" size="small" type="primary" text>Go！Go！❓</el-button>
         </Praise> -->
       </Tip>
       <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
@@ -160,9 +160,9 @@
         <el-table-column fixed="right" label="操作" width="140">
           <template #default="scope">
             <div class="text-btns">
-              <el-button @click="checkInfo(scope.row)" type="text" size="small">查看提交信息</el-button>
-              <el-button @click="downloadOne(scope.row)" type="text" size="small">下载</el-button>
-              <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+              <el-button @click="checkInfo(scope.row)" type="primary" text size="small">查看提交信息</el-button>
+              <el-button @click="downloadOne(scope.row)" type="primary" text size="small">下载</el-button>
+              <el-button @click="handleDelete(scope.row)" type="primary" text size="small">删除</el-button>
             </div>
           </template>
         </el-table-column>

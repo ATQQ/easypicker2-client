@@ -30,10 +30,10 @@
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
             <div class="text-btn-list">
-              <el-button @click="handleChangeStatus(scope.row.id, scope.row.status, scope.row.open_time)" type="text"
+              <el-button @click="handleChangeStatus(scope.row.id, scope.row.status, scope.row.open_time)" type="primary" text
                 size="small">修改状态</el-button>
-              <el-button @click="handleResetPassword(scope.row.id)" type="text" size="small">重置密码</el-button>
-              <el-button @click="handleBindPhone(scope.row.id)" type="text" size="small">绑定手机号</el-button>
+              <el-button @click="handleResetPassword(scope.row.id)" type="primary" text size="small">重置密码</el-button>
+              <el-button @click="handleBindPhone(scope.row.id)" type="primary" text size="small">绑定手机号</el-button>
             </div>
           </template>
         </el-table-column>

@@ -47,7 +47,7 @@
       <div>
         <h3 class="tc" style="font-size: 14px;color: #9e9e9e;">
           任务名：<strong style="color:#000000">{{ activeTask.name }}</strong>，
-          <el-button type="text" @click="openTaskPage">去查看效果</el-button>
+          <el-button type="primary" text @click="openTaskPage">去查看效果</el-button>
         </h3>
         <el-tabs v-model="activeInfo">
           <el-tab-pane label="截止日期" name="ddl">

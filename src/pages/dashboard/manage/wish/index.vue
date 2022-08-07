@@ -30,9 +30,9 @@
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
             <div class="text-btn-list">
-              <el-button @click="handleChangeStatus(scope.row.id, scope.row.status)" type="text" size="small">修改状态
+              <el-button @click="handleChangeStatus(scope.row.id, scope.row.status)" type="primary" text size="small">修改状态
               </el-button>
-              <el-button @click="handleRewriteDes(scope.row.id, scope.row.title, scope.row.des)" type="text"
+              <el-button @click="handleRewriteDes(scope.row.id, scope.row.title, scope.row.des)" type="primary" text
                 size="small">
                 修改描述
               </el-button>

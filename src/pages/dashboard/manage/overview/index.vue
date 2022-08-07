@@ -50,7 +50,7 @@
         <el-table-column min-width="160" prop="msg" label="内容"></el-table-column>
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
-            <el-button @click="handleDetail(scope.row.id)" type="text" size="small">查看详情</el-button>
+            <el-button @click="handleDetail(scope.row.id)" type="primary" text size="small">查看详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -159,7 +159,7 @@ const refreshCount = () => {
 const disableDelete = ref(false)
 const clearExpiredCompressFile = () => {
   disableDelete.value = true
-  SuperOverviewApi.clearExpiredCompressFile().then((res) => {
+  SuperOverviewApi.clearExpiredCompressFile().then(() => {
     setTimeout(() => {
       ElMessage.success('清理成功，数据同步可能有延迟')
       disableDelete.value = false

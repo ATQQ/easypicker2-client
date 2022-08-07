@@ -72,7 +72,7 @@
       <el-select style="margin:0 10px" size="small" v-model="selectType" placeholder="选择添加的类型">
         <el-option v-for="(v, idx) in infoTypeList" :key="idx" :label="v.label" :value="v.value" />
       </el-select>
-      <el-button type="text" @click="showHelp">提示❓</el-button>
+      <el-button type="primary" text @click="showHelp">提示❓</el-button>
     </div>
     <!-- 从其它任务导入 -->
     <el-button size="small" type="warning" @click="openImportPanel">从其它任务导入</el-button>
