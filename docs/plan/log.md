@@ -1,4 +1,8 @@
 # 更新日志
+部署最新beta版步骤，见 => [私有化部署-线上部署-我要体验最新beta版](./../deploy/design/../online.md#%E6%89%A7%E8%A1%8C%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2%E8%84%9A%E6%9C%AC)
+* 线上测试地址：https://ep.dev.sugarat.top/
+
+
 ## v2.1.9-beta.0 (2022/08/07)
 
 ### Feature
@@ -10,6 +14,7 @@
 ### BugFix
 * 引导文案的校对
 * 404页面重复跳转
+* 图片，pdf等会被浏览器直接预览的资源在部分设备上下载失败
 
 ### Chore
 * [Vite]升级(https://vitejs.dev/) Use 3.x

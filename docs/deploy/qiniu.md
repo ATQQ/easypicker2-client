@@ -91,16 +91,43 @@
 * `SC` 对应`.env`中的 `QINIU_SECRET_KEY`
 :::
 
+## 5. 通过面板快速更新配置
 到此七牛云相关的 **5** 个必要需要的环境变量我们都拿到了
 * QINIU_BUCKET_ZONE
 * QINIU_BUCKET_NAME
 * QINIU_BUCKET_DOMAIN
 * QINIU_ACCESS_KEY
 * QINIU_SECRET_KEY
-  
-填写到，后端服务中`.env`中对应位置，然后重启服务即可
 
-## 5. 设置图片样式（可选）
+将其更新到管理面板中七牛云配置的位置即可
+
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTkzNjMzMTE2Mg==659936331162" />
+
+:::details 如果应用版本 < v2.1.9，需要手动更新
+手动将上述配置内容填写到，后端服务中`.env`中对应位置，然后重启服务即可
+:::  
+
+
+## 6. 添加必要响应头信息
+目的：避免图片，pdf，txt等浏览器支持预览的文件直接被预览而不触发下载
+
+首先找到对应的存储空间，选择绑定的域名查看详情
+
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTkzNjgxOTc4OA==659936819788" />
+
+在打开的详情页面中找到 `HTTP响应头配置`
+
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTkzNjkwODY2Mw==659936908663" />
+
+添加一条规则,然后点击确定即可
+
+```sh
+Content-Disposition attachment
+```
+
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTkzNjk3ODQxMg==659936978412" />
+
+## 7. 设置图片样式（可选）
 现在手机拍摄的图片往往都很大，动辄10几兆，为了加快图片的预览与节省服务带宽可以配置七牛云的图片样式进行裁剪
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTE5NDY5Mw==649901194693" />
@@ -118,16 +145,20 @@
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTc1MzA1OQ==649901753059" />
 
-
-将创建好的样式名和分隔符，填入到服务端的环境变量中
+在配置面板中更新即可
 * **注意**
   * 不同存储空间之间的样式不互通
   * 填入格式是分隔符+样式名
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTgwOTI3NQ==649901809275" />
-
 完成配置后重启服务即可
-## 6. 绑定自定义域名（可选）
+:::details 如果应用版本 < v2.1.9，需要手动在配置文件中更新
+
+将创建好的样式名和分隔符，填入到服务端的环境变量中
+
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTgwOTI3NQ==649901809275" />
+:::  
+
+## 8. 绑定自定义域名（可选）
 在存储空间里找到`域名管理`，点击绑定域名即可
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDUwNTkzNw==647694505937" />
