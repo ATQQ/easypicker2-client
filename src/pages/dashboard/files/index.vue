@@ -430,31 +430,31 @@ const downloadOne = (e: any) => {
     .getOneFileUrl(id)
     .then((res) => {
       const { link, mimeType } = res.data
-      if (isSupportPreview(mimeType)) {
-        const fileItem: DownloadItem = reactive<DownloadItem>({
-          filename: name,
-          mimeType,
-          url: link,
-          status: 'ready',
-          size,
-          percentage: 0,
-        })
-        downloadList.push(fileItem)
-        downLoadByXhr(link, name, {
-          progress(loaded, total) {
-            fileItem.status = 'downloading'
-            fileItem.percentage = Math.floor((loaded / total) * 100)
-          },
-          success() {
-            fileItem.percentage = 100
-            fileItem.status = 'done'
-            // showLinkModel.value = true
-            // downloadUrl.value = link
-            ElMessage.success('文件下载成功')
-          },
-        })
-        return
-      }
+      // if (isSupportPreview(mimeType)) {
+      //   const fileItem: DownloadItem = reactive<DownloadItem>({
+      //     filename: name,
+      //     mimeType,
+      //     url: link,
+      //     status: 'ready',
+      //     size,
+      //     percentage: 0,
+      //   })
+      //   downloadList.push(fileItem)
+      //   downLoadByXhr(link, name, {
+      //     progress(loaded, total) {
+      //       fileItem.status = 'downloading'
+      //       fileItem.percentage = Math.floor((loaded / total) * 100)
+      //     },
+      //     success() {
+      //       fileItem.percentage = 100
+      //       fileItem.status = 'done'
+      //       // showLinkModel.value = true
+      //       // downloadUrl.value = link
+      //       ElMessage.success('文件下载成功')
+      //     },
+      //   })
+      //   return
+      // }
       showLinkModel.value = true
       downloadUrl.value = link
       downLoadByUrl(link, name)
