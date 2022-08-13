@@ -40,10 +40,10 @@
           " type="success" size="default" @click="handleExportExcel">导出记录</el-button>
         </div>
         <div class="item">
-          <el-select size="default" v-model="selectSubmitStatus" filterable placeholder="状态筛选">
+          <el-select size="default" v-model="selectSubmitStatus" placeholder="状态筛选">
             <el-option label="全部" value="all" />
-            <el-option label="已提交" value="1" />
-            <el-option label="未提交" value="0" />
+            <el-option label="已提交" :value="1" />
+            <el-option label="未提交" :value="0" />
           </el-select>
         </div>
         <div class="item">
@@ -192,7 +192,7 @@ export default defineComponent({
       if (selectSubmitStatus.value === 'all') {
         return filterPeopleBySearchWord.value
       }
-      return filterPeopleBySearchWord.value.filter((p) => p.status === +selectSubmitStatus.value)
+      return filterPeopleBySearchWord.value.filter((p) => p.status === selectSubmitStatus.value)
     })
     const isLoadingPeopleData = ref(false)
     const refreshSubmitData = () => {
@@ -353,6 +353,7 @@ export default defineComponent({
     }
 
     const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
+
     return {
       ImportTaskTipMsg,
       handleSaveImportInfo,

@@ -1,4 +1,9 @@
 /* element ui 重写 */
+.el-message__content {
+  width: 325px;
+  word-break: break-all;
+  line-height: 1.5;
+}
 .el-progress {
   margin-top: 0 !important;
   position: static !important;

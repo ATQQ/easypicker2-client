@@ -9,7 +9,7 @@ specifiers:
   '@vitejs/plugin-vue': ^3.0.1
   axios: ^0.27.2
   clipboard-copy: ^4.0.1
-  element-plus: ^2.2.10
+  element-plus: ^2.2.13
   eslint: ^7.32.0
   eslint-config-airbnb-base: ^14.2.1
   eslint-plugin-import: ^2.26.0
@@ -23,7 +23,6 @@ specifiers:
   unplugin-element-plus: ^0.4.1
   unplugin-vue-components: ^0.17.21
   vite: ^3.0.2
-  vite-plugin-chunk-split: ^0.2.4
   vitepress: ^1.0.0-alpha.4
   vue: ^3.2.37
   vue-json-viewer: ^3.0.4
@@ -34,7 +33,7 @@ dependencies:
   '@element-plus/icons-vue': 1.1.4_vue@3.2.37
   axios: 0.27.2
   clipboard-copy: 4.0.1
-  element-plus: 2.2.10_vue@3.2.37
+  element-plus: 2.2.13_vue@3.2.37
   spark-md5: 3.0.2
   vitepress: 1.0.0-alpha.4_sass@1.54.0
   vue: 3.2.37
@@ -60,7 +59,6 @@ devDependencies:
   unplugin-element-plus: 0.4.1_vite@3.0.2
   unplugin-vue-components: 0.17.21_vite@3.0.2+vue@3.2.37
   vite: 3.0.2_sass@1.54.0+terser@5.14.2
-  vite-plugin-chunk-split: 0.2.4_vite@3.0.2
 
 packages:
 
@@ -1037,8 +1035,8 @@ packages:
       esutils: 2.0.3
     dev: true
 
-  /element-plus/2.2.10_vue@3.2.37:
-    resolution: {integrity: sha512-hJ+LlbRN3POu4Idl1LXB+SHSWdi+wwmdsoDXdQT2ynGuwzZsMYiusOooYXyEsPlrizeLibdnNGNDx4TIjXQvUg==}
+  /element-plus/2.2.13_vue@3.2.37:
+    resolution: {integrity: sha512-dKQ7BPZC8deUPhv+6s4GgOL0GyGj3KpUarywxm6s1nWnHjH6FqeZlUcxPqBvJd7W/d81POayx3B13GP+rfkG9g==}
     peerDependencies:
       vue: ^3.2.0
     dependencies:
@@ -2692,14 +2690,6 @@ packages:
 
   /v8-compile-cache/2.3.0:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
-    dev: true
-
-  /vite-plugin-chunk-split/0.2.4_vite@3.0.2:
-    resolution: {integrity: sha512-yYgVU9BDXtx5Bdb8uZbpLMtE3DgRARctg7hzl8+tFeAw555GLfEtwI+Mm+rAuSJzcJLE6Qsq/fsPZS8Lxayg9A==}
-    peerDependencies:
-      vite: '>=2.0.0'
-    dependencies:
-      vite: 3.0.2_sass@1.54.0+terser@5.14.2
     dev: true
 
   /vite/2.9.14_sass@1.54.0:

@@ -501,6 +501,9 @@ const handlePageChange = (idx: number) => {
 // 刷新文件列表
 
 const handleRefresh = () => {
+  ElMessage.success({
+    message: '刷新成功',
+  })
   loadFiles()
 }
 const handleDownloadTask = () => {
