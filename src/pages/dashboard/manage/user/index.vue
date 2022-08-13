@@ -203,8 +203,11 @@ const handleSaveStatus = () => {
   }
   user.status = selectStatus.value
   showUserStatusDialog.value = false
-  SuperUserApi.updateUserStatus(user.id, user.status, user.open_time)
-  ElMessage.success('修改成功')
+  SuperUserApi
+    .updateUserStatus(user.id, user.status, user.open_time)
+    .then(() => {
+      ElMessage.success('修改成功')
+    })
 }
 
 // 重置密码
