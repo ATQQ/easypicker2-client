@@ -21,7 +21,7 @@
     "@element-plus/icons-vue": "^1.1.4",
     "axios": "^0.27.2",
     "clipboard-copy": "^4.0.1",
-    "element-plus": "^2.2.10",
+    "element-plus": "^2.2.13",
     "spark-md5": "^3.0.2",
     "vitepress": "^1.0.0-alpha.4",
     "vue": "^3.2.37",
@@ -46,7 +46,6 @@
     "unplugin-auto-import": "^0.6.9",
     "unplugin-element-plus": "^0.4.1",
     "unplugin-vue-components": "^0.17.21",
-    "vite": "^3.0.2",
-    "vite-plugin-chunk-split": "^0.2.4"
+    "vite": "^3.0.2"
   }
 }

@@ -6,7 +6,7 @@
       'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTM3MzgxOA==649149373818'
     ]">设置截止日期，截止后将不能再提交文件。</tip>
     <div class="tc flex fc fac">
-      <el-date-picker :editable="false" v-model="newDate" type="datetime" placeholder="点击设置新截止日期" @blur="updateDDL"
+      <el-date-picker :editable="false" v-model="newDate" type="datetime" placeholder="点击设置新截止日期" @change="updateDDL"
         :default-time="new Date(ddl)"></el-date-picker>
       <el-button v-if="newDate" @click="closeDDL">取消</el-button>
     </div>
