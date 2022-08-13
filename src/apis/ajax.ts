@@ -34,8 +34,6 @@ instance.interceptors.request.use((config) => {
   })
 })
 
-// 跳转首页防抖
-let redirectHome = true
 /**
  * 响应拦截
  */
@@ -44,19 +42,16 @@ instance.interceptors.response.use((v) => {
     if (v.data.code === 0) {
       return v.data
     }
-    if (v.data?.code === 3004) {
+    if (v.data?.code === 3004 && router.currentRoute.value.name !== 'login') {
       localStorage.removeItem('token')
       localStorage.removeItem('system')
-      if (redirectHome) {
-        redirectHome = false
-        ElMessage.error('登录过期,跳转首页')
-        router.replace({
-          name: 'home',
-        })
-        setTimeout(() => {
-          redirectHome = true
-        }, 1000)
-      }
+      ElMessage.error('登录过期,跳转登录')
+      router.replace({
+        name: 'login',
+        query: {
+          redirect: router.currentRoute.value.fullPath,
+        },
+      })
     }
     if (v?.data?.code === 500) {
       ElMessage.error(v?.data?.msg)

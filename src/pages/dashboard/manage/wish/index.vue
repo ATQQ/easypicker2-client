@@ -168,8 +168,11 @@ const handleSaveStatus = () => {
   const wish = wishes.find((v) => v.id === selectWishId.value)
   wish.status = selectStatus.value
   showWishStatusDialog.value = false
-  WishApi.updateWishStatus(selectWishId.value, selectStatus.value)
-  ElMessage.success('修改成功')
+  WishApi
+    .updateWishStatus(selectWishId.value, selectStatus.value)
+    .then(() => {
+      ElMessage.success('修改成功')
+    })
 }
 
 // 描述信息修改
@@ -187,11 +190,14 @@ const handleRewriteDes = (id: string, title: string, des: string) => {
 }
 const handleUpdateWish = () => {
   const wish = wishes.find((v) => v.id === selectWishId.value)
-  desVisible.value = false
-  WishApi.updateWishDes(selectWishId.value, formData.title, formData.des)
-  wish.title = formData.title
-  wish.des = formData.des
-  ElMessage.success('修改成功')
+  WishApi
+    .updateWishDes(selectWishId.value, formData.title, formData.des)
+    .then(() => {
+      desVisible.value = false
+      wish.title = formData.title
+      wish.des = formData.des
+      ElMessage.success('修改成功')
+    })
 }
 onMounted(() => {
   refreshWishes()

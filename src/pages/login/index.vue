@@ -76,8 +76,22 @@ const accountLogin = ref(true)
 const $store = useStore()
 const $router = useRouter()
 const redirectDashBoard = (system?:boolean) => {
+  if (system) {
+    $router.replace({
+      name: 'config',
+    })
+    return
+  }
+  const { redirect } = $router.currentRoute.value.query
+  if (redirect) {
+    $router.replace({
+      path: `${redirect}`,
+    })
+    return
+  }
+
   $router.replace({
-    name: system ? 'config' : 'dashboard',
+    name: 'dashboard',
   })
 }
 const checkForm = () => {
