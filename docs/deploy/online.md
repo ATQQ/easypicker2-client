@@ -175,7 +175,7 @@ curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s github
 ```
 
 :::tip
-如果卡在Git，请换用下面的脚本，从`gitee`拉取代码
+如果很长时间卡在Git，请换用下面的脚本，从`gitee`拉取代码
 ```shell
 curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s gitee
 ```
@@ -342,7 +342,7 @@ curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s github
 ```
 
 :::tip
-如果卡在Git，请换用下面的脚本，从`gitee`拉取代码
+如果很长时间卡在Git，请换用下面的脚本，从`gitee`拉取代码
 ```shell
 curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s gitee
 ```

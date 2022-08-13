@@ -26,8 +26,9 @@
       <h1 class="name">
         {{ taskInfo.name }}
       </h1>
-      <!-- 截止时间字符串 -->
-      <template v-if="taskMoreInfo.tip">
+      <!-- 提示信息 -->
+      <!-- 时间截止了也不再展示 -->
+      <template v-if="taskMoreInfo.tip && (ddlStr ? !isOver : true)">
         <el-divider>⚠️ 注意事项 ⚠️</el-divider>
         <Tip>
           <div class="tip-wrapper">
@@ -38,23 +39,20 @@
       <!-- 截止时间字符串 -->
       <template v-if="ddlStr">
         <el-divider>截止时间</el-divider>
-        <h2 class="ddl">
-          {{ ddlStr }}
-          <span>
-            {{
-                isOver
-                  ? '已经结束'
-                  : waitTimeStr
-            }}
-          </span>
+         <h2 class="ddl">
+          {{timeInfo}}
         </h2>
+        <div v-if="isOver">
+          <el-empty description="已经结束啦！">
+          </el-empty>
+        </div>
       </template>
       <!-- 未设置ddl 或者 设置了还未结束 -->
       <div v-if="!ddlStr || !isOver">
         <el-divider>必要信息填写</el-divider>
         <div class="infos">
           <div v-show="taskMoreInfo.people">
-              <Tip>“姓名”在参与名单里才能正常提交</Tip>
+            <Tip>“姓名”在参与名单里才能正常提交</Tip>
           </div>
           <div v-if="showValidForm">
             <div class="infos">
@@ -73,7 +71,8 @@
         <el-upload style="max-width: 400px; margin: 0 auto;" :drag="!isMobile" action="" ref="fileUpload"
           :on-change="handleChangeFile" :before-remove="
             handleRemoveFile
-          " :on-exceed="handleExceed" :auto-upload="false" multiple :limit="limitUploadCount" v-model:file-list="fileList">
+          " :on-exceed="handleExceed" :auto-upload="false" multiple :limit="limitUploadCount"
+          v-model:file-list="fileList">
           <el-button v-if="isMobile" type="primary">选择文件</el-button>
           <template v-else>
             <el-icon class="el-icon--upload">
@@ -105,7 +104,8 @@
             <tip>① 选择完文件，点击 ”提交文件“即可 <br />
               ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
               <template v-if="taskMoreInfo.template"><br /> ③ <strong>
-                  <el-button type="primary" text style="color: #85ce61" size="small" @click="downloadTemplate">右下角可 “查看提交示例”
+                  <el-button type="primary" text style="color: #85ce61" size="small" @click="downloadTemplate">右下角可
+                    “查看提交示例”
                   </el-button>
                 </strong></template>
             </tip>
@@ -637,6 +637,14 @@ const handleFocus = () => {
     refreshTaskMoreInfo(true)
   }
 }
+
+// 展示的时间提示文案
+const timeInfo = computed(() => {
+  if (!isOver.value) {
+    return ddlStr.value + waitTimeStr.value
+  }
+  return ddlStr.value
+})
 onMounted(() => {
   k.value = $route.params.key as string
   if (k.value) {
