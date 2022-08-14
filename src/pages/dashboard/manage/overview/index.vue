@@ -35,7 +35,7 @@
         </span>
         <span class="item">
           <el-button size="default" type="danger" :icon="TakeawayBox" :disabled="disableDelete"
-            @click="clearExpiredCompressFile">清理无效压缩包</el-button>
+            @click="clearExpiredCompressFile">清理无效文件</el-button>
         </span>
       </div>
       <el-table tooltip-effect="dark" height="400" stripe border :default-sort="{ prop: 'date', order: 'descending' }"
@@ -128,7 +128,7 @@ const cardList = reactive([
   },
   {
     type: 'compress',
-    title: '归档文件',
+    title: '归档&无效文件',
     value: '0/0KB',
     supplement: '已失效0个',
     icon: Coin,
