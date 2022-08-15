@@ -3,21 +3,30 @@
 * 线上测试地址：https://ep.dev.sugarat.top/
 
 
-## v2.1.9-beta.0 (2022/08/07)
+## v2.1.9-beta.x (2022/08/07)
 
 ### Feature
 * 文档站支持全文的内容搜素，Power By [Algolia](https://www.algolia.com/developers/?utm_content=powered_by&utm_source=localhost&utm_medium=referral&utm_campaign=docsearch)
 * 新增单独的服务配置面板，降低服务部署成本，对应路由 `dashboard/config`
   * 支持直接修改各种数据库配置（后续将会提供更多服务运维相关的操作）
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTg2ODY2MjY3NQ==659868662675" style="height:100px;" />
+* 直接直接在面板中修改提交的文件名
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTIxNzYzMw==660541217633" style="height:100px;"/>
+* 支持一键清理归档文件产生的的txt中间文件
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTM4ODI5MQ==660541388291" style="height:100px;"/>
+* 登录过期重定向登录页优化，重新登录后自动回到之前的页面
+* 任务截止不展示提示信息，截止UI优化
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTc1NjMyMA==660541756320" style="height:100px;"/>
 
 ### BugFix
 * 引导文案的校对
 * 404页面重复跳转
 * 图片，pdf等会被浏览器直接预览的资源在部分设备上下载失败
+* 通过添加响应头解决,图片,pdf等资
+源被浏览器直接预览的情况
 
 ### Chore
-* [Vite]升级(https://vitejs.dev/) Use 3.x
+* [Vite](https://vitejs.dev/)升级 Use 3.x
 * [element UI](https://element-plus.gitee.io/zh-CN/component/button.html) 升级，部分API调整
 * 其它依赖库升级
 
