@@ -105,6 +105,13 @@ function checkImageFilePreviewUrl(ids:number[]):FileApiTypes.checkImageFilePrevi
     ids,
   })
 }
+
+function updateFilename(id:number, newName:string):FileApiTypes.updateFilename {
+  return ajax.put('file/name/rewrite', {
+    id,
+    name: newName,
+  })
+}
 export default {
   getUploadToken,
   addFile,
@@ -120,4 +127,5 @@ export default {
   getCompressDownUrl,
   checkSubmitStatus,
   checkImageFilePreviewUrl,
+  updateFilename,
 }

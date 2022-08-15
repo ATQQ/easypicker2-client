@@ -52,6 +52,7 @@ declare namespace FileApiTypes {
     type withdrawFile = ResponseData
     type checkSubmitStatus = ResponseData<{ isSubmit: boolean, txt?: string }>
     type checkImageFilePreviewUrl = ResponseData<{ cover: string, preview: string }[]>
+    type updateFilename = ResponseData
 }
 
 declare namespace UserApiTypes {
