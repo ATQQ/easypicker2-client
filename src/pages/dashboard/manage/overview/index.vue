@@ -35,7 +35,7 @@
         </span>
         <span class="item">
           <el-button size="default" type="danger" :icon="TakeawayBox" :disabled="disableDelete"
-            @click="clearExpiredCompressFile">清理无效文件</el-button>
+            @click="clearExpiredCompressFile" v-loading="disableDelete">清理无效文件</el-button>
         </span>
       </div>
       <el-table tooltip-effect="dark" height="400" stripe border :default-sort="{ prop: 'date', order: 'descending' }"
