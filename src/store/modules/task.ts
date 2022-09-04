@@ -2,20 +2,20 @@ import { Module } from 'vuex'
 import { TaskApi } from '@/apis'
 
 interface State {
-  taskList: any []
+  taskList: any[]
 }
 
 const store: Module<State, unknown> = {
   namespaced: true,
   state() {
     return {
-      taskList: [],
+      taskList: []
     }
   },
   mutations: {
     updateTask(state, payload) {
       state.taskList = payload
-    },
+    }
   },
   actions: {
     getTask(context) {
@@ -45,8 +45,8 @@ const store: Module<State, unknown> = {
         context.dispatch('getTask')
         return res
       })
-    },
-  },
+    }
+  }
 }
 
 export default store

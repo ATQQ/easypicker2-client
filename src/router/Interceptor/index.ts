@@ -16,8 +16,8 @@ declare module 'vue-router' {
 
 function registerRouteGuard(router: Router) {
   /**
-     * 全局前置守卫
-     */
+   * 全局前置守卫
+   */
   router.beforeEach((to, from) => {
     // 上报PV
     const { fullPath } = to
@@ -36,8 +36,8 @@ function registerRouteGuard(router: Router) {
   })
 
   /**
-  * 全局解析守卫
-  */
+   * 全局解析守卫
+   */
   router.beforeResolve(async (to) => {
     if (to.meta.isAdmin || to.meta.isSystem) {
       try {
@@ -45,15 +45,19 @@ function registerRouteGuard(router: Router) {
         $store.commit('user/setSuperAdmin', powerData.power)
         $store.commit('user/setSystem', powerData.system)
         if (to.meta.isSystem) {
-          return powerData.system || {
-            name: '404',
-          }
+          return (
+            powerData.system || {
+              name: '404'
+            }
+          )
         }
 
         if (to.meta.isAdmin) {
-          return powerData.power || {
-            name: '404',
-          }
+          return (
+            powerData.power || {
+              name: '404'
+            }
+          )
         }
       } catch (error) {
         // if (error instanceof NotAllowedError) {
@@ -71,8 +75,8 @@ function registerRouteGuard(router: Router) {
   })
 
   /**
-     * 全局后置守卫
-     */
+   * 全局后置守卫
+   */
   router.afterEach((to, from, failure) => {
     // 改标题,监控上报一些基础信息
     // sendToAnalytics(to.fullPath)

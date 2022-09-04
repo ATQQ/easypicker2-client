@@ -4,7 +4,7 @@ import routes from './routes'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.VITE_ROUTER_BASE as string),
-  routes,
+  routes
 })
 
 // 注册路由守卫

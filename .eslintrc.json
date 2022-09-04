@@ -17,18 +17,21 @@
         "airbnb-base",
         "eslint:recommended",
         "plugin:vue/vue3-essential",
-        "plugin:@typescript-eslint/recommended"
+        "plugin:@typescript-eslint/recommended",
+        "plugin:prettier/recommended"
     ],
     "plugins": [
         "vue",
         "@typescript-eslint",
-        "todo-ddl"
+        "todo-ddl",
+        "prettier"
     ],
     "rules": {
-        "@typescript-eslint/ban-types":"off",
-        "@typescript-eslint/no-explicit-any":"off",
-        "@typescript-eslint/explicit-module-boundary-types":"off",
-        "import/extensions":"off",
+        "prettier/prettier": "error",
+        "@typescript-eslint/ban-types": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/explicit-module-boundary-types": "off",
+        "import/extensions": "off",
         "quotes": [
             "warn",
             "single"
@@ -37,18 +40,18 @@
             "warn",
             "never"
         ],
-        "import/no-unresolved":"off",
+        "import/no-unresolved": "off",
         "todo-ddl/diy": "warn",
-        "import/prefer-default-export":"off",
-        "no-param-reassign":"off",
-        "import/no-extraneous-dependencies":"off",
-        "no-restricted-syntax":"off",
-        "no-bitwise":"off",
-        "camelcase":"off",
-        "no-case-declarations":"off",
-        "@typescript-eslint/no-namespace":"off",
-        "no-undef":"off",
-        "no-shadow":"off",
-        "max-len":"off"
+        "import/prefer-default-export": "off",
+        "no-param-reassign": "off",
+        "import/no-extraneous-dependencies": "off",
+        "no-restricted-syntax": "off",
+        "no-bitwise": "off",
+        "camelcase": "off",
+        "no-case-declarations": "off",
+        "@typescript-eslint/no-namespace": "off",
+        "no-undef": "off",
+        "no-shadow": "off",
+        "max-len": "off"
     }
 }
