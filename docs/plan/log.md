@@ -3,7 +3,7 @@
 * 线上测试地址：https://ep.dev.sugarat.top/
 
 
-## v2.1.9-beta.x (2022/08/07)
+## v2.1.9-beta.x (2022/09/04)
 
 ### Feature
 * 文档站支持全文的内容搜素，Power By [Algolia](https://www.algolia.com/developers/?utm_content=powered_by&utm_source=localhost&utm_medium=referral&utm_campaign=docsearch)
@@ -17,13 +17,15 @@
 * 登录过期重定向登录页优化，重新登录后自动回到之前的页面
 * 任务截止不展示提示信息，截止UI优化
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTc1NjMyMA==660541756320" style="height:100px;"/>
+* 支持用户直接添加”限制人员“
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MjI5NjMzNzMxMw==662296337313" style="height:100px;"/>
 
 ### BugFix
 * 引导文案的校对
 * 404页面重复跳转
 * 图片，pdf等会被浏览器直接预览的资源在部分设备上下载失败
-* 通过添加响应头解决,图片,pdf等资
-源被浏览器直接预览的情况
+* 通过添加响应头解决,图片,pdf等资源被浏览器直接预览的情况
+* 直接访问管理面板报错
 
 ### Chore
 * [Vite](https://vitejs.dev/)升级 Use 3.x
