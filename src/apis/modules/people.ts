@@ -64,6 +64,11 @@ function importPeopleFromTpl(
   })
 }
 
+function addPeopleByUser(name: string, key: string) {
+  return ajax.post(`/people/add/${key}`, {
+    name
+  })
+}
 export default {
   importPeopleFromTpl,
   importPeople,
@@ -71,5 +76,6 @@ export default {
   deletePeople,
   updatePeopleStatus,
   checkPeopleIsExist,
-  getUsefulTemplate
+  getUsefulTemplate,
+  addPeopleByUser
 }
