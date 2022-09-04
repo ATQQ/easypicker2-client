@@ -26,16 +26,16 @@ const routes: RouteRecordRaw[] = [
     name: '404',
     component: NotFind,
     meta: {
-      title: '404',
-    },
+      title: '404'
+    }
   },
   {
     path: '/',
     name: 'home',
     component: Home,
     meta: {
-      title: '首页',
-    },
+      title: '首页'
+    }
   },
   // {
   //   path: '/wish',
@@ -50,63 +50,63 @@ const routes: RouteRecordRaw[] = [
     name: 'login',
     component: Login,
     meta: {
-      title: '登录',
-    },
+      title: '登录'
+    }
   },
   {
     path: '/register',
     name: 'register',
     component: Register,
     meta: {
-      title: '注册',
-    },
+      title: '注册'
+    }
   },
   {
     path: '/reset',
     name: 'reset',
     component: Reset,
     meta: {
-      title: '找回密码',
-    },
+      title: '找回密码'
+    }
   },
   {
     path: '/about',
     name: 'about',
     component: About,
     meta: {
-      title: '关于',
-    },
+      title: '关于'
+    }
   },
   {
     path: '/author',
     name: 'author',
     component: Author,
     meta: {
-      title: '联系作者',
-    },
+      title: '联系作者'
+    }
   },
   {
     path: '/feedback',
     name: 'feedback',
     component: Feedback,
     meta: {
-      title: '建议反馈',
-    },
+      title: '建议反馈'
+    }
   },
   {
     path: '/task/:key',
     name: 'task',
     component: Task,
     meta: {
-      title: '文件提交',
-    },
+      title: '文件提交'
+    }
   },
   {
     path: '/dashboard',
     name: 'dashboard',
     component: Dashboard,
     redirect: {
-      name: 'tasks',
+      name: 'tasks'
     },
     children: [
       {
@@ -115,31 +115,31 @@ const routes: RouteRecordRaw[] = [
         component: Config,
         meta: {
           title: '服务状态维护',
-          isSystem: true,
-        },
+          isSystem: true
+        }
       },
       {
         name: 'files',
         path: 'files',
         component: Files,
         meta: {
-          title: '文件列表',
-        },
+          title: '文件列表'
+        }
       },
       {
         name: 'tasks',
         path: 'tasks',
         component: Tasks,
         meta: {
-          title: '任务列表',
-        },
+          title: '任务列表'
+        }
       },
       {
         name: 'manage',
         path: 'manage',
         component: Manage,
         redirect: {
-          name: 'overview',
+          name: 'overview'
         },
         children: [
           {
@@ -148,8 +148,8 @@ const routes: RouteRecordRaw[] = [
             component: Overview,
             meta: {
               title: '应用概况',
-              isAdmin: true,
-            },
+              isAdmin: true
+            }
           },
           {
             name: 'user',
@@ -157,8 +157,8 @@ const routes: RouteRecordRaw[] = [
             component: User,
             meta: {
               title: '用户列表',
-              isAdmin: true,
-            },
+              isAdmin: true
+            }
           },
           {
             name: 'wish',
@@ -166,12 +166,12 @@ const routes: RouteRecordRaw[] = [
             component: Wish,
             meta: {
               title: '需求管理',
-              isAdmin: true,
-            },
-          },
-        ],
-      },
-    ],
-  },
+              isAdmin: true
+            }
+          }
+        ]
+      }
+    ]
+  }
 ]
 export default routes

@@ -1,13 +1,17 @@
 import { base64 } from './stringUtil'
 
 /* eslint-disable no-restricted-syntax */
-type SuccessCallback = (data:any) => void
-export function jsonp(url: string, jsonpCallback: string, success:SuccessCallback) {
+type SuccessCallback = (data: any) => void
+export function jsonp(
+  url: string,
+  jsonpCallback: string,
+  success: SuccessCallback
+) {
   const $script = document.createElement('script')
   $script.src = `${url}&callback=${jsonpCallback}`
   $script.async = true
-  $script.type = 'text/javascript';
-  (<any>window)[jsonpCallback] = function callback(data:any) {
+  $script.type = 'text/javascript'
+  ;(<any>window)[jsonpCallback] = function callback(data: any) {
     if (success) {
       success(data)
     }
@@ -15,13 +19,17 @@ export function jsonp(url: string, jsonpCallback: string, success:SuccessCallbac
   document.body.appendChild($script)
 }
 
-interface UploadFileOptions{
-  success?:any,
-  error?:any,
-  process?:any
-  method?:string,
+interface UploadFileOptions {
+  success?: any
+  error?: any
+  process?: any
+  method?: string
 }
-export function uploadFile(file:File, url:string, options?:UploadFileOptions) {
+export function uploadFile(
+  file: File,
+  url: string,
+  options?: UploadFileOptions
+) {
   const form = new FormData()
   // ajax对象
   const xhr = new XMLHttpRequest()
@@ -32,7 +40,7 @@ export function uploadFile(file:File, url:string, options?:UploadFileOptions) {
   // 设置请求头参数的方式,如果没有可忽略此行代码
   xhr.setRequestHeader('token', localStorage.getItem('token') as string)
   if (options?.success) {
-  // 上传完成
+    // 上传完成
     xhr.onload = (e) => {
       const target = e?.currentTarget as any
       if (target.response) {
@@ -47,7 +55,7 @@ export function uploadFile(file:File, url:string, options?:UploadFileOptions) {
     xhr.onerror = options.error
   }
   if (options?.process) {
-  // 上传中
+    // 上传中
     xhr.onprogress = (e) => {
       const { total, loaded, lengthComputable } = e
       if (lengthComputable) {
@@ -60,21 +68,31 @@ export function uploadFile(file:File, url:string, options?:UploadFileOptions) {
   xhr.send(form)
 }
 
-export interface tableItem{value:string, col?:number, row?:number}
+export interface tableItem {
+  value: string
+  col?: number
+  row?: number
+}
 /**
-  * 导出表格数据为xls
-  * @param headers 头部
-  * @param body 身体部分数据
-  */
-export function tableToExcel(headers:(string|tableItem)[], body:any[], filename = 'res.xls') {
+ * 导出表格数据为xls
+ * @param headers 头部
+ * @param body 身体部分数据
+ */
+export function tableToExcel(
+  headers: (string | tableItem)[],
+  body: any[],
+  filename = 'res.xls'
+) {
   // 列标题
-  let str = `<tr>${headers.map((v) => {
-    if (v instanceof Object) {
-      const { value, col = 1, row = 1 } = v
-      return `<th colspan="${col}" rowspan="${row}">${value}</th>`
-    }
-    return `<th>${v}</th>`
-  }).join('')}</tr>`
+  let str = `<tr>${headers
+    .map((v) => {
+      if (v instanceof Object) {
+        const { value, col = 1, row = 1 } = v
+        return `<th colspan="${col}" rowspan="${row}">${value}</th>`
+      }
+      return `<th>${v}</th>`
+    })
+    .join('')}</tr>`
   // 循环遍历，每行加入tr标签，每个单元格加td标签
   for (const row of body) {
     str += '<tr>'
@@ -94,14 +112,15 @@ export function tableToExcel(headers:(string|tableItem)[], body:any[], filename 
   const uri = 'data:application/vnd.ms-excel;base64,'
 
   // 下载的表格模板数据
-  const template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" \n'
-          + '      xmlns:x="urn:schemas-microsoft-com:office:excel" \n'
-          + '      xmlns="http://www.w3.org/TR/REC-html40">\n'
-          + '      <head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>\n'
-          + `        <x:Name>${worksheet}</x:Name>\n`
-          + '        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>\n'
-          + '        </x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->\n'
-          + `        </head><body><table>${str}</table></body></html>\n`
+  const template =
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" \n' +
+    '      xmlns:x="urn:schemas-microsoft-com:office:excel" \n' +
+    '      xmlns="http://www.w3.org/TR/REC-html40">\n' +
+    '      <head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>\n' +
+    `        <x:Name>${worksheet}</x:Name>\n` +
+    '        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>\n' +
+    '        </x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->\n' +
+    `        </head><body><table>${str}</table></body></html>\n`
   // 下载模板
   const tempA = document.createElement('a')
   tempA.href = uri + base64(template)
@@ -114,12 +133,19 @@ export function tableToExcel(headers:(string|tableItem)[], body:any[], filename 
 /**
  * 七牛云上传
  */
-export function qiniuUpload(token:string, file:File, key:string, options?:UploadFileOptions) {
+export function qiniuUpload(
+  token: string,
+  file: File,
+  key: string,
+  options?: UploadFileOptions
+) {
   const observable = qiniu.upload(file, key, token)
   const { success, error, process } = options || {}
   const subscription = observable.subscribe({
     next(res) {
-      const { total: { percent } } = res
+      const {
+        total: { percent }
+      } = res
       if (process) {
         process(percent.toFixed(2), res, subscription)
       }
@@ -133,7 +159,7 @@ export function qiniuUpload(token:string, file:File, key:string, options?:Upload
       if (success) {
         success(res, subscription)
       }
-    },
+    }
   })
   // subscription.close() // 取消上传
 }
@@ -151,10 +177,14 @@ export function downLoadByUrl(url: string, filename = `${Date.now()}`) {
  * @param url
  * @param filename
  */
-export function downLoadByXhr(url: string, filename = `${Date.now()}`, options?: {
-  progress:(loaded:number, total:number)=>void,
-  success:(res)=>void,
-}) {
+export function downLoadByXhr(
+  url: string,
+  filename = `${Date.now()}`,
+  options?: {
+    progress: (loaded: number, total: number) => void
+    success: (res) => void
+  }
+) {
   const { progress, success } = options || {}
   const xhr = new XMLHttpRequest()
   xhr.open('GET', url)
@@ -188,7 +218,9 @@ export function downLoadByXhr(url: string, filename = `${Date.now()}`, options?:
     a.href = URL.createObjectURL(blob)
 
     // 40s后移除这个临时链接
-    setTimeout(() => { URL.revokeObjectURL(a.href) }, 4E4) // 40s
+    setTimeout(() => {
+      URL.revokeObjectURL(a.href)
+    }, 4e4) // 40s
     // 触发a标签，执行下载
     setTimeout(() => {
       a.dispatchEvent(new MouseEvent('click'))
