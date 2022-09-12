@@ -168,6 +168,8 @@ curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s github relea
 :::
 :::tip
 此后应用版本有新版本，更新操作也可使用此脚本进行自动更新
+
+由于网络问题，如遇卡顿，可结束，重新执行
 :::
 
 ```shell
