@@ -221,25 +221,28 @@ const editMore = (item: any) => {
   })
 }
 
+// TODO: 有需要再优化，目前像bug
 // 用于选择默认展示项目
-const taskCount = (c: string) => {
-  const count = tasks.value.filter((t: any) => t.category === c).length
-  return count
-}
+// const taskCount = (c: string) => {
+//   const count = tasks.value.filter((t: any) => t.category === c).length
+//   return count
+// }
+
 // 选中一个有任务数据的分类
-watchEffect(() => {
-  if (taskCount('default') > 0) {
-    return
-  }
-  if (categorys.value.length > 0) {
-    for (const c of categorys.value) {
-      if (taskCount(c.k) > 0) {
-        selectCategory.value = c.k
-        break
-      }
-    }
-  }
-})
+// watchEffect(() => {
+//   if (taskCount('default') > 0) {
+//     return
+//   }
+//   if (categorys.value.length > 0) {
+//     for (const c of categorys.value) {
+//       if (taskCount(c.k) > 0) {
+//         selectCategory.value = c.k
+//         break
+//       }
+//     }
+//   }
+// })
+
 onMounted(() => {
   $store.dispatch('category/getCategory')
   $store.dispatch('task/getTask')
