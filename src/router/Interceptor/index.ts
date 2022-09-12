@@ -1,4 +1,5 @@
 import { Router } from 'vue-router'
+import axios from 'axios'
 import $store from '@/store'
 import { PublicApi, UserApi } from '@/apis'
 
@@ -23,14 +24,11 @@ function registerRouteGuard(router: Router) {
     const { fullPath } = to
     PublicApi.reportPv(fullPath)
 
-    const s = document.createElement('script')
-    s.src = `//${
-      import.meta.env.VITE_APP_PV_PATH
-    }/public/report/pv?path=${encodeURIComponent(window.location.href)}`
-    document.body.append(s)
-    s.onload = function () {
-      s.remove()
-    }
+    axios.get(
+      `//${
+        import.meta.env.VITE_APP_PV_PATH
+      }/public/report/pv?path=${encodeURIComponent(window.location.href)}`
+    )
     // 更改title
     window.document.title = `${import.meta.env.VITE_APP_TITLE} ${to.meta.title}`
 
