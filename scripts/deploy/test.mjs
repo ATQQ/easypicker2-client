@@ -11,7 +11,7 @@ const fullOrigin = `${originName}.${origin}`
 const baseServerDir = '/www/wwwroot'
 const destDir = ''
 
-await $`pnpm build:test`
+await $`pnpm build`
 
 await $`echo ==🔧 压缩dist ==`
 await $`tar -zvcf ${compressPkgName} dist && rm -rf dist`
