@@ -1,7 +1,7 @@
 import { Router } from 'vue-router'
 import axios from 'axios'
 import $store from '@/store'
-import { PublicApi, UserApi } from '@/apis'
+import { PublicApi, SuperOverviewApi, UserApi } from '@/apis'
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -12,6 +12,8 @@ declare module 'vue-router' {
     requireLogin?: boolean
     // 路由title
     title?: string
+    // 是否可以禁用
+    allowDisabled?: boolean
   }
 }
 
@@ -84,6 +86,18 @@ function registerRouteGuard(router: Router) {
    * 全局后置守卫
    */
   router.afterEach((to, from, failure) => {
+    if (to.meta.allowDisabled) {
+      SuperOverviewApi.checkDisabledRoute(to.path).then((v) => {
+        if (v.data.status) {
+          router.replace({
+            name: 'disable',
+            query: {
+              title: to.meta.title || to.path
+            }
+          })
+        }
+      })
+    }
     // 改标题,监控上报一些基础信息
     // sendToAnalytics(to.fullPath)
     if (failure) {

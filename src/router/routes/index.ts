@@ -18,6 +18,9 @@ const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
 const User = () => import('@/pages/dashboard/manage/user/index.vue')
 const Wish = () => import('@/pages/dashboard/manage/wish/index.vue')
 const Task = () => import('@/pages/task/index.vue')
+const Disabled = () => import('@/pages/disabled/index.vue')
+const DashboardConfig = () =>
+  import('@/pages/dashboard/manage/config/index.vue')
 
 const routes: RouteRecordRaw[] = [
   // 404
@@ -30,11 +33,17 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/disabled',
+    name: 'disable',
+    component: Disabled
+  },
+  {
     path: '/',
     name: 'home',
     component: Home,
     meta: {
-      title: '首页'
+      title: '首页',
+      allowDisabled: true
     }
   },
   // {
@@ -58,7 +67,8 @@ const routes: RouteRecordRaw[] = [
     name: 'register',
     component: Register,
     meta: {
-      title: '注册'
+      title: '注册',
+      allowDisabled: true
     }
   },
   {
@@ -66,7 +76,8 @@ const routes: RouteRecordRaw[] = [
     name: 'reset',
     component: Reset,
     meta: {
-      title: '找回密码'
+      title: '找回密码',
+      allowDisabled: true
     }
   },
   {
@@ -166,6 +177,15 @@ const routes: RouteRecordRaw[] = [
             component: Wish,
             meta: {
               title: '需求管理',
+              isAdmin: true
+            }
+          },
+          {
+            name: 'dashboard-config',
+            path: 'config',
+            component: DashboardConfig,
+            meta: {
+              title: '配置面板',
               isAdmin: true
             }
           }

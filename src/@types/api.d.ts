@@ -189,6 +189,7 @@ declare namespace OverviewApiTypes {
     pageIndex: number
     pageSize: number
   }>
+  type disabledStatus = ResponseData<{ status: boolean }>
 }
 
 declare namespace SuperUserApiTypes {
