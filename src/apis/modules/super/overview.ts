@@ -30,10 +30,27 @@ function getLogMsgDetail(id: string): any {
 function clearExpiredCompressFile() {
   return ajax.delete(`${baseUrl}/compress`)
 }
+
+function checkDisabledRoute(route: string): OverviewApiTypes.disabledStatus {
+  return ajax.get(`${baseUrl}/route/disabled`, {
+    params: {
+      route
+    }
+  })
+}
+
+function addDisabledRoute(route: string, status: boolean) {
+  return ajax.post(`${baseUrl}/route/disabled`, {
+    route,
+    status
+  })
+}
 export default {
   getCount,
   getAllLogMsg,
   getLogMsg,
   getLogMsgDetail,
-  clearExpiredCompressFile
+  clearExpiredCompressFile,
+  checkDisabledRoute,
+  addDisabledRoute
 }

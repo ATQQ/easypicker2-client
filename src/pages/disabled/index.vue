@@ -1,30 +1,17 @@
 <template>
   <div class="not-found">
-    <h1>404 Not Found</h1>
-    <h2>糟糕页面走丢了</h2>
-    <h3>{{ time }}s后<a @click="handleToHome">回到首页</a></h3>
+    <h1>EasyPicker | 轻取</h1>
+    <h2>{{ $route.query.title }}：已被网站管理员禁用</h2>
+    <h3><a @click="handleToHome">查看应用介绍</a></h3>
   </div>
 </template>
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
-const time = ref(3)
-const timer = ref(null)
-const router = useRouter()
+const $route = useRoute()
 const handleToHome = () => {
-  clearInterval(timer.value)
-  router.replace('/')
+  window.location.href = 'https://docs.ep.sugarat.top/'
 }
-onMounted(() => {
-  timer.value = setInterval(() => {
-    if (time.value === 1) {
-      clearInterval(timer.value)
-      router.replace('/')
-    }
-    time.value -= 1
-  }, 1000)
-})
 </script>
 <style lang="scss" scoped>
 .not-found {
@@ -43,6 +30,7 @@ a {
 a {
   margin-left: 10px;
   border-bottom: 2px solid aliceblue;
+  cursor: pointer;
 }
 h1 {
   font-size: 48px;
