@@ -209,3 +209,22 @@ export function parseInfo(info: string): InfoItem[] {
 export function normalizeFileName(name: string) {
   return name.replace(/[\\/:*?"<>|]/g, '-')
 }
+
+export function parseFileFormat(format: string) {
+  const formatData = {
+    size: 0,
+    status: false,
+    format: [],
+    limit: 10
+  }
+  try {
+    const v = JSON.parse(format)
+    formatData.status = !!v.status
+    formatData.format = v.format || []
+    formatData.size = v.size || 0
+    formatData.limit = v.limit || 10
+  } catch (_) {
+    return formatData
+  }
+  return formatData
+}

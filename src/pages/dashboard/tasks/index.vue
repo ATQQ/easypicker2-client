@@ -113,6 +113,9 @@
           <el-tab-pane label="模板文件" name="template">
             <TemplatePanel :value="taskInfo.template" :k="activeTask.key" />
           </el-tab-pane>
+          <el-tab-pane label="文件属性" name="attr">
+            <FileInfoPanel :format="taskInfo.format" :k="activeTask.key" />
+          </el-tab-pane>
         </el-tabs>
       </div>
     </el-dialog>
@@ -133,6 +136,7 @@ import PeoplePanel from './components/infoPanel/people.vue'
 import TemplatePanel from './components/infoPanel/template.vue'
 import InfoPanel from './components/infoPanel/info.vue'
 import TipInfoPanel from './components/infoPanel/tipInfo.vue'
+import FileInfoPanel from './components/infoPanel/file.vue'
 
 const $store = useStore()
 const isMobile = computed(() => $store.getters['public/isMobile'])
@@ -214,6 +218,7 @@ const editMore = (item: any) => {
     taskInfo.info = '[]'
     taskInfo.ddl = ''
     taskInfo.tip = ''
+    taskInfo.format = ''
     setTimeout(() => {
       Object.assign(taskInfo, res.data)
       showTaskInfoPanel.value = true
