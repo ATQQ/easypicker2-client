@@ -37,7 +37,7 @@
       </li>
       <!-- 已上线 -->
       <li><hr /></li>
-      <li><center>↓ 💐 下面是已上线需求 💐 ↓</center></li>
+      <li style="text-algin: center">↓ 💐 下面是已上线需求 💐 ↓</li>
       <li v-for="d in successData" :key="d.id">
         <hr />
         <div class="wish">
