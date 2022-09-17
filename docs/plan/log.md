@@ -3,7 +3,7 @@
 * 线上测试地址：https://ep.dev.sugarat.top/
 
 
-## v2.1.9-beta.x (2022/09/17)
+## v2.2.0 (2022/09/17)
 
 ### Feature
 * 文档站支持全文的内容搜素，Power By [Algolia](https://www.algolia.com/developers/?utm_content=powered_by&utm_source=localhost&utm_medium=referral&utm_campaign=docsearch)
