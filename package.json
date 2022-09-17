@@ -1,6 +1,6 @@
 {
   "name": "vite-vue-demo",
-  "version": "2.1.9-beta.4",
+  "version": "2.2.0",
   "scripts": {
     "dev": "vite",
     "dev:test": "vite --mode test",
