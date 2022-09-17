@@ -35,6 +35,29 @@
           </el-button>
         </div>
       </li>
+      <!-- 已上线 -->
+      <li><hr /></li>
+      <li><center>↓ 💐 下面是已上线需求 💐 ↓</center></li>
+      <li v-for="d in successData" :key="d.id">
+        <hr />
+        <div class="wish">
+          <div class="content">
+            <div class="title">
+              <i class="circle" :class="d.status" />
+              <span>{{ d.title }}</span>
+            </div>
+            <div class="des">
+              <span>{{ d.des }}</span>
+            </div>
+          </div>
+          <el-button type="primary" @click="praise(d.id, d.alreadyPraise)">
+            <el-icon>
+              <Flag />
+            </el-icon>
+            {{ d.count }}票
+          </el-button>
+        </div>
+      </li>
     </ul>
   </div>
 </template>
@@ -48,10 +71,20 @@ import { WishApi } from '../apis'
 const data = reactive<WishApiTypes.DocsWishItem[]>([])
 
 const showData = computed(() =>
-  data.map((v) => ({
-    ...v,
-    status: WishStatus[v.status].toLowerCase()
-  }))
+  data
+    .map((v) => ({
+      ...v,
+      status: WishStatus[v.status].toLowerCase()
+    }))
+    .filter((v) => v.status !== 'end')
+)
+const successData = computed(() =>
+  data
+    .map((v) => ({
+      ...v,
+      status: WishStatus[v.status].toLowerCase()
+    }))
+    .filter((v) => v.status === 'end')
 )
 
 const praise = (id: string, alreadyPraise: boolean) => {
