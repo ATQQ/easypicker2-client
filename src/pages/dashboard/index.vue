@@ -5,7 +5,10 @@
         <!-- LOGO -->
         <div class="logo">
           <router-link to="/">
-            <img src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png" alt="logo" />
+            <img
+              src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png"
+              alt="logo"
+            />
           </router-link>
         </div>
         <input v-if="isMobile" type="checkbox" id="navActive" />
@@ -20,12 +23,18 @@
             v-for="(n, idx) in navList"
             :key="idx"
             :class="{
-              active: navActiveIdx === idx,
+              active: navActiveIdx === idx
             }"
             @click="handleNav(idx)"
-          >{{ n.title }}</label>
-          <label @click="handleLogout" v-if="isMobile" for="navActive" class="nav-item">
-            <span style="margin-right: 6px;">退出</span>
+            >{{ n.title }}</label
+          >
+          <label
+            @click="handleLogout"
+            v-if="isMobile"
+            for="navActive"
+            class="nav-item"
+          >
+            <span style="margin-right: 6px">退出</span>
             <el-icon size="16">
               <svg
                 width="16"
@@ -67,7 +76,9 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="handleLogout" :icon="Close">退出</el-dropdown-item>
+              <el-dropdown-item @click="handleLogout" :icon="Close"
+                >退出</el-dropdown-item
+              >
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -77,13 +88,9 @@
   </div>
 </template>
 <script lang="ts" setup>
-import {
-  Expand, Close, ArrowDown,
-} from '@element-plus/icons-vue'
+import { Expand, Close, ArrowDown } from '@element-plus/icons-vue'
 
-import {
-  onMounted, reactive, ref, computed, watch,
-} from 'vue'
+import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -92,27 +99,25 @@ import { UserApi } from '@/apis'
 const $router = useRouter()
 const $store = useStore()
 const $route = useRoute()
-const isMobile = computed(
-  () => $store.getters[
-    'public/isMobile'
-  ],
-)
-const navList = reactive<{title:string, path:string, isExternal?:boolean}[]>([
+const isMobile = computed(() => $store.getters['public/isMobile'])
+const navList = reactive<
+  { title: string; path: string; isExternal?: boolean }[]
+>([
   {
     title: '文件管理',
-    path: '/dashboard/files',
+    path: '/dashboard/files'
   },
   {
     title: '任务管理',
-    path: '/dashboard/tasks',
-  },
+    path: '/dashboard/tasks'
+  }
 ])
 const navActiveIdx = ref(0)
 const handleNav = (idx: number) => {
   const n = navList[idx]
   if (!n.isExternal && idx !== navActiveIdx.value) {
     $router.push({
-      path: n.path,
+      path: n.path
     })
   }
   if (n.isExternal) {
@@ -121,23 +126,27 @@ const handleNav = (idx: number) => {
 }
 
 // 自动切换激活的标题栏
-watch(() => $route.path, (path: string) => {
-  const idx = navList.findIndex((n) => path.startsWith(n.path))
-  if (idx !== -1) {
-    navActiveIdx.value = idx
+watch(
+  () => $route.path,
+  (path: string) => {
+    const idx = navList.findIndex((n) => path.startsWith(n.path))
+    if (idx !== -1) {
+      navActiveIdx.value = idx
+    }
   }
-})
+)
 
 const handleLogout = () => {
   ElMessageBox.confirm('确认退出登录？', '登出提示', {
-    draggable: true,
+    draggable: true
   })
     .then(() => {
       $store.commit('user/setToken', null)
       $router.replace({
-        name: 'home',
+        name: 'home'
       })
-    }).catch(() => {
+    })
+    .catch(() => {
       ElMessage.info('取消')
     })
 }
@@ -157,19 +166,27 @@ onMounted(() => {
       const superNavList = [
         {
           title: '应用管理',
-          path: '/dashboard/manage',
+          path: '/dashboard/manage'
         },
         {
           title: '网站监控',
           path: 'https://www.frontjs.com/app/87c1ef7667a513f313b4abb22a88dc78',
-          isExternal: true,
-        }]
+          isExternal: true
+        }
+      ]
       navList.push(...superNavList)
+    }
+    const isSystem = r.data?.system
+    if (isSystem) {
+      navList.splice(0, navList.length)
+      navList.push({
+        title: '系统管理',
+        path: '/dashboard/config'
+      })
     }
     refreshActiveTab()
   })
 })
-
 </script>
 <style scoped lang="scss">
 .dashboard {

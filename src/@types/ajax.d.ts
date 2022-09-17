@@ -1,5 +1,5 @@
 interface BaseResponse<T = any> {
-    code: number,
-    errMsg: string,
-    data: T
+  code: number
+  errMsg: string
+  data: T
 }

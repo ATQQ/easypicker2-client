@@ -1,27 +1,36 @@
 import { Router } from 'vue-router'
+import axios from 'axios'
 import $store from '@/store'
-import { PublicApi, UserApi } from '@/apis'
+import { PublicApi, SuperOverviewApi, UserApi } from '@/apis'
 
 declare module 'vue-router' {
   interface RouteMeta {
     // 是否管理员页面
     isAdmin?: boolean
+    isSystem?: boolean
     // 是否需要登录
     requireLogin?: boolean
     // 路由title
     title?: string
+    // 是否可以禁用
+    allowDisabled?: boolean
   }
 }
 
 function registerRouteGuard(router: Router) {
   /**
-     * 全局前置守卫
-     */
+   * 全局前置守卫
+   */
   router.beforeEach((to, from) => {
     // 上报PV
     const { fullPath } = to
     PublicApi.reportPv(fullPath)
 
+    axios.get(
+      `//${
+        import.meta.env.VITE_APP_PV_PATH
+      }/public/report/pv?path=${encodeURIComponent(window.location.href)}`
+    )
     // 更改title
     window.document.title = `${import.meta.env.VITE_APP_TITLE} ${to.meta.title}`
 
@@ -35,15 +44,28 @@ function registerRouteGuard(router: Router) {
   })
 
   /**
-  * 全局解析守卫
-  */
+   * 全局解析守卫
+   */
   router.beforeResolve(async (to) => {
-    if (to.meta.isAdmin) {
+    if (to.meta.isAdmin || to.meta.isSystem) {
       try {
-        const isAdmin = (await UserApi.checkPower()).data.power
-        $store.commit('user/setSuperAdmin', isAdmin)
-        return isAdmin || {
-          name: '404',
+        const powerData = (await UserApi.checkPower()).data
+        $store.commit('user/setSuperAdmin', powerData.power)
+        $store.commit('user/setSystem', powerData.system)
+        if (to.meta.isSystem) {
+          return (
+            powerData.system || {
+              name: '404'
+            }
+          )
+        }
+
+        if (to.meta.isAdmin) {
+          return (
+            powerData.power || {
+              name: '404'
+            }
+          )
         }
       } catch (error) {
         // if (error instanceof NotAllowedError) {
@@ -61,9 +83,21 @@ function registerRouteGuard(router: Router) {
   })
 
   /**
-     * 全局后置守卫
-     */
+   * 全局后置守卫
+   */
   router.afterEach((to, from, failure) => {
+    if (to.meta.allowDisabled) {
+      SuperOverviewApi.checkDisabledRoute(to.path).then((v) => {
+        if (v.data.status) {
+          router.replace({
+            name: 'disable',
+            query: {
+              title: to.meta.title || to.path
+            }
+          })
+        }
+      })
+    }
     // 改标题,监控上报一些基础信息
     // sendToAnalytics(to.fullPath)
     if (failure) {

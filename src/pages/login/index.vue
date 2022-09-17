@@ -75,7 +75,21 @@ const remember = ref(false)
 const accountLogin = ref(true)
 const $store = useStore()
 const $router = useRouter()
-const redirectDashBoard = () => {
+const redirectDashBoard = (system?:boolean) => {
+  if (system) {
+    $router.replace({
+      name: 'config',
+    })
+    return
+  }
+  const { redirect } = $router.currentRoute.value.query
+  if (redirect) {
+    $router.replace({
+      path: `${redirect}`,
+    })
+    return
+  }
+
   $router.replace({
     name: 'dashboard',
   })
@@ -161,10 +175,11 @@ const login = () => {
       localStorage.removeItem('userinfo')
     }
     UserApi.login(account.value, pwd.value).then((res) => {
-      const { token } = res.data
+      const { token, system } = res.data
       $store.commit('user/setToken', token)
+      $store.commit('user/setSystem', system)
       ElMessage.success('登录成功')
-      redirectDashBoard()
+      redirectDashBoard(system)
     }).catch((err) => {
       loginErrorMsg(err, '密码不正确')
     })
@@ -173,6 +188,7 @@ const login = () => {
     UserApi.codeLogin(account.value, pwd.value).then((res) => {
       const { token } = res.data
       $store.commit('user/setToken', token)
+      $store.commit('user/setSystem', false)
       ElMessage.success('登录成功')
       redirectDashBoard()
     }).catch((err) => {
@@ -183,7 +199,8 @@ const login = () => {
 onMounted(() => {
   const token = localStorage.getItem('token')
   if (token) {
-    redirectDashBoard()
+    redirectDashBoard(localStorage.getItem('system') === 'true')
+    return
   }
   const info = localStorage.getItem('userinfo')
   if (info) {

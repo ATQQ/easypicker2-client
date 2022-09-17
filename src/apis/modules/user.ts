@@ -1,34 +1,44 @@
 import ajax from '../ajax'
 
-function register(options:UserApiTypes.RegisterOptions):UserApiTypes.register {
+function register(
+  options: UserApiTypes.RegisterOptions
+): UserApiTypes.register {
   return ajax.post('user/register', {
-    ...options,
+    ...options
   })
 }
 
-function login(account:string, pwd:string):UserApiTypes.login {
+function login(account: string, pwd: string): UserApiTypes.login {
   return ajax.post('user/login', {
-    account, pwd,
+    account,
+    pwd
   })
 }
 
-function codeLogin(phone:string, code:string):UserApiTypes.codeLogin {
+function codeLogin(phone: string, code: string): UserApiTypes.codeLogin {
   return ajax.post('user/login/code', {
-    phone, code,
+    phone,
+    code
   })
 }
 
-function resetPwd(phone:string, code:string, pwd:string):UserApiTypes.resetPwd {
+function resetPwd(
+  phone: string,
+  code: string,
+  pwd: string
+): UserApiTypes.resetPwd {
   return ajax.put('user/password', {
-    phone, code, pwd,
+    phone,
+    code,
+    pwd
   })
 }
 
-function checkPower():UserApiTypes.checkPower {
+function checkPower(): UserApiTypes.checkPower {
   return ajax.get('user/power/super')
 }
 
-function checkLoginStatus():UserApiTypes.checkLoginStatus {
+function checkLoginStatus(): UserApiTypes.checkLoginStatus {
   return ajax.get('user/login')
 }
 export default {
@@ -37,5 +47,5 @@ export default {
   codeLogin,
   resetPwd,
   checkPower,
-  checkLoginStatus,
+  checkLoginStatus
 }

@@ -1,8 +1,11 @@
 # 线上部署 - 使用宝塔面板
 
-* [宝塔面板官网](https://www.bt.cn/)
+:::danger ！！！推荐使用`Linux`系服务器！！！
+下面的所有操作，均在 `Linux` 上进行，如果机器是装的`windows server` 部分操作可能需要远程桌面进行
+:::
 
-推荐使用`Linux`系服务器
+**[宝塔面板官网](https://www.bt.cn/)**
+
 ## 1. 安装宝塔面板
 宝塔面板介绍安装教程：https://www.bt.cn/
 
@@ -157,8 +160,16 @@ pnpm -v
 
 执行下述指令
 
+:::details 我要体验最新beta版
+
+```shell
+curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s github release/beta
+```
+:::
 :::tip
 此后应用版本有新版本，更新操作也可使用此脚本进行自动更新
+
+由于网络问题，如遇卡顿，可结束，重新执行
 :::
 
 ```shell
@@ -166,7 +177,7 @@ curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s github
 ```
 
 :::tip
-如果卡在Git，请换用下面的脚本，从`gitee`拉取代码
+如果很长时间卡在Git，请换用下面的脚本，从`gitee`拉取代码
 ```shell
 curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s gitee
 ```
@@ -318,6 +329,12 @@ curl https://script.sugarat.top/shell/ep/init-db.sh | bash -s ep-shell-test ep-s
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjMzOTI2ODAzMw==656339268033" />
 
+:::details 我要体验最新beta版
+
+```shell
+curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s github release/beta
+```
+:::
 :::tip
 此后应用版本有新版本，更新操作也可使用此脚本进行自动更新
 :::
@@ -327,7 +344,7 @@ curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s github
 ```
 
 :::tip
-如果卡在Git，请换用下面的脚本，从`gitee`拉取代码
+如果很长时间卡在Git，请换用下面的脚本，从`gitee`拉取代码
 ```shell
 curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s gitee
 ```
@@ -343,8 +360,13 @@ curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s gitee
 如果由于目录冲突，导致脚本执行失败，请手动删除`easypicker2-server` 目录后重试
 :::
 
-### 修改.env.local配置文件
+:::tip 应用版本 ≥ v2.1.9 可直接跳过本节后续内容，直接快进到`启动服务`步骤
+:::
+
+:::details 如果应用版本 < v2.1.9，需要手动修改.env.local配置文件
 进入`easypicker2-server`目录双击 `.env.local` 文件进行修改
+
+如果不存在，手动创建`.env.local`文件即可,内容格式同`.env`文件
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjM5NDQwMTA1OQ==656394401059" />
 
@@ -352,7 +374,7 @@ curl https://script.sugarat.top/shell/ep/deploy-server.sh | bash -s gitee
 每个变量的释义参看源码中的 [src/types/env.d.ts](https://github.com/ATQQ/easypicker2-server/blob/master/src/types/env.d.ts)
 :::
 
-:::details 我需要关心的几个变量
+:::details 手动修改 .env.local 我需要关心的几个变量
 * 服务相关
   * SERVER_PORT: 服务启动的端口，默认3000，无特殊需求可以不修改
 * MySql相关
@@ -399,6 +421,16 @@ pm2 logs ep-server
 在服务日志里，可以看到服务监听的端口，和运行打印的log日志情况
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NjM5NTA0Mzg4Ng==656395043886" />
+
+在应用版本 `> v2.1.8`，还可以看到一个服务管理面板的账号与密码，用于后续随时修改服务的配置信息
+
+:::warning 拿小本本记下这个账号密码后面会用到！！！
+拿小本本记下这个账号密码后面会用到 ！！！
+
+拿小本本记下这个账号密码后面会用到 ！！！
+:::
+
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTkzODEwNDg4Mw==659938104883" />
 
 :::tip 温馨提示
 后续 如果代码有更新，只需要重新进行`代码部署`和`启动服务`这个步骤即可，即执行**2**行脚本
@@ -487,7 +519,7 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 只差最后一步了
 
 :::
-## 5. 配置反向代理
+## 6. 配置反向代理
 
 打开网站的设置面板，点击添加反向代理，勾选`高级功能`
 
@@ -515,7 +547,10 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 
 location ^~ /api/
 {
-    proxy_pass http://localhost:3004/;
+    # 此处的服务端口改成你的服务地址，可能3000也可能是3001
+    # 此处的服务端口改成你的服务地址，通过 pm2 logs指令 查看服务启动监听的端口
+    # 此处的服务端口改成你的服务地址
+    proxy_pass http://localhost:3000/;
     proxy_set_header Host localhost;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -545,7 +580,48 @@ location ^~ /api/
 ```
 :::
 
-## 6. 其余功能
+完成反向代理的配置后，我们就可以用上面提供的管理账号和密码进行服务相关配置的更新了
+
+## 7. 最后更新配置
+1. 访问我们的网站进行登录
+2. 输入上面拿到的账号密码
+3. 在新面板中进行相应配置更新
+
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTkzOTEzNzg1Ng==659939137856" />
+
+:::details 标红的为必要更新的字段
+* MySQL
+  * 数据库名
+  * 用户名
+  * 密码
+* MongoDB
+  * 数据库名：例如 ep-prod,ep-test,ep-log
+* 七牛云
+  * AccessKey
+  * SecretKey
+  * 存储空间名
+  * 绑定的域名
+  * 存储区域
+:::
+
+:::details 从哪获取这些变量？
+#### MySQL 相关
+
+MySQL 的账号密码在数据库面板获取，即前面创建的数据库账号密码
+
+#### MongoDB
+这里只需要填入数据库名，格式 `小写+连字符`
+
+例如 `ep-prod`, `ep-test`, `ep-log`
+#### 七牛云相关配置
+
+参考[七牛云OSS服务创建](./qiniu.md)文章，获取七牛云相关的几个环境变量
+:::
+
+<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTkzOTAyNDM2OA==659939024368" />
+
+更新完立马生效，不需要再重新启动后端服务了
+## 99. 其余功能
 ### 开启内容压缩
 在网站设置面板，点击反向代理，配置文件
 

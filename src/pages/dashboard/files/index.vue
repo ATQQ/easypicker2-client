@@ -90,9 +90,9 @@
           <div class="progress">
             <el-progress text-inside :stroke-width="24" :percentage="v.percentage" :color="customColors">
             </el-progress>
-            <el-button size="small" disabled type="text">
+            <el-button size="small" disabled type="primary" text>
               {{ formatSize((v.percentage / 100) * v.size) }}/{{ formatSize(v.size) }}</el-button>
-            <el-button size="small" type="text" @click="copyRes(v.url, '资源链接已复制到剪贴板')">复制链接</el-button>
+            <el-button size="small" type="primary" text @click="copyRes(v.url, '资源链接已复制到剪贴板')">复制链接</el-button>
           </div>
           <div class="des flex fc fac">
             <div class="filename">{{ v.filename }}</div>
@@ -105,9 +105,10 @@
     <div class="panel">
       <Tip>空间占用情况：{{ filterFileSize }} / {{ fileListSize }}</Tip>
       <Tip>↑ 仅供使用者参考，应用无存储空间上限，也不收费</Tip>
-      <Tip><strong>如果你绝应用不错，<a style="color: #409eff;" href="http://docs.ep.sugarat.top/praise/index.html" target="_blank" rel="noopener noreferrer">请作者喝茶 🍵</a></strong>
+      <Tip><strong>如果你觉得应用不错，<a style="color: #409eff;" href="http://docs.ep.sugarat.top/praise/index.html"
+            target="_blank" rel="noopener noreferrer">请作者喝茶 🍵</a></strong>
         <!-- <Praise>
-          <el-button style="margin:0 0 2px;" size="small" type="text">Go！Go！❓</el-button>
+          <el-button style="margin:0 0 2px;" size="small" type="primary" text>Go！Go！❓</el-button>
         </Praise> -->
       </Tip>
       <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
@@ -160,9 +161,10 @@
         <el-table-column fixed="right" label="操作" width="140">
           <template #default="scope">
             <div class="text-btns">
-              <el-button @click="checkInfo(scope.row)" type="text" size="small">查看提交信息</el-button>
-              <el-button @click="downloadOne(scope.row)" type="text" size="small">下载</el-button>
-              <el-button @click="handleDelete(scope.row)" type="text" size="small">删除</el-button>
+              <el-button @click="checkInfo(scope.row)" type="primary" text size="small">查看提交信息</el-button>
+              <el-button @click="rewriteFilename(scope.row)" type="primary" text size="small">修改文件名</el-button>
+              <el-button @click="downloadOne(scope.row)" type="primary" text size="small">下载</el-button>
+              <el-button @click="handleDelete(scope.row)" type="primary" text size="small">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -179,6 +181,26 @@
       <InfosForm :infos="infos" :disabled="true" />
     </el-dialog>
     <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
+    <el-dialog :fullscreen="isMobile" title="修改文件名" v-model="showRenameDialog">
+      <div>
+        <el-form label-width="100px" :model="renameForm">
+          <el-form-item label="原文件名" prop="newName">
+            <el-input v-model="renameForm.oldName" disabled/>
+          </el-form-item>
+          <el-form-item label="新文件名" prop="newName">
+            <el-input v-model="renameForm.newName" placeholder="请输入新文件名" >
+               <template #append>
+                {{ renameForm.suffix }}
+              </template>
+            </el-input>
+          </el-form-item>
+              <el-form-item>
+      <el-button type="success" @click="handleSaveNewName">保存</el-button>
+      <el-button  @click="showRenameDialog=false">取消</el-button>
+    </el-form-item>
+        </el-form>
+      </div>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
@@ -193,7 +215,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import {
-  copyRes, formatDate, formatSize, isSupportPreview, parseInfo,
+  copyRes, formatDate, formatSize, getFileSuffix, isSupportPreview, parseInfo,
 } from '@/utils/stringUtil'
 import { FileApi } from '@/apis'
 import {
@@ -416,6 +438,34 @@ const checkInfo = (e: any) => {
   showInfoDialog.value = true
 }
 
+const showRenameDialog = ref(false)
+const renameForm = reactive({
+  oldName: '',
+  newName: '',
+  suffix: '',
+  id: -1,
+})
+const rewriteFilename = (e: any) => {
+  const { id, name } = e
+  const suffix = getFileSuffix(name)
+  renameForm.oldName = name
+  renameForm.suffix = suffix
+  renameForm.id = id
+  showRenameDialog.value = true
+}
+
+const handleSaveNewName = () => {
+  FileApi.updateFilename(renameForm.id, `${renameForm.newName}${renameForm.suffix}`).then(() => {
+    ElMessage.success('修改成功')
+    const file = files.find((v) => v.id === renameForm.id)
+    file.name = `${renameForm.newName}${renameForm.suffix}`
+  }).catch(() => {
+    ElMessage.error('修改失败')
+  }).finally(() => {
+    showRenameDialog.value = false
+  })
+}
+
 const customColors = [
   { color: '#f56c6c', percentage: 30 },
   { color: '#e6a23c', percentage: 50 },
@@ -430,31 +480,31 @@ const downloadOne = (e: any) => {
     .getOneFileUrl(id)
     .then((res) => {
       const { link, mimeType } = res.data
-      if (isSupportPreview(mimeType)) {
-        const fileItem: DownloadItem = reactive<DownloadItem>({
-          filename: name,
-          mimeType,
-          url: link,
-          status: 'ready',
-          size,
-          percentage: 0,
-        })
-        downloadList.push(fileItem)
-        downLoadByXhr(link, name, {
-          progress(loaded, total) {
-            fileItem.status = 'downloading'
-            fileItem.percentage = Math.floor((loaded / total) * 100)
-          },
-          success() {
-            fileItem.percentage = 100
-            fileItem.status = 'done'
-            // showLinkModel.value = true
-            // downloadUrl.value = link
-            ElMessage.success('文件下载成功')
-          },
-        })
-        return
-      }
+      // if (isSupportPreview(mimeType)) {
+      //   const fileItem: DownloadItem = reactive<DownloadItem>({
+      //     filename: name,
+      //     mimeType,
+      //     url: link,
+      //     status: 'ready',
+      //     size,
+      //     percentage: 0,
+      //   })
+      //   downloadList.push(fileItem)
+      //   downLoadByXhr(link, name, {
+      //     progress(loaded, total) {
+      //       fileItem.status = 'downloading'
+      //       fileItem.percentage = Math.floor((loaded / total) * 100)
+      //     },
+      //     success() {
+      //       fileItem.percentage = 100
+      //       fileItem.status = 'done'
+      //       // showLinkModel.value = true
+      //       // downloadUrl.value = link
+      //       ElMessage.success('文件下载成功')
+      //     },
+      //   })
+      //   return
+      // }
       showLinkModel.value = true
       downloadUrl.value = link
       downLoadByUrl(link, name)
@@ -501,6 +551,9 @@ const handlePageChange = (idx: number) => {
 // 刷新文件列表
 
 const handleRefresh = () => {
+  ElMessage.success({
+    message: '刷新成功',
+  })
   loadFiles()
 }
 const handleDownloadTask = () => {

@@ -9,21 +9,27 @@
       >
         <el-menu-item index="overview">
           <el-icon>
-            <DataAnalysis/>
+            <DataAnalysis />
           </el-icon>
           <template #title>概况</template>
         </el-menu-item>
         <el-menu-item index="user">
           <el-icon>
-            <User/>
+            <User />
           </el-icon>
-          <template #title>用户管理</template>
+          <template #title>用户</template>
         </el-menu-item>
         <el-menu-item index="wish">
           <el-icon>
-            <DataBoard/>
+            <DataBoard />
           </el-icon>
-          <template #title>需求管理</template>
+          <template #title>需求</template>
+        </el-menu-item>
+        <el-menu-item index="config">
+          <el-icon>
+            <Setting />
+          </el-icon>
+          <template #title>配置</template>
         </el-menu-item>
       </el-menu>
     </div>
@@ -35,18 +41,18 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { User, DataBoard, DataAnalysis } from '@element-plus/icons-vue'
+import { User, DataBoard, DataAnalysis, Setting } from '@element-plus/icons-vue'
 
 const defaultActive = ref('overview')
 const isCollapse = ref(false)
 const $router = useRouter()
 const $route = useRoute()
-const handleSelect = (path:string) => {
+const handleSelect = (path: string) => {
   if ($route.path.endsWith(path)) {
     return
   }
   $router.replace({
-    path,
+    path
   })
 }
 onMounted(() => {
@@ -63,34 +69,34 @@ onMounted(() => {
   overflow: hidden;
   display: flex;
 }
-.navs{
+.navs {
   min-width: 140px;
 }
-.container{
+.container {
   padding-left: 20px;
   flex-grow: 1;
   width: calc(100% - 150px);
 }
 
-@media screen and (max-width:700px) {
-  .monitor{
+@media screen and (max-width: 700px) {
+  .monitor {
     margin-top: 70px;
     padding: 10px 0;
     width: 100%;
   }
-  .navs{
+  .navs {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
   }
 
-  .el-radio-group{
+  .el-radio-group {
     display: none;
   }
-  .el-menu-nav{
+  .el-menu-nav {
     display: flex;
   }
-  .container{
+  .container {
     padding-left: 0;
     margin-top: 30px;
     width: 100%;

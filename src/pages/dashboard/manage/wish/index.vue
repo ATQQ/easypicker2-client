@@ -30,9 +30,9 @@
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
             <div class="text-btn-list">
-              <el-button @click="handleChangeStatus(scope.row.id, scope.row.status)" type="text" size="small">修改状态
+              <el-button @click="handleChangeStatus(scope.row.id, scope.row.status)" type="primary" text size="small">修改状态
               </el-button>
-              <el-button @click="handleRewriteDes(scope.row.id, scope.row.title, scope.row.des)" type="text"
+              <el-button @click="handleRewriteDes(scope.row.id, scope.row.title, scope.row.des)" type="primary" text
                 size="small">
                 修改描述
               </el-button>
@@ -168,8 +168,11 @@ const handleSaveStatus = () => {
   const wish = wishes.find((v) => v.id === selectWishId.value)
   wish.status = selectStatus.value
   showWishStatusDialog.value = false
-  WishApi.updateWishStatus(selectWishId.value, selectStatus.value)
-  ElMessage.success('修改成功')
+  WishApi
+    .updateWishStatus(selectWishId.value, selectStatus.value)
+    .then(() => {
+      ElMessage.success('修改成功')
+    })
 }
 
 // 描述信息修改
@@ -187,11 +190,14 @@ const handleRewriteDes = (id: string, title: string, des: string) => {
 }
 const handleUpdateWish = () => {
   const wish = wishes.find((v) => v.id === selectWishId.value)
-  desVisible.value = false
-  WishApi.updateWishDes(selectWishId.value, formData.title, formData.des)
-  wish.title = formData.title
-  wish.des = formData.des
-  ElMessage.success('修改成功')
+  WishApi
+    .updateWishDes(selectWishId.value, formData.title, formData.des)
+    .then(() => {
+      desVisible.value = false
+      wish.title = formData.title
+      wish.des = formData.des
+      ElMessage.success('修改成功')
+    })
 }
 onMounted(() => {
   refreshWishes()

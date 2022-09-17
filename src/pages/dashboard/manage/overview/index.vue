@@ -35,7 +35,7 @@
         </span>
         <span class="item">
           <el-button size="default" type="danger" :icon="TakeawayBox" :disabled="disableDelete"
-            @click="clearExpiredCompressFile">清理无效压缩包</el-button>
+            @click="clearExpiredCompressFile" v-loading="disableDelete">清理无效文件</el-button>
         </span>
       </div>
       <el-table tooltip-effect="dark" height="400" stripe border :default-sort="{ prop: 'date', order: 'descending' }"
@@ -50,7 +50,7 @@
         <el-table-column min-width="160" prop="msg" label="内容"></el-table-column>
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
-            <el-button @click="handleDetail(scope.row.id)" type="text" size="small">查看详情</el-button>
+            <el-button @click="handleDetail(scope.row.id)" type="primary" text size="small">查看详情</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -128,7 +128,7 @@ const cardList = reactive([
   },
   {
     type: 'compress',
-    title: '归档文件',
+    title: '归档&无效文件',
     value: '0/0KB',
     supplement: '已失效0个',
     icon: Coin,
@@ -159,7 +159,7 @@ const refreshCount = () => {
 const disableDelete = ref(false)
 const clearExpiredCompressFile = () => {
   disableDelete.value = true
-  SuperOverviewApi.clearExpiredCompressFile().then((res) => {
+  SuperOverviewApi.clearExpiredCompressFile().then(() => {
     setTimeout(() => {
       ElMessage.success('清理成功，数据同步可能有延迟')
       disableDelete.value = false
