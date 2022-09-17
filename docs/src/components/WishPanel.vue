@@ -1,41 +1,42 @@
 <template>
-    <div class="wish-panel" v-show="data.length">
-        <div class="tips">
-            <div>
-                <i class="circle"></i>
-                <span>规划中</span>
-            </div>
-            <div>
-                <i class="circle start"></i>
-                <span>开发中</span>
-            </div>
-            <div>
-                <i class="circle end"></i>
-                <span>已上线</span>
-            </div>
-        </div>
-        <ul>
-            <li v-for="d in showData" :key="d.id">
-                <hr>
-                <div class="wish">
-                    <div class="content">
-                        <div class="title">
-                            <i class="circle" :class="d.status" />
-                            <span>{{ d.title }}</span>
-                        </div>
-                        <div class="des">
-                            <span>{{ d.des }}</span>
-                        </div>
-                    </div>
-                    <el-button type="primary" @click="praise(d.id, d.alreadyPraise)">
-                        <el-icon>
-                            <Flag />
-                        </el-icon> {{ d.count }}票
-                    </el-button>
-                </div>
-            </li>
-        </ul>
+  <div class="wish-panel" v-show="data.length">
+    <div class="tips">
+      <div>
+        <i class="circle"></i>
+        <span>规划中</span>
+      </div>
+      <div>
+        <i class="circle start"></i>
+        <span>开发中</span>
+      </div>
+      <div>
+        <i class="circle end"></i>
+        <span>已上线</span>
+      </div>
     </div>
+    <ul>
+      <li v-for="d in showData" :key="d.id">
+        <hr />
+        <div class="wish">
+          <div class="content">
+            <div class="title">
+              <i class="circle" :class="d.status" />
+              <span>{{ d.title }}</span>
+            </div>
+            <div class="des">
+              <span>{{ d.des }}</span>
+            </div>
+          </div>
+          <el-button type="primary" @click="praise(d.id, d.alreadyPraise)">
+            <el-icon>
+              <Flag />
+            </el-icon>
+            {{ d.count }}票
+          </el-button>
+        </div>
+      </li>
+    </ul>
+  </div>
 </template>
 <script lang="ts" setup>
 import { computed, onMounted, reactive } from 'vue'
@@ -46,10 +47,12 @@ import { WishApi } from '../apis'
 
 const data = reactive<WishApiTypes.DocsWishItem[]>([])
 
-const showData = computed(() => data.map((v) => ({
-  ...v,
-  status: WishStatus[v.status].toLowerCase(),
-})))
+const showData = computed(() =>
+  data.map((v) => ({
+    ...v,
+    status: WishStatus[v.status].toLowerCase()
+  }))
+)
 
 const praise = (id: string, alreadyPraise: boolean) => {
   if (alreadyPraise) {
@@ -62,7 +65,8 @@ const praise = (id: string, alreadyPraise: boolean) => {
     .then(() => {
       ElMessage.success('投票成功')
       wish.count += 1
-    }).catch(() => {
+    })
+    .catch(() => {
       ElMessage.error('你已经投过票了')
     })
 }
@@ -75,58 +79,57 @@ onMounted(() => {
 </script>
 <style lang="scss" scoped>
 .wish-panel {
-    ul {
-        list-style: none;
-    }
+  ul {
+    list-style: none;
+  }
 
-    .wish {
+  .wish {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 40px;
+
+    .content {
+      display: flex;
+      flex-direction: column;
+      max-width: 70%;
+
+      .title {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        min-height: 40px;
+      }
 
-        .content {
-            display: flex;
-            flex-direction: column;
-            max-width: 70%;
+      .des {
+        margin-top: 5px;
+        font-size: 14px;
+        color: #999;
+      }
+    }
+  }
 
-            .title {
-                display: flex;
-                align-items: center;
-            }
+  .circle {
+    display: inline-block;
+    background-color: #f5222d;
+    min-width: 10px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 10px;
 
-            .des {
-                margin-top: 5px;
-                font-size: 14px;
-                color: #999;
-            }
-        }
-
+    &.end {
+      background-color: #52c41a;
     }
 
-    .circle {
-        display: inline-block;
-        background-color: #f5222d;
-        min-width: 10px;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        margin-right: 10px;
-
-        &.end {
-            background-color: #52c41a;
-        }
-
-        &.start {
-            background-color: #1890ff;
-        }
+    &.start {
+      background-color: #1890ff;
     }
+  }
 
-        .tips{
-        display: flex;
-        justify-content: space-around;
-        flex-wrap: wrap;
-        margin-top: 10px;
-    }
+  .tips {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
 }
 </style>
