@@ -210,19 +210,23 @@ export function normalizeFileName(name: string) {
   return name.replace(/[\\/:*?"<>|]/g, '-')
 }
 
-export function parseFileFormat(format: string) {
-  const formatData = {
+export const getDefaultFormat = () => {
+  return {
     size: 0,
+    sizeUnit: 'MB',
     status: false,
     format: [],
-    limit: 10
+    limit: 10,
+    splitChar: '-'
   }
+}
+export function parseFileFormat(format: string) {
+  const formatData = getDefaultFormat()
   try {
     const v = JSON.parse(format)
-    formatData.status = !!v.status
-    formatData.format = v.format || []
-    formatData.size = v.size || 0
-    formatData.limit = v.limit || 10
+    Object.keys(v).forEach((key) => {
+      formatData[key] = v[key] || formatData[key]
+    })
   } catch (_) {
     return formatData
   }

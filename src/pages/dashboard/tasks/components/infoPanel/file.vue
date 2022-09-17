@@ -63,7 +63,7 @@
       />
       <el-select
         @change="handleChangeUnit"
-        v-model="selectUnit"
+        v-model="formatData.sizeUnit"
         placeholder="单位"
         style="width: 100px"
       >
@@ -81,7 +81,12 @@
 <script lang="ts" setup>
 import { ElMessage } from 'element-plus'
 import { reactive, ref, watchEffect } from 'vue'
-import { copyRes, formatSize, parseFileFormat } from '@/utils/stringUtil'
+import {
+  copyRes,
+  formatSize,
+  getDefaultFormat,
+  parseFileFormat
+} from '@/utils/stringUtil'
 import { updateTaskInfo } from '../../public'
 import Tip from './tip.vue'
 
@@ -97,19 +102,8 @@ const props = defineProps({
   }
 })
 
-const formatData = reactive({
-  status: false,
-  format: [],
-  size: 0,
-  limit: 10
-})
+const formatData = reactive(getDefaultFormat())
 const typeName = ref('')
-watchEffect(() => {
-  if (props.format !== null) {
-    const data = parseFileFormat(props.format)
-    Object.assign(formatData, data)
-  }
-})
 const updateInfo = () => {
   updateTaskInfo(props.k, {
     format: JSON.stringify(formatData)
@@ -149,18 +143,23 @@ const handleChangeLimit = (limit: number) => {
 
 const inputSize = ref(0)
 const unitList = reactive(['B', 'KB', 'MB', 'GB'])
-const selectUnit = ref('MB')
 const handleChangeUnit = () => {
-  const idx = unitList.findIndex((v) => v === selectUnit.value)
+  const idx = unitList.findIndex((v) => v === formatData.sizeUnit)
   formatData.size = inputSize.value * 1024 ** idx
   updateInfo()
 }
 const handleLimitSize = (limit: number) => {
   inputSize.value = limit
-  const idx = unitList.findIndex((v) => v === selectUnit.value)
+  const idx = unitList.findIndex((v) => v === formatData.sizeUnit)
   formatData.size = inputSize.value * 1024 ** idx
   updateInfo()
 }
+
+watchEffect(() => {
+  if (props.format !== null) {
+    Object.assign(formatData, parseFileFormat(props.format))
+  }
+})
 </script>
 <style scoped>
 .type {

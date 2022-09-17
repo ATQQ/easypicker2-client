@@ -408,7 +408,9 @@ const startUpload = () => {
       const originName = name
       // 如果开启了自动重命名,这里重命名一下
       if (taskMoreInfo.rewrite) {
-        name = infos.map((v) => v.value).join('-') + getFileSuffix(name)
+        name =
+          infos.map((v) => v.value).join(formatData.value.splitChar || '-') +
+          getFileSuffix(name)
       }
       // 替换不合法的字符
       name = normalizeFileName(name)
@@ -541,7 +543,9 @@ const runWithdraw = () => {
 
       // 如果开启了自动重命名,这里重命名一下
       if (taskMoreInfo.rewrite) {
-        name = infos.map((v) => v.value).join('-') + getFileSuffix(name)
+        name =
+          infos.map((v) => v.value).join(formatData.value.splitChar || '-') +
+          getFileSuffix(name)
       }
 
       FileApi.withdrawFile({

@@ -108,6 +108,7 @@
               :rewrite="taskInfo.rewrite"
               :info="taskInfo.info"
               :k="activeTask.key"
+              :format="taskInfo.format"
             />
           </el-tab-pane>
           <el-tab-pane label="模板文件" name="template">
