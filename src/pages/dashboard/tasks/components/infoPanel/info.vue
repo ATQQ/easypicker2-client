@@ -1,23 +1,53 @@
 <template>
   <div class="tc">
-    <tip :imgs="[
-      'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzM3NjUyNg==650183376526',
-      'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjU2ODcyNg==651496568726',
-    ]">上传文件必填表单信息</tip>
+    <tip
+      :imgs="[
+        'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzM3NjUyNg==650183376526',
+        'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjU2ODcyNg==651496568726'
+      ]"
+      >上传文件必填表单信息</tip
+    >
     <div class="auto-format">
       <span>文件自动重命名:</span>
-      <el-switch style="display: block" v-model="autoRewrite" active-color="#13ce66" inactive-color="#ff4949"
-        active-text="开" @change="handleChange" inactive-text="关"></el-switch>
+      <el-switch
+        style="display: block"
+        v-model="autoRewrite"
+        active-color="#13ce66"
+        inactive-color="#ff4949"
+        active-text="开"
+        @change="handleChange"
+        inactive-text="关"
+      ></el-switch>
     </div>
-    <div v-if="autoRewrite" style="margin-bottom: 10px;">
+    <div v-if="autoRewrite" style="margin-bottom: 10px">
       预期格式:
-      <span style="color: #409EFF;">{{ resFormat }}</span>
+      <span style="color: #409eff">{{ resFormat }}</span>
     </div>
-    <tip v-if="autoRewrite" style="color:red">开启自动重命名后，重点关注文件名格式是否符合预期</tip>
+    <div v-if="autoRewrite" style="margin-bottom: 10px">
+      分割符：
+      <el-select
+        @change="handleChangeSplitChar"
+        v-model="formatData.splitChar"
+        placeholder="分隔符"
+        style="width: 60px"
+        size="small"
+      >
+        <el-option v-for="v in splitCharList" :key="v" :label="v" :value="v" />
+      </el-select>
+    </div>
+    <tip v-if="autoRewrite" style="color: red"
+      >开启自动重命名后，重点关注文件名格式是否符合预期</tip
+    >
     <div>
       预览
-      <el-switch v-model="openPreview" inline-prompt active-text="是" inactive-text="否" active-color="#13ce66"
-        inactive-color="#ff4949" />
+      <el-switch
+        v-model="openPreview"
+        inline-prompt
+        active-text="是"
+        inactive-text="否"
+        active-color="#13ce66"
+        inactive-color="#ff4949"
+      />
     </div>
     <!-- 必填信息区域 -->
     <div class="form-wrapper">
@@ -29,32 +59,65 @@
               <div class="num-wrapper">
                 <div>{{ idx + 1 }}</div>
               </div>
-              <div class="form-item-type" :class="item.type">{{ getTypeDes(item.type) }}</div>
+              <div class="form-item-type" :class="item.type">
+                {{ getTypeDes(item.type) }}
+              </div>
             </div>
           </template>
-          <el-input placeholder="输入内容" v-model="item.text" :maxlength="maxInputLength" clearable show-word-limit>
+          <el-input
+            placeholder="输入内容"
+            v-model="item.text"
+            :maxlength="maxInputLength"
+            clearable
+            show-word-limit
+          >
             <template #append>
               <div class="form-item-wrapper">
-                <el-icon :color="infos.length > 1 ? 'red' : 'grey'" @click="deleteInfo(idx)">
+                <el-icon
+                  :color="infos.length > 1 ? 'red' : 'grey'"
+                  @click="deleteInfo(idx)"
+                >
                   <CircleCloseFilled />
                 </el-icon>
-                <el-icon color="#000" style="margin-left: 6px;" v-if="idx > 0" @click="moveInfoUp(idx)">
+                <el-icon
+                  color="#000"
+                  style="margin-left: 6px"
+                  v-if="idx > 0"
+                  @click="moveInfoUp(idx)"
+                >
                   <Top />
                 </el-icon>
               </div>
             </template>
           </el-input>
-          <div v-if="item.type === 'radio' || item.type === 'select'" class="radio-list">
-            <el-input size="small" v-for="(v, idx) in item.children" :key="idx" placeholder="输入内容" v-model="v.text"
-              :maxlength="maxInputLength" clearable show-word-limit>
+          <div
+            v-if="item.type === 'radio' || item.type === 'select'"
+            class="radio-list"
+          >
+            <el-input
+              size="small"
+              v-for="(v, idx) in item.children"
+              :key="idx"
+              placeholder="输入内容"
+              v-model="v.text"
+              :maxlength="maxInputLength"
+              clearable
+              show-word-limit
+            >
               <template #append>
                 <div class="form-item-wrapper">
-                  <el-icon :color="item.children.length > 2 ? 'red' : 'grey'"
-                    @click="deleteInfo(idx, item.children, 2)">
+                  <el-icon
+                    :color="item.children.length > 2 ? 'red' : 'grey'"
+                    @click="deleteInfo(idx, item.children, 2)"
+                  >
                     <CircleCloseFilled />
                   </el-icon>
                   <template v-if="idx + 1 === item.children.length">
-                    <el-icon style="margin-left: 10px;" color="#67C23A" @click="addInfo(item.children, item.type)">
+                    <el-icon
+                      style="margin-left: 10px"
+                      color="#67C23A"
+                      @click="addInfo(item.children, item.type)"
+                    >
                       <CirclePlusFilled />
                     </el-icon>
                   </template>
@@ -66,36 +129,80 @@
       </el-form>
     </div>
     <div class="p10" v-if="showAddInfo">
-      <el-button size="small" type="primary" @click="() => {
-        addInfo()
-      }" round>添加一项</el-button>
-      <el-select style="margin:0 10px" size="small" v-model="selectType" placeholder="选择添加的类型">
-        <el-option v-for="(v, idx) in infoTypeList" :key="idx" :label="v.label" :value="v.value" />
+      <el-button
+        size="small"
+        type="primary"
+        @click="
+          () => {
+            addInfo()
+          }
+        "
+        round
+        >添加一项</el-button
+      >
+      <el-select
+        style="margin: 0 10px"
+        size="small"
+        v-model="selectType"
+        placeholder="选择添加的类型"
+      >
+        <el-option
+          v-for="(v, idx) in infoTypeList"
+          :key="idx"
+          :label="v.label"
+          :value="v.value"
+        />
       </el-select>
       <el-button type="primary" text @click="showHelp">提示❓</el-button>
     </div>
     <!-- 从其它任务导入 -->
-    <el-button size="small" type="warning" @click="openImportPanel">从其它任务导入</el-button>
+    <el-button size="small" type="warning" @click="openImportPanel"
+      >从其它任务导入</el-button
+    >
     <div class="p10">
       <tip>支持从已有的任务直接导入表单信息</tip>
-      <el-button type="success" @click="saveInfo" style="width: 200px;">保存</el-button>
+      <el-button type="success" @click="saveInfo" style="width: 200px"
+        >保存</el-button
+      >
     </div>
-    <div style="color: red;" v-if="needSave">有变动，请记得点击保存</div>
+    <div style="color: red" v-if="needSave">有变动，请记得点击保存</div>
     <div class="info-panel">
-      <el-dialog :fullscreen="isMobile" title="表单信息导入" v-model="showImportPanel">
-        <el-form :model="importPanelInfo" label-width="100px" label-position="right">
+      <el-dialog
+        :fullscreen="isMobile"
+        title="表单信息导入"
+        v-model="showImportPanel"
+      >
+        <el-form
+          :model="importPanelInfo"
+          label-width="100px"
+          label-position="right"
+        >
           <el-form-item label="任务">
-            <el-select filterable v-model="importPanelInfo.taskValue" placeholder="请选择" no-data-text="无可用任务">
-              <el-option v-for="t in importPanelInfo.taskList" :key="t.taskKey" :label="t.name" :value="t.taskKey">
+            <el-select
+              filterable
+              v-model="importPanelInfo.taskValue"
+              placeholder="请选择"
+              no-data-text="无可用任务"
+            >
+              <el-option
+                v-for="t in importPanelInfo.taskList"
+                :key="t.taskKey"
+                :label="t.name"
+                :value="t.taskKey"
+              >
               </el-option>
             </el-select>
           </el-form-item>
-          <tip>{{ importPanelInfo.taskValue ? "" : "无可用任务" }}</tip>
+          <tip>{{ importPanelInfo.taskValue ? '' : '无可用任务' }}</tip>
         </el-form>
         <template #footer>
           <span class="dialog-footer">
             <el-button @click="showImportPanel = false">取 消</el-button>
-            <el-button :disabled="!importPanelInfo.taskValue" type="primary" @click="handleSaveImportInfo">确 定
+            <el-button
+              :disabled="!importPanelInfo.taskValue"
+              type="primary"
+              @click="handleSaveImportInfo"
+              >确 定
             </el-button>
           </span>
         </template>
@@ -105,51 +212,64 @@
 </template>
 <script lang="ts" setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import {
-  computed, reactive, ref, watch, watchEffect,
-} from 'vue'
-import { CircleCloseFilled, CirclePlusFilled, Top } from '@element-plus/icons-vue'
+  CircleCloseFilled,
+  CirclePlusFilled,
+  Top
+} from '@element-plus/icons-vue'
 import { useStore } from 'vuex'
 import { updateTaskInfo } from '../../public'
 import Tip from './tip.vue'
 import { TaskApi } from '@/apis'
 import InfosForm from '@/components/InfosForm/index.vue'
-import { parseInfo } from '@/utils/stringUtil'
+import {
+  getDefaultFormat,
+  parseFileFormat,
+  parseInfo
+} from '@/utils/stringUtil'
 
 const props = defineProps({
   rewrite: {
     type: Number,
-    default: 0,
+    default: 0
   },
   info: {
     typs: String,
-    default: '[]',
+    default: '[]'
   },
   k: {
     type: String,
-    default: '',
+    default: ''
   },
+  format: {
+    type: String,
+    default: '',
+    required: false
+  }
 })
+const formatData = reactive(getDefaultFormat())
 const openPreview = ref(false)
-const infoTypeList = reactive<{ label: string, value: InfoItemType }[]>([
+const infoTypeList = reactive<{ label: string; value: InfoItemType }[]>([
   {
     label: '输入框',
-    value: 'input',
+    value: 'input'
   },
   {
     label: '固定内容',
-    value: 'text',
+    value: 'text'
   },
   {
     label: '单选框',
-    value: 'radio',
+    value: 'radio'
   },
   {
     label: '下拉选择',
-    value: 'select',
-  },
+    value: 'select'
+  }
 ])
-const getTypeDes = (type: string) => infoTypeList.find((v) => v.value === type)?.label
+const getTypeDes = (type: string) =>
+  infoTypeList.find((v) => v.value === type)?.label
 
 const selectType = ref<InfoItemType>('input')
 
@@ -160,11 +280,14 @@ const infos = reactive<InfoItem[]>([])
 const needSave = ref(false)
 const showAddInfo = computed(() => infos.length < 6 && !openPreview.value)
 // 负责清空
-watch(() => props.info, () => {
-  infos.splice(0, infos.length)
-  selectType.value = 'input'
-  openPreview.value = false
-})
+watch(
+  () => props.info,
+  () => {
+    infos.splice(0, infos.length)
+    selectType.value = 'input'
+    openPreview.value = false
+  }
+)
 // 负责更新
 watchEffect(() => {
   infos.push(...parseInfo(props.info))
@@ -172,13 +295,15 @@ watchEffect(() => {
 })
 
 // 预计格式
-const resFormat = computed(() => `${infos.map((v) => v.text).join('-')}.后缀`)
+const resFormat = computed(
+  () => `${infos.map((v) => v.text).join(formatData.splitChar)}.后缀`
+)
 watchEffect(() => {
   autoRewrite.value = !!props.rewrite
 })
 const handleChange = (v: boolean) => {
   updateTaskInfo(props.k, {
-    rewrite: +v,
+    rewrite: +v
   })
 }
 
@@ -200,7 +325,8 @@ const deleteInfo = (idx: number, infoList?: InfoItem[], minLen = 1) => {
   list.splice(idx, 1)
   needSave.value = true
 }
-const judgeInfoForm = (items: InfoItem[]) => items.every((v) => v.text.trim() && judgeInfoForm(v.children || []))
+const judgeInfoForm = (items: InfoItem[]) =>
+  items.every((v) => v.text.trim() && judgeInfoForm(v.children || []))
 const saveInfo = () => {
   if (!judgeInfoForm(infos)) {
     ElMessage.error('请完整填写表单信息')
@@ -210,13 +336,15 @@ const saveInfo = () => {
     return
   }
   updateTaskInfo(props.k, {
-    info: JSON.stringify(infos.map((v) => {
-      // 特殊处理固定值的内容
-      if (v.type === 'text') {
-        v.value = v.text
-      }
-      return v
-    })),
+    info: JSON.stringify(
+      infos.map((v) => {
+        // 特殊处理固定值的内容
+        if (v.type === 'text') {
+          v.value = v.text
+        }
+        return v
+      })
+    )
   })
   needSave.value = false
 }
@@ -233,14 +361,16 @@ const showImportPanel = ref(false)
 const openImportPanel = async () => {
   const taskKey = props.k
   // 通过任务Key获取可用任务列表，与概况信息
-  const { data } = (await TaskApi.getUsefulTemplate(taskKey))
+  const { data } = await TaskApi.getUsefulTemplate(taskKey)
   importPanelInfo.taskList = data
   importPanelInfo.taskValue = data[0]?.taskKey || ''
   showImportPanel.value = true
 }
 
 const handleSaveImportInfo = () => {
-  const usefulInfo = importPanelInfo.taskList.find((v) => v.taskKey === importPanelInfo.taskValue).info
+  const usefulInfo = importPanelInfo.taskList.find(
+    (v) => v.taskKey === importPanelInfo.taskValue
+  ).info
   infos.splice(0, infos.length)
   infos.push(...parseInfo(usefulInfo))
   showImportPanel.value = false
@@ -252,8 +382,24 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
 const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
 
 const showHelp = () => {
-  ElMessageBox.alert('<p>固定内容主要用于重命名中，固定的部分，如“活动名”，“班级名”</p><p>如要设置注意事项，请使用 <strong>批注</strong> 功能</p>', '注意事项', { dangerouslyUseHTMLString: true })
+  ElMessageBox.alert(
+    '<p>固定内容主要用于重命名中，固定的部分，如“活动名”，“班级名”</p><p>如要设置注意事项，请使用 <strong>批注</strong> 功能</p>',
+    '注意事项',
+    { dangerouslyUseHTMLString: true }
+  )
 }
+
+const handleChangeSplitChar = () => {
+  updateTaskInfo(props.k, {
+    format: JSON.stringify(formatData)
+  })
+}
+const splitCharList = reactive(['-', '+', '_'])
+watchEffect(() => {
+  if (props.format !== null) {
+    Object.assign(formatData, parseFileFormat(props.format))
+  }
+})
 </script>
 <style scoped lang="scss">
 .auto-format {

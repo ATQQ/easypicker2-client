@@ -3,7 +3,7 @@
 * 线上测试地址：https://ep.dev.sugarat.top/
 
 
-## v2.1.9-beta.x (2022/09/12)
+## v2.1.9-beta.x (2022/09/17)
 
 ### Feature
 * 文档站支持全文的内容搜素，Power By [Algolia](https://www.algolia.com/developers/?utm_content=powered_by&utm_source=localhost&utm_medium=referral&utm_campaign=docsearch)
@@ -21,6 +21,10 @@
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MjI5NjMzNzMxMw==662296337313" style="height:100px;"/>
 * 支持管理员限制部分页面访问
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2Mjk4NjMyMzAxOA==662986323018" style="height:100px;"/>
+* 提交文件相关：支持限制文件类型，文件大小，单次最大上传数量
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MzM5NzU5NjExNQ==663397596115" style="height:100px;"/>
+* 支持下划线（_）加号（+）等作为文件分隔符
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MzQwNDA1OTI5MQ==663404059291" style="height:100px;"/>
 
 ### BugFix
 * 引导文案的校对
