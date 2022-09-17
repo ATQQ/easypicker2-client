@@ -10,8 +10,8 @@ const store = createStore({
     user,
     category,
     task,
-    public: publicModule,
-  },
+    public: publicModule
+  }
 })
 
 export default store

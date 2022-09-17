@@ -2,20 +2,20 @@ import { Module } from 'vuex'
 import { CategoryApi } from '@/apis'
 
 interface State {
-  categoryList: any []
+  categoryList: any[]
 }
 
 const store: Module<State, unknown> = {
   namespaced: true,
   state() {
     return {
-      categoryList: [],
+      categoryList: []
     }
   },
   mutations: {
     updateCategory(state, payload) {
       state.categoryList = payload
-    },
+    }
   },
   actions: {
     getCategory(context) {
@@ -37,8 +37,8 @@ const store: Module<State, unknown> = {
         }
         return res
       })
-    },
-  },
+    }
+  }
 }
 
 export default store

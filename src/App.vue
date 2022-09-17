@@ -30,5 +30,4 @@ onMounted(() => {
 a {
   text-decoration: none;
 }
-
 </style>

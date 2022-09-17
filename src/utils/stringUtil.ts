@@ -3,9 +3,9 @@ import SparkMD5 from 'spark-md5'
 import copy from 'clipboard-copy'
 import { jsonp } from './networkUtil'
 /**
-* 将结果写入的剪贴板
-* @param {String} text
-*/
+ * 将结果写入的剪贴板
+ * @param {String} text
+ */
 export function copyRes(text: string, msg = '结果已成功复制到剪贴板') {
   // 自定义
   // const input = document.createElement('input')
@@ -18,30 +18,38 @@ export function copyRes(text: string, msg = '结果已成功复制到剪贴板')
   // document.body.removeChild(input)
 
   // 第三方
-  copy(text).then(() => {
-    if (msg) {
-      ElMessage.success(msg)
-    }
-  }).catch((err) => {
-    // TODO:错误上报API接入
-    console.error(err)
-    ElMessage.warning('不支持自动复制，请手动选择复制')
-  })
+  copy(text)
+    .then(() => {
+      if (msg) {
+        ElMessage.success(msg)
+      }
+    })
+    .catch((err) => {
+      // TODO:错误上报API接入
+      console.error(err)
+      ElMessage.warning('不支持自动复制，请手动选择复制')
+    })
 }
 
 /**
-* 生成短地址
-* @param url
-*/
+ * 生成短地址
+ * @param url
+ */
 export function getShortUrl(text: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    jsonp(`https://api.suowo.cn/api.htm?format=jsonp&url=${encodeURIComponent(text)}&key=5ec8a001be96bd79a37f19b8@bf33c7483d0c6900bb7bc90a0e6dfdf0&expireDate=2030-03-31&domain=0`, 'shortLink', (res) => {
-      const { url, err } = res
-      if (err) {
-        reject(err)
+    jsonp(
+      `https://api.suowo.cn/api.htm?format=jsonp&url=${encodeURIComponent(
+        text
+      )}&key=5ec8a001be96bd79a37f19b8@bf33c7483d0c6900bb7bc90a0e6dfdf0&expireDate=2030-03-31&domain=0`,
+      'shortLink',
+      (res) => {
+        const { url, err } = res
+        if (err) {
+          reject(err)
+        }
+        resolve(url)
       }
-      resolve(url)
-    })
+    )
   })
 }
 
@@ -60,11 +68,22 @@ export function formatDate(d: Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
     'm+': d.getMinutes(), // 分
     's+': d.getSeconds(), // 秒
     'q+': Math.floor((d.getMonth() + 3) / 3), // 季度
-    S: d.getMilliseconds(), // 毫秒
+    S: d.getMilliseconds() // 毫秒
   }
-  if (/(y+)/.test(fmt)) { fmt = fmt.replace(RegExp.$1, (`${d.getFullYear()}`).substr(4 - RegExp.$1.length)) }
+  if (/(y+)/.test(fmt)) {
+    fmt = fmt.replace(
+      RegExp.$1,
+      `${d.getFullYear()}`.substr(4 - RegExp.$1.length)
+    )
+  }
   // eslint-disable-next-line no-restricted-syntax
-  for (const k in o) { if (new RegExp(`(${k})`).test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? (o[k]) : ((`00${o[k]}`).substr((`${o[k]}`).length))) }
+  for (const k in o) {
+    if (new RegExp(`(${k})`).test(fmt))
+      fmt = fmt.replace(
+        RegExp.$1,
+        RegExp.$1.length === 1 ? o[k] : `00${o[k]}`.substr(`${o[k]}`.length)
+      )
+  }
   return fmt
 }
 
@@ -84,7 +103,7 @@ export function getFileMd5Hash(file: File) {
 
     function loadNext() {
       const start = currentChunk * chunkSize
-      const end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize
+      const end = start + chunkSize >= file.size ? file.size : start + chunkSize
 
       fileReader.readAsArrayBuffer(blobSlice.call(file, start, end))
     }
@@ -111,24 +130,45 @@ export function getFileMd5Hash(file: File) {
   })
 }
 
-export function formatSize(size: number, pointLength?: number, units?: string[]) {
+export function formatSize(
+  size: number,
+  pointLength?: number,
+  units?: string[]
+) {
   let unit
   units = units || ['B', 'K', 'M', 'G', 'TB']
   // eslint-disable-next-line no-cond-assign
   while ((unit = units.shift()) && size > 1024) {
     size /= 1024
   }
-  return (unit === 'B' ? size : size.toFixed(pointLength === undefined ? 2 : pointLength)) + unit
+  return (
+    (unit === 'B'
+      ? size
+      : size.toFixed(pointLength === undefined ? 2 : pointLength)) + unit
+  )
 }
 
 /**
  * 浏览器支持预览的类型
  */
 function getSupportPreviewType() {
-  const types = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp', 'image/svg+xml', 'application/pdf', 'text/plain', 'video/mp4']
+  const types = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/bmp',
+    'image/webp',
+    'image/svg+xml',
+    'application/pdf',
+    'text/plain',
+    'video/mp4'
+  ]
   const supportTypes = []
   types.forEach((type) => {
-    if (typeof (FileReader) !== 'undefined' && typeof (FileReader.prototype.readAsDataURL) !== 'undefined') {
+    if (
+      typeof FileReader !== 'undefined' &&
+      typeof FileReader.prototype.readAsDataURL !== 'undefined'
+    ) {
       const fileReader = new FileReader()
       if (fileReader.readAsDataURL) {
         try {
@@ -168,4 +208,27 @@ export function parseInfo(info: string): InfoItem[] {
  */
 export function normalizeFileName(name: string) {
   return name.replace(/[\\/:*?"<>|]/g, '-')
+}
+
+export const getDefaultFormat = () => {
+  return {
+    size: 0,
+    sizeUnit: 'MB',
+    status: false,
+    format: [],
+    limit: 10,
+    splitChar: '-'
+  }
+}
+export function parseFileFormat(format: string) {
+  const formatData = getDefaultFormat()
+  try {
+    const v = JSON.parse(format)
+    Object.keys(v).forEach((key) => {
+      formatData[key] = v[key] || formatData[key]
+    })
+  } catch (_) {
+    return formatData
+  }
+  return formatData
 }
