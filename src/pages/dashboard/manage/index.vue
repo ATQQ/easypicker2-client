@@ -64,7 +64,7 @@ onMounted(() => {
 <style scoped>
 .monitor {
   width: 96%;
-  min-height: 100vh;
+  /* min-height: 100vh; */
   padding: 10px;
   overflow: hidden;
   display: flex;

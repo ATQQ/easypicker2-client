@@ -1,6 +1,6 @@
 <template>
   <el-config-provider size="large" :zIndex="1000">
-    <router-view></router-view>
+    <router-view style="min-height: 100vh"></router-view>
   </el-config-provider>
 </template>
 
