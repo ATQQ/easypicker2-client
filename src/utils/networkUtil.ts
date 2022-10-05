@@ -81,7 +81,7 @@ export interface tableItem {
 export function tableToExcel(
   headers: (string | tableItem)[],
   body: any[],
-  filename = 'res.xls'
+  filename = 'res.xlsx'
 ) {
   // 列标题
   let str = `<tr>${headers
@@ -108,26 +108,30 @@ export function tableToExcel(
   }
 
   // Worksheet名
-  const worksheet = 'sheet1'
-  const uri = 'data:application/vnd.ms-excel;base64,'
+  // const worksheet = 'sheet1'
+  // const uri = 'data:application/vnd.ms-excel;base64,'
 
-  // 下载的表格模板数据
-  const template =
-    '<html xmlns:o="urn:schemas-microsoft-com:office:office" \n' +
-    '      xmlns:x="urn:schemas-microsoft-com:office:excel" \n' +
-    '      xmlns="http://www.w3.org/TR/REC-html40">\n' +
-    '      <head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>\n' +
-    `        <x:Name>${worksheet}</x:Name>\n` +
-    '        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>\n' +
-    '        </x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->\n' +
-    `        </head><body><table>${str}</table></body></html>\n`
+  // // 下载的表格模板数据
+  // const template =
+  //   '<html xmlns:o="urn:schemas-microsoft-com:office:office" \n' +
+  //   '      xmlns:x="urn:schemas-microsoft-com:office:excel" \n' +
+  //   '      xmlns="http://www.w3.org/TR/REC-html40">\n' +
+  //   '      <head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>\n' +
+  //   `        <x:Name>${worksheet}</x:Name>\n` +
+  //   '        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>\n' +
+  //   '        </x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->\n' +
+  //   `        </head><body><table>${str}</table></body></html>\n`
   // 下载模板
-  const tempA = document.createElement('a')
-  tempA.href = uri + base64(template)
-  tempA.download = filename
-  document.body.appendChild(tempA)
-  tempA.click()
-  document.body.removeChild(tempA)
+  // const tempA = document.createElement('a')
+  // tempA.href = uri + base64(template)
+  // tempA.download = filename
+  // document.body.appendChild(tempA)
+  // tempA.click()
+  // document.body.removeChild(tempA)
+  const tableElement = document.createElement('table')
+  tableElement.innerHTML = str
+  const wb = XLSX.utils.table_to_book(tableElement)
+  XLSX.writeFile(wb, filename)
 }
 
 /**

@@ -375,7 +375,7 @@ const exportLogData = () => {
     `导出日志_${logs.length}条${formatDate(
       new Date(),
       'yyyy年MM月日hh时mm分ss秒'
-    )}.xls`
+    )}.xlsx`
   )
   ElMessage.success('导出成功')
 }
