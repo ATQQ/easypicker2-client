@@ -1,50 +1,87 @@
 <template>
   <div class="footer">
     <ul>
-      <li v-for="(item, index) in navs" :key="index">
-        <a target="_blank" rel="noopener" v-bind:href="item.link">{{ item.title }}</a>
-      </li>
-      <li>
-        <a href="https://docs.ep.sugarat.top/author.html" target="_blank">联系作者</a>
-      </li>
-      <li style="width:26px;">
-        <a href="https://docs.ep.sugarat.top/praise/index.html" target="_blank">👍🏻</a>
-        <!-- <a><Praise>👍🏻</Praise></a> -->
+      <li v-for="(item, index) in navList" :key="index">
+        <a target="_blank" rel="noopener" v-bind:href="item.link">{{
+          item.title
+        }}</a>
       </li>
     </ul>
-    <ul v-if="navs2.length">
-      <li v-for="(item, index) in navs2" :key="index">
-        <a target="_blank" rel="noopener" v-bind:href="item.link">{{ item.title }}</a>
-      </li>
-    </ul>
-    <p>v{{version}}
-      © 2019 - {{ cunnrentYear }} by
-      <a style="color: aliceblue;" target="_blank" rel="noopener" href="https://docs.ep.sugarat.top/author.html">粥里有勺糖</a>
+    <p>
+      v{{ version }} © 2019 - {{ currentYear }} by
+      <a
+        target="_blank"
+        rel="noopener"
+        href="https://docs.ep.sugarat.top/author.html"
+        >粥里有勺糖</a
+      >
     </p>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive } from 'vue'
+import { computed } from 'vue'
 import { version } from '../../../package.json'
-// import Praise from '../Praise/index.vue'
 
-const navs = reactive([
-  {
-    title: '应用介绍',
-    link: 'https://docs.ep.sugarat.top/',
-  },
-  {
-    title: '问卷反馈',
-    link: 'https://www.wenjuan.com/s/UZBZJvA040/',
-  },
-])
+const props = defineProps<{
+  type?: 'home' | 'dashboard' | 'task'
+}>()
 
-const navs2 = reactive([
+const navList = computed(() => {
+  const navMap = {
+    home: [
+      {
+        title: '应用介绍',
+        link: 'https://docs.ep.sugarat.top/'
+      },
+      {
+        title: 'GitHub',
+        link: 'https://github.com/ATQQ/easypicker2-client'
+      },
+      {
+        title: '联系作者',
+        link: 'https://docs.ep.sugarat.top/author.html'
+      },
+      {
+        title: '请喝奶茶🧋',
+        link: 'https://docs.ep.sugarat.top/praise/index.html'
+      }
+    ],
+    dashboard: [
+      {
+        title: '页面&功能问题反馈，点这里😊',
+        link: 'https://docs.ep.sugarat.top/plan/wish.html'
+      }
+    ],
+    task: [
+      {
+        title: '页面&功能问题反馈，点这里😊',
+        link: 'https://docs.ep.sugarat.top/plan/wish.html'
+      }
+    ]
+  }
 
-])
+  return navMap[props.type || 'home'] || []
+})
 
-const cunnrentYear = new Date().getFullYear()
+const currentYear = new Date().getFullYear()
+const fontColor = computed(() => {
+  const colors = {
+    home: '#fff',
+    dashboard: '#7f7f7f',
+    task: '#a4a4a4'
+  }
+  return colors[props.type || 'home']
+})
+
+const shadowColor = computed(() => {
+  const colors = {
+    home: '#ddd',
+    dashboard: '#9b9b9b',
+    task: '#c6c6c6'
+  }
+  return colors[props.type || 'home']
+})
 </script>
 
 <style lang="scss" scoped>
@@ -54,29 +91,29 @@ const cunnrentYear = new Date().getFullYear()
     display: flex;
     justify-content: center;
     li {
-      width: 80px;
+      min-width: 80px;
       list-style: none;
       text-align: center;
       a {
         text-align: center;
-        color: #fff;
+        color: v-bind(fontColor);
         opacity: 0.8;
         font-size: 1rem;
         line-height: 1rem;
         &:hover {
           opacity: 1;
-          text-shadow: 0 0 2px #ddd;
+          text-shadow: 0 0 2px v-bind(shadowColor);
         }
       }
     }
   }
 
   p {
-    margin-top: 40px;
+    margin-top: 28px;
     padding-bottom: 20px;
-    color: #ddd;
+    color: v-bind(shadowColor);
     a {
-      color: #ddd;
+      color: v-bind(shadowColor);
       margin-left: 10px;
     }
   }
