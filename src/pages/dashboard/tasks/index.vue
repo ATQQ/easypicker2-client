@@ -71,7 +71,6 @@
     </LinkDialog>
     <!-- 附加属性编辑弹窗 -->
     <el-dialog
-      draggable
       :fullscreen="isMobile"
       title="更多设置"
       v-model="showTaskInfoPanel"
