@@ -17,3 +17,4 @@ export const SuperOverviewApi = superOverview
 export const SuperUserApi = superUser
 export { default as WishApi } from './modules/wish'
 export { default as ConfigServiceAPI } from './modules/config'
+export { default as ActionServiceAPI } from './modules/action'
