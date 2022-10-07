@@ -78,7 +78,7 @@ const shadowColor = computed(() => {
   const colors = {
     home: '#ddd',
     dashboard: '#9b9b9b',
-    task: '#c6c6c6'
+    task: '#d5d5d5'
   }
   return colors[props.type || 'home']
 })
