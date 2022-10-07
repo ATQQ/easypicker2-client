@@ -19,10 +19,10 @@ export default defineConfig({
     }),
     Components({
       resolvers: [ElementPlusResolver()]
-    }),
-    ElementPlus({
-      defaultLocale: 'zh-cn'
     })
+    // ElementPlus({
+    //   defaultLocale: 'zh-cn'
+    // })
   ],
   optimizeDeps: {
     include: ['vue', 'vue-router', 'vuex', 'axios', 'vue-json-viewer']
