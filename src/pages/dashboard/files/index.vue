@@ -166,40 +166,15 @@
             inactive-text="否"
           />
         </div>
-      </div>
-    </div>
-    <div v-show="downloadList.length" class="panel">
-      <tip
-        >此部分 ”只会展示浏览器将直接预览的文件“
-        的下载信息，暂不可切换页面，切换后会丢失当前正在下载进度</tip
-      >
-      <div class="progress-list">
-        <div class="progress-item" v-for="(v, idx) in downloadList" :key="idx">
-          <div class="progress">
-            <el-progress
-              text-inside
-              :stroke-width="24"
-              :percentage="v.percentage"
-              :color="customColors"
-            >
-            </el-progress>
-            <el-button size="small" disabled type="primary" text>
-              {{ formatSize((v.percentage / 100) * v.size) }}/{{
-                formatSize(v.size)
-              }}</el-button
-            >
-            <el-button
-              size="small"
-              type="primary"
-              text
-              @click="copyRes(v.url, '资源链接已复制到剪贴板')"
-              >复制链接</el-button
-            >
-          </div>
-          <div class="des flex fc fac">
-            <div class="filename">{{ v.filename }}</div>
-            <div class="mimeType">{{ v.mimeType }}</div>
-          </div>
+        <div class="control-item">
+          ⏰ 近期下载
+          <el-switch
+            v-model="showHistoryPanel"
+            style="
+              --el-switch-on-color: #13ce66;
+              --el-switch-off-color: #ff4949;
+            "
+          />
         </div>
       </div>
     </div>
@@ -353,6 +328,100 @@
         layout="total, sizes, prev, pager, next, jumper"
       ></el-pagination>
     </div>
+    <div class="panel" v-show="showHistoryPanel">
+      <tip style="font-size: 16px"
+        >”❤️下面展示历史的下载记录与归档任务完成情况❤️“</tip
+      >
+      <tip style="font-size: 16px">”再也不需要在页面停留等待归档完成“</tip>
+      <div>
+        <el-table
+          v-loading="isLoadingData"
+          element-loading-text="Loading..."
+          tooltip-effect="dark"
+          multipleTable
+          ref="multipleTable"
+          @selection-change="handleSelectionChange"
+          stripe
+          border
+          :default-sort="{ prop: 'date', order: 'descending' }"
+          :max-height="666"
+          :data="historyDownloadRecord.actions"
+          style="width: 100%"
+        >
+          <el-table-column prop="date" label="触发时间" width="200">
+            <template #default="scope">{{
+              formatDate(new Date(scope.row.date))
+            }}</template>
+          </el-table-column>
+          <el-table-column prop="tip" label="文件信息"></el-table-column>
+          <el-table-column prop="type" label="任务类型">
+            <template #default="scope">
+              <el-link
+                v-if="scope.row.type === ActionType.Compress"
+                type="primary"
+                >归档下载</el-link
+              >
+              <el-link v-else type="default">普通下载</el-link>
+            </template>
+          </el-table-column>
+          <el-table-column prop="size" label="大小" width="100">
+            <template #default="scope">
+              <span v-if="scope.row.status === DownloadStatus.ARCHIVE"
+                ><el-link type="danger">归档中...</el-link></span
+              >
+              <span v-else>{{
+                !scope.row.size ? '未知大小' : formatSize(scope.row.size)
+              }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column fixed="right" label="操作" width="140">
+            <template #default="scope">
+              <div
+                v-loading="true"
+                v-if="scope.row.status === DownloadStatus.ARCHIVE"
+              >
+                归档中...
+              </div>
+              <div v-if="scope.row.status === DownloadStatus.EXPIRED">
+                链接已失效
+              </div>
+              <div v-if="scope.row.status === DownloadStatus.SUCCESS">
+                <el-link @click="downLoadByUrl(scope.row.url)" type="primary"
+                  >下载</el-link
+                >
+                <el-link
+                  type="success"
+                  style="margin-left: 10px"
+                  @click="copyRes(scope.row.url)"
+                  >链接</el-link
+                >
+                <el-link
+                  type="warning"
+                  style="margin-left: 10px"
+                  @click="
+                    () => {
+                      showLinkModel = true
+                      downloadUrl = scope.row.url
+                    }
+                  "
+                  >二维码</el-link
+                >
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="flex fc">
+          <el-pagination
+            small
+            :current-page="historyDownloadRecord.pageCurrent"
+            :page-count="historyDownloadRecord.pageCount"
+            :total="historyDownloadRecord.pageTotal"
+            layout="total, prev, pager, next"
+            @current-change="handleHistoryActionPageChange"
+          ></el-pagination>
+        </div>
+      </div>
+    </div>
     <!-- 信息弹窗 -->
     <el-dialog
       :fullscreen="isMobile"
@@ -413,18 +482,13 @@ import {
   formatDate,
   formatSize,
   getFileSuffix,
-  isSupportPreview,
   parseInfo
 } from '@/utils/stringUtil'
-import { FileApi } from '@/apis'
-import {
-  downLoadByUrl,
-  downLoadByXhr,
-  tableItem,
-  tableToExcel
-} from '@/utils/networkUtil'
+import { ActionServiceAPI, FileApi } from '@/apis'
+import { downLoadByUrl, tableItem, tableToExcel } from '@/utils/networkUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
+import { DownloadStatus, ActionType } from '@/constants'
 
 const $store = useStore()
 const $route = useRoute()
@@ -433,7 +497,46 @@ const downloadUrl = ref('')
 const showImg = ref(false)
 const showPeople = ref(true)
 const showOriginName = ref(false)
+const showHistoryPanel = ref(false)
+const historyDownloadRecord = reactive({
+  actions: [],
+  pageSize: 3,
+  /**
+   * 总页数
+   */
+  pageCount: 0,
+  pageCurrent: 1,
+  pageTotal: 0
+})
 
+const loadActions = () => {
+  ActionServiceAPI.getDownloadActions(
+    historyDownloadRecord.pageSize,
+    historyDownloadRecord.pageCurrent
+  ).then((v) => {
+    const { actions, sum } = v.data
+    const haveArchive = !!actions.find(
+      (v) => v.status === DownloadStatus.ARCHIVE
+    )
+    if (actions?.[0]?.type === ActionType.Compress) {
+      showHistoryPanel.value = true
+    }
+    if (haveArchive) {
+      showHistoryPanel.value = haveArchive
+      // 递归查询
+      setTimeout(loadActions, 1000)
+    }
+    historyDownloadRecord.pageTotal = sum
+    historyDownloadRecord.actions = actions
+    historyDownloadRecord.pageCount = Math.ceil(
+      sum / historyDownloadRecord.pageSize
+    )
+  })
+}
+const handleHistoryActionPageChange = (v) => {
+  historyDownloadRecord.pageCurrent = v
+  loadActions()
+}
 // 记录导出
 const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
   if (files.length === 0) {
@@ -565,7 +668,7 @@ const filterFiles = computed(() =>
             // eslint-disable-next-line no-useless-escape
             t.info
           ])
-            .replace(/[:'"\{\},\[\]]/g, '')
+            .replace(/[:'"{},[\]]/g, '')
             .includes(searchWord.value)
         : true
     )
@@ -600,37 +703,14 @@ const handleDropdownClick = (e: string) => {
         ids,
         `批量下载_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}`
       )
-        .then((r) => {
-          const { k } = r.data
-          FileApi.getCompressFileUrl(k)
-            .then((v) => {
-              showLinkModel.value = true
-              downloadUrl.value = v
-              downLoadByUrl(v, `${Date.now()}.zip`)
-              batchDownStart.value = false
-            })
-            .catch((err) => {
-              batchDownStart.value = false
-              ElMessageBox.confirm(err.msg, '错误提示', {
-                draggable: true
-              })
-                .then(() => {
-                  copyRes(err.msg, '错误信息已复制到剪贴板')
-                  ElMessage.error('联系开发者协助处理')
-                })
-                .catch(() => {
-                  ElMessage.info('取消')
-                  copyRes(err.msg, '错误信息已复制到剪贴板')
-                  ElMessage.error('联系开发者协助处理')
-                })
-            })
+        .then(() => {
+          loadActions()
         })
         .catch(() => {
           ElMessage.error('所选文件均已从服务器上移除')
           batchDownStart.value = false
         })
-      batchDownStart.value = true
-      ElMessage.info('开始归档选中的文件,请赖心等待,完成后将自动进行下载')
+      ElMessage.info('开始归档选中的文件,请赖心等待,历史面板可查看归档完成情况')
       break
     case 'delete':
       if (selectItem.length === 0) {
@@ -710,22 +790,16 @@ const handleSaveNewName = () => {
     })
 }
 
-const customColors = [
-  { color: '#f56c6c', percentage: 30 },
-  { color: '#e6a23c', percentage: 50 },
-  { color: '#409eff', percentage: 100 },
-  { color: '#67c23a', percentage: 100 }
-]
-// 可预览文件下载列表
-const downloadList = reactive<DownloadItem[]>([])
 const downloadOne = (e: any) => {
-  const { id, name, size } = e
+  const { id, name } = e
   FileApi.getOneFileUrl(id)
     .then((res) => {
       const { link } = res.data
       showLinkModel.value = true
       downloadUrl.value = link
       downLoadByUrl(link, name)
+      // 刷新
+      loadActions()
     })
     .catch(() => {
       ElMessage.error('文件已从服务器上移除')
@@ -792,39 +866,15 @@ const handleDownloadTask = () => {
     ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
     return
   }
-  // TODO:待优化重复代码
   FileApi.batchDownload(ids, selectTaskName.value)
-    .then((r) => {
-      const { k } = r.data
-      FileApi.getCompressFileUrl(k)
-        .then((v) => {
-          showLinkModel.value = true
-          downloadUrl.value = v
-          downLoadByUrl(v, `${Date.now()}.zip`)
-          batchDownStart.value = false
-        })
-        .catch((err) => {
-          batchDownStart.value = false
-          ElMessageBox.confirm(err.msg, '错误提示', {
-            draggable: true
-          })
-            .then(() => {
-              copyRes(err.msg, '错误信息已复制到剪贴板')
-              ElMessage.error('联系开发者协助处理')
-            })
-            .catch(() => {
-              ElMessage.info('取消')
-              copyRes(err.msg, '错误信息已复制到剪贴板')
-              ElMessage.error('联系开发者协助处理')
-            })
-        })
+    .then(() => {
+      loadActions()
     })
     .catch(() => {
       ElMessage.error('所选任务中的文件均已从服务器上移除')
       batchDownStart.value = false
     })
-  batchDownStart.value = true
-  ElMessage.info('开始归档任务中的文件,请赖心等待,完成后将自动进行下载')
+  ElMessage.info('开始归档选中的文件,请赖心等待,历史面板可查看归档完成情况')
 }
 
 const previewImages = reactive([])
@@ -865,6 +915,7 @@ watchEffect(() => {
 
 onMounted(() => {
   loadFiles()
+  loadActions()
   $store.dispatch('category/getCategory')
   $store.dispatch('task/getTask')
 })
