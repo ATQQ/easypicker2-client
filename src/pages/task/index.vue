@@ -813,7 +813,7 @@ onUnmounted(() => {
   line-height: 20px;
   text-align: left;
   word-break: break-all;
-  max-height: 100px;
+  // max-height: 100px;
   overflow: hidden;
   padding: 0 20px;
   color: #e6a23c;
