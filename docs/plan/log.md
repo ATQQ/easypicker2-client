@@ -10,6 +10,7 @@
 ### Bugfix
 * 设置填写信息弹窗，在PC侧被拖动后无法复原的问题（禁止弹窗拖动）
 * 批注信息内容过多，内容被截断
+* build `unplugin-element-plus` warn
 
 ## v2.2.1 (2022/10/05)
 ### BugFix
