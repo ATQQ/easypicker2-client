@@ -8,6 +8,8 @@
 * 表单项数放开到10项（原来6）
 * 单独展示历史下载记录（普通下载&归档下载）
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTE1MzY0MDU5OQ==665153640599" style="height:100px;" />
+* 单独的归档展示面板。刷新页面也不会丢失归档任务
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTIzOTc1NjIxMg==665239756212" style="height:100px;" />
 
 ### Bugfix
 * 设置填写信息弹窗，在PC侧被拖动后无法复原的问题（禁止弹窗拖动）
