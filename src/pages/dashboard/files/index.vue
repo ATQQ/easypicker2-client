@@ -167,7 +167,7 @@
           />
         </div>
         <div class="control-item">
-          ⏰ 近期下载
+          ⏰ 查看下载历史
           <el-switch
             v-model="showHistoryPanel"
             style="
@@ -518,11 +518,24 @@ const loadActions = () => {
     const haveArchive = !!actions.find(
       (v) => v.status === DownloadStatus.ARCHIVE
     )
-    if (actions?.[0]?.type === ActionType.Compress) {
-      showHistoryPanel.value = true
-    }
+
+    // 已记录的task
+    const compressTask: string[] = JSON.parse(
+      localStorage.getItem('ep_compress_task') || '[]'
+    )
+    actions
+      .filter((v) => v.type === ActionType.Compress)
+      .forEach((action) => {
+        // 判断状态
+        // SUCCESS
+        //  存在，触发下载，从compressTask移除
+        // Archive
+        //  不存在，push进compressTask
+      })
+
+    // TODO:更新用于展示的数据
+    localStorage.setItem('ep_compress_task', JSON.stringify(compressTask))
     if (haveArchive) {
-      showHistoryPanel.value = haveArchive
       // 递归查询
       setTimeout(loadActions, 1000)
     }
@@ -710,7 +723,7 @@ const handleDropdownClick = (e: string) => {
           ElMessage.error('所选文件均已从服务器上移除')
           batchDownStart.value = false
         })
-      ElMessage.info('开始归档选中的文件,请赖心等待,历史面板可查看归档完成情况')
+      ElMessage.info('开始归档选中的文件,请赖心等待')
       break
     case 'delete':
       if (selectItem.length === 0) {
@@ -874,7 +887,7 @@ const handleDownloadTask = () => {
       ElMessage.error('所选任务中的文件均已从服务器上移除')
       batchDownStart.value = false
     })
-  ElMessage.info('开始归档选中的文件,请赖心等待,历史面板可查看归档完成情况')
+  ElMessage.info('开始归档选中的文件,请赖心等待')
 }
 
 const previewImages = reactive([])
