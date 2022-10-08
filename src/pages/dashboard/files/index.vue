@@ -178,6 +178,123 @@
         </div>
       </div>
     </div>
+    <div
+      class="panel"
+      v-show="historyDownloadRecord.compressTask.length && !showHistoryPanel"
+    >
+      <tip style="font-size: 16px"
+        >正在进行归档的任务
+        {{ historyDownloadRecord.compressTask.length }}个</tip
+      >
+      <tip>详细归档记录点击右上角 “⏰查看下载历史”</tip>
+      <p
+        v-for="(record, idx) in historyDownloadRecord.compressTask"
+        :key="record.id"
+        class="tc"
+        style="margin-top: 10px"
+      >
+        {{ idx + 1 }}. {{ record.tip }}
+        <span
+          v-loading="true"
+          element-loading-text="..."
+          style="--el-loading-spinner-size: 20px"
+        ></span>
+      </p>
+    </div>
+    <div class="panel" v-show="showHistoryPanel">
+      <tip style="font-size: 16px"
+        >”❤️下面展示历史的下载记录与归档任务完成情况❤️“</tip
+      >
+      <tip>”再也不需要在页面停留等待归档完成“</tip>
+      <div>
+        <el-table
+          v-loading="isLoadingData"
+          element-loading-text="Loading..."
+          tooltip-effect="dark"
+          multipleTable
+          ref="multipleTable"
+          @selection-change="handleSelectionChange"
+          stripe
+          border
+          :default-sort="{ prop: 'date', order: 'descending' }"
+          :max-height="666"
+          :data="historyDownloadRecord.actions"
+          style="width: 100%"
+        >
+          <el-table-column prop="date" label="触发时间" width="200">
+            <template #default="scope">{{
+              formatDate(new Date(scope.row.date))
+            }}</template>
+          </el-table-column>
+          <el-table-column prop="tip" label="文件信息"></el-table-column>
+          <el-table-column prop="type" label="任务类型">
+            <template #default="scope">
+              <el-link
+                v-if="scope.row.type === ActionType.Compress"
+                type="primary"
+                >归档下载</el-link
+              >
+              <el-link v-else type="default">普通下载</el-link>
+            </template>
+          </el-table-column>
+          <el-table-column prop="size" label="大小" width="100">
+            <template #default="scope">
+              <span v-if="scope.row.status === DownloadStatus.ARCHIVE"
+                ><el-link type="danger">归档中...</el-link></span
+              >
+              <span v-else>{{
+                !scope.row.size ? '未知大小' : formatSize(scope.row.size)
+              }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column fixed="right" label="操作" width="140">
+            <template #default="scope">
+              <div
+                v-loading="true"
+                v-if="scope.row.status === DownloadStatus.ARCHIVE"
+              >
+                归档中...
+              </div>
+              <div v-if="scope.row.status === DownloadStatus.EXPIRED">
+                链接已失效
+              </div>
+              <div v-if="scope.row.status === DownloadStatus.SUCCESS">
+                <el-link @click="downLoadByUrl(scope.row.url)" type="primary"
+                  >下载</el-link
+                >
+                <el-link
+                  type="success"
+                  style="margin-left: 10px"
+                  @click="copyRes(scope.row.url)"
+                  >链接</el-link
+                >
+                <el-link
+                  type="warning"
+                  style="margin-left: 10px"
+                  @click="
+                    () => {
+                      showLinkModel = true
+                      downloadUrl = scope.row.url
+                    }
+                  "
+                  >二维码</el-link
+                >
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="flex fc">
+          <el-pagination
+            small
+            :current-page="historyDownloadRecord.pageCurrent"
+            :page-count="historyDownloadRecord.pageCount"
+            :total="historyDownloadRecord.pageTotal"
+            layout="total, prev, pager, next"
+            @current-change="handleHistoryActionPageChange"
+          ></el-pagination>
+        </div>
+      </div>
+    </div>
     <!-- 主体内容 -->
     <div class="panel">
       <Tip>空间占用情况：{{ filterFileSize }} / {{ fileListSize }}</Tip>
@@ -328,100 +445,6 @@
         layout="total, sizes, prev, pager, next, jumper"
       ></el-pagination>
     </div>
-    <div class="panel" v-show="showHistoryPanel">
-      <tip style="font-size: 16px"
-        >”❤️下面展示历史的下载记录与归档任务完成情况❤️“</tip
-      >
-      <tip style="font-size: 16px">”再也不需要在页面停留等待归档完成“</tip>
-      <div>
-        <el-table
-          v-loading="isLoadingData"
-          element-loading-text="Loading..."
-          tooltip-effect="dark"
-          multipleTable
-          ref="multipleTable"
-          @selection-change="handleSelectionChange"
-          stripe
-          border
-          :default-sort="{ prop: 'date', order: 'descending' }"
-          :max-height="666"
-          :data="historyDownloadRecord.actions"
-          style="width: 100%"
-        >
-          <el-table-column prop="date" label="触发时间" width="200">
-            <template #default="scope">{{
-              formatDate(new Date(scope.row.date))
-            }}</template>
-          </el-table-column>
-          <el-table-column prop="tip" label="文件信息"></el-table-column>
-          <el-table-column prop="type" label="任务类型">
-            <template #default="scope">
-              <el-link
-                v-if="scope.row.type === ActionType.Compress"
-                type="primary"
-                >归档下载</el-link
-              >
-              <el-link v-else type="default">普通下载</el-link>
-            </template>
-          </el-table-column>
-          <el-table-column prop="size" label="大小" width="100">
-            <template #default="scope">
-              <span v-if="scope.row.status === DownloadStatus.ARCHIVE"
-                ><el-link type="danger">归档中...</el-link></span
-              >
-              <span v-else>{{
-                !scope.row.size ? '未知大小' : formatSize(scope.row.size)
-              }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column fixed="right" label="操作" width="140">
-            <template #default="scope">
-              <div
-                v-loading="true"
-                v-if="scope.row.status === DownloadStatus.ARCHIVE"
-              >
-                归档中...
-              </div>
-              <div v-if="scope.row.status === DownloadStatus.EXPIRED">
-                链接已失效
-              </div>
-              <div v-if="scope.row.status === DownloadStatus.SUCCESS">
-                <el-link @click="downLoadByUrl(scope.row.url)" type="primary"
-                  >下载</el-link
-                >
-                <el-link
-                  type="success"
-                  style="margin-left: 10px"
-                  @click="copyRes(scope.row.url)"
-                  >链接</el-link
-                >
-                <el-link
-                  type="warning"
-                  style="margin-left: 10px"
-                  @click="
-                    () => {
-                      showLinkModel = true
-                      downloadUrl = scope.row.url
-                    }
-                  "
-                  >二维码</el-link
-                >
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-        <div class="flex fc">
-          <el-pagination
-            small
-            :current-page="historyDownloadRecord.pageCurrent"
-            :page-count="historyDownloadRecord.pageCount"
-            :total="historyDownloadRecord.pageTotal"
-            layout="total, prev, pager, next"
-            @current-change="handleHistoryActionPageChange"
-          ></el-pagination>
-        </div>
-      </div>
-    </div>
     <!-- 信息弹窗 -->
     <el-dialog
       :fullscreen="isMobile"
@@ -506,34 +529,47 @@ const historyDownloadRecord = reactive({
    */
   pageCount: 0,
   pageCurrent: 1,
-  pageTotal: 0
+  pageTotal: 0,
+  compressTask: []
 })
 
 const loadActions = () => {
+  // 已记录的task
+  const compressTask: ActionApiTypes.DownloadActionData[] = JSON.parse(
+    localStorage.getItem('ep_compress_task') || '[]'
+  )
+  historyDownloadRecord.compressTask = compressTask
+
   ActionServiceAPI.getDownloadActions(
     historyDownloadRecord.pageSize,
-    historyDownloadRecord.pageCurrent
+    historyDownloadRecord.pageCurrent,
+    compressTask.map((v) => v.id)
   ).then((v) => {
     const { actions, sum } = v.data
     const haveArchive = !!actions.find(
       (v) => v.status === DownloadStatus.ARCHIVE
     )
 
-    // 已记录的task
-    const compressTask: string[] = JSON.parse(
-      localStorage.getItem('ep_compress_task') || '[]'
-    )
     actions
       .filter((v) => v.type === ActionType.Compress)
       .forEach((action) => {
+        const existIndex = compressTask.findIndex((v) => v.id === action.id)
         // 判断状态
         // SUCCESS
         //  存在，触发下载，从compressTask移除
+        if (action.status === DownloadStatus.SUCCESS && existIndex !== -1) {
+          downLoadByUrl(action.url)
+          ElMessage.success(`自动下载归档任务 ${action.tip}`)
+          compressTask.splice(existIndex, 1)
+        }
         // Archive
         //  不存在，push进compressTask
+        if (action.status === DownloadStatus.ARCHIVE && existIndex === -1) {
+          compressTask.push(action)
+        }
       })
-
-    // TODO:更新用于展示的数据
+    // TODO:之后根据反馈优化
+    historyDownloadRecord.compressTask = compressTask
     localStorage.setItem('ep_compress_task', JSON.stringify(compressTask))
     if (haveArchive) {
       // 递归查询
@@ -879,13 +915,18 @@ const handleDownloadTask = () => {
     ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
     return
   }
+  batchDownStart.value = true
   FileApi.batchDownload(ids, selectTaskName.value)
     .then(() => {
       loadActions()
     })
     .catch(() => {
       ElMessage.error('所选任务中的文件均已从服务器上移除')
-      batchDownStart.value = false
+    })
+    .finally(() => {
+      setTimeout(() => {
+        batchDownStart.value = false
+      }, 1000)
     })
   ElMessage.info('开始归档选中的文件,请赖心等待')
 }
