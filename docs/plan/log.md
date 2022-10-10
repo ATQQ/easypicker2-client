@@ -11,6 +11,11 @@
 * 单独的归档展示面板。刷新页面也不会丢失归档任务
   * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTIzOTc1NjIxMg==665239756212" style="height:100px;" />
 * 支持移动端滑动任务设置面板的顶部菜单
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTQxMjkzMTIxOQ==665412931219" style="height:100px;" />
+* 图片预览优化
+  * 自动记住用户上次的开启状态
+  * 控制条位置展示选中的图片名称
+    * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTQxMjc3MTQ2Mw==665412771463" style="height:100px;" />
 
 ### Bugfix
 * 设置填写信息弹窗，在PC侧被拖动后无法复原的问题（禁止弹窗拖动）

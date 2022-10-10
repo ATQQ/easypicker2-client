@@ -365,6 +365,8 @@
           <el-table-column label="缩略图" width="120">
             <template #default="scope">
               <el-image
+                @switch="handleSwitchImage"
+                @click="handleSwitchImage(scope.$index)"
                 preview-teleported
                 :preview-src-list="previewImages"
                 :initial-index="scope.$index"
@@ -373,6 +375,9 @@
                 :src="scope.row.cover"
                 fit="cover"
               >
+                <template #viewer>
+                  <div class="imageDes">{{ viewImageFilename }}</div>
+                </template>
                 <template #placeholder>
                   <div class="imageLoading">Loading...</div>
                 </template>
@@ -517,7 +522,7 @@ const $store = useStore()
 const $route = useRoute()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
-const showImg = ref(false)
+const showImg = ref(localStorage.getItem('ep-show-images') === 'true')
 const showPeople = ref(true)
 const showOriginName = ref(false)
 const showHistoryPanel = ref(false)
@@ -932,6 +937,11 @@ const handleDownloadTask = () => {
 }
 
 const previewImages = reactive([])
+const viewImageFilename = ref('')
+
+const handleSwitchImage = (idx: number) => {
+  viewImageFilename.value = showFilterFiles.value[idx].name
+}
 
 let fetching = false
 const refreshFilesCover = () => {
@@ -957,6 +967,7 @@ const refreshFilesCover = () => {
   })
 }
 watchEffect(() => {
+  window.localStorage.setItem('ep-show-images', `${showImg.value}`)
   if (!showImg.value) {
     return
   }
@@ -1050,6 +1061,13 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   align-items: center;
   justify-content: center;
   height: 100%;
+}
+.imageDes {
+  position: absolute;
+  bottom: 80px;
+  color: #fff;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .progress-list {
