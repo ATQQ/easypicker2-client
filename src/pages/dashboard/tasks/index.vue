@@ -287,5 +287,11 @@ const openTaskPage = () => {
   .categorys-area {
     margin-top: 20px;
   }
+  :deep(.el-tabs__nav-scroll) {
+    overflow-x: scroll;
+    &::-webkit-scrollbar {
+      display: none; /* Chrome Safari */
+    }
+  }
 }
 </style>
