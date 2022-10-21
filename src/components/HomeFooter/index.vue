@@ -34,9 +34,13 @@ const navList = computed(() => {
         title: '应用介绍',
         link: 'https://docs.ep.sugarat.top/'
       },
+      // {
+      //   title: 'GitHub',
+      //   link: 'https://github.com/ATQQ/easypicker2-client'
+      // },
       {
-        title: 'GitHub',
-        link: 'https://github.com/ATQQ/easypicker2-client'
+        title: '问题反馈',
+        link: 'https://support.qq.com/product/444158'
       },
       {
         title: '联系作者',
@@ -50,13 +54,13 @@ const navList = computed(() => {
     dashboard: [
       {
         title: '页面&功能问题反馈，点这里😊',
-        link: 'https://docs.ep.sugarat.top/plan/wish.html'
+        link: 'https://support.qq.com/product/444158'
       }
     ],
     task: [
       {
         title: '页面&功能问题反馈，点这里😊',
-        link: 'https://docs.ep.sugarat.top/plan/wish.html'
+        link: 'https://support.qq.com/product/444158'
       }
     ]
   }

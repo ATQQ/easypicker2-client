@@ -7,7 +7,7 @@
         style="margin: 0 auto"
         size="large"
         type="success"
-        >❤️ 提建议 & 给反馈 ❤️</el-button
+        >提建议 & 给反馈</el-button
       >
       <el-button
         v-else

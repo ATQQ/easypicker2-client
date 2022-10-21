@@ -1,4 +1,6 @@
 # 更新日志
+> 问题反馈交流新“地盘” => [EasyPicker](https://support.qq.com/product/444158)
+
 部署最新beta版步骤，见 => [私有化部署-线上部署-我要体验最新beta版](./../deploy/design/../online.md#%E6%89%A7%E8%A1%8C%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2%E8%84%9A%E6%9C%AC)
 * 线上测试地址：https://ep.dev.sugarat.top/
 
@@ -21,6 +23,9 @@
 * 设置填写信息弹窗，在PC侧被拖动后无法复原的问题（禁止弹窗拖动）
 * 批注信息内容过多，内容被截断
 * build `unplugin-element-plus` warn
+
+### Chore
+* 新的反馈交流渠道：https://support.qq.com/product/444158
 
 ## v2.2.1 (2022/10/05)
 ### BugFix
