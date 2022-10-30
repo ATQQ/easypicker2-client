@@ -322,13 +322,13 @@
         @selection-change="handleSelectionChange"
         stripe
         border
-        :default-sort="{ prop: 'date', order: 'descending' }"
         :max-height="666"
         :data="showFilterFiles"
         style="width: 100%"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column sortable prop="date" label="提交时间" width="200">
+        <el-table-column prop="id" label="id" width="100"></el-table-column>
+        <el-table-column prop="date" label="提交时间" width="200">
           <template #default="scope">{{
             formatDate(new Date(scope.row.date))
           }}</template>
@@ -339,18 +339,12 @@
           width="150"
         ></el-table-column>
         <el-table-column
-          sortable
           prop="name"
           label="文件名"
           width="200"
         ></el-table-column>
         <template v-if="showOriginName">
-          <el-table-column
-            sortable
-            prop="origin_name"
-            label="原文件名"
-            width="200"
-          >
+          <el-table-column prop="origin_name" label="原文件名" width="200">
             <template #default="scope">
               {{ scope.row.origin_name || '-' }}
             </template>
@@ -936,8 +930,32 @@ const handleDownloadTask = () => {
   ElMessage.info('开始归档选中的文件,请赖心等待')
 }
 
-const previewImages = reactive([])
+const previewData = reactive<
+  { cover: string; preview: string; name: string; date: string; id: number }[]
+>([])
+const sortProps = reactive({
+  order: null,
+  prop: null
+})
 const viewImageFilename = ref('')
+const handleFilesSortChange = (v) => {
+  sortProps.prop = v.prop
+  sortProps.order = v.order
+}
+const previewImages = computed(() => {
+  // if (!sortProps.prop) {
+  return previewData.map((v) => v.preview)
+  // }
+  // TODO：下面代码暂不生效，后续再支持表格排序场景
+  // const temp = [...previewData]
+  // temp.sort((a, b) => {
+  //   if (sortProps.order === 'descending') {
+  //     return a[sortProps.prop] - b[sortProps.prop]
+  //   }
+  //   return b[sortProps.prop] - a[sortProps.prop]
+  // })
+  // return temp.map((v) => v.preview)
+})
 
 const handleSwitchImage = (idx: number) => {
   viewImageFilename.value = showFilterFiles.value[idx].name
@@ -956,14 +974,12 @@ const refreshFilesCover = () => {
     if (data.length === 0 || data.length !== showFilterFiles.value.length) {
       return
     }
-    previewImages.splice(0, previewImages.length)
-
+    previewData.splice(0, previewData.length)
     showFilterFiles.value.forEach((v, idx) => {
       const { cover, preview } = data[idx]
       v.cover = cover
-      previewImages.push(preview)
+      previewData.push({ cover, preview, name: v.name, date: v.date, id: v.id })
     })
-    // 添加裁剪参数
   })
 }
 watchEffect(() => {
