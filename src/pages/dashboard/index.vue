@@ -85,10 +85,14 @@
       </div>
     </div>
     <router-view></router-view>
+    <div>
+      <home-footer type="dashboard"></home-footer>
+    </div>
   </div>
 </template>
 <script lang="ts" setup>
 import { Expand, Close, ArrowDown } from '@element-plus/icons-vue'
+import HomeFooter from '@components/HomeFooter/index.vue'
 
 import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'

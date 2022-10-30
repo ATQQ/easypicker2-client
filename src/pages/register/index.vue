@@ -37,7 +37,11 @@
         </div>
         <div class="tc">
           <el-checkbox v-model="bindPhone">绑定手机</el-checkbox>
-          <el-tooltip effect="dark" content="可用于修改/找回密码" placement="top-start">
+          <el-tooltip
+            effect="dark"
+            content="可用于修改/找回密码"
+            placement="top-start"
+          >
             <el-icon :size="16">
               <QuestionFilled />
             </el-icon>
@@ -62,7 +66,9 @@
             clearable
           >
             <template #append>
-              <el-button :disabled="time !== 0" @click="getCode">{{ codeText }}</el-button>
+              <el-button :disabled="time !== 0" @click="getCode">{{
+                codeText
+              }}</el-button>
             </template>
           </el-input>
         </div>
@@ -72,6 +78,11 @@
         <el-divider></el-divider>
         <div class="links">
           <router-link to="/login">已有账号,去登陆</router-link>
+        </div>
+        <div class="links" style="margin-top: 20px">
+          <el-link target="_blank" href="https://support.qq.com/product/444158"
+            >问题反馈?</el-link
+          >
         </div>
       </div>
     </login-panel>
@@ -83,12 +94,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import loginPanel from '@components/loginPanel.vue'
 import { useStore } from 'vuex'
-import {
-  User, Lock, Phone, QuestionFilled,
-} from '@element-plus/icons-vue'
-import {
-  rAccount, rMobilePhone, rPassword, rVerCode,
-} from '@/utils/regExp'
+import { User, Lock, Phone, QuestionFilled } from '@element-plus/icons-vue'
+import { rAccount, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { PublicApi, UserApi } from '@/apis'
 
 const $store = useStore()
@@ -156,28 +163,29 @@ const handleRegister = () => {
     pwd: pwd1.value,
     bindPhone: bindPhone.value,
     phone: phone.value,
-    code: code.value,
-  }).then((res) => {
-    const { token } = res.data
-    $store.commit('user/setToken', token)
-    ElMessage.success('注册成功')
-    $router.replace({
-      name: 'dashboard',
-    })
-  }).catch((err) => {
-    const { code: c } = err
-    const msg = '注册失败,未知错误'
-    const options: any = {
-      1001: '账号已存在',
-      1002: '手机号已被注册',
-      1003: '验证码不正确',
-      1004: '密码格式不正确',
-      1006: '手机号格式不正确',
-    }
-    ElMessage.error(options[c] || msg)
+    code: code.value
   })
+    .then((res) => {
+      const { token } = res.data
+      $store.commit('user/setToken', token)
+      ElMessage.success('注册成功')
+      $router.replace({
+        name: 'dashboard'
+      })
+    })
+    .catch((err) => {
+      const { code: c } = err
+      const msg = '注册失败,未知错误'
+      const options: any = {
+        1001: '账号已存在',
+        1002: '手机号已被注册',
+        1003: '验证码不正确',
+        1004: '密码格式不正确',
+        1006: '手机号格式不正确'
+      }
+      ElMessage.error(options[c] || msg)
+    })
 }
-
 </script>
 <style scoped lang="scss">
 .register {

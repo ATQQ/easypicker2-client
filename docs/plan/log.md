@@ -1,7 +1,42 @@
 # 更新日志
+> 问题反馈交流新“地盘” => [EasyPicker](https://support.qq.com/product/444158)
+
 部署最新beta版步骤，见 => [私有化部署-线上部署-我要体验最新beta版](./../deploy/design/../online.md#%E6%89%A7%E8%A1%8C%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2%E8%84%9A%E6%9C%AC)
 * 线上测试地址：https://ep.dev.sugarat.top/
 
+## v2.3.0 (2022/10/30)
+
+### Feature
+* 表单项数放开到10项（原来6）
+* 单独展示历史下载记录（普通下载&归档下载）
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTE1MzY0MDU5OQ==665153640599" style="height:100px;" />
+* 单独的归档展示面板。刷新页面也不会丢失归档任务
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTIzOTc1NjIxMg==665239756212" style="height:100px;" />
+* 支持移动端滑动任务设置面板的顶部菜单
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTQxMjkzMTIxOQ==665412931219" style="height:100px;" />
+* 图片预览优化
+  * 自动记住用户上次的开启状态
+  * 控制条位置展示选中的图片名称
+    * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTQxMjc3MTQ2Mw==665412771463" style="height:100px;" />
+
+### Bugfix
+* 设置填写信息弹窗，在PC侧被拖动后无法复原的问题（禁止弹窗拖动）
+* 批注信息内容过多，内容被截断
+* build `unplugin-element-plus` warn
+* 同一时间上传的图片预览错位（取消表格数据的自定义排序）
+* 修复内容截断的问题，使用新的表单填写布局
+  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NzEzNDcyMDczOA==667134720738" />
+
+### Chore
+* 新的反馈交流渠道：https://support.qq.com/product/444158
+
+## v2.2.1 (2022/10/05)
+### BugFix
+* 表单项过多，无法渲染，同时影响创建更新
+* Excel文件下载失败、Excel报表下载打开乱码(部分浏览器)
+
+### Chore
+* 部分页面追加底部导航，引导问题反馈
 
 ## v2.2.0 (2022/09/17)
 
