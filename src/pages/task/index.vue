@@ -74,7 +74,7 @@
                 status-icon
                 :model="validModal"
                 :disabled="disableForm"
-                label-width="100px"
+                label-position="top"
               >
                 <el-form-item prop="peopleName" label="姓名">
                   <el-input
@@ -799,9 +799,16 @@ onUnmounted(() => {
   }
 
   .infos {
-    max-width: 400px;
+    max-width: 460px;
     margin: auto;
     overflow: hidden;
+    :deep(div.el-form-item > label) {
+      font-weight: bold;
+      &::before {
+        content: '* ';
+        color: red;
+      }
+    }
   }
 }
 

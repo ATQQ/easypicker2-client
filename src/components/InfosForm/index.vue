@@ -1,9 +1,5 @@
 <template>
-  <el-form
-    :disabled="disabled"
-    :label-position="labelPosition || 'right'"
-    label-width="100px"
-  >
+  <el-form :disabled="disabled" :label-position="labelPosition || 'top'">
     <el-form-item
       class="ellipsis"
       v-for="(info, idx) in infos"
@@ -18,7 +14,7 @@
         :maxlength="maxInputLength"
         clearable
         show-word-limit
-        :placeholder="`请输入${info.text}`"
+        :placeholder="`请输入`"
         v-model="info.value"
       ></el-input>
       <el-radio-group v-if="info.type === 'radio'" v-model="info.value">
@@ -35,7 +31,7 @@
         filterable
         v-if="info.type === 'select'"
         v-model="info.value"
-        :placeholder="`请选择${info.text}`"
+        :placeholder="`请选择`"
       >
         <el-option
           v-for="(r, idx) in info.children"
@@ -57,6 +53,17 @@ defineProps<{
 const maxInputLength = +import.meta.env.VITE_APP_INPUT_MAX_LENGTH || 10
 </script>
 <style scoped lang="scss">
+:deep(div.el-form-item > label) {
+  font-weight: bold;
+  &::before {
+    content: '* ';
+    color: red;
+  }
+}
+
+:deep(div.el-form-item__content > .el-select) {
+  flex: 1;
+}
 .fixed-text {
   background-color: #f5f7fa;
   padding: 0 10px;
