@@ -38,3 +38,40 @@ export enum WishStatus {
    */
   CLOSE
 }
+
+export enum ActionType {
+  /**
+   * 点赞
+   */
+  PRAISE,
+
+  /**
+   * 文件下载
+   */
+  Download,
+
+  /**
+   * 文件归档
+   */
+  Compress,
+
+  /**
+   * 路由禁用
+   */
+  DisabledRoute
+}
+
+export enum DownloadStatus {
+  /**
+   * 归档中
+   */
+  ARCHIVE,
+  /**
+   * 链接已失效
+   */
+  EXPIRED,
+  /**
+   * 可下载
+   */
+  SUCCESS
+}

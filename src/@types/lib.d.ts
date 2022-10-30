@@ -16,3 +16,11 @@ declare namespace qiniu {
   type upload = (file: File, key: string, token: string) => Observable
   const upload: upload
 }
+
+declare namespace XLSX {
+  interface utils {
+    table_to_book: (dom: HTMLElement) => any
+  }
+  const utils: utils
+  const writeFile: (wb: any, filename: string) => void
+}

@@ -37,27 +37,29 @@
       </li>
       <!-- 已上线 -->
       <li><hr /></li>
-      <li style="text-align: center">↓ 💐 下面是已上线需求 💐 ↓</li>
-      <li v-for="d in successData" :key="d.id">
-        <hr />
-        <div class="wish">
-          <div class="content">
-            <div class="title">
-              <i class="circle" :class="d.status" />
-              <span>{{ d.title }}</span>
+      <details class="details custom-block">
+        <summary>💐 已处理完毕的反馈归档 💐</summary>
+        <li v-for="d in successData" :key="d.id">
+          <hr />
+          <div class="wish">
+            <div class="content">
+              <div class="title">
+                <i class="circle" :class="d.status" />
+                <span>{{ d.title }}</span>
+              </div>
+              <div class="des">
+                <span>{{ d.des }}</span>
+              </div>
             </div>
-            <div class="des">
-              <span>{{ d.des }}</span>
-            </div>
+            <el-button type="primary" @click="praise(d.id, d.alreadyPraise)">
+              <el-icon>
+                <Flag />
+              </el-icon>
+              {{ d.count }}票
+            </el-button>
           </div>
-          <el-button type="primary" @click="praise(d.id, d.alreadyPraise)">
-            <el-icon>
-              <Flag />
-            </el-icon>
-            {{ d.count }}票
-          </el-button>
-        </div>
-      </li>
+        </li>
+      </details>
     </ul>
   </div>
 </template>

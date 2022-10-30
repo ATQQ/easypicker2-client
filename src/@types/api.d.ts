@@ -274,3 +274,22 @@ declare namespace ConfigServiceAPITypes {
   }
   type getServiceConfig = ResponseData<ConfigData[]>
 }
+
+declare namespace ActionApiTypes {
+  interface DownloadActionData {
+    id: string
+    type: number
+    url: string
+    status: number
+    tip: string
+    date: number
+    size: number
+  }
+
+  type getDownloadActions = ResponseData<{
+    sum: number
+    pageSize: number
+    pageIndex: number
+    actions: DownloadActionData[]
+  }>
+}

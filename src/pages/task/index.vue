@@ -74,7 +74,7 @@
                 status-icon
                 :model="validModal"
                 :disabled="disableForm"
-                label-width="100px"
+                label-position="top"
               >
                 <el-form-item prop="peopleName" label="姓名">
                   <el-input
@@ -226,6 +226,9 @@
       title="示例文件下载链接"
       :link="templateLink"
     ></LinkDialog>
+    <div style="padding-top: 20px">
+      <home-footer type="task"></home-footer>
+    </div>
   </div>
 </template>
 <script lang="ts" setup>
@@ -233,6 +236,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadUserFile, UploadInstance, FormInstance } from 'element-plus'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import HomeFooter from '@components/HomeFooter/index.vue'
 import LinkDialog from '@components/linkDialog.vue'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { useStore } from 'vuex'
@@ -726,6 +730,7 @@ onUnmounted(() => {
 .task-panel {
   background-color: #f3f6f8;
   padding-bottom: 1rem;
+  position: relative;
 }
 
 .pc-nav {
@@ -794,9 +799,16 @@ onUnmounted(() => {
   }
 
   .infos {
-    max-width: 400px;
+    max-width: 460px;
     margin: auto;
     overflow: hidden;
+    :deep(div.el-form-item > label) {
+      font-weight: bold;
+      &::before {
+        content: '* ';
+        color: red;
+      }
+    }
   }
 }
 
@@ -808,7 +820,7 @@ onUnmounted(() => {
   line-height: 20px;
   text-align: left;
   word-break: break-all;
-  max-height: 100px;
+  // max-height: 100px;
   overflow: hidden;
   padding: 0 20px;
   color: #e6a23c;

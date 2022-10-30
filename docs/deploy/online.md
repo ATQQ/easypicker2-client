@@ -432,6 +432,13 @@ pm2 logs ep-server
 
 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTkzODEwNDg4Mw==659938104883" />
 
+后续也可以在`easypicker2-server`目录下执行如下脚本获取
+```sh
+curl https://script.sugarat.top/js/ep/user-config.js | node - server
+```
+
+![图片](https://img.cdn.sugarat.top/mdImg/MTY2NjI2NjMwOTA3MQ==666266309071)
+
 :::tip 温馨提示
 后续 如果代码有更新，只需要重新进行`代码部署`和`启动服务`这个步骤即可，即执行**2**行脚本
 :::
