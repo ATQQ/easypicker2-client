@@ -14,7 +14,7 @@
         :maxlength="maxInputLength"
         clearable
         show-word-limit
-        :placeholder="`请输入`"
+        :placeholder="`请输入 ${info.text}`"
         v-model="info.value"
       ></el-input>
       <el-radio-group v-if="info.type === 'radio'" v-model="info.value">
@@ -31,7 +31,7 @@
         filterable
         v-if="info.type === 'select'"
         v-model="info.value"
-        :placeholder="`请选择`"
+        :placeholder="`请选择 ${info.text}`"
       >
         <el-option
           v-for="(r, idx) in info.children"
