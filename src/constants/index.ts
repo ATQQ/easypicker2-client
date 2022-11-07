@@ -75,3 +75,5 @@ export enum DownloadStatus {
    */
   SUCCESS
 }
+
+export const filenamePattern = /[\\/:*?"<>|]/g
