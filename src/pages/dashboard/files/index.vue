@@ -509,7 +509,7 @@ import { ActionServiceAPI, FileApi } from '@/apis'
 import { downLoadByUrl, tableItem, tableToExcel } from '@/utils/networkUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
-import { DownloadStatus, ActionType } from '@/constants'
+import { DownloadStatus, ActionType, filenamePattern } from '@/constants'
 
 const $store = useStore()
 const $route = useRoute()
@@ -820,6 +820,12 @@ const rewriteFilename = (e: any) => {
 }
 
 const handleSaveNewName = () => {
+  // 文件名校验，不能有系统不支持的字符
+  if (filenamePattern.test(renameForm.newName)) {
+    ElMessage.error(`文件名不能包含${filenamePattern.source}等字符`)
+    filenamePattern.lastIndex = 0
+    return
+  }
   FileApi.updateFilename(
     renameForm.id,
     `${renameForm.newName}${renameForm.suffix}`
