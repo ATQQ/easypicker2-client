@@ -556,8 +556,11 @@ const loadActions = () => {
         // SUCCESS
         //  存在，触发下载，从compressTask移除
         if (action.status === DownloadStatus.SUCCESS && existIndex !== -1) {
+          // 展示弹窗
+          downloadUrl.value = action.url
+          showLinkModel.value = true
           downLoadByUrl(action.url)
-          ElMessage.success(`自动下载归档任务 ${action.tip}`)
+          // ElMessage.success(`自动下载归档任务 ${action.tip}`)
           compressTask.splice(existIndex, 1)
         }
         // Archive
