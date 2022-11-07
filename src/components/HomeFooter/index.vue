@@ -8,7 +8,13 @@
       </li>
     </ul>
     <p>
-      v{{ version }} © 2019 - {{ currentYear }} by
+      <a
+        href="https://docs.ep.sugarat.top/plan/log.html"
+        target="_blank"
+        rel="noopener"
+        >v{{ version }}</a
+      >
+      © 2019 - {{ currentYear }} by
       <a
         target="_blank"
         rel="noopener"

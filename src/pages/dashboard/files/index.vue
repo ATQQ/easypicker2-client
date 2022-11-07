@@ -327,7 +327,6 @@
         style="width: 100%"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="id" label="id" width="100"></el-table-column>
         <el-table-column prop="date" label="提交时间" width="200">
           <template #default="scope">{{
             formatDate(new Date(scope.row.date))
@@ -510,7 +509,7 @@ import { ActionServiceAPI, FileApi } from '@/apis'
 import { downLoadByUrl, tableItem, tableToExcel } from '@/utils/networkUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
-import { DownloadStatus, ActionType } from '@/constants'
+import { DownloadStatus, ActionType, filenamePattern } from '@/constants'
 
 const $store = useStore()
 const $route = useRoute()
@@ -557,8 +556,11 @@ const loadActions = () => {
         // SUCCESS
         //  存在，触发下载，从compressTask移除
         if (action.status === DownloadStatus.SUCCESS && existIndex !== -1) {
+          // 展示弹窗
+          downloadUrl.value = action.url
+          showLinkModel.value = true
           downLoadByUrl(action.url)
-          ElMessage.success(`自动下载归档任务 ${action.tip}`)
+          // ElMessage.success(`自动下载归档任务 ${action.tip}`)
           compressTask.splice(existIndex, 1)
         }
         // Archive
@@ -821,6 +823,12 @@ const rewriteFilename = (e: any) => {
 }
 
 const handleSaveNewName = () => {
+  // 文件名校验，不能有系统不支持的字符
+  if (filenamePattern.test(renameForm.newName)) {
+    ElMessage.error(`文件名不能包含${filenamePattern.source}等字符`)
+    filenamePattern.lastIndex = 0
+    return
+  }
   FileApi.updateFilename(
     renameForm.id,
     `${renameForm.newName}${renameForm.suffix}`
