@@ -327,7 +327,6 @@
         style="width: 100%"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="id" label="id" width="100"></el-table-column>
         <el-table-column prop="date" label="提交时间" width="200">
           <template #default="scope">{{
             formatDate(new Date(scope.row.date))
