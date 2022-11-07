@@ -73,7 +73,11 @@ export enum DownloadStatus {
   /**
    * 可下载
    */
-  SUCCESS
+  SUCCESS,
+  /**
+   * 归档失败
+   */
+  FAIL
 }
 
 export const filenamePattern = /[\\/:*?"<>|]/g

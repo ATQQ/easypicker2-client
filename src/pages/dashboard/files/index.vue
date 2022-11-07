@@ -242,6 +242,9 @@
               <span v-if="scope.row.status === DownloadStatus.ARCHIVE"
                 ><el-link type="danger">归档中...</el-link></span
               >
+              <span v-if="scope.row.status === DownloadStatus.FAIL"
+                ><el-link type="danger">归档失败</el-link></span
+              >
               <span v-else>{{
                 !scope.row.size ? '未知大小' : formatSize(scope.row.size)
               }}</span>
@@ -257,6 +260,9 @@
               </div>
               <div v-if="scope.row.status === DownloadStatus.EXPIRED">
                 链接已失效
+              </div>
+              <div v-if="scope.row.status === DownloadStatus.FAIL">
+                联系开发者，提供错误信息：{{ scope.row.error }}
               </div>
               <div v-if="scope.row.status === DownloadStatus.SUCCESS">
                 <el-link @click="downLoadByUrl(scope.row.url)" type="primary"
@@ -567,6 +573,11 @@ const loadActions = () => {
         //  不存在，push进compressTask
         if (action.status === DownloadStatus.ARCHIVE && existIndex === -1) {
           compressTask.push(action)
+        }
+
+        // ERROR
+        if (action.status === DownloadStatus.FAIL && existIndex !== -1) {
+          compressTask.splice(existIndex, 1)
         }
       })
     // TODO:之后根据反馈优化
