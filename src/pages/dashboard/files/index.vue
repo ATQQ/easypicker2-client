@@ -242,12 +242,12 @@
               <span v-if="scope.row.status === DownloadStatus.ARCHIVE"
                 ><el-link type="danger">归档中...</el-link></span
               >
+              <span v-else-if="scope.row.status !== DownloadStatus.FAIL">{{
+                !scope.row.size ? '未知大小' : formatSize(scope.row.size)
+              }}</span>
               <span v-if="scope.row.status === DownloadStatus.FAIL"
                 ><el-link type="danger">归档失败</el-link></span
               >
-              <span v-else>{{
-                !scope.row.size ? '未知大小' : formatSize(scope.row.size)
-              }}</span>
             </template>
           </el-table-column>
           <el-table-column fixed="right" label="操作" width="140">
