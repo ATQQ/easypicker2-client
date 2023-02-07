@@ -197,7 +197,10 @@ const login = () => {
         const { token, system } = res.data
         $store.commit('user/setToken', token)
         $store.commit('user/setSystem', system)
-        ElMessage.success('登录成功')
+        ElMessage.success({
+          message: '登录成功',
+          duration: 500
+        })
         redirectDashBoard(system)
       })
       .catch((err) => {
@@ -210,7 +213,10 @@ const login = () => {
         const { token } = res.data
         $store.commit('user/setToken', token)
         $store.commit('user/setSystem', false)
-        ElMessage.success('登录成功')
+        ElMessage.success({
+          message: '登录成功',
+          duration: 500
+        })
         redirectDashBoard()
       })
       .catch((err) => {
