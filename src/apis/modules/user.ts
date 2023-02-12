@@ -41,11 +41,16 @@ function checkPower(): UserApiTypes.checkPower {
 function checkLoginStatus(): UserApiTypes.checkLoginStatus {
   return ajax.get('user/login')
 }
+
+function logout(): UserApiTypes.logout {
+  return ajax.get('user/logout')
+}
 export default {
   register,
   login,
   codeLogin,
   resetPwd,
   checkPower,
-  checkLoginStatus
+  checkLoginStatus,
+  logout
 }
