@@ -145,9 +145,12 @@ const handleLogout = () => {
     draggable: true
   })
     .then(() => {
-      $store.commit('user/setToken', null)
-      $router.replace({
-        name: 'home'
+      // 登出接口
+      UserApi.logout().finally(() => {
+        $store.commit('user/setToken', null)
+        $router.replace({
+          name: 'home'
+        })
       })
     })
     .catch(() => {

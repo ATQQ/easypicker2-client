@@ -26,11 +26,14 @@ function registerRouteGuard(router: Router) {
     const { fullPath } = to
     PublicApi.reportPv(fullPath)
 
-    axios.get(
-      `//${
-        import.meta.env.VITE_APP_PV_PATH
-      }/public/report/pv?path=${encodeURIComponent(window.location.href)}`
-    )
+    if (!import.meta.env.VITE_APP_PV_PATH.includes(window.location.hostname)) {
+      axios.get(
+        `//${
+          import.meta.env.VITE_APP_PV_PATH
+        }/public/report/pv?path=${encodeURIComponent(window.location.href)}`
+      )
+    }
+
     // 更改title
     window.document.title = `${import.meta.env.VITE_APP_TITLE} ${to.meta.title}`
 
