@@ -1,6 +1,6 @@
 {
   "name": "vite-vue-demo",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "scripts": {
     "dev": "vite",
     "dev:test": "VITE_APP_AXIOS_BASE_URL=/api-test/ vite --mode test",
