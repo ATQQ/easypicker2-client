@@ -95,7 +95,11 @@ export default defineConfig({
                             link: '/deploy/local',
                         },
                         {
-                            text: '线上部署 - 使用宝塔面板',
+                            text: '线上部署（New）',
+                            link: '/deploy/online-new',
+                        },
+                        {
+                            text: '线上部署(旧)',
                             link: '/deploy/online',
                         },
                         {
