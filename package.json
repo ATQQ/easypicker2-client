@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.4",
+    "@sugarat/theme": "^0.1.5",
     "axios": "^0.27.2",
     "clipboard-copy": "^4.0.1",
     "element-plus": "^2.2.13",
@@ -38,18 +39,18 @@
     "@vitejs/plugin-vue": "^3.0.1",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-todo-ddl": "^1.1.1",
     "eslint-plugin-vue": "^7.20.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.7.1",
     "sass": "^1.54.0",
     "terser": "^5.14.2",
     "typescript": "^4.7.4",
     "unplugin-auto-import": "^0.6.9",
     "unplugin-element-plus": "^0.4.1",
     "unplugin-vue-components": "^0.17.21",
-    "vite": "^3.0.9",
-    "prettier": "^2.7.1"
+    "vite": "^3.0.9"
   }
 }
