@@ -4,7 +4,7 @@
 
 目前就职于 🛵美团🛵（Base 北京到店餐饮），有兴趣成为同事的话，可以小窗私我了解岗位详情
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTYwNDcyMTQ4NTMyOA==604721485328" />
+![](https://img.cdn.sugarat.top/mdImg/MTYwNDcyMTQ4NTMyOA==604721485328)
 
 ## 联系作者
 <callme/>
