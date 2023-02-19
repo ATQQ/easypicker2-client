@@ -39,15 +39,15 @@
 ### Feature
 * 表单项数放开到10项（原来6）
 * 单独展示历史下载记录（普通下载&归档下载）
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTE1MzY0MDU5OQ==665153640599" style="height:100px;" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2NTE1MzY0MDU5OQ==665153640599)
 * 单独的归档展示面板。刷新页面也不会丢失归档任务
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTIzOTc1NjIxMg==665239756212" style="height:100px;" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2NTIzOTc1NjIxMg==665239756212)
 * 支持移动端滑动任务设置面板的顶部菜单
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTQxMjkzMTIxOQ==665412931219" style="height:100px;" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2NTQxMjkzMTIxOQ==665412931219)
 * 图片预览优化
   * 自动记住用户上次的开启状态
   * 控制条位置展示选中的图片名称
-    * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NTQxMjc3MTQ2Mw==665412771463" style="height:100px;" />
+    * ![](https://img.cdn.sugarat.top/mdImg/MTY2NTQxMjc3MTQ2Mw==665412771463)
 
 ### Bugfix
 * 设置填写信息弹窗，在PC侧被拖动后无法复原的问题（禁止弹窗拖动）
@@ -55,7 +55,7 @@
 * build `unplugin-element-plus` warn
 * 同一时间上传的图片预览错位（取消表格数据的自定义排序）
 * 修复内容截断的问题，使用新的表单填写布局
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2NzEzNDcyMDczOA==667134720738" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2NzEzNDcyMDczOA==667134720738)
 
 ### Chore
 * 新的反馈交流渠道：https://support.qq.com/product/444158
@@ -74,22 +74,22 @@
 * 文档站支持全文的内容搜素，Power By [Algolia](https://www.algolia.com/developers/?utm_content=powered_by&utm_source=localhost&utm_medium=referral&utm_campaign=docsearch)
 * 新增单独的服务配置面板，降低服务部署成本，对应路由 `dashboard/config`
   * 支持直接修改各种数据库配置（后续将会提供更多服务运维相关的操作）
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1OTg2ODY2MjY3NQ==659868662675" style="height:100px;" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1OTg2ODY2MjY3NQ==659868662675)
 * 直接直接在面板中修改提交的文件名
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTIxNzYzMw==660541217633" style="height:100px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTIxNzYzMw==660541217633)
 * 支持一键清理归档文件产生的的txt中间文件
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTM4ODI5MQ==660541388291" style="height:100px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTM4ODI5MQ==660541388291)
 * 登录过期重定向登录页优化，重新登录后自动回到之前的页面
 * 任务截止不展示提示信息，截止UI优化
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTc1NjMyMA==660541756320" style="height:100px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2MDU0MTc1NjMyMA==660541756320)
 * 支持用户直接添加”限制人员“
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MjI5NjMzNzMxMw==662296337313" style="height:100px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2MjI5NjMzNzMxMw==662296337313)
 * 支持管理员限制部分页面访问
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2Mjk4NjMyMzAxOA==662986323018" style="height:100px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2Mjk4NjMyMzAxOA==662986323018)
 * 提交文件相关：支持限制文件类型，文件大小，单次最大上传数量
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MzM5NzU5NjExNQ==663397596115" style="height:100px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2MzM5NzU5NjExNQ==663397596115)
 * 支持下划线（_）加号（+）等作为文件分隔符
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY2MzQwNDA1OTI5MQ==663404059291" style="height:100px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY2MzQwNDA1OTI5MQ==663404059291)
 
 ### BugFix
 * 引导文案的校对
@@ -141,14 +141,14 @@
   * 记录即`提交记录数量`
   * OSS即`云上实际存在的文件数量`
 * 上传表单信息支持`单选`，`下拉选择`，`固定内容`
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjU2ODcyNg==651496568726" style="height:100px;" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjU2ODcyNg==651496568726)
 * 任务支持设置批注
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241" style="height:100px;" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241)
 * 上传的文件支持查看原文件名
 * 支持直接从任务卡片跳转到文件面板展示对应任务数据
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTU2MzY3MTQzMA==651563671430" style="height:100px;" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1MTU2MzY3MTQzMA==651563671430)
 * 支持查看已收集文件的大小
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTU2MzU2ODk4Mg==651563568982" style="width:200px;" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1MTU2MzU2ODk4Mg==651563568982)
 * 添加赞赏入口
 * 管理端支持直接重置密码/换绑手机号
 
@@ -170,11 +170,11 @@
 ## v2.1.5
 ### Feature
 * 支持从其它任务导入限制人员
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDYzODMzNTI5Mw==650638335293" style="height:100px;" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1MDYzODMzNTI5Mw==650638335293)
 * 支持从其它任务导入表单信息
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDYzODU5OTQ2Mg==650638599462" style="width:200px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1MDYzODU5OTQ2Mg==650638599462)
 * 支持手动清理OSS上已失效的归档文件，节约存储空间
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDYzODczNzUyMw==650638737523" style="width:200px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1MDYzODczNzUyMw==650638737523)
 * 文档支持图片预览
 * PC侧支持拖拽上传
 * 提交信息页支持控制姓名展示
@@ -195,9 +195,9 @@
 ## v2.1.4
 ### Feature
 * 信息维护面板，简单显示帮助提示信息 + 图例
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mzg4NjUzMw==650183886533" style="height:100px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mzg4NjUzMw==650183886533)
 * 文件提交页增加提示文案
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDE0MTE0MA==650184141140" style="height:100px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDE0MTE0MA==650184141140)
 
 ### Chore
 * 升级客户端 qiniu-sdk版本
@@ -205,7 +205,7 @@
 ### Bugfix
 * 文件提交页交互缺陷修复
 * 图片/PDF/视频等浏览器支持预览的文件将会直接进行预览
-  * 改由应用去控制此类文件的下载 <Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDM0Nzg2NA==650184347864" style="height:100px;"/>
+  * 改由应用去控制此类文件的下载 ![](https://img.cdn.sugarat.top/mdImg/MTY1MDE4NDM0Nzg2NA==650184347864)
 * 批量删除文件的误删
 * 撤回文件误删
 
@@ -214,7 +214,7 @@
 * 提交文件面板，未选择文件时可点击提交文件并进行后续逻辑
 * 单个文件记录删除，导致关联文件被误删
 * 将无关联任务的文件，单独展示出来
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTkzNjA2OTY1Ng==649936069656" style="width:200px;"/>
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY0OTkzNjA2OTY1Ng==649936069656)
 
 ### Chore
 * 优化删除提示文案”数据无价，谨慎操作“
@@ -231,7 +231,7 @@
 ## v2.1.0
 ### Feature
 * 优化提交记录的Excel导出格式
-  * <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0OTgxNTg0MDg1Mg==649815840852" />
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY0OTgxNTg0MDg1Mg==649815840852)
 
 ### Chore
 * 添加[51la](https://v6.51.la/)的的数据统计SDK

@@ -6,7 +6,7 @@
 ```shell
 pm2 ls
 ```
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NTM0NTI1MDEzOQ==655345250139" />
+![](https://img.cdn.sugarat.top/mdImg/MTY1NTM0NTI1MDEzOQ==655345250139)
 
 观察服务重启次数是否一直在增加
 
@@ -30,7 +30,7 @@ npm i -g pm2
 完成升级后，手动启动服务
 1. 先确保当前执行目录在服务目录下
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NTM0NTYzMzk0Nw==655345633947" />
+![](https://img.cdn.sugarat.top/mdImg/MTY1NTM0NTYzMzk0Nw==655345633947)
 
 2. 删除旧的服务
 
@@ -49,7 +49,7 @@ pm2 start npm --name 自定义服务名 -- run start
 pm2 start npm --name my-ep2-server -- run start
 ```
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NTM0NTg4MTQzNw==655345881437" />
+![](https://img.cdn.sugarat.top/mdImg/MTY1NTM0NTg4MTQzNw==655345881437)
 
 4. 查看服务情况
 
@@ -63,7 +63,7 @@ pm2 log my-ep2-server
 pm2 stop my-ep2-server
 ```
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NTM0NjEwODI3Nw==655346108277" />
+![](https://img.cdn.sugarat.top/mdImg/MTY1NTM0NjEwODI3Nw==655346108277)
 :::
 
 没有错误就完事大吉
@@ -78,9 +78,9 @@ pm2 stop my-ep2-server
 
 修改代码`src/utils/qiniuUtil.ts`第`251`行，Zone的值为对应区域的值
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NTM0Njg4NDIxNQ==655346884215" />
+![](https://img.cdn.sugarat.top/mdImg/MTY1NTM0Njg4NDIxNQ==655346884215)
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1NTM0Njk0NTY2Mw==655346945663" />
+![](https://img.cdn.sugarat.top/mdImg/MTY1NTM0Njk0NTY2Mw==655346945663)
 
 ### > v2.1.7
 见最新 [接入七牛云OSS服务](./qiniu.md#创建存储空间) 文档，修改 `.env` 中 `QINIU_BUCKET_ZONE` 的值
