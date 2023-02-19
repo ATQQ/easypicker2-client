@@ -10,13 +10,13 @@
 ```shell
 node -v
 ```
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MDQ3MjM1OA==647480472358" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MDQ3MjM1OA==647480472358)
 
 建议安装大于等于`14.19`版本的
 
 多版本管理可以使用 [nvm](https://github.com/nvm-sh/nvm) 
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY1MTY0OTU1NzUyNw==651649557527" />
+![](https://img.cdn.sugarat.top/mdImg/MTY1MTY0OTU1NzUyNw==651649557527)
 
 ### 切换镜像源
 其中`npm`是随Node一起安装的包管理工具，通过切换到国内的镜像源，有助于加快安装速度
@@ -30,7 +30,7 @@ npm i -g nrm --registry=https://registry.npmmirror.com
 ```shell
 nrm ls
 ```
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MDczNjY3OA==647480736678" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MDczNjY3OA==647480736678)
 
 切换`淘宝源`
 ```shell
@@ -75,14 +75,14 @@ git clone https://github.com/ATQQ/easypicker2-client.git
 git clone https://gitee.com/sugarjl/easypicker2-client.git
 ```
 地址来源
-* [GitHub](https://github.com/ATQQ/easypicker2-client): <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTQ2NjkzMA==647481466930" />
-* [Gitee](https://gitee.com/sugarjl/easypicker2-client): <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTcxMzU1MQ==647481713551" />
+* [GitHub](https://github.com/ATQQ/easypicker2-client): ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTQ2NjkzMA==647481466930)
+* [Gitee](https://gitee.com/sugarjl/easypicker2-client): ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTcxMzU1MQ==647481713551)
 
 
 ### 方式2：压缩包
 
-* [GitHub](https://github.com/ATQQ/easypicker2-client): <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg1OTMzOQ==647481859339" />
-* [Gitee](https://gitee.com/sugarjl/easypicker2-client): <Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg3NzIwMA==647481877200" />
+* [GitHub](https://github.com/ATQQ/easypicker2-client): ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg1OTMzOQ==647481859339)
+* [Gitee](https://gitee.com/sugarjl/easypicker2-client): ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg3NzIwMA==647481877200)
 
 ## 3. 启动客户端
 
@@ -90,7 +90,7 @@ git clone https://gitee.com/sugarjl/easypicker2-client.git
 
 使用`pwd`查看位置
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MjE0NjQwMA==647482146400" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MjE0NjQwMA==647482146400)
 
 ### 安装依赖
 ```shell
@@ -105,11 +105,11 @@ pnpm install
 pnpm dev:test
 ```
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MjMwNjQ4OA==647482306488" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MjMwNjQ4OA==647482306488)
 
 浏览器访问 `[http://localhost:8080/](http://localhost:8080/)`
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MjQwMjg1MQ==647482402851" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MjQwMjg1MQ==647482402851)
 
 #### 方式2 - 构建后产物
 页面访问速度更快
@@ -124,7 +124,7 @@ pnpm build:test
 pnpm serve
 ```
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzQ4Mjc4NjE1Ng==647482786156" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4Mjc4NjE1Ng==647482786156)
 
 浏览器访问终端给予的地址即可
 
@@ -165,13 +165,13 @@ pnpm install
 pnpm  build
 ```
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU2NzUyMTg3NQ==647567521875" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzU2NzUyMTg3NQ==647567521875)
 
 ### 运行
 ```shell
 pnpm start
 ```
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU2NzYxOTg4OA==647567619888" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzU2NzYxOTg4OA==647567619888)
 
 当然要让服务正常工作需要，在本地安装三个数据库，同时[创建七牛云账号](./qiniu.md)
 
@@ -179,7 +179,7 @@ pnpm start
 ### 一些配置
 `数据库&云服务&本地服务`等相关的配置均放在了`.env`文件中，如下
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzU2Nzc1NjE5MQ==647567756191" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzU2Nzc1NjE5MQ==647567756191)
 
 每个变量的释义参看源码中的 [src/types/env.d.ts](https://github.com/ATQQ/easypicker2-server/blob/master/src/types/env.d.ts)
 
@@ -219,20 +219,20 @@ mysql -u root -p
 ```
 回车后输入密码
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYwODU4NjE3OQ==647608586179" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzYwODU4NjE3OQ==647608586179)
 
 查看当前已有数据库
 ```shell
 show databases;
 ```
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYwODY3ODQ4MA==647608678480" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzYwODY3ODQ4MA==647608678480)
 
 创建一个数据库
 ```shell
 create database ep_local_test;
 ```
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYwODc5ODc3Nw==647608798777" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzYwODc5ODc3Nw==647608798777)
 
 ### 导入表结构数据
 选择咱刚创建的数据库
@@ -247,12 +247,12 @@ show tables;
 
 导入所需的表 其中`sql文件位置`为本地的后端项目中`docs/sql/auto_create.sql`的绝对路径
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTE5ODYzNA==647609198634" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTE5ODYzNA==647609198634)
 
 ```shell
 source sql文件位置
 ```
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTI0ODAzNQ==647609248035" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTI0ODAzNQ==647609248035)
 
 完成导入后再查看当前拥有的表
 
@@ -260,7 +260,7 @@ source sql文件位置
 show tables;
 ```
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTI5MzAyMQ==647609293021" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0NzYwOTI5MzAyMQ==647609293021)
 
 到此MySQL的本地准备工作准备完毕
 
@@ -272,4 +272,4 @@ show tables;
 
 有其它问题可以小群交流，方便可以加入及时交流沟通问题: 685446473
 
-<Picture src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503" />
+![](https://img.cdn.sugarat.top/mdImg/MTY0Nzc1MjI3MzUwMw==647752273503)

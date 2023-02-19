@@ -1,6 +1,5 @@
-import DefaultTheme from 'vitepress/theme'
 import './index.scss'
-import 'element-plus/dist/index.css'
 
+import BlogTheme from '@sugarat/theme'
 
-export default DefaultTheme
+export default BlogTheme
