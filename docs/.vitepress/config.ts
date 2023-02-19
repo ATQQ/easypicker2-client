@@ -4,6 +4,7 @@ import { getThemeConfig, defineConfig } from '@sugarat/theme/node'
 const blogTheme = getThemeConfig({
     search: false,
     blog: false,
+    author:'粥里有勺糖',
     comment: {
         repo: 'atqq/easypicker2-client',
         repoId: 'MDEwOlJlcG9zaXRvcnkzNTQxNzc0NjA=',
@@ -46,7 +47,7 @@ export default defineConfig({
         },
         lastUpdatedText: '上次更新于',
         footer: {
-            message: `MIT Licensed | ${Pkg.version}`,
+            message: `MIT Licensed | <a href="https://theme.sugarat.top">Docs Power By @sugarat/theme</a>`,
             copyright: '<a href="https://sugarat.top">Copyright © 2019-PRESENT 粥里有勺糖</a>'
         },
         logo: '/logo.png',
