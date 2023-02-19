@@ -58,10 +58,12 @@
 域名即为后端服务中`.env`中`QINIU_BUCKET_DOMAIN`的值
 :::
 
+:::danger 注意：这里的值需要加上协议
 * 注意：这里的值需要加上协议`http://你的域名`
 * 注意：这里的值需要加上协议`http://你的域名`
 * 注意：这里的值需要加上协议`http://你的域名`
   * 如果升级了https，这里对应填入https
+:::
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0Nzc0NTM4MzMzOQ==647745383339)
 
