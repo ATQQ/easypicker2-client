@@ -25,5 +25,5 @@
 
 | 加群反馈                                                                                                            | [问卷反馈](https://www.wenjuan.com/s/UZBZJvA040/#《轻取（EasyPicker）用户意见收集》，快来参与吧。【问卷网提供支持】) |
 | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| <Picture style="width: 240px" src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDk2MzQ3OQ==649900963479" alt="QQ群"/> | <Picture style="width: 240px" src="https://img.cdn.sugarat.top/mdImg/MTY1NTYwNjA0OTc0OA==655606049748" alt="问卷"/>  |
+| <img style="width: 240px" src="https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDk2MzQ3OQ==649900963479" alt="QQ群"/> | <img style="width: 240px" src="https://img.cdn.sugarat.top/mdImg/MTY1NTYwNjA0OTc0OA==655606049748" alt="问卷"/>  |
 

@@ -1,5 +1,18 @@
-import { defineConfig } from 'vitepress'
 import Pkg from './../../package.json'
+import { getThemeConfig, defineConfig } from '@sugarat/theme/node'
+
+const blogTheme = getThemeConfig({
+    search: false,
+    blog: false,
+    author:'粥里有勺糖',
+    comment: {
+        repo: 'atqq/easypicker2-client',
+        repoId: 'MDEwOlJlcG9zaXRvcnkzNTQxNzc0NjA=',
+        category: 'Announcements',
+        categoryId: 'DIC_kwDOFRxRtM4CUThN'
+    }
+})
+
 export default defineConfig({
     title: 'EasyPicker | 轻取',
     description: '在线文件收集平台',
@@ -14,6 +27,10 @@ export default defineConfig({
         ['script', {}, 'LA.init({id: "JiqK2jS5HmnB4s8G",ck: "JiqK2jS5HmnB4s8G",hashMode:true})'],
     ],
     vite: {
+        optimizeDeps: {
+            include: ['element-plus'],
+            exclude: ['@sugarat/theme']
+        },
         server: {
             port: 4000,
             host: '0.0.0.0'
@@ -21,16 +38,17 @@ export default defineConfig({
     },
     lastUpdated: true,
     themeConfig: {
-        algolia :{
-            appId:'GPX84VDH91',
+        ...blogTheme,
+        algolia: {
+            appId: 'GPX84VDH91',
             apiKey: '150dda0b943087c4e6a04d54af1d7391',
             indexName: 'sugarat',
             placeholder: '请输入要搜索的内容...',
         },
         lastUpdatedText: '上次更新于',
         footer: {
-            message: `MIT Licensed | ${Pkg.version}`,
-            copyright: 'Copyright © 2019-PRESENT 粥里有勺糖'
+            message: `MIT Licensed | <a href="https://theme.sugarat.top">Docs Power By @sugarat/theme</a>`,
+            copyright: '<a href="https://sugarat.top">Copyright © 2019-PRESENT 粥里有勺糖</a>'
         },
         logo: '/logo.png',
         editLink: {
@@ -95,7 +113,11 @@ export default defineConfig({
                             link: '/deploy/local',
                         },
                         {
-                            text: '线上部署 - 使用宝塔面板',
+                            text: '线上部署（New）',
+                            link: '/deploy/online-new',
+                        },
+                        {
+                            text: '线上部署(旧)',
                             link: '/deploy/online',
                         },
                         {
