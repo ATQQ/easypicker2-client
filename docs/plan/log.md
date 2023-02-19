@@ -1,8 +1,50 @@
 # 更新日志
 > 问题反馈交流新“地盘” => [EasyPicker](https://support.qq.com/product/444158)
 
-部署最新beta版步骤，见 => [私有化部署-线上部署-我要体验最新beta版](./../deploy/design/../online.md#%E6%89%A7%E8%A1%8C%E8%87%AA%E5%8A%A8%E5%8C%96%E9%83%A8%E7%BD%B2%E8%84%9A%E6%9C%AC)
+部署最新beta版步骤，见 => [私有化部署-线上部署-我要体验最新beta版](./../deploy/online-new.md#_2-2-一键部署前端)
 * 线上测试地址：https://ep.dev.sugarat.top/
+* 线上测试地址：https://ep.test.sugarat.top/
+
+::: code-group
+```sh [部署最新稳定版]
+# 前端
+q ep client --deploy
+# 后端
+q ep server --deploy
+```
+
+```sh [部署最新预览版]
+# 前端
+q ep client --deploy beta
+# 后端
+q ep server --deploy beta
+```
+
+```sh [部署指定版本]
+# 前端
+q ep client --deploy 2.3.4
+# 后端
+q ep server --deploy 2.3.4
+# 更多可用版本见 > TODO(待提供)
+```
+:::
+
+## v2.3.5（进行中）
+
+### Bugfix
+* ❌ patch MySQL逻辑与sql不一致
+* ❌ redis缓存数据在不同站点之间相互影响
+* ❌ 部分varchar字段极端情况溢出
+
+### chore
+* ✅ 全新的[部署文档](./../deploy/online-new.md)
+* ✅ 提供一键部署前后端资源的CLI
+  * [Github: @sugarat/cli](https://github.com/ATQQ/tools/tree/main/packages/cli/dynamic-cli/core)
+  * [Github: @sugarat/cli-plugin-ep](https://github.com/ATQQ/tools/tree/main/packages/cli/dynamic-cli/plugins/cli-plugin-ep)
+* ❌ 部分接口性能调优
+  * 串行接口合并
+  * 慢查询优化
+
 ## v2.3.4 (2023/02/12)
 ### Feature
 * 优化PV上报逻辑，同域避免重复上报
