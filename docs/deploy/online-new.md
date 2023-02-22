@@ -181,6 +181,15 @@ q ep client --deploy beta
 q ep client --deploy 2.3.4
 # 更多可用版本见 > TODO(待提供)
 ```
+
+```sh [拉源码构建部署]
+# 此方式适合，需要对网站内容做调整的场景
+# Github
+curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s github
+
+# Gitee
+curl https://script.sugarat.top/shell/ep/deploy-client.sh | bash -s gitee
+```
 :::
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY3Njc5NjA3NTY1NQ==676796075655)
