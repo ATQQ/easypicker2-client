@@ -32,9 +32,9 @@ q ep server --deploy 2.3.4
 ## v2.3.5（进行中）
 
 ### Bugfix
-* ❌ patch MySQL逻辑与sql不一致
-* ❌ redis缓存数据在不同站点之间相互影响
-* ❌ 部分varchar字段极端情况溢出
+* ✅ patch MySQL逻辑与sql不一致
+* ✅ redis缓存数据在不同站点之间相互影响
+* ✅ 部分varchar字段极端情况溢出
 
 ### chore
 * ✅ 全新的[部署文档](./../deploy/online-new.md)
@@ -43,7 +43,7 @@ q ep server --deploy 2.3.4
   * [Github: @sugarat/cli-plugin-ep](https://github.com/ATQQ/tools/tree/main/packages/cli/dynamic-cli/plugins/cli-plugin-ep)
 * ❌ 部分接口性能调优
   * 串行接口合并
-  * 慢查询优化
+  * ❌慢查询优化
 
 ## v2.3.4 (2023/02/12)
 ### Feature
