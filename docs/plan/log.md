@@ -30,6 +30,14 @@ q ep server --deploy 2.3.4
 :::
 
 ## v2.3.5（进行中）
+### Feature
+* 管理后台
+  * ⭕️ 支持向用户推送消息（单独，全局）
+  * 支持查看提交文件数量
+  * 支持查看用户占用的云空间大小
+  * 支持一键清理文件（账号维度，避免文件长时间占用空间）
+  ![](https://img.cdn.sugarat.top/mdImg/MTY3NzQ4ODI2NDYwNA==677488264604)
+* 任务删除支持回收站（避免误删任务，导致文件错乱）
 
 ### Bugfix
 * ✅ patch MySQL逻辑与sql不一致

@@ -75,6 +75,51 @@
             scope.row.open_time && formatDate(new Date(scope.row.open_time))
           }}</template>
         </el-table-column>
+        <el-table-column prop="fileCount" label="收集文件数"></el-table-column>
+        <el-table-column label="占用云空间" width="200">
+          <template
+            #default="{
+              row: { resources, monthAgoSize, quarterAgoSize, halfYearSize, id }
+            }"
+          >
+            <ul class="user-oss-info">
+              <li>总大小：{{ resources }}</li>
+              <li>
+                一月前：{{ monthAgoSize
+                }}<el-button
+                  v-if="resources !== '0B'"
+                  class="clear-btn"
+                  @click="handleClearFiles(id, 'month')"
+                  :icon="DeleteFilled"
+                  circle
+                  size="small"
+                ></el-button>
+              </li>
+              <li>
+                三月前：{{ quarterAgoSize
+                }}<el-button
+                  v-if="quarterAgoSize !== '0B'"
+                  class="clear-btn"
+                  @click="handleClearFiles(id, 'quarter')"
+                  :icon="DeleteFilled"
+                  circle
+                  size="small"
+                ></el-button>
+              </li>
+              <li>
+                半年前：{{ halfYearSize
+                }}<el-button
+                  v-if="halfYearSize !== '0B'"
+                  class="clear-btn"
+                  @click="handleClearFiles(id, 'half')"
+                  :icon="DeleteFilled"
+                  circle
+                  size="small"
+                ></el-button>
+              </li>
+            </ul>
+          </template>
+        </el-table-column>
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
             <div class="text-btn-list">
@@ -245,7 +290,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useStore } from 'vuex'
-import { Search } from '@element-plus/icons-vue'
+import { Search, DeleteFilled } from '@element-plus/icons-vue'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate } from '@/utils/stringUtil'
@@ -475,6 +520,28 @@ const handleSavePhone = async () => {
       ElMessage.error(options[c] || msg)
     })
 }
+
+const handleClearFiles = (
+  userId: number,
+  type: 'month' | 'quarter' | 'half'
+) => {
+  const tipWords = {
+    month: '一个月前',
+    quarter: '三个月前',
+    half: '半年前'
+  }
+  selectUserId.value = userId
+  ElMessageBox.confirm('移除后这些文件将无法恢复，请谨慎操作', '删除前确认？', {
+    confirmButtonText: `确认删除 ${tipWords[type]}文件`
+  })
+    .then(() => {
+      SuperUserApi.clearOssFile(userId, type).then(() => {
+        ElMessage.success('清理成功')
+      })
+    })
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    .catch(() => {})
+}
 onMounted(() => {
   refreshUsers()
 })
@@ -527,6 +594,16 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
 
   button {
     margin-left: 0;
+  }
+}
+
+.user-oss-info {
+  list-style: none;
+  li {
+    margin-bottom: 10px;
+  }
+  .clear-btn {
+    margin-left: 10px;
   }
 }
 </style>

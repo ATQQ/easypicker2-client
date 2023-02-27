@@ -26,9 +26,17 @@ function resetPhone(id: number, phone: string, code: string) {
     code
   })
 }
+
+function clearOssFile(id: number, type: string) {
+  return ajax.delete(`${baseUrl}/clear/oss`, {
+    params: { id, type }
+  })
+}
+
 export default {
   getUserList,
   updateUserStatus,
   resetPassword,
-  resetPhone
+  resetPhone,
+  clearOssFile
 }
