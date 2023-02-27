@@ -27,6 +27,11 @@
           >
           </el-input>
         </span>
+        <span class="item">
+          <el-button size="default" :icon="Refresh" @click="refreshUsers"
+            >刷新</el-button
+          >
+        </span>
       </div>
       <el-table
         height="550"
@@ -290,7 +295,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useStore } from 'vuex'
-import { Search, DeleteFilled } from '@element-plus/icons-vue'
+import { Search, DeleteFilled, Refresh } from '@element-plus/icons-vue'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate } from '@/utils/stringUtil'
