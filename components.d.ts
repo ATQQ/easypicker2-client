@@ -4,6 +4,7 @@
 
 declare module 'vue' {
   export interface GlobalComponents {
+    ElBadge: typeof import('element-plus/es')['ElBadge']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCard: typeof import('element-plus/es')['ElCard']
     ElCheckbox: typeof import('element-plus/es')['ElCheckbox']
@@ -25,6 +26,7 @@ declare module 'vue' {
     ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
     ElOption: typeof import('element-plus/es')['ElOption']
     ElPagination: typeof import('element-plus/es')['ElPagination']
+    ElPopover: typeof import('element-plus/es')['ElPopover']
     ElRadio: typeof import('element-plus/es')['ElRadio']
     ElRadioButton: typeof import('element-plus/es')['ElRadioButton']
     ElRadioGroup: typeof import('element-plus/es')['ElRadioGroup']
@@ -43,6 +45,8 @@ declare module 'vue' {
     LinkDialog: typeof import('./src/components/linkDialog.vue')['default']
     Loading: typeof import('element-plus/es')['ElLoadingDirective']
     LoginPanel: typeof import('./src/components/loginPanel.vue')['default']
+    MessageList: typeof import('./src/components/MessageList/index.vue')['default']
+    MessagePanel: typeof import('./src/components/MessagePanel/index.vue')['default']
     Praise: typeof import('./src/components/Praise/index.vue')['default']
     QrCode: typeof import('./src/components/QrCode.vue')['default']
   }
