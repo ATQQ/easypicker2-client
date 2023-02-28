@@ -33,10 +33,21 @@ function clearOssFile(id: number, type: string) {
   })
 }
 
+function getMessageList(): SuperUserApiTypes.getMessageList {
+  return ajax.get(`${baseUrl}/message`)
+}
+
+function readMessage(id: string) {
+  return ajax.put(`${baseUrl}/message`, {
+    id
+  })
+}
 export default {
   getUserList,
   updateUserStatus,
   resetPassword,
   resetPhone,
-  clearOssFile
+  clearOssFile,
+  getMessageList,
+  readMessage
 }

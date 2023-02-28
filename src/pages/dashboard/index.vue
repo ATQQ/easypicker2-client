@@ -65,8 +65,9 @@
           </el-icon>
         </label>
       </span>
-      <div class="flex" v-if="!isMobile">
-        Hello 💐，
+      <div class="flex fac" v-if="!isMobile">
+        <message-panel />
+        <span>Hello 💐，</span>
         <el-dropdown class="exit">
           <span class="exit-info">
             <span class="ellipsis">{{ userName }}</span>
@@ -91,13 +92,14 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { Expand, Close, ArrowDown } from '@element-plus/icons-vue'
+import { Expand, Close, ArrowDown, Bell } from '@element-plus/icons-vue'
 import HomeFooter from '@components/HomeFooter/index.vue'
 
 import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import MessagePanel from '@/components/MessagePanel/index.vue'
 import { UserApi } from '@/apis'
 
 const $router = useRouter()
