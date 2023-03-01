@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, computed } from 'vue'
+import { useStore } from 'vuex'
 import { formatDate } from '@/utils/stringUtil'
 import { SuperUserApi } from '@/apis'
 
@@ -34,7 +35,6 @@ const readMessage = () => {
   })
 }
 
-// TODO：弹窗提示消费所有的未读消息
 watch(
   () => props.data.length,
   () => {
@@ -47,6 +47,10 @@ watch(
     }
   }
 )
+
+// TODO：换成自定义hook
+const $store = useStore()
+const isMobile = computed(() => $store.getters['public/isMobile'])
 </script>
 <template>
   <div v-if="!data.length" class="empty">暂无更多消息 ღ( ´･ᴗ･` )比心</div>
@@ -64,6 +68,7 @@ watch(
     </li>
   </ul>
   <el-dialog
+    class="preview-message-dialog"
     center
     show-close
     append-to-body
@@ -71,13 +76,24 @@ watch(
     :close-on-click-modal="false"
     :title="dialogMessage.title"
     width="30%"
+    :fullscreen="isMobile"
   >
-    <div v-html="dialogMessage.text"></div>
+    <div class="message-text" v-html="dialogMessage.text"></div>
     <template #footer>
       <p class="dialog-date">
         时间：{{ formatDate(new Date(activeMessage.date)) }}
       </p>
       <span>
+        <el-button
+          type="default"
+          @click="
+            () => {
+              dialogMessage.show = false
+            }
+          "
+        >
+          下次提醒
+        </el-button>
         <el-button type="primary" @click="readMessage"> 确定 </el-button>
       </span>
     </template>
@@ -87,6 +103,8 @@ watch(
 <style lang="scss" scoped>
 .message-list {
   list-style: none;
+  max-height: 500px;
+  overflow-y: scroll;
   li {
     border-bottom: 1px solid #ddd;
     padding: 10px;
@@ -124,5 +142,15 @@ watch(
   text-align: right;
   padding: 10px;
   color: grey;
+}
+</style>
+<style lang="scss">
+.message-text {
+  overflow-y: scroll;
+  max-height: 500px;
+  ul,
+  ol {
+    list-style: none;
+  }
 }
 </style>

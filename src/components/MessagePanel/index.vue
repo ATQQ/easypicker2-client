@@ -16,7 +16,7 @@ onMounted(() => {
 </script>
 <template>
   <div class="message-panel">
-    <el-popover placement="bottom-end" :width="400" trigger="hover">
+    <el-popover placement="bottom-end" :width="375" trigger="hover">
       <template #reference>
         <el-badge :value="noReadMessage.length || ''" :max="99">
           <el-button :icon="Bell" circle />
@@ -24,10 +24,10 @@ onMounted(() => {
       </template>
       <div>
         <el-tabs v-model="activeTab">
-          <el-tab-pane label="未读" name="no">
+          <el-tab-pane :label="`未读 ${noReadMessage.length || ''}`" name="no">
             <message-list auto-show :data="noReadMessage" />
           </el-tab-pane>
-          <el-tab-pane label="全部" name="all">
+          <el-tab-pane :label="`全部 ${messageData.length || ''}`" name="all">
             <message-list :data="messageData" />
           </el-tab-pane>
         </el-tabs>

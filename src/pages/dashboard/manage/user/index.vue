@@ -32,6 +32,14 @@
             >刷新</el-button
           >
         </span>
+        <span class="item">
+          <el-button
+            size="warning"
+            :icon="Message"
+            @click="sendMessage(null, 0)"
+            >推送全局消息</el-button
+          >
+        </span>
       </div>
       <el-table
         height="550"
@@ -155,6 +163,13 @@
                 size="small"
                 >绑定手机号</el-button
               >
+              <el-button
+                @click="sendMessage(scope.row.id)"
+                type="warning"
+                text
+                size="small"
+                >发送消息</el-button
+              >
             </div>
           </template>
         </el-table-column>
@@ -173,6 +188,28 @@
         ></el-pagination>
       </div>
     </div>
+    <!-- 消息推送弹窗 -->
+    <el-dialog
+      :fullscreen="isMobile"
+      center
+      title="消息推送"
+      v-model="showMessageDialog"
+    >
+      <div class="tc">
+        <el-input
+          v-model="pushMessageText"
+          :autosize="{ minRows: 6, maxRows: 20 }"
+          type="textarea"
+          placeholder="输入要推送的消息，支持HTML内容（推荐使用mdnice 转 markdown 转html）"
+        />
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showMessageDialog = false">取 消</el-button>
+          <el-button type="primary" @click="sureSendMessage">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
     <!-- 用户状态修改弹窗 -->
     <el-dialog
       :fullscreen="isMobile"
@@ -295,7 +332,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useStore } from 'vuex'
-import { Search, DeleteFilled, Refresh } from '@element-plus/icons-vue'
+import { Search, DeleteFilled, Refresh, Message } from '@element-plus/icons-vue'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate } from '@/utils/stringUtil'
@@ -547,6 +584,30 @@ const handleClearFiles = (
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     .catch(() => {})
 }
+
+// TODO: 0 global 1 user_push
+const pushMessageType = ref(1)
+const showMessageDialog = ref(false)
+const pushMessageText = ref('')
+const sendMessage = (id: number, type = 1) => {
+  selectUserId.value = id
+  pushMessageType.value = type
+  showMessageDialog.value = true
+}
+
+const sureSendMessage = () => {
+  SuperUserApi.sendMessage(
+    pushMessageText.value,
+    pushMessageType.value,
+    selectUserId.value
+  ).then(() => {
+    ElMessage.success('推送成功')
+    // 推送成功
+    pushMessageText.value = ''
+    showMessageDialog.value = false
+  })
+}
+
 onMounted(() => {
   refreshUsers()
 })

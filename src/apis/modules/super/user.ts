@@ -42,6 +42,14 @@ function readMessage(id: string) {
     id
   })
 }
+
+function sendMessage(text: string, type: number, target?: number) {
+  return ajax.post(`${baseUrl}/message`, {
+    text,
+    type,
+    target
+  })
+}
 export default {
   getUserList,
   updateUserStatus,
@@ -49,5 +57,6 @@ export default {
   resetPhone,
   clearOssFile,
   getMessageList,
-  readMessage
+  readMessage,
+  sendMessage
 }

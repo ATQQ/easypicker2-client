@@ -59,6 +59,7 @@
       </div>
       <!-- 移动端展示 -->
       <span id="navMenu">
+        <message-panel v-if="isMobile" class="mobile-message-bell" />
         <label for="navActive">
           <el-icon size="32">
             <Expand />
@@ -260,12 +261,21 @@ onMounted(() => {
 #navMenu {
   display: none;
 }
+.mobile-message-bell {
+  display: none;
+  position: fixed;
+  right: 0;
+  top: 0;
+}
 @media screen and (max-width: 700px) {
   #navActive {
     display: block;
     position: fixed;
     left: 0;
     top: 0;
+  }
+  .mobile-message-bell {
+    display: block;
   }
   #navMenu {
     cursor: pointer;
