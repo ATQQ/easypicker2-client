@@ -179,7 +179,7 @@ q ep client --deploy beta
 
 ```sh [部署指定版本]
 q ep client --deploy 2.3.4
-# 更多可用版本见 > TODO(待提供)
+# 更多可用版本见 > 更新日志(>=v2.3.4)：https://docs.ep.sugarat.top/plan/log.html
 ```
 
 ```sh [拉源码构建部署]
@@ -334,7 +334,7 @@ q ep server --deploy beta
 
 ```sh [部署指定版本]
 q ep server --deploy 2.3.4
-# 更多可用版本见 > TODO(待提供)
+# 更多可用版本见 > 更新日志(>=v2.3.4)：https://docs.ep.sugarat.top/plan/log.html
 ```
 :::
 
