@@ -33,8 +33,11 @@ const store: Module<State, unknown> = {
     deleteTask(context, k) {
       return TaskApi.deleteOne(k).then((res) => {
         const idx = context.state.taskList.findIndex((v) => v.key === k)
-        if (idx >= 0) {
+        const targetTask = context.state.taskList[idx]
+        if (targetTask && targetTask.category === 'trash') {
           context.state.taskList.splice(idx, 1)
+        } else {
+          targetTask.category = 'trash'
         }
         return res
       })
