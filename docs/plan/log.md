@@ -38,7 +38,8 @@ q ep server --deploy 2.3.4
   * 支持一键清理文件（账号维度，避免文件长时间占用空间）
     * ![](https://img.cdn.sugarat.top/mdImg/MTY3NzY4MTY3MzUwMw==677681673503)
     * ![](https://img.cdn.sugarat.top/mdImg/MTY3NzY4MTY2ODMyNQ==677681668325)
-* ⭕️ 任务删除支持回收站（避免误删任务，导致文件错乱）
+* 任务删除支持回收站（避免误删任务，导致文件错乱）
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY3Nzc2Njc2MzUwMg==677766763502)
 * ⭕️ 批注支持设置图片（最多3张）
 
 ### Bugfix
