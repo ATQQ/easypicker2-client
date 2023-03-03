@@ -53,6 +53,7 @@ q ep server --deploy 2.3.4
   * [Github: @sugarat/cli](https://github.com/ATQQ/tools/tree/main/packages/cli/dynamic-cli/core)
   * [Github: @sugarat/cli-plugin-ep](https://github.com/ATQQ/tools/tree/main/packages/cli/dynamic-cli/plugins/cli-plugin-ep)
 * 文件软删除逻辑优化，添加字段标识
+* sql脚本更新
 
 ## v2.3.4 (2023/02/12)
 ### Feature
