@@ -4,17 +4,20 @@ import { debounce } from '@/utils/other'
 
 export const updateTaskInfo: (
   key: string,
-  options: TaskApiTypes.TaskInfo
+  options: TaskApiTypes.TaskInfo,
+  successInfo?: boolean
 ) => void = debounce(
-  (key, options) => {
+  (key, options, successInfo = true) => {
     if (key) {
       TaskApi.updateTaskMoreInfo(key, options)
         .then(() => {
-          ElMessage.success({
-            message: '设置成功',
-            zIndex: 4000,
-            duration: 1000
-          })
+          if (successInfo) {
+            ElMessage.success({
+              message: '设置成功',
+              zIndex: 4000,
+              duration: 1000
+            })
+          }
         })
         .catch(() => {
           ElMessage.error({

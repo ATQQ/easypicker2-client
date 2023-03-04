@@ -40,7 +40,7 @@
       <div class="import-people-wrapper">
         <div v-show="activeTab === '文件导入'">
           <el-upload
-            accetp="text/plain"
+            accept="text/plain"
             action=""
             class="upload-demo"
             ref="peopleUpload"
@@ -268,7 +268,7 @@
 </template>
 <script lang="ts" setup>
 import { ElMessage, ElMessageBox, UploadUserFile } from 'element-plus'
-import { computed, defineComponent, reactive, ref, watchEffect } from 'vue'
+import { computed, reactive, ref, watchEffect } from 'vue'
 import { useStore } from 'vuex'
 import { PeopleApi } from '@/apis'
 import { uploadFile, tableToExcel } from '@/utils/networkUtil'

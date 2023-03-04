@@ -205,7 +205,16 @@ declare namespace SuperUserApiTypes {
     phone: string
     status: number
   }
+  interface MessageItem {
+    id: string
+    type: number
+    style: number
+    date: string
+    text: string
+    read: boolean
+  }
   type getUserList = ResponseData<{ list: UserItem[] }>
+  type getMessageList = ResponseData<MessageItem[]>
   type updateUserStatus = ResponseData
 }
 

@@ -27,6 +27,19 @@
           >
           </el-input>
         </span>
+        <span class="item">
+          <el-button size="default" :icon="Refresh" @click="refreshUsers"
+            >刷新</el-button
+          >
+        </span>
+        <span class="item">
+          <el-button
+            size="warning"
+            :icon="Message"
+            @click="sendMessage(null, 0)"
+            >推送全局消息</el-button
+          >
+        </span>
       </div>
       <el-table
         height="550"
@@ -75,6 +88,51 @@
             scope.row.open_time && formatDate(new Date(scope.row.open_time))
           }}</template>
         </el-table-column>
+        <el-table-column prop="fileCount" label="收集文件数"></el-table-column>
+        <el-table-column label="占用云空间" width="200">
+          <template
+            #default="{
+              row: { resources, monthAgoSize, quarterAgoSize, halfYearSize, id }
+            }"
+          >
+            <ul class="user-oss-info">
+              <li>总大小：{{ resources }}</li>
+              <li>
+                一月前：{{ monthAgoSize
+                }}<el-button
+                  v-if="resources !== '0B'"
+                  class="clear-btn"
+                  @click="handleClearFiles(id, 'month')"
+                  :icon="DeleteFilled"
+                  circle
+                  size="small"
+                ></el-button>
+              </li>
+              <li>
+                三月前：{{ quarterAgoSize
+                }}<el-button
+                  v-if="quarterAgoSize !== '0B'"
+                  class="clear-btn"
+                  @click="handleClearFiles(id, 'quarter')"
+                  :icon="DeleteFilled"
+                  circle
+                  size="small"
+                ></el-button>
+              </li>
+              <li>
+                半年前：{{ halfYearSize
+                }}<el-button
+                  v-if="halfYearSize !== '0B'"
+                  class="clear-btn"
+                  @click="handleClearFiles(id, 'half')"
+                  :icon="DeleteFilled"
+                  circle
+                  size="small"
+                ></el-button>
+              </li>
+            </ul>
+          </template>
+        </el-table-column>
         <el-table-column fixed="right" label="操作" width="100">
           <template #default="scope">
             <div class="text-btn-list">
@@ -105,6 +163,13 @@
                 size="small"
                 >绑定手机号</el-button
               >
+              <el-button
+                @click="sendMessage(scope.row.id)"
+                type="warning"
+                text
+                size="small"
+                >发送消息</el-button
+              >
             </div>
           </template>
         </el-table-column>
@@ -123,6 +188,28 @@
         ></el-pagination>
       </div>
     </div>
+    <!-- 消息推送弹窗 -->
+    <el-dialog
+      :fullscreen="isMobile"
+      center
+      title="消息推送"
+      v-model="showMessageDialog"
+    >
+      <div class="tc">
+        <el-input
+          v-model="pushMessageText"
+          :autosize="{ minRows: 6, maxRows: 20 }"
+          type="textarea"
+          placeholder="输入要推送的消息，支持HTML内容（推荐使用mdnice 转 markdown 转html）"
+        />
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showMessageDialog = false">取 消</el-button>
+          <el-button type="primary" @click="sureSendMessage">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
     <!-- 用户状态修改弹窗 -->
     <el-dialog
       :fullscreen="isMobile"
@@ -245,7 +332,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useStore } from 'vuex'
-import { Search } from '@element-plus/icons-vue'
+import { Search, DeleteFilled, Refresh, Message } from '@element-plus/icons-vue'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate } from '@/utils/stringUtil'
@@ -475,6 +562,52 @@ const handleSavePhone = async () => {
       ElMessage.error(options[c] || msg)
     })
 }
+
+const handleClearFiles = (
+  userId: number,
+  type: 'month' | 'quarter' | 'half'
+) => {
+  const tipWords = {
+    month: '一个月前',
+    quarter: '三个月前',
+    half: '半年前'
+  }
+  selectUserId.value = userId
+  ElMessageBox.confirm('移除后这些文件将无法恢复，请谨慎操作', '删除前确认？', {
+    confirmButtonText: `确认删除 ${tipWords[type]}文件`
+  })
+    .then(() => {
+      SuperUserApi.clearOssFile(userId, type).then(() => {
+        ElMessage.success('清理成功')
+      })
+    })
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    .catch(() => {})
+}
+
+// TODO: 0 global 1 user_push
+const pushMessageType = ref(1)
+const showMessageDialog = ref(false)
+const pushMessageText = ref('')
+const sendMessage = (id: number, type = 1) => {
+  selectUserId.value = id
+  pushMessageType.value = type
+  showMessageDialog.value = true
+}
+
+const sureSendMessage = () => {
+  SuperUserApi.sendMessage(
+    pushMessageText.value,
+    pushMessageType.value,
+    selectUserId.value
+  ).then(() => {
+    ElMessage.success('推送成功')
+    // 推送成功
+    pushMessageText.value = ''
+    showMessageDialog.value = false
+  })
+}
+
 onMounted(() => {
   refreshUsers()
 })
@@ -527,6 +660,16 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
 
   button {
     margin-left: 0;
+  }
+}
+
+.user-oss-info {
+  list-style: none;
+  li {
+    margin-bottom: 10px;
+  }
+  .clear-btn {
+    margin-left: 10px;
   }
 }
 </style>

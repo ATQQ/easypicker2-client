@@ -25,8 +25,25 @@ function checkPhone(phone: string): PublicApiTypes.checkPhone {
     }
   })
 }
+
+function getTipImageUrl(
+  key: string,
+  data: {
+    uid: number
+    name: string
+  }[]
+) {
+  return ajax.post<any, BaseResponse<{ cover: string; preview: string }[]>>(
+    'public/tip/image',
+    {
+      key,
+      data
+    }
+  )
+}
 export default {
   getCode,
   reportPv,
-  checkPhone
+  checkPhone,
+  getTipImageUrl
 }
