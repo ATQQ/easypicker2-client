@@ -40,7 +40,8 @@ q ep server --deploy 2.3.4
     * ![](https://img.cdn.sugarat.top/mdImg/MTY3NzY4MTY2ODMyNQ==677681668325)
 * 任务删除支持回收站（避免误删任务，导致文件错乱）
   * ![](https://img.cdn.sugarat.top/mdImg/MTY3Nzc2Njc2MzUwMg==677766763502)
-* ⭕️ 批注支持设置图片（最多3张）
+* 批注支持设置图片（最多3张）
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY3NzkxNzczODAyNg==677917738026)
 
 ### Bugfix
 * patch MySQL逻辑与sql不一致

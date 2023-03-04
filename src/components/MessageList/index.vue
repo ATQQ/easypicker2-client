@@ -68,7 +68,6 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
     </li>
   </ul>
   <el-dialog
-    class="preview-message-dialog"
     center
     show-close
     append-to-body

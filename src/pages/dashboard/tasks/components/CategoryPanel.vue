@@ -33,7 +33,7 @@
         >
         <span class="list-tip"
           ><el-tag
-            type="error"
+            type="danger"
             :effect="category === 'trash' ? 'dark' : 'plain'"
             @click="handleClickCategory('trash')"
             ><el-icon><DeleteFilled /></el-icon> 回收站{{
