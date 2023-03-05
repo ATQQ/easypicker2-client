@@ -5,6 +5,9 @@ hero:
   name: EasyPicker(轻取)
   text: 在线文件收取平台
   tagline: 一个功能丰富，开源&免费，活跃的Web应用
+  image:
+    src: https://img.cdn.sugarat.top/mdImg/MTY3ODAwMzU3MTc2Ng==678003571766
+    alt: 轻取
   actions:
     - theme: brand
       text: 立即体验
