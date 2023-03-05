@@ -29,15 +29,16 @@ q ep server --deploy 2.3.4
 ```
 :::
 
-## v2.4.0-beta.0
+## vv2.4.0 (2023/03/05)
 ### Feature
 * 管理后台
   * 支持向用户推送消息（单独，全局）
   * 支持查看提交文件数量
   * 支持查看用户占用的云空间大小
-  * 支持一键清理文件（账号维度，避免文件长时间占用空间）
+  * 支持一键清理文件，并推送站内消息（账号维度，避免文件长时间占用空间）
     * ![](https://img.cdn.sugarat.top/mdImg/MTY3NzY4MTY3MzUwMw==677681673503)
     * ![](https://img.cdn.sugarat.top/mdImg/MTY3NzY4MTY2ODMyNQ==677681668325)
+    * ![](https://img.cdn.sugarat.top/mdImg/MTY3ODAwMTE0MTA0OQ==678001141049)
 * 任务删除支持回收站（避免误删任务，导致文件错乱）
   * ![](https://img.cdn.sugarat.top/mdImg/MTY3Nzc2Njc2MzUwMg==677766763502)
 * 批注支持设置图片（最多3张）
