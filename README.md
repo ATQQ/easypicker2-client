@@ -1,9 +1,9 @@
-<p align="center">
+<!-- <p align="center">
  	<a href="https://ep.sugarat.top">
 		<img width="50%" src="https://img.cdn.sugarat.top/mdImg/MTY0NzY5OTk0NTY1NQ==647699945655"
 			 alt="Status">
 	</a>
-</p>
+</p> -->
 
 <h1 align="center">EasyPicker（轻取）</h1>
 
@@ -15,6 +15,7 @@
 	</a>
 </p>
 
+![](https://img.cdn.sugarat.top/mdImg/MTY3ODAwMzU3MTc2Ng==678003571766)
 
 ## 简介
 [在线文件收取平台](https://docs.ep.sugarat.top/)
