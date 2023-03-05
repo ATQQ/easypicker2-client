@@ -88,7 +88,11 @@
             scope.row.open_time && formatDate(new Date(scope.row.open_time))
           }}</template>
         </el-table-column>
-        <el-table-column prop="fileCount" label="收集文件数"></el-table-column>
+        <el-table-column
+          sortable
+          prop="fileCount"
+          label="收集文件数"
+        ></el-table-column>
         <el-table-column label="占用云空间" width="200">
           <template
             #default="{

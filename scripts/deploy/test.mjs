@@ -1,13 +1,13 @@
 #!/usr/bin/env zx
+/* eslint-disable no-await-in-loop */
 
 // user config
-const originName = 'ep.test'
+const originName = ['ep.test', 'ep.dev']
 
 // not care
 const compressPkgName = `${originName}.tar.gz`
 const user = 'root'
 const origin = 'sugarat.top'
-const fullOrigin = `${originName}.${origin}`
 const baseServerDir = '/www/wwwroot'
 const destDir = ''
 
@@ -21,4 +21,6 @@ await $`scp ${compressPkgName} ${user}@${origin}:./`
 await $`rm -rf ${compressPkgName}`
 
 await $`echo ==✅ 部署代码 ==`
-await $`ssh -p22 ${user}@${origin} "tar -xf ${compressPkgName} -C ${baseServerDir}/${fullOrigin}/${destDir}"`
+for (const name of originName) {
+  await $`ssh -p22 ${user}@${origin} "tar -xf ${compressPkgName} -C ${baseServerDir}/${name}.${origin}/${destDir}"`
+}

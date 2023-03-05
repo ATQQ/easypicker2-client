@@ -1,13 +1,11 @@
 {
   "name": "ep-client",
   "private": true,
-  "version": "2.4.0-beta.0",
+  "version": "2.4.1",
   "scripts": {
     "dev": "vite",
     "dev:test": "VITE_APP_AXIOS_BASE_URL=/api-test/ vite --mode test",
     "build": "vite build",
-    "build:dev": "vite build --mode dev",
-    "build:test": "vite build --mode test",
     "serve": "vite preview",
     "lint": "eslint src --fix",
     "docs:dev": "vitepress dev docs",
@@ -15,8 +13,7 @@
     "docs:serve": "vitepress serve docs",
     "docs:deploy": "zx scripts/deploy/docs.mjs",
     "deploy:prod": "zx scripts/deploy/prod.mjs",
-    "deploy:test": "zx scripts/deploy/test.mjs",
-    "deploy:dev": "zx scripts/deploy/dev.mjs"
+    "deploy:test": "zx scripts/deploy/test.mjs"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.4",
