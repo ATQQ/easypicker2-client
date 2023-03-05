@@ -232,3 +232,11 @@ export function parseFileFormat(format: string) {
   }
   return formatData
 }
+
+export function getTipImageKey(
+  key: string,
+  name: string,
+  uid?: number | string
+) {
+  return `easypicker2/tip/${key}/${uid || Date.now()}/${name}`
+}

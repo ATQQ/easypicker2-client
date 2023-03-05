@@ -25,25 +25,37 @@ q ep server --deploy beta
 q ep client --deploy 2.3.4
 # 后端
 q ep server --deploy 2.3.4
-# 更多可用版本见 > TODO(待提供)
+# 更多可用版本见 > 更新日志(>=v2.3.4)：https://docs.ep.sugarat.top/plan/log.html
 ```
 :::
 
-## v2.3.5（进行中）
+## vv2.4.0 (2023/03/05)
+### Feature
+* 管理后台
+  * 支持向用户推送消息（单独，全局）
+  * 支持查看提交文件数量
+  * 支持查看用户占用的云空间大小
+  * 支持一键清理文件，并推送站内消息（账号维度，避免文件长时间占用空间）
+    * ![](https://img.cdn.sugarat.top/mdImg/MTY3NzY4MTY3MzUwMw==677681673503)
+    * ![](https://img.cdn.sugarat.top/mdImg/MTY3NzY4MTY2ODMyNQ==677681668325)
+    * ![](https://img.cdn.sugarat.top/mdImg/MTY3ODAwMTE0MTA0OQ==678001141049)
+* 任务删除支持回收站（避免误删任务，导致文件错乱）
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY3Nzc2Njc2MzUwMg==677766763502)
+* 批注支持设置图片（最多3张）
+  * ![](https://img.cdn.sugarat.top/mdImg/MTY3NzkxNzczODAyNg==677917738026)
 
 ### Bugfix
-* ❌ patch MySQL逻辑与sql不一致
-* ❌ redis缓存数据在不同站点之间相互影响
-* ❌ 部分varchar字段极端情况溢出
+* patch MySQL逻辑与sql不一致
+* redis缓存数据在不同站点之间相互影响
+* 部分varchar字段极端情况溢出
 
 ### chore
-* ✅ 全新的[部署文档](./../deploy/online-new.md)
-* ✅ 提供一键部署前后端资源的CLI
+* 全新的[部署文档](./../deploy/online-new.md)
+* 提供一键部署前后端资源的CLI
   * [Github: @sugarat/cli](https://github.com/ATQQ/tools/tree/main/packages/cli/dynamic-cli/core)
   * [Github: @sugarat/cli-plugin-ep](https://github.com/ATQQ/tools/tree/main/packages/cli/dynamic-cli/plugins/cli-plugin-ep)
-* ❌ 部分接口性能调优
-  * 串行接口合并
-  * 慢查询优化
+* 文件软删除逻辑优化，添加字段标识
+* sql脚本更新
 
 ## v2.3.4 (2023/02/12)
 ### Feature

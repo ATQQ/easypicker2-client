@@ -45,6 +45,15 @@ function getUsefulTemplate(key: string): TaskApiTypes.getUsefulTemplate {
   return ajax.get(`/task_info/template/${key}`)
 }
 
+function delTipImage(key: string, uid: number, name: string) {
+  return ajax.delete(`/task_info/tip/image/${key}`, {
+    params: {
+      uid,
+      name
+    }
+  })
+}
+
 export default {
   getList,
   create,
@@ -53,5 +62,6 @@ export default {
   getTaskInfo,
   getTaskMoreInfo,
   updateTaskMoreInfo,
-  getUsefulTemplate
+  getUsefulTemplate,
+  delTipImage
 }

@@ -26,9 +26,37 @@ function resetPhone(id: number, phone: string, code: string) {
     code
   })
 }
+
+function clearOssFile(id: number, type: string) {
+  return ajax.delete(`${baseUrl}/clear/oss`, {
+    params: { id, type }
+  })
+}
+
+function getMessageList(): SuperUserApiTypes.getMessageList {
+  return ajax.get(`${baseUrl}/message`)
+}
+
+function readMessage(id: string) {
+  return ajax.put(`${baseUrl}/message`, {
+    id
+  })
+}
+
+function sendMessage(text: string, type: number, target?: number) {
+  return ajax.post(`${baseUrl}/message`, {
+    text,
+    type,
+    target
+  })
+}
 export default {
   getUserList,
   updateUserStatus,
   resetPassword,
-  resetPhone
+  resetPhone,
+  clearOssFile,
+  getMessageList,
+  readMessage,
+  sendMessage
 }

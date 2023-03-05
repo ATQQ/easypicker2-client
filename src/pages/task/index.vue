@@ -39,15 +39,28 @@
       </h1>
       <!-- 提示信息 -->
       <!-- 时间截止了也不再展示 -->
-      <template v-if="taskMoreInfo.tip && (ddlStr ? !isOver : true)">
+      <template v-if="tipData.text && (ddlStr ? !isOver : true)">
         <el-divider>⚠️ 注意事项 ⚠️</el-divider>
         <Tip>
           <div class="tip-wrapper">
-            <p v-for="(t, i) in taskMoreInfo.tip.split('\n')" :key="i">
+            <p v-for="(t, i) in tipData.text.split('\n')" :key="i">
               {{ t.replace(/\s/g, '&nbsp;') }}
             </p>
           </div>
         </Tip>
+      </template>
+      <template v-if="imageList.length && (ddlStr ? !isOver : true)">
+        <el-image
+          hide-on-click-modal
+          v-for="(img, idx) in imageList"
+          :key="img.uid"
+          style="width: 100px; height: 100px; margin: 10px"
+          :src="img.url"
+          :zoom-rate="1.2"
+          :preview-src-list="imageList.map((v) => v.preview)"
+          :initial-index="idx"
+          fit="contain"
+        />
       </template>
       <!-- 截止时间字符串 -->
       <template v-if="ddlStr">
@@ -234,7 +247,7 @@
 <script lang="ts" setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadUserFile, UploadInstance, FormInstance } from 'element-plus'
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HomeFooter from '@components/HomeFooter/index.vue'
 import LinkDialog from '@components/linkDialog.vue'
@@ -250,7 +263,7 @@ import {
   parseInfo
 } from '@/utils/stringUtil'
 import { downLoadByUrl, qiniuUpload } from '@/utils/networkUtil'
-import { FileApi, PeopleApi, TaskApi } from '@/apis'
+import { FileApi, PeopleApi, PublicApi, TaskApi } from '@/apis'
 import Tip from '../dashboard/tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
 
@@ -669,6 +682,60 @@ const timeInfo = computed(() => {
   }
   return ddlStr.value
 })
+
+// tipImage
+const tipData = reactive<{
+  text: string
+  imgs: {
+    uid: number
+    name: string
+  }[]
+}>({
+  text: '',
+  imgs: []
+})
+const imageList = ref<
+  { name: string; uid: number; preview?: string; url: string }[]
+>([])
+
+watch(
+  () => taskMoreInfo.tip,
+  () => {
+    // 初始化
+    try {
+      const parseData = JSON.parse(taskMoreInfo.tip)
+      tipData.imgs = parseData.imgs
+      tipData.text = parseData.text || ''
+      imageList.value = tipData.imgs.map((v) => {
+        return {
+          ...v,
+          url: 'https://img.cdn.sugarat.top/mdImg/MTY3NzkxMDI1NTU1Nw==20140524124237518.gif'
+        }
+      })
+      if (imageList.value.length) {
+        // 异步填充url
+        PublicApi.getTipImageUrl(
+          k.value,
+          imageList.value.map((v) => ({
+            uid: v.uid,
+            name: v.name
+          }))
+        ).then((v) => {
+          v.data.forEach((url, idx) => {
+            imageList.value[idx].url = url.cover
+            Object.assign(imageList.value[idx], {
+              preview: url.preview
+            })
+          })
+        })
+      }
+    } catch {
+      tipData.text = ''
+      tipData.imgs = []
+      imageList.value = []
+    }
+  }
+)
 onMounted(() => {
   k.value = $route.params.key as string
   if (k.value) {
