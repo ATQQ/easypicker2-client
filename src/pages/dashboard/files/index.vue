@@ -20,6 +20,7 @@
             :value="item.k"
           />
           <el-option label="无关联任务" value="no-task" />
+          <el-option label="♻️回收站♻️" value="trash" />
         </el-select>
       </div>
       <div class="item">

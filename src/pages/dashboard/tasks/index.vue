@@ -154,12 +154,17 @@ const filterTasks = computed(() => {
 })
 
 // 删除任务
-const deleteTask = (k: string) => {
+const deleteTask = (k: string, isTrash = false) => {
   if (!k) return
-  ElMessageBox.confirm('确认删除此任务吗?', '数据无价，请谨慎操作', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  })
+  ElMessageBox.confirm(
+    '确认删除此任务吗?',
+    isTrash ? '!!回收站的删除后无法再恢复' : '数据无价，请谨慎操作',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: isTrash ? 'error' : 'info'
+    }
+  )
     .then(() => {
       $store.dispatch('task/deleteTask', k).then(() => {
         ElMessage.success('删除成功')

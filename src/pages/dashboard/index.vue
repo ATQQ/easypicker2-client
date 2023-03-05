@@ -59,14 +59,16 @@
       </div>
       <!-- 移动端展示 -->
       <span id="navMenu">
+        <message-panel v-if="isMobile" class="mobile-message-bell" />
         <label for="navActive">
           <el-icon size="32">
             <Expand />
           </el-icon>
         </label>
       </span>
-      <div class="flex" v-if="!isMobile">
-        Hello 💐，
+      <div class="flex fac" v-if="!isMobile">
+        <message-panel />
+        <span>Hello 💐，</span>
         <el-dropdown class="exit">
           <span class="exit-info">
             <span class="ellipsis">{{ userName }}</span>
@@ -91,13 +93,14 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { Expand, Close, ArrowDown } from '@element-plus/icons-vue'
+import { Expand, Close, ArrowDown, Bell } from '@element-plus/icons-vue'
 import HomeFooter from '@components/HomeFooter/index.vue'
 
 import { onMounted, reactive, ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import MessagePanel from '@/components/MessagePanel/index.vue'
 import { UserApi } from '@/apis'
 
 const $router = useRouter()
@@ -258,12 +261,21 @@ onMounted(() => {
 #navMenu {
   display: none;
 }
+.mobile-message-bell {
+  display: none;
+  position: fixed;
+  right: 0;
+  top: 0;
+}
 @media screen and (max-width: 700px) {
   #navActive {
     display: block;
     position: fixed;
     left: 0;
     top: 0;
+  }
+  .mobile-message-bell {
+    display: block;
   }
   #navMenu {
     cursor: pointer;
