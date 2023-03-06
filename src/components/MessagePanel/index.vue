@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { Bell } from '@element-plus/icons-vue'
 import { computed, reactive, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { SuperUserApi } from '@/apis'
 import MessageList from '@/components/MessageList/index.vue'
 
@@ -8,10 +9,13 @@ const activeTab = ref<'all' | 'no'>('all')
 const messageData = reactive<SuperUserApiTypes.MessageItem[]>([])
 
 const noReadMessage = computed(() => messageData.filter((v) => !v.read))
+const route = useRoute()
 onMounted(() => {
-  SuperUserApi.getMessageList().then((v) => {
-    messageData.push(...v.data)
-  })
+  if (route.name !== 'config') {
+    SuperUserApi.getMessageList().then((v) => {
+      messageData.push(...v.data)
+    })
+  }
 })
 </script>
 <template>
