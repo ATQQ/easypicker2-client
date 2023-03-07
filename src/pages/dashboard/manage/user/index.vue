@@ -517,7 +517,6 @@ const getCode = () => {
       })
     })
     .catch((err) => {
-      // TODO:编写通用方法处理失败信息弹窗回掉
       const { code: c } = err
       const msg = '注册失败,未知错误'
       const options: any = {

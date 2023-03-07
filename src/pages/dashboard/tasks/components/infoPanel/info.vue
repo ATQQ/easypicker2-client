@@ -455,16 +455,6 @@ watchEffect(() => {
   font-size: 12px;
   width: 48px;
   text-align: left;
-  // TODO：待定颜色
-  // &.input{
-  //   color: black;
-  // }
-  // &.text{
-  //   color: #000000;
-  // }
-  // &.radio{
-  //   color: #999;
-  // }
 }
 
 .radio-list {

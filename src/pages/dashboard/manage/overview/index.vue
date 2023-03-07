@@ -133,8 +133,6 @@
       center
       :fullscreen="isMobile"
     >
-      <!-- TODO: 展示优化 -->
-      <!-- <pre style="overflow: hidden;">{{ showData }}</pre> -->
       <json-viewer
         :value="jsonData"
         :expand-depth="5"

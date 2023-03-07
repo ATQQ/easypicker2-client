@@ -5,23 +5,43 @@
       <div>
         <h1>
           <span>服务概况</span>
-          <el-icon :class="{
-            loading,
-          }" @click="refreshStatus" style="cursor:pointer;margin-left: 10px;">
+          <el-icon
+            :class="{
+              loading
+            }"
+            @click="refreshStatus"
+            style="cursor: pointer; margin-left: 10px"
+          >
             <Refresh />
           </el-icon>
           <span v-show="loading">数据加载中...</span>
         </h1>
         <Tip>查看各个服务的运行情况</Tip>
         <div class="service-list">
-          <div v-for="service in serviceList" :key="service.key" class="service-item">
-            <img :src="service.logo" :alt="service.name">
+          <div
+            v-for="service in serviceList"
+            :key="service.key"
+            class="service-item"
+          >
+            <img :src="service.logo" :alt="service.name" />
             <!-- <p>{{ service.name }}</p> -->
             <p>
               <Tip>{{ service.des }}</Tip>
             </p>
-            <el-button v-if="service.status" type="success" size="small" :icon="Select" circle />
-            <el-button v-else type="danger" size="small" :icon="CloseBold" circle />
+            <el-button
+              v-if="service.status"
+              type="success"
+              size="small"
+              :icon="Select"
+              circle
+            />
+            <el-button
+              v-else
+              type="danger"
+              size="small"
+              :icon="CloseBold"
+              circle
+            />
             <p v-if="!service.status && service.error">
               <Tip>{{ service.error }}</Tip>
             </p>
@@ -30,32 +50,61 @@
       </div>
       <div v-show="showErrorList.length" class="error-panel">
         <h1>错误信息</h1>
-        <p v-for="err in showErrorList" :key="err.key"><strong>{{ err.name }}:</strong> <span class="error">{{
-            err.errMsg
-        }}</span></p>
+        <p v-for="err in showErrorList" :key="err.key">
+          <strong>{{ err.name }}:</strong>
+          <span class="error">{{ err.errMsg }}</span>
+        </p>
       </div>
       <div>
-        <h1>
-          服务相关配置
-        </h1>
+        <h1>服务相关配置</h1>
         <Tip>
           在此面板，配置服务器运行相关参数
-          <!-- TODO：待补齐地址 -->
-          <el-button type="primary" link="">配置手册?</el-button>
+          <a
+            href="https://docs.ep.sugarat.top/deploy/online-new.html#_5-%E6%9C%80%E5%90%8E%E6%9B%B4%E6%96%B0%E9%85%8D%E7%BD%AE"
+          >
+            <el-button type="primary" link>配置手册?</el-button></a
+          >
         </Tip>
       </div>
       <div class="config-container">
-        <div class="config-panel" v-for="serverItem in serverConfig" :key="serverItem.title">
+        <div
+          class="config-panel"
+          v-for="serverItem in serverConfig"
+          :key="serverItem.title"
+        >
           <h2>
             {{ serverItem.title }}
           </h2>
-          <el-form :label-position="'right'" label-width="100px" style="max-width: 400px;margin: 0 auto;;">
-            <el-form-item :label-width="'auto'" v-for="cfgItem in serverItem.data" :label="cfgItem.label || cfgItem.key"
-              :key="cfgItem.key">
-              <div class="flex" style="flex:1">
-                <el-input :disabled="cfgItem.disabled" v-model="cfgItem.value" />
-                <el-button v-if="cfgItem.disabled" @click="cfgItem.disabled = false" type="primary" text>更新</el-button>
-                <el-button v-else @click="updateCfg(cfgItem)" type="success" text>完成</el-button>
+          <el-form
+            :label-position="'right'"
+            label-width="100px"
+            style="max-width: 400px; margin: 0 auto"
+          >
+            <el-form-item
+              :label-width="'auto'"
+              v-for="cfgItem in serverItem.data"
+              :label="cfgItem.label || cfgItem.key"
+              :key="cfgItem.key"
+            >
+              <div class="flex" style="flex: 1">
+                <el-input
+                  :disabled="cfgItem.disabled"
+                  v-model="cfgItem.value"
+                />
+                <el-button
+                  v-if="cfgItem.disabled"
+                  @click="cfgItem.disabled = false"
+                  type="primary"
+                  text
+                  >更新</el-button
+                >
+                <el-button
+                  v-else
+                  @click="updateCfg(cfgItem)"
+                  type="success"
+                  text
+                  >完成</el-button
+                >
               </div>
             </el-form-item>
           </el-form>
@@ -66,9 +115,7 @@
 </template>
 <script lang="ts" setup>
 import { ElMessage } from 'element-plus'
-import {
-  computed, onMounted, reactive, ref,
-} from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useStore } from 'vuex'
 import { Select, CloseBold, Refresh } from '@element-plus/icons-vue'
 import { ConfigServiceAPI } from '@/apis'
@@ -81,21 +128,21 @@ const serviceList = reactive([
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTAyMjIwNA==657359022204',
     status: false,
     des: '存储用户数据',
-    errMsg: '',
+    errMsg: ''
   },
   {
     name: '七牛云',
     key: 'qiniu',
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1ODcyODM0Mg==657358728342',
     status: false,
-    des: '文件存储',
+    des: '文件存储'
   },
   {
     name: 'MongoDB',
     key: 'mongodb',
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTA4OTc3Nw==657359089777',
     status: false,
-    des: '用户数据与日志',
+    des: '用户数据与日志'
   },
   {
     name: 'Redis',
@@ -103,15 +150,15 @@ const serviceList = reactive([
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1ODgyNzM1MA==657358827350',
     status: false,
     des: '持久化缓存数据',
-    error: '确保安装redis，且监听端口6379',
+    error: '确保安装redis，且监听端口6379'
   },
   {
     name: '腾讯云',
     key: 'tx',
     logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTE1MzQzOQ==657359153439',
     status: false,
-    des: '短信服务',
-  },
+    des: '短信服务'
+  }
 ])
 const $store = useStore()
 const loading = ref(false)
@@ -119,49 +166,42 @@ const showErrorList = computed(() => serviceList.filter((item) => item.errMsg))
 const refreshStatus = () => {
   if (loading.value) return
   loading.value = true
-  ConfigServiceAPI
-    .getServiceOverview()
-    .then((v) => {
-      const { data } = v
-      serviceList.forEach((item) => {
-        const { status, errMsg } = data[item.key]
-        item.status = status
-        item.errMsg = errMsg
-      })
-      ElMessage.success('服务状态刷新完成')
-      loading.value = false
+  ConfigServiceAPI.getServiceOverview().then((v) => {
+    const { data } = v
+    serviceList.forEach((item) => {
+      const { status, errMsg } = data[item.key]
+      item.status = status
+      item.errMsg = errMsg
     })
+    ElMessage.success('服务状态刷新完成')
+    loading.value = false
+  })
 }
 
 const serverConfig = ref([])
 const getServiceConfig = () => {
-  ConfigServiceAPI
-    .getServiceConfig()
-    .then((v) => {
-      // console.log(v.data)
+  ConfigServiceAPI.getServiceConfig().then((v) => {
+    // console.log(v.data)
+    v.data.forEach((v) => {
       v.data.forEach((v) => {
-        v.data.forEach((v) => {
-          v.disabled = true
-        })
+        v.disabled = true
       })
-      serverConfig.value = v.data
     })
+    serverConfig.value = v.data
+  })
 }
 const updateCfg = (item: ConfigServiceAPITypes.ServiceConfigItem) => {
-  ConfigServiceAPI
-    .updateCfg(item)
-    .then(() => {
-      item.disabled = true
-      ElMessage.success('更新成功')
-      refreshStatus()
-    })
+  ConfigServiceAPI.updateCfg(item).then(() => {
+    item.disabled = true
+    ElMessage.success('更新成功')
+    refreshStatus()
+  })
 }
 onMounted(() => {
   refreshStatus()
   getServiceConfig()
 })
 const isMobile = computed(() => $store.getters['public/isMobile'])
-
 </script>
 
 <style scoped lang="scss">
