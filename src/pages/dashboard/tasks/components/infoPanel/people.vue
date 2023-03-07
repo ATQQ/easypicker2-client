@@ -299,7 +299,6 @@ const handAddName = () => {
   if (!userInputName.value) {
     return
   }
-  // TODO:掉接口导入
   importStatus.value = true
   PeopleApi.addPeopleByUser(userInputName.value, props.k)
     .then((v) => {
