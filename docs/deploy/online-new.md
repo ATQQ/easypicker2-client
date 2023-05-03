@@ -42,8 +42,19 @@ outline: [2,3]
 
 使用PM2面板安装`Node`
 
-:::tip 温馨提示
-建议安装大于等于`14.19`版本的
+:::tip 温馨提示 (重要的事情说3遍)
+建议安装`Node 18`(大于等于`18.16.0`版本)
+
+建议安装`Node 18`(大于等于`18.16.0`版本)
+
+建议安装`Node 18`(大于等于`18.16.0`版本)
+:::
+
+:::details Node 各版本生命周期
+
+数据来源：https://github.com/nodejs/Release/blob/main/README.md
+
+![](https://img.cdn.sugarat.top/mdImg/MTY4MzExNTA4NTcyNw==683115085727)
 :::
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MzQ0MjUzMg==647483442532)
