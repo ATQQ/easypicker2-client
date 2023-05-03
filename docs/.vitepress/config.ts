@@ -4,7 +4,7 @@ import { getThemeConfig, defineConfig } from '@sugarat/theme/node'
 const blogTheme = getThemeConfig({
     search: false,
     blog: false,
-    author:'粥里有勺糖',
+    author: '粥里有勺糖',
     comment: {
         repo: 'atqq/easypicker2-client',
         repoId: 'MDEwOlJlcG9zaXRvcnkzNTQxNzc0NjA=',
@@ -14,6 +14,7 @@ const blogTheme = getThemeConfig({
 })
 
 export default defineConfig({
+    extends: blogTheme,
     title: 'EasyPicker | 轻取',
     description: '在线文件收集平台',
     head: [
@@ -38,12 +39,14 @@ export default defineConfig({
     },
     lastUpdated: true,
     themeConfig: {
-        ...blogTheme,
-        algolia: {
-            appId: 'GPX84VDH91',
-            apiKey: '150dda0b943087c4e6a04d54af1d7391',
-            indexName: 'sugarat',
-            placeholder: '请输入要搜索的内容...',
+        search: {
+            provider: 'algolia',
+            options: {
+                appId: 'GPX84VDH91',
+                apiKey: '150dda0b943087c4e6a04d54af1d7391',
+                indexName: 'sugarat',
+                placeholder: '请输入要搜索的内容...',
+            }
         },
         lastUpdatedText: '上次更新于',
         footer: {
