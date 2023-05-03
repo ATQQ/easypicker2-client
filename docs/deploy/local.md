@@ -12,12 +12,20 @@ node -v
 ```
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MDQ3MjM1OA==647480472358)
 
-建议安装大于等于`14.19`版本的
+**建议安装`Node 18`(大于等于`18.16.0`版本)**
 
-多版本管理可以使用 [nvm](https://github.com/nvm-sh/nvm) 
+:::details Node 各版本生命周期
+
+数据来源：https://github.com/nodejs/Release/blob/main/README.md
+
+![](https://img.cdn.sugarat.top/mdImg/MTY4MzExNTA4NTcyNw==683115085727)
+:::
+
+多版本管理可以使用 [nvm](https://github.com/nvm-sh/nvm) 或者 [fnm](https://github.com/Schniz/fnm)
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY1MTY0OTU1NzUyNw==651649557527)
 
+![](https://img.cdn.sugarat.top/mdImg/MTY4MzExNDk1MTY5Mw==683114951693)
 ### 切换镜像源
 其中`npm`是随Node一起安装的包管理工具，通过切换到国内的镜像源，有助于加快安装速度
 
