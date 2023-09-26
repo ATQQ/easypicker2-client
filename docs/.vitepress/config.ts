@@ -5,11 +5,15 @@ const blogTheme = getThemeConfig({
     search: false,
     blog: false,
     author: '粥里有勺糖',
+    themeColor:'el-blue',
     comment: {
         repo: 'atqq/easypicker2-client',
         repoId: 'MDEwOlJlcG9zaXRvcnkzNTQxNzc0NjA=',
         category: 'Announcements',
         categoryId: 'DIC_kwDOFRxRtM4CUThN'
+    },
+    footer:{
+        copyright:`MIT Licensed | 2019 - ${new Date().getFullYear()} 粥里有勺糖`
     }
 })
 
@@ -49,10 +53,6 @@ export default defineConfig({
             }
         },
         lastUpdatedText: '上次更新于',
-        footer: {
-            message: `MIT Licensed | <a href="https://theme.sugarat.top">Docs Power By @sugarat/theme</a>`,
-            copyright: '<a href="https://sugarat.top">Copyright © 2019-PRESENT 粥里有勺糖</a>'
-        },
         logo: '/logo.png',
         editLink: {
             pattern: "https://github.com/ATQQ/easypicker2-client/edit/main/docs/:path",
