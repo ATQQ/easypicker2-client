@@ -429,7 +429,9 @@ const startUpload = () => {
       }
       // 替换不合法的字符
       name = normalizeFileName(name)
-      const key = `easypicker2/${k.value}/${file.md5}/${name}`
+      // const key = `easypicker2/${k.value}/${file.md5}/${name}`
+      // 特殊要求去掉文件hash
+      const key = `easypicker2/${k.value}/${name}`
 
       FileApi.getUploadToken().then((res) => {
         qiniuUpload(res.data.token, file.raw, key, {
