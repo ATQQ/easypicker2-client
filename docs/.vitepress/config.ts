@@ -32,10 +32,6 @@ export default defineConfig({
         ['script', {}, 'LA.init({id: "JiqK2jS5HmnB4s8G",ck: "JiqK2jS5HmnB4s8G",hashMode:true})'],
     ],
     vite: {
-        optimizeDeps: {
-            include: ['element-plus'],
-            exclude: ['@sugarat/theme']
-        },
         server: {
             port: 4000,
             host: '0.0.0.0'
