@@ -10,7 +10,7 @@ import { useStore } from 'vuex'
 import { ElConfigProvider } from 'element-plus'
 import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/message-box/style/css'
-import zhCn from 'element-plus/lib/locale/lang/zh-cn'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 
 const $store = useStore()
 const refreshWidth = () => {
@@ -30,6 +30,7 @@ onMounted(() => {
   padding: 0;
   margin: 0;
 }
+
 a {
   text-decoration: none;
 }
