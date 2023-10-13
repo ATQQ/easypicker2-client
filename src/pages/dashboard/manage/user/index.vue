@@ -49,6 +49,7 @@
         :data="pageUsers"
         style="width: 100%"
       >
+        <el-table-column prop="id" label="ID" width="60"></el-table-column>
         <el-table-column
           prop="account"
           label="账号"
@@ -375,10 +376,17 @@ const filterUsers = computed(() =>
   users
     .filter((v) => v.status === filterLogType.value)
     .filter((v) => {
-      const { account, phone, join_time, login_count, login_time, open_time } =
-        v
+      const {
+        id,
+        account,
+        phone,
+        join_time,
+        login_count,
+        login_time,
+        open_time
+      } = v
       if (searchWord.value.length === 0) return true
-      return `${account} ${phone} ${login_count} ${formatDate(
+      return `${id} ${account} ${phone} ${login_count} ${formatDate(
         open_time
       )} ${formatDate(login_time)} ${formatDate(join_time)}`.includes(
         searchWord.value
