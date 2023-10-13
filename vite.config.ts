@@ -28,7 +28,6 @@ export default defineConfig({
     include: ['vue', 'vue-router', 'vuex', 'axios', 'vue-json-viewer']
   },
   build: {
-    target: 'modules', // 默认值
     sourcemap: true
   },
   server: {
