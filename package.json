@@ -14,7 +14,7 @@
     "docs:deploy": "zx scripts/deploy/docs.mjs",
     "deploy:prod": "zx scripts/deploy/prod.mjs",
     "deploy:test": "zx scripts/deploy/test.mjs",
-    "upload:oss": "pnpm build && q ep server -up"
+    "upload:oss": "pnpm build && q ep client -up"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.4",
