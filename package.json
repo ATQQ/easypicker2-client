@@ -13,7 +13,8 @@
     "docs:serve": "vitepress serve docs",
     "docs:deploy": "zx scripts/deploy/docs.mjs",
     "deploy:prod": "zx scripts/deploy/prod.mjs",
-    "deploy:test": "zx scripts/deploy/test.mjs"
+    "deploy:test": "zx scripts/deploy/test.mjs",
+    "upload:oss": "sh scripts/upload.sh"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.4",
