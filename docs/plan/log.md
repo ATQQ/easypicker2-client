@@ -32,6 +32,7 @@ q ep server --deploy 2.3.4
 ### Feature
 * 用户列表支持id展示
 * 添加token自动刷新机制
+* 支持一键下线用户账号
 
 ### Bugfix
 * 系统账号登出时越权报错
