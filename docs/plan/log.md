@@ -1,9 +1,8 @@
 # 更新日志
 > 问题反馈交流新“地盘” => [EasyPicker](https://support.qq.com/product/444158)
 
-部署最新beta版步骤，见 => [私有化部署-线上部署-我要体验最新beta版](./../deploy/online-new.md#_2-2-一键部署前端)
-* 线上测试地址：https://ep.dev.sugarat.top/
-* 线上测试地址：https://ep.test.sugarat.top/
+* 线上测试地址1：https://ep.dev.sugarat.top/
+* 线上测试地址2：https://ep.test.sugarat.top/
 
 ::: code-group
 ```sh [部署最新稳定版]
@@ -15,9 +14,9 @@ q ep server --deploy
 
 ```sh [部署最新预览版]
 # 前端
-q ep client --deploy beta
+q ep client --deploy 2.5.0-beta.2
 # 后端
-q ep server --deploy beta
+q ep server --deploy 2.5.0-beta.2
 ```
 
 ```sh [部署指定版本]
@@ -28,7 +27,8 @@ q ep server --deploy 2.3.4
 # 更多可用版本见 > 更新日志(>=v2.3.4)：https://docs.ep.sugarat.top/plan/log.html
 ```
 :::
-## v2.5.0-beta.1
+
+## v2.5.0-beta.2 <Badge text="预览版" type="tip"/>
 ### Feature
 * 用户列表支持id展示
 * 添加token自动刷新机制
