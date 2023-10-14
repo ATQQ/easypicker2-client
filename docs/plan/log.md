@@ -14,9 +14,9 @@ q ep server --deploy
 
 ```sh [部署最新预览版]
 # 前端
-q ep client --deploy 2.5.0-beta.4
+q ep client --deploy 2.5.0-beta.5
 # 后端
-q ep server --deploy 2.5.0-beta.4
+q ep server --deploy 2.5.0-beta.5
 ```
 
 ```sh [部署指定版本]
@@ -28,7 +28,7 @@ q ep server --deploy 2.3.4
 ```
 :::
 
-## v2.5.0-beta.4 <Badge text="预览版" type="tip"/>
+## v2.5.0-beta.5 <Badge text="预览版" type="tip"/>
 ### Feature
 * 用户列表支持id展示
 * 添加token自动刷新机制
