@@ -64,7 +64,7 @@ export default defineConfig({
                     },
                     {
                         text: '线上部署',
-                        link: '/deploy/online',
+                        link: '/deploy/online-new',
                     },
                     {
                         text: '接入七牛云OSS',
