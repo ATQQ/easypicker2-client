@@ -28,6 +28,22 @@ q ep server --deploy 2.3.4
 # 更多可用版本见 > 更新日志(>=v2.3.4)：https://docs.ep.sugarat.top/plan/log.html
 ```
 :::
+## v2.5.0-beta.1
+### Feature
+* 用户列表支持id展示
+* 添加token自动刷新机制
+
+### Bugfix
+* 系统账号登出时越权报错
+* 封禁账号未实时生效
+* 一些列安全问题修复
+
+### Chore
+* pnpm 切换到 v8
+* 部分依赖升级
+* 使用 cross-env 处理环境变量
+* 后端服务架构升级
+* 引入 typeorm 操作数据库
 
 ## v2.4.3 (2023/03/07)
 ### Bugfix
