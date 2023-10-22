@@ -19,6 +19,7 @@ const blogTheme = getThemeConfig({
 
 export default defineConfig({
     extends: blogTheme,
+    ignoreDeadLinks: true,
     title: 'EasyPicker | 轻取',
     description: '在线文件收集平台',
     head: [
