@@ -63,6 +63,10 @@ export default defineConfig({
                         link: '/deploy/local',
                     },
                     {
+                        text: '使用docker',
+                        link: '/deploy/docker',
+                    },
+                    {
                         text: '线上部署',
                         link: '/deploy/online-new',
                     },
@@ -110,6 +114,10 @@ export default defineConfig({
                         {
                             text: '本地启动',
                             link: '/deploy/local',
+                        },
+                        {
+                            text: '使用docker',
+                            link: '/deploy/docker',
                         },
                         {
                             text: '线上部署（New）',
