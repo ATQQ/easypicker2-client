@@ -374,8 +374,8 @@ q ep server --log
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY3Njc5NjUwNzU4OA==676796507588)
 
-:::warning 注意事项，请赖心看完
-① 默认会监听 `localhost`
+:::details 如果显示是localhost，展开查看注意事项
+① 旧版源码默认会监听 `localhost`
 
 如果机器上没有配`127.0.0.1   localhost`，会导致后续的配置无法通过 localhost 访问
 
@@ -611,6 +611,26 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 ![](https://img.cdn.sugarat.top/mdImg/MTY1OTkzOTAyNDM2OA==659939024368)
 
 更新完立马生效
+
+:::details 如何不通过面板修改配置？
+后端服务启动后会创建一个 user-config.json 文件
+
+![](https://img.cdn.sugarat.top/mdImg/MTY5Nzk2NTc3MjM0MQ==697965772341)
+
+这个 JSON 文件里面就是我们的配置信息，可以直接修改
+
+配置项格式如下
+```json
+{
+  "type": "mysql",
+  "key": "host",
+  "value": "localhost",
+  "isSecret": false
+}
+```
+
+修改后按下述方式重启服务即可
+:::
 
 当然，为预防一些意外情况，可以在都配置完后，通过如下指令重启一下服务
 ```sh

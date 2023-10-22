@@ -14,9 +14,9 @@ q ep server --deploy
 
 ```sh [部署最新预览版]
 # 前端
-q ep client --deploy 2.5.0-beta.5
+q ep client --deploy 2.5.0-beta.6
 # 后端
-q ep server --deploy 2.5.0-beta.5
+q ep server --deploy 2.5.0-beta.6
 ```
 
 ```sh [部署指定版本]
@@ -28,11 +28,12 @@ q ep server --deploy 2.3.4
 ```
 :::
 
-## v2.5.0-beta.5 <Badge text="预览版" type="tip"/>
+## v2.5.0-beta.6 <Badge text="预览版" type="tip"/>
 ### Feature
 * 用户列表支持id展示
 * 添加token自动刷新机制
 * 支持一键下线用户账号
+* docker 镜像支持
 
 ### Bugfix
 * 系统账号登出时越权报错
@@ -46,6 +47,8 @@ q ep server --deploy 2.3.4
 * 使用 cross-env 处理环境变量
 * 后端服务架构升级
 * 引入 typeorm 操作数据库
+* 添加 listWithUrl接口
+* 配置文件里 localhost 切换为 ip
 
 ## v2.4.3 (2023/03/07)
 ### Bugfix
