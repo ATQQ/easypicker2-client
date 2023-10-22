@@ -1,2 +1,2 @@
 bash ./bash.sh
-docker build -t sugarjl/easypicker:latest .
+docker buildx build -t sugarjl/easypicker:latest --platform=linux/arm,linux/arm64,linux/amd64 . --push
