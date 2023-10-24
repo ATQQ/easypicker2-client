@@ -1,4 +1,4 @@
-FROM sugarjl/debian:latest
+FROM sugarjl/debian:beta
 ENV PNPM_HOME="/root/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
@@ -12,6 +12,7 @@ COPY ./nginx.conf /etc/nginx/sites-enabled/default
 RUN mkdir -p /usr/share/easypicker/ng-logs \
     && mv /root/client /usr/share/easypicker \
     && mv /root/server /usr/share/easypicker \
+    && pnpm config set registry https://registry.npmmirror.com/ \
     && cd /usr/share/easypicker/server && pnpm install -P \
     && pnpm add pm2 -g
 
