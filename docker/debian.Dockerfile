@@ -22,3 +22,8 @@ RUN apt install -y nginx
 
 # 安装redis
 RUN apt install -y redis-server
+
+COPY ./sources.list /etc/apt/sources.list
+
+# 安装mysql
+RUN apt update && apt install -y default-mysql-server default-mysql-client
