@@ -7,6 +7,8 @@ COPY ./client /root/client
 COPY ./server /root/server
 COPY ./start.sh /start.sh
 COPY ./nginx.conf /etc/nginx/sites-enabled/default
+COPY ./mysql.cnf /etc/mysql/conf.d
+COPY ./auto_create.sql /easypicker2.sql
 
 # 环境准备
 RUN mkdir -p /usr/share/easypicker/ng-logs \
