@@ -1,2 +1,2 @@
-bash ./bash.sh
+bash ./base.sh
 docker buildx build -t sugarjl/easypicker:latest --platform=linux/arm64,linux/amd64 . --push
