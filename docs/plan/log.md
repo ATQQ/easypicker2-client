@@ -14,9 +14,9 @@ q ep server --deploy
 
 ```sh [部署最新预览版]
 # 前端
-q ep client --deploy 2.5.0-beta.6
+q ep client --deploy 2.5.0-beta.7
 # 后端
-q ep server --deploy 2.5.0-beta.6
+q ep server --deploy 2.5.0-beta.7
 ```
 
 ```sh [部署指定版本]
