@@ -280,20 +280,20 @@ const infos = reactive<InfoItem[]>([])
 const needSave = ref(false)
 // TODO：暂时限制表单的题目数为10，遇到case再修改
 const showAddInfo = computed(() => infos.length < 10 && !openPreview.value)
-// 负责清空
+// 负责清空&更新
 watch(
   () => props.info,
   () => {
     infos.splice(0, infos.length)
     selectType.value = 'input'
     openPreview.value = false
+    infos.push(...parseInfo(props.info))
+    needSave.value = false
+  },
+  {
+    immediate: true
   }
 )
-// 负责更新
-watchEffect(() => {
-  infos.push(...parseInfo(props.info))
-  needSave.value = false
-})
 
 // 预计格式
 const resFormat = computed(
