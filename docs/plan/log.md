@@ -28,7 +28,7 @@ q ep server --deploy 2.3.4
 ```
 :::
 
-## v2.5.0-beta.6 <Badge text="预览版" type="tip"/>
+## v2.5.0-beta.7 <Badge text="预览版" type="tip"/>
 ### Feature
 * 用户列表支持id展示
 * 添加token自动刷新机制
@@ -40,6 +40,7 @@ q ep server --deploy 2.3.4
 * 封禁账号未实时生效
 * 一些列安全问题修复
 * 系统账号无法登录
+* TypeError ddl.getTime is not a function
 
 ### Chore
 * pnpm 切换到 v8
