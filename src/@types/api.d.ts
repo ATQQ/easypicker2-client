@@ -105,6 +105,7 @@ declare namespace TaskApiTypes {
     category?: string
     tip?: string
     size?: number
+    bindField?: string
   }
 
   type getList = ResponseData<{ tasks: TaskItem[] }>
