@@ -100,6 +100,7 @@
               :name="activeTask.name"
               :value="taskInfo.people"
               :k="activeTask.key"
+              :field="taskInfo.bindField"
             />
           </el-tab-pane>
           <el-tab-pane label="必填信息" name="info">
@@ -224,6 +225,7 @@ const editMore = (item: any) => {
     taskInfo.ddl = ''
     taskInfo.tip = ''
     taskInfo.format = ''
+    taskInfo.bindField = ''
     setTimeout(() => {
       Object.assign(taskInfo, res.data)
       showTaskInfoPanel.value = true
