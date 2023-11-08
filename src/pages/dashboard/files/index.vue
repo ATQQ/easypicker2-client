@@ -334,7 +334,7 @@
         style="width: 100%"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="date" label="提交时间" width="200">
+        <el-table-column prop="date" label="提交时间" width="160">
           <template #default="scope">{{
             formatDate(new Date(scope.row.date))
           }}</template>
@@ -394,7 +394,7 @@
           </el-table-column>
         </template>
         <template v-if="showPeople">
-          <el-table-column prop="people" label="姓名">
+          <el-table-column prop="people" width="100" label="限制名单">
             <template #default="scope">
               {{ scope.row.people || '-' }}
             </template>

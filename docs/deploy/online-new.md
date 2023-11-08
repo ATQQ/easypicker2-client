@@ -362,7 +362,7 @@ q ep server --deploy 2.3.4
 * 其它问题，[加反馈群](./../author.md)或者[联系作者](./../author.md)沟通 
 :::
 
-### 3.2 获取端口和管理面板账号
+### 3.2 获取端口
 
 通过查询运行日志可以得到此信息
 
@@ -370,14 +370,64 @@ q ep server --deploy 2.3.4
 q ep server --log
 ```
 
-在服务日志里，可以看到服务监听的端口，和运行打印的log日志情况，当然还有管理面板的账号密码
+在服务日志里，可以看到服务监听的端口，和运行打印的log日志情况
+
+![](https://img.cdn.sugarat.top/mdImg/MTY3Njc5NjUwNzU4OA==676796507588)
+
+:::details 如果显示是localhost，展开查看注意事项
+① 旧版源码默认会监听 `localhost`
+
+如果机器上没有配`127.0.0.1   localhost`，会导致后续的配置无法通过 localhost 访问
+
+② 如何确定我有没有这个配置？
+
+终端执行下面的指令
+```sh
+ping -c 1 localhost
+```
+如果执行没有报错，那就不用看下面的注意事项，**如果有报错，请接着往下看**
+
+![](https://img.cdn.sugarat.top/mdImg/MTY5NTczNTk1NTk1MQ==695735955951)
+
+③ ping 报错提示 `ping: localhost: Name or service not known`
+
+方式1（推荐）：在`/etc/hosts`文件中添加`这个映射，执行如下指令
+```sh
+# 一键添加
+echo "127.0.0.1 localhost" | sudo tee -a /etc/hosts
+
+# 查看添加后的结果
+cat /etc/hosts
+```
+
+方式2：后续用到 `localhost` 的地方都替换成 `127.0.0.1`
+
+比如后端服务代码里面的`.env`文件里的`SERVER_HOST`(修改完成后记得重启后端服务，下面有介绍)
+
+![](https://img.cdn.sugarat.top/mdImg/MTY5NTczNjExMTIyMg==695736111222)
+:::
+
+**重启服务**
+```sh
+q ep server --restart
+q ep server --log
+```
+### 3.3 获取管理面板账号
+
+通过查询运行日志可以得到此信息
+
+```sh
+q ep server --log
+```
+
+在服务日志里，可以看到管理面板的账号密码
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY3Njc5NjUwNzU4OA==676796507588)
 
 :::danger 拿小本本记下这个账号密码后面会用到！！！
 :::
 
-如果后续忘了，可以通过如下**2种方式获取**
+如果后续忘了，可以通过如下**3种方式获取**
 
 ::: code-group
 
@@ -402,11 +452,10 @@ curl https://script.sugarat.top/js/ep/user-config.js | node - server
 
 下面分别是3种方式的执行结果
 
-![](https://img.cdn.sugarat.top/mdImg/MTY3NjgwMDQ0NzE1MA==676800447150)
+|                                 使用CLI                                 |                                重启服务                                 |                                Shell脚本                                |
+| :---------------------------------------------------------------------: | :---------------------------------------------------------------------: | :---------------------------------------------------------------------: |
+| ![](https://img.cdn.sugarat.top/mdImg/MTY3NjgwMDQ0NzE1MA==676800447150) | ![](https://img.cdn.sugarat.top/mdImg/MTY3NjgwMDAzNjUwNg==676800036506) | ![](https://img.cdn.sugarat.top/mdImg/MTY3NjgwMDczMDU2Mw==676800730563) |
 
-![](https://img.cdn.sugarat.top/mdImg/MTY3NjgwMDAzNjUwNg==676800036506)
-
-![](https://img.cdn.sugarat.top/mdImg/MTY3NjgwMDczMDU2Mw==676800730563)
 ## 4 配置反向代理
 任选下面任意一个方案即可，推荐使用方式1 简单利索
 
@@ -464,7 +513,8 @@ location ^~ /api/
 :::danger 重要提示
 代理名称随便填
 * 代理目录`/api/`
-* 目标URL填`自己的后端服务地址`
+* 目标URL填`自己的后端服务地址`，例如`http://127.0.0.1:3000/`
+  * 末尾一定要带`/`(截图里漏了)
 * 内容替换`/api`,第二个留空
 :::
 
@@ -562,6 +612,26 @@ MySQL 的账号密码在数据库面板获取，即前面创建的数据库账�
 
 更新完立马生效
 
+:::details 如何不通过面板修改配置？
+后端服务启动后会创建一个 user-config.json 文件
+
+![](https://img.cdn.sugarat.top/mdImg/MTY5Nzk2NTc3MjM0MQ==697965772341)
+
+这个 JSON 文件里面就是我们的配置信息，可以直接修改
+
+配置项格式如下
+```json
+{
+  "type": "mysql",
+  "key": "host",
+  "value": "localhost",
+  "isSecret": false
+}
+```
+
+修改后按下述方式重启服务即可
+:::
+
 当然，为预防一些意外情况，可以在都配置完后，通过如下指令重启一下服务
 ```sh
 q ep server --restart
@@ -593,8 +663,8 @@ q ep server --restart
 * 管理用户账号
 
 
-| 添加前                                                                               | 添加后                                                                               |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| 添加前                                                                  | 添加后                                                                  |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | ![](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDAzOTMxNg==647694039316) | ![](https://img.cdn.sugarat.top/mdImg/MTY0NzY5NDMxMDE1OA==647694310158) |
 
 

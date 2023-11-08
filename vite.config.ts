@@ -1,6 +1,6 @@
+import path from 'path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import ElementPlus from 'unplugin-element-plus/vite'
@@ -28,7 +28,6 @@ export default defineConfig({
     include: ['vue', 'vue-router', 'vuex', 'axios', 'vue-json-viewer']
   },
   build: {
-    target: 'modules', // 默认值
     sourcemap: true
   },
   server: {
