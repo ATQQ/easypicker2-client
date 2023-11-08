@@ -4,12 +4,12 @@ outline: [2,3]
 # 使用docker部署
 
 :::tip 关于镜像的一点说明❤️
-基于 [debian](https://hub.docker.com/_/debian) 构建，默认安装了 Nginx，Redis，PNPM，Node，MySQL，MongoDB（打包为 [sugarjl/debian](https://hub.docker.com/repository/docker/sugarjl/debian/general)）
+基于 [debian](https://hub.docker.com/_/debian) 构建，默认安装了 Nginx，Redis，PNPM，Node，MySQL，MongoDB（打包为 [sugarjl/debian](https://hub.docker.com/repository/docker/sugarjl/debian/general) - [debian.Dockerfile](https://github.com/ATQQ/easypicker2-client/blob/main/docker/debian.Dockerfile)）
 
 easypicker 镜像相关资源
 * 镜像地址：[sugarjl/easypicker](https://hub.docker.com/repository/docker/sugarjl/easypicker/general)
-* 构建脚本：docker/build-latest.sh，docker/build-beta.sh，docker/build-version.mjs
-* Dockerfile：docker/Dockerfile
+* 构建脚本：[docker/build-latest.sh](https://github.com/ATQQ/easypicker2-client/blob/main/docker/build-latest.sh)，[docker/build-beta.sh](https://github.com/ATQQ/easypicker2-client/blob/main/docker/build-beta.sh)，[docker/build-version.mjs](https://github.com/ATQQ/easypicker2-client/blob/main/docker/build-version.mjs)
+* Dockerfile：[docker/Dockerfile](https://github.com/ATQQ/easypicker2-client/blob/main/docker/Dockerfile)
 
 <span style="color:red;"><strong>如果你希望是用宿主机的数据库，请阅最后一部分自定义镜像</strong></span>
 
@@ -132,6 +132,8 @@ docker exec easypicker2 mongorestore -d easypicker2 /tmp/ep_backup/easypicker2
 ```sh
 docker restart easypicker2
 ```
+
+## 🚧 自定义镜像
 
 ## FAQ
 ### Q1: 启动后，容器自动关闭
