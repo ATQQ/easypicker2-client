@@ -22,14 +22,14 @@ easypicker 镜像相关资源
 
 ① 获取镜像
 ```sh
-docker pull sugarjl/easypicker:beta
+docker pull sugarjl/easypicker
 ```
 
 ② 启动镜像，并设置一个映射的端口
 
 这里设置为`6478`，同时设置容器名为`easypicker2`（这些都可以根据实际情况进行修改）
 ```sh
-docker run -d -p 6478:80 --name easypicker2 sugarjl/easypicker:beta
+docker run -d -p 6478:80 --name easypicker2 sugarjl/easypicker
 ```
 
 运行`docker ps` 如果看到下面类似的日志，*恭喜你，你已经成功启动了 easypicker2 🎉*
@@ -97,7 +97,7 @@ docker stop easypicker2
 
 ③ 更新镜像
 ```sh
-docker pull sugarjl/easypicker:beta
+docker pull sugarjl/easypicker
 ```
 
 ④ 重新创建容器
@@ -114,7 +114,7 @@ docker rm easypicker2
 :::
 ```sh
 # 重新创建新的容器
-docker run -d -p 6478:80 --name easypicker2 sugarjl/easypicker:beta
+docker run -d -p 6478:80 --name easypicker2 sugarjl/easypicker
 ```
 
 ⑤ 恢复数据
