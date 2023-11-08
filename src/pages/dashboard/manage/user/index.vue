@@ -49,11 +49,14 @@
         :data="pageUsers"
         style="width: 100%"
       >
+        <el-table-column prop="id" label="ID" width="60"></el-table-column>
         <el-table-column
           prop="account"
           label="账号"
           width="120"
         ></el-table-column>
+        <el-table-column prop="onlineCount" label="token" width="80">
+        </el-table-column>
         <el-table-column
           prop="phone"
           label="手机号"
@@ -173,6 +176,14 @@
                 text
                 size="small"
                 >发送消息</el-button
+              >
+              <el-button
+                v-if="scope.row.onlineCount !== 0"
+                @click="logout(scope.row.account)"
+                type="danger"
+                text
+                size="small"
+                >一键下线</el-button
               >
             </div>
           </template>
@@ -375,10 +386,17 @@ const filterUsers = computed(() =>
   users
     .filter((v) => v.status === filterLogType.value)
     .filter((v) => {
-      const { account, phone, join_time, login_count, login_time, open_time } =
-        v
+      const {
+        id,
+        account,
+        phone,
+        join_time,
+        login_count,
+        login_time,
+        open_time
+      } = v
       if (searchWord.value.length === 0) return true
-      return `${account} ${phone} ${login_count} ${formatDate(
+      return `${id} ${account} ${phone} ${login_count} ${formatDate(
         open_time
       )} ${formatDate(login_time)} ${formatDate(join_time)}`.includes(
         searchWord.value
@@ -608,6 +626,12 @@ const sureSendMessage = () => {
     // 推送成功
     pushMessageText.value = ''
     showMessageDialog.value = false
+  })
+}
+const logout = (account: string) => {
+  SuperUserApi.logout(account).then(() => {
+    ElMessage.success(`下线成功 ${account}`)
+    refreshUsers()
   })
 }
 

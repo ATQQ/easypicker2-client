@@ -5,16 +5,21 @@ const blogTheme = getThemeConfig({
     search: false,
     blog: false,
     author: '粥里有勺糖',
+    themeColor:'el-blue',
     comment: {
         repo: 'atqq/easypicker2-client',
         repoId: 'MDEwOlJlcG9zaXRvcnkzNTQxNzc0NjA=',
         category: 'Announcements',
         categoryId: 'DIC_kwDOFRxRtM4CUThN'
+    },
+    footer:{
+        copyright:`MIT Licensed | 2019 - ${new Date().getFullYear()} 粥里有勺糖`
     }
 })
 
 export default defineConfig({
     extends: blogTheme,
+    ignoreDeadLinks: true,
     title: 'EasyPicker | 轻取',
     description: '在线文件收集平台',
     head: [
@@ -28,10 +33,6 @@ export default defineConfig({
         ['script', {}, 'LA.init({id: "JiqK2jS5HmnB4s8G",ck: "JiqK2jS5HmnB4s8G",hashMode:true})'],
     ],
     vite: {
-        optimizeDeps: {
-            include: ['element-plus'],
-            exclude: ['@sugarat/theme']
-        },
         server: {
             port: 4000,
             host: '0.0.0.0'
@@ -49,10 +50,6 @@ export default defineConfig({
             }
         },
         lastUpdatedText: '上次更新于',
-        footer: {
-            message: `MIT Licensed | <a href="https://theme.sugarat.top">Docs Power By @sugarat/theme</a>`,
-            copyright: '<a href="https://sugarat.top">Copyright © 2019-PRESENT 粥里有勺糖</a>'
-        },
         logo: '/logo.png',
         editLink: {
             pattern: "https://github.com/ATQQ/easypicker2-client/edit/main/docs/:path",
@@ -67,8 +64,12 @@ export default defineConfig({
                         link: '/deploy/local',
                     },
                     {
+                        text: '使用docker',
+                        link: '/deploy/docker',
+                    },
+                    {
                         text: '线上部署',
-                        link: '/deploy/online',
+                        link: '/deploy/online-new',
                     },
                     {
                         text: '接入七牛云OSS',
@@ -114,6 +115,10 @@ export default defineConfig({
                         {
                             text: '本地启动',
                             link: '/deploy/local',
+                        },
+                        {
+                            text: '使用docker',
+                            link: '/deploy/docker',
                         },
                         {
                             text: '线上部署（New）',

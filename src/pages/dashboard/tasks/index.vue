@@ -95,11 +95,12 @@
               :k="activeTask.key"
             />
           </el-tab-pane>
-          <el-tab-pane label="限制人员" name="people">
+          <el-tab-pane label="限制名单" name="people">
             <PeoplePanel
               :name="activeTask.name"
               :value="taskInfo.people"
               :k="activeTask.key"
+              :field="taskInfo.bindField"
             />
           </el-tab-pane>
           <el-tab-pane label="必填信息" name="info">
@@ -224,6 +225,7 @@ const editMore = (item: any) => {
     taskInfo.ddl = ''
     taskInfo.tip = ''
     taskInfo.format = ''
+    taskInfo.bindField = ''
     setTimeout(() => {
       Object.assign(taskInfo, res.data)
       showTaskInfoPanel.value = true

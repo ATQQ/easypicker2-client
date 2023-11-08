@@ -50,6 +50,11 @@ function sendMessage(text: string, type: number, target?: number) {
     target
   })
 }
+function logout(account: string) {
+  return ajax.delete(`${baseUrl}/logout`, {
+    params: { account }
+  })
+}
 export default {
   getUserList,
   updateUserStatus,
@@ -58,5 +63,6 @@ export default {
   clearOssFile,
   getMessageList,
   readMessage,
-  sendMessage
+  sendMessage,
+  logout
 }

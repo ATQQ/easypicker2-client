@@ -1,9 +1,8 @@
 # 更新日志
 > 问题反馈交流新“地盘” => [EasyPicker](https://support.qq.com/product/444158)
 
-部署最新beta版步骤，见 => [私有化部署-线上部署-我要体验最新beta版](./../deploy/online-new.md#_2-2-一键部署前端)
-* 线上测试地址：https://ep.dev.sugarat.top/
-* 线上测试地址：https://ep.test.sugarat.top/
+* 线上测试地址1：https://ep.dev.sugarat.top/
+* 线上测试地址2：https://ep.test.sugarat.top/
 
 ::: code-group
 ```sh [部署最新稳定版]
@@ -15,9 +14,9 @@ q ep server --deploy
 
 ```sh [部署最新预览版]
 # 前端
-q ep client --deploy beta
+q ep client --deploy 2.5.0-beta.9
 # 后端
-q ep server --deploy beta
+q ep server --deploy 2.5.0-beta.9
 ```
 
 ```sh [部署指定版本]
@@ -28,6 +27,33 @@ q ep server --deploy 2.3.4
 # 更多可用版本见 > 更新日志(>=v2.3.4)：https://docs.ep.sugarat.top/plan/log.html
 ```
 :::
+
+## v2.5.0 (2023/11/08)<Badge text="最新版" type="tip"/>
+### Feature
+* 用户列表支持id展示
+* 添加token自动刷新机制
+* 支持一键下线用户账号
+* 支持设置限制提交绑定的表单项
+
+### Bugfix
+* 系统账号登出时越权报错
+* 封禁账号未实时生效
+* 一些列安全问题修复
+* 系统账号无法登录
+* TypeError ddl.getTime is not a function
+* 编辑时表单没有渲染
+
+### Chore
+* pnpm 切换到 v8
+* 部分依赖升级
+* 使用 cross-env 处理环境变量
+* 后端服务架构升级
+* 引入 typeorm 操作数据库
+* 添加 listWithUrl接口
+* 配置文件里 localhost 切换为 ip
+* docker 镜像支持
+* 部署 CLI更新
+
 
 ## v2.4.3 (2023/03/07)
 ### Bugfix

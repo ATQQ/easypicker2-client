@@ -103,6 +103,18 @@
           </div>
         </div>
       </div>
+      <div style="max-width: 320px; margin: 0 auto">
+        <el-form label-width="120px">
+          <el-form-item label="绑定表单项" style="margin-bottom: 6px">
+            <el-input size="small" v-model="bindField" clearable>
+              <template #append>
+                <el-button @click="handleSureBind"> 确定 </el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <tip style="">和表单项同名字段，可以避免重复填写!!</tip>
+        </el-form>
+      </div>
     </div>
     <el-dialog :fullscreen="isMobile" title="提交情况" v-model="showPeopleList">
       <!-- 上部分的筛选菜单 -->
@@ -268,9 +280,9 @@
 </template>
 <script lang="ts" setup>
 import { ElMessage, ElMessageBox, UploadUserFile } from 'element-plus'
-import { computed, reactive, ref, watchEffect } from 'vue'
+import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import { useStore } from 'vuex'
-import { PeopleApi } from '@/apis'
+import { PeopleApi, TaskApi } from '@/apis'
 import { uploadFile, tableToExcel } from '@/utils/networkUtil'
 import { formatDate } from '@/utils/stringUtil'
 import { updateTaskInfo } from '../../public'
@@ -288,6 +300,10 @@ const props = defineProps({
   name: {
     type: String,
     default: ''
+  },
+  field: {
+    type: String,
+    default: '姓名'
   }
 })
 
@@ -527,6 +543,31 @@ const handleSaveImportInfo = () => {
 }
 
 const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
+
+const bindField = ref('姓名')
+watch(
+  () => props.field,
+  (v) => {
+    bindField.value = v
+  },
+  {
+    immediate: true
+  }
+)
+const handleSureBind = () => {
+  // 空值校验
+  if (!bindField.value.trim().length) {
+    ElMessage.warning('绑定的表单项不能为空')
+    return
+  }
+
+  // 提交保存
+  TaskApi.updateTaskMoreInfo(props.k, {
+    bindField: bindField.value
+  }).then(() => {
+    ElMessage.success('保存成功')
+  })
+}
 </script>
 <style scoped>
 .upload-people {
