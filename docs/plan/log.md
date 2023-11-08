@@ -28,12 +28,11 @@ q ep server --deploy 2.3.4
 ```
 :::
 
-## v2.5.0-beta.9 <Badge text="预览版" type="tip"/>
+## v2.5.0 (2023/11/08)<Badge text="最新版" type="tip"/>
 ### Feature
 * 用户列表支持id展示
 * 添加token自动刷新机制
 * 支持一键下线用户账号
-* docker 镜像支持
 * 支持设置限制提交绑定的表单项
 
 ### Bugfix
@@ -52,6 +51,9 @@ q ep server --deploy 2.3.4
 * 引入 typeorm 操作数据库
 * 添加 listWithUrl接口
 * 配置文件里 localhost 切换为 ip
+* docker 镜像支持
+* 部署 CLI更新
+
 
 ## v2.4.3 (2023/03/07)
 ### Bugfix
