@@ -63,12 +63,10 @@ docker logs easypicker2
 *user 表里，将对应的用户 `power` 值设置为 0 即可*
 
 下面是操作案例，将 `admin` 账号设置为管理员
-```sh
-# 进入容器内部
-docker exec -it easypicker2 /bin/bash
 
-# 执行sql修改目标账号权限
-mysql -uroot -peasypicker2 -e "use easypicker2;UPDATE user SET power=0 WHERE account='admin';"
+*执行sql修改目标账号权限，修改最后的 **account='admin'** 为目标账号即可*
+```sh
+docker exec easypicker2 mysql -uroot -peasypicker2 -e "use easypicker2;UPDATE user SET power=0 WHERE account='admin';"
 ```
 重新登录账号即可生效
 

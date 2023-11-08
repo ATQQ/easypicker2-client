@@ -103,7 +103,8 @@ CREATE TABLE IF NOT EXISTS `task_info` (
   `ddl` timestamp NULL DEFAULT NULL COMMENT '截止日期',
   `share_key` varchar(128) NOT NULL COMMENT '用于分享的链接',
   `limit_people` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否限制提交人员',
-  `tip` text DEFAULT '' COMMENT '批注信息'
+  `tip` text COMMENT '批注信息',
+  `bind_field` varchar(255) DEFAULT '姓名' COMMENT '绑定表单字段'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='任务附加属性';
 
 -- --------------------------------------------------------
