@@ -75,7 +75,7 @@
         <el-divider>必要信息填写</el-divider>
         <div class="infos">
           <div v-show="taskMoreInfo.people">
-            <Tip>“姓名”在参与名单里才能正常提交</Tip>
+            <Tip>“{{ limitBindField }}”在参与名单里才能正常提交</Tip>
           </div>
           <div v-if="showValidForm">
             <div class="infos">
@@ -87,12 +87,12 @@
                 :disabled="disableForm"
                 label-position="top"
               >
-                <el-form-item prop="peopleName" label="姓名">
+                <el-form-item prop="peopleName" :label="limitBindField">
                   <el-input
                     :maxlength="14"
                     clearable
                     show-word-limit
-                    placeholder="参与者填写"
+                    :placeholder="`请输入 ${limitBindField}`"
                     v-model="validModal.peopleName"
                   ></el-input>
                 </el-form-item>
@@ -287,8 +287,13 @@ const handleNav = (idx: number) => {
 }
 
 // 任务基本信息展示
-const taskInfo = reactive<TaskApiTypes.TaskInfo>({ name: '', category: '' })
-const taskMoreInfo = reactive<Partial<TaskApiTypes.TaskInfo>>({})
+const taskInfo = reactive<TaskApiTypes.TaskInfo>({
+  name: '',
+  category: ''
+})
+const taskMoreInfo = reactive<Partial<TaskApiTypes.TaskInfo>>({
+  bindField: ''
+})
 const formatData = computed(() => parseFileFormat(taskMoreInfo.format))
 const k = ref('')
 
@@ -362,8 +367,14 @@ const handleRemoveFile: any = (file: any) => {
 const isWriteFinish = computed(() => infos.every((item) => item.value))
 // 提交文件
 
+const limitBindField = computed(() => {
+  return taskMoreInfo.bindField.trim() || '姓名'
+})
+
 // 身份核验表单
-const isSameFieldName = computed(() => infos.find((v) => v.text === '姓名'))
+const isSameFieldName = computed(() =>
+  infos.find((v) => v.text === limitBindField.value)
+)
 const showValidForm = computed(
   () => taskMoreInfo.people && !isSameFieldName.value
 )
@@ -373,8 +384,9 @@ const validModal = reactive({
 
 const validatePeopleName = (rule: any, value: any, callback: any) => {
   if (!value) {
-    callback(new Error('请输入姓名'))
-    ElMessage.error('请输入姓名')
+    const message = `请输入${limitBindField.value}`
+    callback(new Error(message))
+    ElMessage.error(message)
     return
   }
   // 异步校验
@@ -395,9 +407,9 @@ const validModalRules = reactive({
   peopleName: [{ validator: validatePeopleName, trigger: 'blur' }]
 })
 const confirmPeopleName = () => {
-  // 处理表单必填项含有姓名的情况
+  // 处理表单必填项含有 limitBindField 的情况
   if (isSameFieldName.value) {
-    const value = infos.find((v) => v.text === '姓名')?.value
+    const value = infos.find((v) => v.text === limitBindField.value)?.value
     validModal.peopleName = value || ''
     return new Promise((resolve) => {
       validatePeopleName(null, value, resolve)
