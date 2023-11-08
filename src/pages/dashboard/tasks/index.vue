@@ -95,7 +95,7 @@
               :k="activeTask.key"
             />
           </el-tab-pane>
-          <el-tab-pane label="限制人员" name="people">
+          <el-tab-pane label="限制名单" name="people">
             <PeoplePanel
               :name="activeTask.name"
               :value="taskInfo.people"
