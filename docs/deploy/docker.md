@@ -185,4 +185,21 @@ docker restart easypicker2
 
 3 按照上面的步骤运行镜像
 
+镜像启动后可以通过 `docker ps` 查看容器运行情况
+
+![](https://img.cdn.sugarat.top/mdImg/MTY5OTU0MDA2NDIxMA==699540064210)
+
 4 创建网站
+
+在网站的 nginx 配置文件中添加`/`路由，通过反向代理将流量转发至 docker 启动的容器
+
+![](https://img.cdn.sugarat.top/mdImg/MTY5OTU0MDc2MTMzMg==699540761332)
+```conf
+location / {
+  proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header  X-Real-IP $remote_addr;
+  proxy_pass http://172.17.0.1:6480;
+}
+```
+
+现在访问网站就可以看到内容了
