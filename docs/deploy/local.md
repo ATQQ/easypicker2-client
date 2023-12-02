@@ -1,4 +1,7 @@
-# 本地启动
+---
+outline: [2,3]
+---
+# 本地启动&源码修改
 ## 1. 准备工作
 ### 安装Node
 * [中文官网](https://nodejs.org/zh-cn/download/)
@@ -26,7 +29,8 @@ node -v
 ![](https://img.cdn.sugarat.top/mdImg/MTY1MTY0OTU1NzUyNw==651649557527)
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY4MzExNDk1MTY5Mw==683114951693)
-### 切换镜像源
+
+:::details (可选) 切换镜像源
 其中`npm`是随Node一起安装的包管理工具，通过切换到国内的镜像源，有助于加快安装速度
 
 安装`nrm`（切换镜像源工具）
@@ -52,6 +56,7 @@ npm config get registry
 
 结果是上述淘宝源即可
 
+:::
 ### 安装PNPM
 #### 方式1
 使用 `npm` 安装
@@ -83,14 +88,17 @@ git clone https://github.com/ATQQ/easypicker2-client.git
 git clone https://gitee.com/sugarjl/easypicker2-client.git
 ```
 地址来源
-* [GitHub](https://github.com/ATQQ/easypicker2-client): ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTQ2NjkzMA==647481466930)
-* [Gitee](https://gitee.com/sugarjl/easypicker2-client): ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTcxMzU1MQ==647481713551)
+
+|          [GitHub](https://github.com/ATQQ/easypicker2-client)           |          [Gitee](https://gitee.com/sugarjl/easypicker2-client)          |
+| :---------------------------------------------------------------------: | :---------------------------------------------------------------------: |
+| ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTQ2NjkzMA==647481466930) | ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTcxMzU1MQ==647481713551) |
 
 
 ### 方式2：压缩包
 
-* [GitHub](https://github.com/ATQQ/easypicker2-client): ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg1OTMzOQ==647481859339)
-* [Gitee](https://gitee.com/sugarjl/easypicker2-client): ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg3NzIwMA==647481877200)
+|          [GitHub](https://github.com/ATQQ/easypicker2-client)           |          [Gitee](https://gitee.com/sugarjl/easypicker2-client)          |
+| :---------------------------------------------------------------------: | :---------------------------------------------------------------------: |
+| ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg1OTMzOQ==647481859339) | ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MTg3NzIwMA==647481877200) |
 
 ## 3. 启动客户端
 
@@ -105,21 +113,28 @@ git clone https://gitee.com/sugarjl/easypicker2-client.git
 pnpm install
 ```
 
-### 本地启动 - 线上test服务
+### 本地启动 - 使用线上test服务
 后端服务使用线上测试环境的 https://ep.dev.sugarat.top
 
 #### 方式1 - 开发模式
 ```shell
 pnpm dev:test
 ```
+[启动后输出日志](https://app.warp.dev/block/H2XZZUF7yP3hzJbVax2FVa)
+```sh
+VITE v4.4.7  ready in 443 ms
 
-![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MjMwNjQ4OA==647482306488)
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.1.2:5173/
+  ➜  Network: http://198.18.0.1:5173/
+  ➜  press h to show help
+```
 
-浏览器访问 `[http://localhost:8080/](http://localhost:8080/)`
+浏览器访问 [http://localhost:5173/](http://localhost:5173/)
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4MjQwMjg1MQ==647482402851)
 
-#### 方式2 - 构建后产物
+#### 方式2 - 预览构建后产物
 页面访问速度更快
 
 产物构建
@@ -134,9 +149,9 @@ pnpm serve
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzQ4Mjc4NjE1Ng==647482786156)
 
-浏览器访问终端给予的地址即可
+浏览器访问终端给予的地址即可 [http://localhost:4173/](http://localhost:4173/)
 
-### 本地启动 - 本地的后端服务
+### 本地启动 - 使用本地的后端服务
 需要参照 4，5，6 同时启动本地的后端服务
 
 后端服务使用本地的 `http://localhost:3000`
@@ -145,6 +160,30 @@ pnpm serve
 # 启动
 pnpm dev
 ```
+
+### 本地构建 - 修改源码
+在完成客户端的源码拉取，可在(测试)开发模式下直接启动
+```sh
+pnpm dev:test
+```
+
+然后修改代码里的文案，逻辑等，保存后会直接生效
+
+![](https://img.cdn.sugarat.top/mdImg/MTcwMTUzMDM2OTU2NA==701530369564)
+
+如果部署到自己的服务器上，在完成修改后执行构建命令 [pnpm build](https://app.warp.dev/block/og9qOohoyxZxheDYMrZ30g)
+
+```sh
+pnpm build
+```
+
+将会在当前目录下生成一个 `dist` 目录（里面即为打包后的文件）
+
+![](https://img.cdn.sugarat.top/mdImg/MTcwMTUzMDU0Njk5MA==701530546990)
+
+将这个 dist 目录用作部署到自己的服务器即可，比如下面使用宝塔面板部署的示例目录
+
+![](https://img.cdn.sugarat.top/mdImg/MTcwMTUzMDY4NzEyNg==701530687126)
 
 ## 4. 获取服务端源码
 ### 方式1: 通过Git拉取

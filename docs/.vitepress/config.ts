@@ -60,7 +60,7 @@ export default defineConfig({
                 text: '私有化部署',
                 items: [
                     {
-                        text: '本地启动',
+                        text: '本地启动&源码修改',
                         link: '/deploy/local',
                     },
                     {
@@ -113,7 +113,7 @@ export default defineConfig({
                             link: '/deploy/',
                         },
                         {
-                            text: '本地启动',
+                            text: '本地启动&源码修改',
                             link: '/deploy/local',
                         },
                         {
