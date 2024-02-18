@@ -56,6 +56,11 @@ import Picture from './Picture.vue'
 .h2 {
   opacity: 0.5;
   text-align: center;
+  font-size: 16px;
+}
+
+a {
+  text-decoration: none;
 }
 
 .description {
@@ -76,6 +81,7 @@ import Picture from './Picture.vue'
 }
 
 .card-grid {
+  list-style: none;
   display: flex;
   max-width: 1168px;
   width: 100%;
