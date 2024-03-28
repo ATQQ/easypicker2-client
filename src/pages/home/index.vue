@@ -4,7 +4,7 @@
     <header>
       <HomeHeader />
     </header>
-    <h1 class="title">吧唧吧唧</h1>
+    <h1 class="title">EasyPicker</h1>
 
     <!-- 简介 -->
     <section class="introduce">
@@ -32,14 +32,13 @@ import HomeFooter from '@components/HomeFooter/index.vue'
 const introduces: string[] = reactive([
   '一款在线文件收取助手',
   '自动归档,记录每次提交的文件信息与提交人信息',
-  '随时随地下载,查看收取详细情况',
+  '随时随地下载,查看收取详细情况'
 ])
-
 </script>
 
 <style lang="scss" scoped>
 .home {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
   background-image: linear-gradient(to top, #30cfd0 0%, #330867 100%);
   min-height: 100vh;
 }

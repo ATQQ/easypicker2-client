@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `files` (
   `info` varchar(10240) DEFAULT NULL COMMENT '提交填写的信息',
   `hash` varchar(512) NOT NULL COMMENT '文件hash',
   `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传日期',
-  `size` int(11) NOT NULL COMMENT '文件大小',
+  `size` bigint NOT NULL COMMENT '文件大小',
   `people` varchar(256) DEFAULT NULL COMMENT '人员姓名',
   `origin_name` varchar(1024) DEFAULT '' COMMENT '原文件名',
   `del` tinyint(4) DEFAULT '0' COMMENT '是否删除'
