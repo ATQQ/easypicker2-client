@@ -1,5 +1,17 @@
 <template>
   <el-config-provider size="large" :zIndex="1000" :locale="zhCn">
+    <el-alert center type="error">
+      <template #title>
+        ☕️ 支持一下作者 👉🏻
+        <el-link href="https://sugarat.top/essay/dev/afdian.html" type="primary"
+          >爱发电</el-link
+        >
+        |
+        <el-link href="https://docs.ep.sugarat.top/praise/" type="success"
+          >赞赏</el-link
+        >
+      </template>
+    </el-alert>
     <router-view style="min-height: 100vh"></router-view>
   </el-config-provider>
 </template>
