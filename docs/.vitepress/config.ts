@@ -38,7 +38,7 @@ const blogTheme = getThemeConfig({
         props: {
           type: 'success'
         },
-        link: 'https://sugarat.top/essay/dev/afdian.html',
+        link: '/praise/index.html',
       }
     ],
     duration: 0
