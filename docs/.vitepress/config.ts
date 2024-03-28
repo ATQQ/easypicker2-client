@@ -30,7 +30,7 @@ const blogTheme = getThemeConfig({
       {
         type: 'button',
         content: '关于作者',
-        link: '/author'
+        link: '/author.html'
       },
       {
         type: 'button',
@@ -38,7 +38,7 @@ const blogTheme = getThemeConfig({
         props: {
           type: 'success'
         },
-        link: '',
+        link: 'https://sugarat.top/essay/dev/afdian.html',
       }
     ],
     duration: 0
