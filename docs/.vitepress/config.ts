@@ -14,7 +14,35 @@ const blogTheme = getThemeConfig({
   },
   footer: {
     copyright: `MIT Licensed | 2019 - ${new Date().getFullYear()} 粥里有勺糖`
-  }
+  },
+  popover: {
+    title: '广而告之',
+    body: [
+      {
+        type: 'image',
+        src: '/group.png',
+        style: 'width:60%;margin:0 auto;display:block'
+      },
+      {
+        type: 'text',
+        content: '欢迎加群交流&吐槽 💐'
+      },
+      {
+        type: 'button',
+        content: '关于作者',
+        link: '/author'
+      },
+      {
+        type: 'button',
+        content: '发电⚡',
+        props: {
+          type: 'success'
+        },
+        link: '',
+      }
+    ],
+    duration: 0
+  },
 })
 
 export default defineConfig({
