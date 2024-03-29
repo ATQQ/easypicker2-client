@@ -34,7 +34,7 @@
 
 **爱发电主页：https://afdian.net/a/sugarat**
 
-![](https://img.cdn.sugarat.top/mdImg/sugar/b521e25334ad5bc378cb95288f4a1039)
+![](https://img.cdn.sugarat.top/mdImg/sugar/c430e0cd75397d7f444e87dab0157604)
 
 
 ## 打赏记录
