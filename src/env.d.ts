@@ -5,4 +5,6 @@ interface ImportMetaEnv {
   VITE_APP_INPUT_MAX_LENGTH: string
   // PV 上报路径
   VITE_APP_PV_PATH: string
+  // 是否开启赞赏的提示弹窗
+  VITE_APP_OPEN_PRAISE: string
 }
