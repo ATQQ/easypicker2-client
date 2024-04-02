@@ -1,6 +1,6 @@
 {
   "name": "ep-server",
-  "version": "2.6.1-beta.0",
+  "version": "2.6.1-beta.1",
   "private": true,
   "description": "",
   "main": "src/index.ts",
