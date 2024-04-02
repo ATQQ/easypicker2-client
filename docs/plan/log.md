@@ -14,9 +14,9 @@ q ep server --deploy
 
 ```sh [部署最新预览版]
 # 前端
-q ep client --deploy 2.6.1-beta.0
+q ep client --deploy 2.6.1-beta.1
 # 后端
-q ep server --deploy 2.6.1-beta.0
+q ep server --deploy 2.6.1-beta.1
 ```
 
 ```sh [部署指定版本]
@@ -28,7 +28,7 @@ q ep server --deploy 2.3.4
 ```
 :::
 
-## v2.6.1-beta.0 <Badge text="beta" type="warning"/>
+## v2.6.1-beta.1 <Badge text="beta" type="warning"/>
 >不代表最终结果，大家可以加群反馈交流
 
 ### Feature
