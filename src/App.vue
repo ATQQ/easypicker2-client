@@ -1,6 +1,6 @@
 <template>
   <el-config-provider size="large" :zIndex="1000" :locale="zhCn">
-    <el-alert center type="error">
+    <el-alert v-if="isOpenPraise" center type="error">
       <template #title>
         ☕️ 支持一下作者 👉🏻
         <el-link href="https://sugarat.top/essay/dev/afdian.html" type="primary"
@@ -29,6 +29,7 @@ const refreshWidth = () => {
   const clientWIdth = window.document.body.clientWidth
   $store.commit('public/setWidth', clientWIdth)
 }
+const isOpenPraise = import.meta.env.VITE_APP_OPEN_PRAISE === 'true'
 onMounted(() => {
   window.addEventListener('load', refreshWidth)
   window.addEventListener('resize', refreshWidth)
