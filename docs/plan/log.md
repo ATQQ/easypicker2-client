@@ -49,9 +49,11 @@ q ep server --deploy 2.3.4
 * [ ] 内容审核配置引导
 * [ ] CLI 优化
 * [ ] 仓库重构 => monorepo
+* [x] 默认限制输入长度调整为 20
 
 ### Bugfix
 * [x] fix: 上传超大文件时数据无法落库
+* [x] fix: 修改绑定表单字段报错
 * [ ] 🥔
 
 ## v2.5.0 (2023/11/08)<Badge text="最新版" type="tip"/>
