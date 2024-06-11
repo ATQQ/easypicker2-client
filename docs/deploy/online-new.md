@@ -40,9 +40,9 @@ outline: [2,3]
 
 ### 1.3 安装Node
 
-使用PM2面板安装`Node`
+使用 Node 管理面板安装`Node`
 
-:::tip 温馨提示 (重要的事情说3遍)
+:::tip 温馨提示 (重要的事情说 3 遍)
 建议安装`Node 18`(大于等于`18.16.0`版本)
 
 建议安装`Node 18`(大于等于`18.16.0`版本)
@@ -71,6 +71,12 @@ node -v
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzYxMjU3OTk2NA==647612579964)
 
+如果提示没有 node 指令，可手动向 `~/.bashrc` 文件添加如下配置
+
+```sh
+export PATH=$PATH:/www/server/nodejs/实际安装版本/bin
+```
+
 ### 1.4 安装辅助CLI工具
 执行如下指令安装
 ```sh
@@ -94,13 +100,33 @@ q update
 ```
 ![](https://img.cdn.sugarat.top/mdImg/MTY3Njc5MTQyNjExOQ==676791426119)
 
-### 1.5 初始化Node相关环境
+### 1.5 初始化 Node 相关环境
 
 :::tip 温馨提示
 可重复执行，用于检查环境，不会重复安装已有库
 
 下述方式选择其一即可
 :::
+
+方式 ①：手动执行 shell 指令安装（较推荐），稳定不出错
+```sh
+# 设置镜像源为 npm 国内镜像源
+npm config set registry https://registry.npmmirror.com/
+
+# 安装 zx
+npm i -g zx
+
+# 安装 nrm
+npm i -g nrm
+
+# 安装 pnpm
+npm i -g pnpm
+
+# 安装 pm2
+npm i -g pm2
+```
+
+方式 ②：使用`q`指令安装，自动完成安装，部分操作系统不一样执行了不一定生效
 ::: code-group
 
 ```shell [使用CLI工具]
@@ -114,7 +140,7 @@ curl https://script.sugarat.top/shell/ep/init-env.sh | bash
 
 自动完成`zx`,`node`,`nrm`,`镜像源配置`,`pnpm`等等等安装与环境检查
 
-下面分别是2种方法的执行结果
+下面分别是 2 种方法的执行结果
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY3Njc5MTg1NTY2Mg==676791855662)
 
@@ -125,7 +151,10 @@ curl https://script.sugarat.top/shell/ep/init-env.sh | bash
 * [node](https://nodejs.org/zh-cn/): `JavaScript` 服务端运行时
 * [nrm](https://github.com/Pana/nrm): `npm` 镜像源切换工具
 * [pnpm](https://pnpm.io/zh/): 快速的，节省磁盘空间的包管理工具
+* [pm2](https://pm2.keymetrics.io/): 守护进程管理工具
 :::
+
+**如果在执行过程中出现问题或后续启动服务时出现问题，可以按方式 1 进行重新安装**
 
 
 ## 2 创建网站
