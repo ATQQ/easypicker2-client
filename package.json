@@ -1,7 +1,10 @@
 {
-  "name": "ep-client",
-  "private": true,
+  "name": "@sugarat/easypicker2-client",
   "version": "2.6.1-beta.1",
+  "files": [
+    "package.json",
+    "dist"
+  ],
   "scripts": {
     "dev": "vite",
     "dev:test": "cross-env VITE_APP_AXIOS_BASE_URL=/api-test/ vite --mode test",
