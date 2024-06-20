@@ -1,7 +1,10 @@
 {
-  "name": "ep-client",
-  "private": true,
+  "name": "@sugarat/easypicker2-client",
   "version": "2.6.1-beta.1",
+  "files": [
+    "package.json",
+    "dist"
+  ],
   "scripts": {
     "dev": "vite",
     "dev:test": "cross-env VITE_APP_AXIOS_BASE_URL=/api-test/ vite --mode test",
@@ -16,11 +19,12 @@
     "deploy:prod": "zx scripts/deploy/prod.mjs",
     "deploy:test": "zx scripts/deploy/test.mjs",
     "upload:oss": "pnpm build && q ep client -up",
-    "update:version": "npm version prerelease --preid=beta --no-git-tag-version"
+    "update:version": "npm version prerelease --preid=beta --no-git-tag-version",
+    "preinstall": "npm config set registry https://registry.npmmirror.com/"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.4",
-    "@sugarat/theme": "^0.4.4",
+    "@sugarat/theme": "^0.4.5",
     "axios": "^0.27.2",
     "clipboard-copy": "^4.0.1",
     "element-plus": "2.2.13",
