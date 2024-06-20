@@ -2,7 +2,7 @@ import { getThemeConfig, defineConfig } from '@sugarat/theme/node'
 import Pkg from '../../package.json'
 
 const blogTheme = getThemeConfig({
-  search: false,
+  // search: true,
   blog: false,
   author: '粥里有勺糖',
   themeColor: 'el-blue',
@@ -90,15 +90,15 @@ export default defineConfig({
   },
   lastUpdated: true,
   themeConfig: {
-    search: {
-      provider: 'algolia',
-      options: {
-        appId: 'GPX84VDH91',
-        apiKey: '150dda0b943087c4e6a04d54af1d7391',
-        indexName: 'sugarat',
-        placeholder: '请输入要搜索的内容...'
-      }
-    },
+    // search: {
+    //   provider: 'algolia',
+    //   options: {
+    //     appId: 'GPX84VDH91',
+    //     apiKey: '150dda0b943087c4e6a04d54af1d7391',
+    //     indexName: 'sugarat',
+    //     placeholder: '请输入要搜索的内容...'
+    //   }
+    // },
     lastUpdatedText: '上次更新于',
     logo: '/logo.png',
     editLink: {
