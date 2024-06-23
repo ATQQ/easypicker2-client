@@ -5,30 +5,56 @@
 * 线上测试地址1：<https://ep.dev.sugarat.top/>
 * 线上测试地址2：<https://ep.test.sugarat.top/>
 
-::: code-group
+:::tip 线上重新部署
 
-```sh [部署最新稳定版]
-# 前端
-q ep client --deploy
-# 后端
-q ep server --deploy
+```sh
+q ep deploy
+
+┌   部署 EasyPicker 项目
+│
+◆  选择部署端
+│  ● 客户端 - client
+│  ○ 数据库 - mysql
+│  ○ 服务端 - server
+└
 ```
 
-```sh [部署最新预览版]
-# 前端
-q ep client --deploy 2.6.1-beta.1
-# 后端
-q ep server --deploy 2.6.1-beta.1
+:::details 交互式部署结果
+```sh
+┌   部署 EasyPicker 项目
+│
+◇  选择部署端
+│  客户端 - client
+│
+◇  选择部署版本
+│  稳定版 - latest
+│
+◇  选择具体版本
+│  2.5.0
+│
+◇  资源包拉取完成 (easypicker2-client-2.5.0.tgz)
+│
+◇  资源解压完成（目录：./dist）
+│
+└  部署完成！🎉，记得设置 nginx 访问目录为 dist 目录
+
 ```
 
-```sh [部署指定版本]
-# 前端
-q ep client --deploy 2.3.4
-# 后端
-q ep server --deploy 2.3.4
-# 更多可用版本见 > 更新日志(>=v2.3.4)：https://docs.ep.sugarat.top/plan/log.html
+:::
+
+:::details 没安装请先安装工具
+```sh
+# 安装工具
+npm i -g @sugarat/cli --registry=https://registry.npmmirror.com
+
+# 安装插件
+q add ep
+
+# 更新插件
+q update
 ```
 
+详细用法参考，宝塔部署文档 V3
 :::
 
 ## v2.6.1-beta.1 <Badge text="beta" type="warning"/>
@@ -48,6 +74,7 @@ q ep server --deploy 2.3.4
 * [ ] 其它类型文件预览(视频，office 等)
 * [ ] 限制提交次数，自动覆盖
 * [ ] 单文件不同的提交表单
+* [ ] 支持对接网盘管理工具
 
 ### Chore
 
@@ -55,21 +82,26 @@ q ep server --deploy 2.3.4
   * [ ] 任务信息编辑
   * [ ] 移动端交互优化
 * [ ] 内容审核配置引导
-* [ ] CLI 优化
-  * [ ] all in Bun
-  * [ ] npm 分发资源
-  * [ ] 带菜单交互，简化操作
+* [ ] all in Bun
 * [ ] 仓库重构 => monorepo
 * [ ] 首页样式优化（醒目的登录入口）
+* [ ] 上传下载重构，抽象通用类，便于任何 OSS 的对接
+
+## v2.6.0 (2024/06/23) <Badge text="最新版" type="tip"/>
+
+### Chore
 * [x] 默认限制输入长度调整为 20
+* [x] CLI 优化
+  * [x] npm 分发资源
+  * [x] 带菜单交互，简化操作
 
 ### Bugfix
 
-* [x] fix: 上传超大文件时数据无法落库
-* [x] fix: 修改绑定表单字段报错
-* [ ] 🥔
+* 上传超大文件时数据无法落库
+* 修改绑定表单字段报错
+* 修改配置不同步环境变量
 
-## v2.5.0 (2023/11/08)<Badge text="最新版" type="tip"/>
+## v2.5.0 (2023/11/08)
 
 ### Feature
 
