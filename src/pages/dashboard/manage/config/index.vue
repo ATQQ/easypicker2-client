@@ -1,7 +1,7 @@
 <template>
   <div class="user">
     <div class="panel">
-      <el-divider>部分路由管理</el-divider>
+      <el-divider>禁用路由管理</el-divider>
       <ul class="routes">
         <li v-for="r in showRoutes" :key="r.name">
           <el-switch @change="handleChangeRoute(r)" :value="!r.disabled" style="
