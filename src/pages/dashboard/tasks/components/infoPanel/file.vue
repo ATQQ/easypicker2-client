@@ -1,7 +1,7 @@
 <template>
   <div class="tc">
     <tip class="title"> ↓下方设置允许提交的文件类型↓ </tip>
-    <tip>暂时只支持通过文件名后缀进行卡控，后续根据反馈再优化</tip>
+    <tip>暂时只支持通过文件名后缀进行卡控，不区分大小写</tip>
     <tip>例如：txt,png,jpeg,webp</tip>
     <div class="tc">
       <el-switch
@@ -115,7 +115,10 @@ const handleChange = (v: boolean) => {
 }
 
 const handleAddType = () => {
-  const inputValue = typeName.value.split(',')
+  const inputValue = typeName.value
+    .split(',')
+    // 转为小写
+    .map((v) => v.trim().toLowerCase())
   for (const v of inputValue) {
     if (formatData.format.includes(v)) {
       ElMessage.error(`${v} 已存在`)
