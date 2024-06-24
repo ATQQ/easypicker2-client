@@ -20,6 +20,7 @@ q ep deploy
 ```
 
 :::details 交互式部署结果
+
 ```sh
 ┌   部署 EasyPicker 项目
 │
@@ -43,6 +44,7 @@ q ep deploy
 :::
 
 :::details 没安装请先安装工具
+
 ```sh
 # 安装工具
 npm i -g @sugarat/cli --registry=https://registry.npmmirror.com
@@ -54,7 +56,7 @@ q add ep
 q update
 ```
 
-详细用法参考，宝塔部署文档 V3
+详细用法参考，[最新部署文档 V3](../deploy/online-v3.md)
 :::
 
 ## v2.6.1-beta.1 <Badge text="beta" type="warning"/>
@@ -87,19 +89,26 @@ q update
 * [ ] 首页样式优化（醒目的登录入口）
 * [ ] 上传下载重构，抽象通用类，便于任何 OSS 的对接
 
-## v2.6.0 (2024/06/23) <Badge text="最新版" type="tip"/>
+## v2.6.0 (2024/06/24) <Badge text="最新版" type="tip"/>
+
+### Feature
+
+* 禁用注册后，隐藏相关注册入口，禁用注册接口调用
+* 文件后缀校验不区分大小写
 
 ### Chore
-* [x] 默认限制输入长度调整为 20
-* [x] CLI 优化
-  * [x] npm 分发资源
-  * [x] 带菜单交互，简化操作
+
+* 默认限制输入长度调整为 20
+* CLI 优化
+  * npm 分发资源
+  * 提供操作菜单交互，简化操作
 
 ### Bugfix
 
 * 上传超大文件时数据无法落库
 * 修改绑定表单字段报错
 * 修改配置不同步环境变量
+* user-config 解析报错
 
 ## v2.5.0 (2023/11/08)
 

@@ -72,7 +72,10 @@ pm2 stop my-ep2-server
 
 这种情况一般是七牛云的存储空间区域没有配置对
 
-查看服务版本
+根据服务版本。
+
+### > v2.1.7
+见最新 [接入七牛云OSS服务](./qiniu.md) 文档，根据自己的区域配置 `存储空间区域` 值。
 
 ### <= v2.1.7
 
@@ -81,6 +84,3 @@ pm2 stop my-ep2-server
 ![](https://img.cdn.sugarat.top/mdImg/MTY1NTM0Njg4NDIxNQ==655346884215)
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY1NTM0Njk0NTY2Mw==655346945663)
-
-### > v2.1.7
-见最新 [接入七牛云OSS服务](./qiniu.md#创建存储空间) 文档，修改 `.env` 中 `QINIU_BUCKET_ZONE` 的值

@@ -1,4 +1,4 @@
-# 接入七牛云OSS服务
+# 七牛云OSS配置
 
 文件存储采用七牛云的[OSS](https://www.qiniu.com/products/kodo)（对象存储服务）
 
