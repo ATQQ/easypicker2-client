@@ -175,7 +175,7 @@
         <h2 style="color: #f56c6c">↑ 由于部分用户用量较大，小站无法承担这笔开销，故限制每个账户为 2GB 可用空间</h2>
       </Tip>
       <Tip><span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ spaceUsageText }}</span></Tip>
-      <Tip v-if="limitDownload"><span style="color:#f56c6c">超限将无法上传/下载文件</span>，如需要使用，请联系管理员扩容</Tip>
+      <Tip v-if="limitDownload"><h2 style="color:#f56c6c">空间超限将无法上传/下载文件，如需要使用，请联系管理员扩容，或自行删除无关文件</h2></Tip>
       <Tip>
         <strong>如果你觉得应用不错，<a style="color: #409eff" href="http://docs.ep.sugarat.top/praise/index.html" target="_blank"
             rel="noopener noreferrer">给他发电⚡</a></strong>
