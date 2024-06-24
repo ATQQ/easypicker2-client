@@ -57,7 +57,7 @@
           >
         </div>
         <el-divider></el-divider>
-        <div class="links">
+        <div class="links" v-if="supportRegister">
           <router-link to="/register">快速注册</router-link>
         </div>
         <div class="links" style="margin-top: 20px">
@@ -79,6 +79,9 @@ import { User, Phone, Lock } from '@element-plus/icons-vue'
 import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
 import { PublicApi, UserApi } from '@/apis'
+import { useSupportRegister } from '@/composables'
+
+const supportRegister = useSupportRegister()
 
 const account = ref('')
 const pwd = ref('')

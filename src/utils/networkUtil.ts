@@ -234,3 +234,20 @@ export function downLoadByXhr(
   // 发送请求
   xhr.send()
 }
+
+export function mergeRequest<T extends Function>(callback: T, delay = 1000){
+  let pMap = new Map<string, Promise<any>>()
+  const cb: any  = (...args)=>{
+    const key = JSON.stringify(args)
+    let p = pMap.get(key)
+    if (!p) {
+      p = callback(...args)
+      pMap.set(key, p)
+      setTimeout(()=>{
+        pMap.delete(key)
+      },delay)
+    }
+    return p
+  }
+  return cb as T
+}
