@@ -225,6 +225,12 @@ export function parseFileFormat(format: string) {
     const v = JSON.parse(format)
     Object.keys(v).forEach((key) => {
       formatData[key] = v[key] || formatData[key]
+      // format 小写去重
+      if (key === 'format') {
+        formatData[key] = Array.from(
+          new Set(formatData[key].map((v) => v.toLowerCase()))
+        )
+      }
     })
   } catch (_) {
     return formatData
