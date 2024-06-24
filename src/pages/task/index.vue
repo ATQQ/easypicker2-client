@@ -35,6 +35,7 @@
       <h1 class="name">
         {{ taskInfo.name }}
       </h1>
+      <h2 v-if="disabledUpload" style="color: red">任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间</h2>
       <!-- 提示信息 -->
       <!-- 时间截止了也不再展示 -->
       <template v-if="tipData.text && (ddlStr ? !isOver : true)">
@@ -143,7 +144,7 @@
             >一键撤回</el-button
           >
           <el-button
-            v-else
+            v-else-if="!disabledUpload"
             size="default"
             @click="submitUpload"
             type="success"
@@ -180,7 +181,7 @@
             <tip
               >① 选择完文件，点击 ”提交文件“即可 <br />
               ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
-              <template v-if="taskMoreInfo.template"
+              <template v-if="taskMoreInfo.template && !disabledUpload"
                 ><br />
                 ③
                 <strong>
@@ -202,7 +203,7 @@
             type="primary"
             text
             style="color: #85ce61"
-            v-if="taskMoreInfo.template"
+            v-if="taskMoreInfo.template && !disabledUpload"
             size="small"
             @click="downloadTemplate"
             >查看提交示例</el-button
@@ -264,7 +265,7 @@ import { downLoadByUrl, qiniuUpload } from '@/utils/networkUtil'
 import { FileApi, PeopleApi, PublicApi, TaskApi } from '@/apis'
 import Tip from '../dashboard/tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
-
+import { useLocalStorage } from '@vueuse/core'
 const $store = useStore()
 const isMobile = computed(() => $store.getters['public/isMobile'])
 // 顶部导航
@@ -525,7 +526,7 @@ const handleChangeFile = (file: any) => {
   if (formatData.value.format.length && formatData.value.status) {
     const suffix = getFileSuffix(name)
     if (!formatData.value.format.find((v) => suffix.endsWith(v))) {
-      ElMessage.error(`${name} 格式不符合要球`)
+      ElMessage.error(`${name} 格式不符合要求`)
       fileUpload.value.handleRemove(file)
       return
     }
@@ -746,6 +747,10 @@ watch(
     }
   }
 )
+
+// 禁用上传
+const disabledUpload = useLocalStorage('disabledUpload', false)
+
 onMounted(() => {
   k.value = $route.params.key as string
   if (k.value) {
@@ -753,6 +758,10 @@ onMounted(() => {
     TaskApi.getTaskInfo(k.value)
       .then((res) => {
         Object.assign(taskInfo, res.data)
+        disabledUpload.value = !!res.data.limitUpload
+        if(disabledUpload.value){
+          ElMessageBox.alert('任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间')
+        }
       })
       .catch((err) => {
         if (err.code === 4001) {
