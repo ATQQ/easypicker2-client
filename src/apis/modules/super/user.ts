@@ -55,6 +55,13 @@ function logout(account: string) {
     params: { account }
   })
 }
+
+function resetLimitSpace(id: number, size: number){
+  return ajax.put(`${baseUrl}/size`, {
+    id,
+    size
+  })
+}
 export default {
   getUserList,
   updateUserStatus,
@@ -64,5 +71,6 @@ export default {
   getMessageList,
   readMessage,
   sendMessage,
-  logout
+  logout,
+  resetLimitSpace
 }

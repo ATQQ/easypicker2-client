@@ -65,7 +65,7 @@
         <el-table-column
           sortable
           prop="login_time"
-          label="最后登录时间"
+          label="最后登录"
           width="190"
         >
           <template #default="scope">{{
@@ -94,16 +94,16 @@
         <el-table-column
           sortable
           prop="fileCount"
-          label="收集文件数"
+          label="收集文件"
         ></el-table-column>
         <el-table-column label="占用云空间" width="200">
           <template
             #default="{
-              row: { resources, monthAgoSize, quarterAgoSize, halfYearSize, id }
+              row: { resources, monthAgoSize, quarterAgoSize, halfYearSize, id, limitSize, limitUpload, percentage }
             }"
           >
-            <ul class="user-oss-info">
-              <li>总大小：{{ resources }}</li>
+            <ul class="user-oss-info" :class="{ 'disabled': limitUpload}">
+              <li>{{ percentage }}% {{ resources }}/{{ limitSize }}</li>
               <li>
                 一月前：{{ monthAgoSize
                 }}<el-button
@@ -176,6 +176,13 @@
                 text
                 size="small"
                 >发送消息</el-button
+              >
+              <el-button
+                @click="handleRewriteSize(scope.row.id, scope.row.size)"
+                type="danger"
+                text
+                size="small"
+                >修改上限</el-button
               >
               <el-button
                 v-if="scope.row.onlineCount !== 0"
@@ -341,10 +348,42 @@
         </span>
       </template>
     </el-dialog>
+    <!-- 修改空间上限 -->
+    <el-dialog
+      :fullscreen="isMobile"
+      center
+      title="修改空间上限"
+      v-model="showLimitSizeDialog"
+    >
+      <div class="tc">
+        <el-form :model="limitSizeForm" label-width="60px">
+          <el-form-item label="大小">
+            <el-input
+              show-word-limit
+              clearable
+              v-model="limitSizeForm.size"
+              placeholder="请输入空间上限"
+              maxlength="4"
+              type="number"
+            >
+              <template #append>
+                GB
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showLimitSizeDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSaveSize">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script lang="ts" setup>
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, linkEmits } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useStore } from 'vuex'
 import { Search, DeleteFilled, Refresh, Message } from '@element-plus/icons-vue'
@@ -358,9 +397,8 @@ const $store = useStore()
 const users: any[] = reactive([])
 const refreshUsers = () => {
   SuperUserApi.getUserList().then((res) => {
-    users.splice(0, users.length)
-    const d = res.data.list
-    users.push(...d)
+    users.splice(0, users.length, ...res.data.list)
+    ElMessage.success('列表数据刷新成功')
   })
 }
 
@@ -501,6 +539,28 @@ const handleSavePassword = () => {
     .catch(() => {
       //
     })
+}
+
+// 限制空间大小
+const showLimitSizeDialog = ref(false)
+const limitSizeForm = reactive({
+  size: 2
+})
+const handleRewriteSize = (id: number, size: number) => {
+  selectUserId.value = id
+  limitSizeForm.size = size
+  showLimitSizeDialog.value = true
+}
+const handleSaveSize = async () => {
+  if(+limitSizeForm.size<0){
+    ElMessage.warning('空间上限不能小于0')
+    return
+  }
+  await SuperUserApi.resetLimitSpace(selectUserId.value, +limitSizeForm.size)
+  // 接口调用修改
+  ElMessage.success('修改成功')
+  showLimitSizeDialog.value = false
+  refreshUsers()
 }
 
 // 绑定手机号
@@ -697,6 +757,9 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   }
   .clear-btn {
     margin-left: 10px;
+  }
+  &.disabled{
+    background-color: rgb(245 108 108 / 30%);
   }
 }
 </style>
