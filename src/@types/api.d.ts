@@ -116,7 +116,7 @@ declare namespace TaskApiTypes {
   type create = ResponseData
   type deleteOne = ResponseData
   type updateBaseInfo = ResponseData
-  type getTaskInfo = ResponseData<TaskInfo>
+  type getTaskInfo = ResponseData<TaskInfo&{limitUpload:boolean}>
   type getTaskMoreInfo = ResponseData<TaskInfo>
   type updateTaskMoreInfo = ResponseData
   type getUsefulTemplate = ResponseData<
