@@ -120,10 +120,10 @@ export default defineConfig({
           },
           {
             text: '线上部署',
-            link: '/deploy/online-new'
+            link: '/deploy/online-v3'
           },
           {
-            text: '接入七牛云OSS',
+            text: '七牛云OSS配置',
             link: '/deploy/qiniu'
           },
           {
@@ -133,13 +133,13 @@ export default defineConfig({
           {
             text: '相关设计',
             link: '/deploy/design/index'
-          }
+          },
         ],
         activeMatch: '/deploy/'
       },
       {
-        text: '源码修改部署',
-        link: '/deploy/local'
+        text: '功能介绍',
+        link: '/introduction/feature/index'
       },
       {
         text: `v${Pkg.version}`,
@@ -178,11 +178,15 @@ export default defineConfig({
               link: '/deploy/docker'
             },
             {
-              text: '线上部署（New）',
+              text: '线上部署 - v3（推荐）',
+              link: '/deploy/online-v3'
+            },
+            {
+              text: '线上部署 - v2',
               link: '/deploy/online-new'
             },
             {
-              text: '线上部署(旧)',
+              text: '线上部署 - v1',
               link: '/deploy/online'
             },
             {
@@ -251,11 +255,16 @@ export default defineConfig({
           ]
         },
         {
-          text: '功能',
+          text: '功能介绍',
           items: [
             {
-              text: '现有功能',
+              text: '概述',
               link: '/introduction/feature/index'
+            },
+            {
+              text: '管理员功能',
+
+              link: '/introduction/feature/admin'
             }
           ]
         }
