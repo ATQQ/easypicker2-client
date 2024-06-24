@@ -5,60 +5,27 @@
       <div class="item">
         <span class="label">分类</span>
         <!--TODO: multiple 多选待评估 -->
-        <el-select
-          size="default"
-          v-model="selectCategory"
-          filterable
-          placeholder="请选择"
-        >
+        <el-select size="default" v-model="selectCategory" filterable placeholder="请选择">
           <el-option label="全部" value="all" />
           <el-option label="默认" value="default" />
-          <el-option
-            v-for="item in categories"
-            :key="item.k"
-            :label="item.name"
-            :value="item.k"
-          />
+          <el-option v-for="item in categories" :key="item.k" :label="item.name" :value="item.k" />
           <el-option label="无关联任务" value="no-task" />
           <el-option label="♻️回收站♻️" value="trash" />
         </el-select>
       </div>
       <div class="item">
         <span class="label">任务</span>
-        <el-select
-          size="default"
-          v-model="selectTask"
-          filterable
-          placeholder="请选择"
-        >
+        <el-select size="default" v-model="selectTask" filterable placeholder="请选择">
           <el-option label="全部" value="all" />
-          <el-option
-            v-for="item in filterTasks"
-            :key="item.key"
-            :label="item.name"
-            :value="item.key"
-          ></el-option>
+          <el-option v-for="item in filterTasks" :key="item.key" :label="item.name" :value="item.key"></el-option>
         </el-select>
       </div>
       <div class="item">
-        <el-button
-          :loading="batchDownStart"
-          :disabled="selectTask === 'all'"
-          type="primary"
-          size="default"
-          :icon="Download"
-          @click="handleDownloadTask"
-          >下载任务中的文件</el-button
-        >
+        <el-button :loading="batchDownStart" :disabled="selectTask === 'all'" type="primary" size="default"
+          :icon="Download" @click="handleDownloadTask">下载任务中的文件</el-button>
       </div>
       <div class="item">
-        <el-input
-          size="default"
-          clearable
-          placeholder="请输入要检索的内容"
-          :prefix-icon="Search"
-          v-model="searchWord"
-        >
+        <el-input size="default" clearable placeholder="请输入要检索的内容" :prefix-icon="Search" v-model="searchWord">
         </el-input>
       </div>
     </div>
@@ -72,32 +39,16 @@
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item
-                :disabled="selectItem.length === 0"
-                command="download"
-                >下载</el-dropdown-item
-              >
-              <el-dropdown-item
-                :disabled="selectItem.length === 0"
-                command="delete"
-                >删除</el-dropdown-item
-              >
-              <el-dropdown-item
-                :disabled="selectItem.length === 0"
-                command="excel"
-                >导出记录</el-dropdown-item
-              >
+              <el-dropdown-item :disabled="selectItem.length === 0" command="download">下载</el-dropdown-item>
+              <el-dropdown-item :disabled="selectItem.length === 0" command="delete">删除</el-dropdown-item>
+              <el-dropdown-item :disabled="selectItem.length === 0" command="excel">导出记录</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
         <div v-show="false">
           <!-- 迷惑的解决bug的手段 -->
           <el-dropdown trigger="click" @command="handleDropdownClick">
-            <el-button
-              type="primary"
-              :disabled="selectItem.length === 0"
-              size="default"
-            >
+            <el-button type="primary" :disabled="selectItem.length === 0" size="default">
               批量操作
               <el-icon>
                 <ArrowDown />
@@ -112,151 +63,83 @@
             </template>
           </el-dropdown>
         </div>
-        <el-button size="default" :icon="Refresh" @click="handleRefresh"
-          >刷新</el-button
-        >
-        <el-button
-          title="导出表格中所有的数据"
-          type="success"
-          size="default"
-          :icon="DataAnalysis"
-          @click="
-            () => {
-              handleExportExcel(
-                filterFiles,
-                `筛选数据导出_${formatDate(
-                  new Date(),
-                  'yyyy年MM月日hh时mm分ss秒'
-                )}.xlsx`
-              )
-            }
-          "
-          :disabled="showFilterFiles.length === 0"
-          >导出记录</el-button
-        >
+        <el-button size="default" :icon="Refresh" @click="handleRefresh">刷新</el-button>
+        <el-button title="导出表格中所有的数据" type="success" size="default" :icon="DataAnalysis" @click="() => {
+          handleExportExcel(
+            filterFiles,
+            `筛选数据导出_${formatDate(
+              new Date(),
+              'yyyy年MM月日hh时mm分ss秒'
+            )}.xlsx`
+          )
+        }
+          " :disabled="showFilterFiles.length === 0">导出记录</el-button>
         <div class="control-item">
           显示图片
-          <el-switch
-            inline-prompt
-            v-model="showImg"
-            active-color="#13ce66"
-            inactive-color="#ff4949"
-            active-text="是"
-            inactive-text="否"
-          />
+          <el-switch inline-prompt v-model="showImg" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
+            inactive-text="否" />
         </div>
         <div class="control-item">
           展示原文件名
-          <el-switch
-            inline-prompt
-            v-model="showOriginName"
-            active-color="#13ce66"
-            inactive-color="#ff4949"
-            active-text="是"
-            inactive-text="否"
-          />
+          <el-switch inline-prompt v-model="showOriginName" active-color="#13ce66" inactive-color="#ff4949"
+            active-text="是" inactive-text="否" />
         </div>
         <div class="control-item">
           显示提交人姓名
-          <el-switch
-            inline-prompt
-            v-model="showPeople"
-            active-color="#13ce66"
-            inactive-color="#ff4949"
-            active-text="是"
-            inactive-text="否"
-          />
+          <el-switch inline-prompt v-model="showPeople" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
+            inactive-text="否" />
         </div>
         <div class="control-item">
           ⏰ 查看下载历史
-          <el-switch
-            v-model="showHistoryPanel"
-            style="
+          <el-switch v-model="showHistoryPanel" style="
               --el-switch-on-color: #13ce66;
               --el-switch-off-color: #ff4949;
-            "
-          />
+            " />
         </div>
       </div>
     </div>
-    <div
-      class="panel"
-      v-show="historyDownloadRecord.compressTask.length && !showHistoryPanel"
-    >
-      <tip style="font-size: 16px"
-        >正在进行归档的任务
-        {{ historyDownloadRecord.compressTask.length }}个</tip
-      >
+    <div class="panel" v-show="historyDownloadRecord.compressTask.length && !showHistoryPanel">
+      <tip style="font-size: 16px">正在进行归档的任务
+        {{ historyDownloadRecord.compressTask.length }}个</tip>
       <tip>详细归档记录点击右上角 “⏰查看下载历史”</tip>
-      <p
-        v-for="(record, idx) in historyDownloadRecord.compressTask"
-        :key="record.id"
-        class="tc"
-        style="margin-top: 10px"
-      >
+      <p v-for="(record, idx) in historyDownloadRecord.compressTask" :key="record.id" class="tc"
+        style="margin-top: 10px">
         {{ idx + 1 }}. {{ record.tip }}
-        <span
-          v-loading="true"
-          element-loading-text="..."
-          style="--el-loading-spinner-size: 20px"
-        ></span>
+        <span v-loading="true" element-loading-text="..." style="--el-loading-spinner-size: 20px"></span>
       </p>
     </div>
     <div class="panel" v-show="showHistoryPanel">
-      <tip style="font-size: 16px"
-        >”❤️下面展示历史的下载记录与归档任务完成情况❤️“</tip
-      >
+      <tip style="font-size: 16px">”❤️下面展示历史的下载记录与归档任务完成情况❤️“</tip>
       <tip>”再也不需要在页面停留等待归档完成“</tip>
       <div>
-        <el-table
-          v-loading="isLoadingData"
-          element-loading-text="Loading..."
-          tooltip-effect="dark"
-          multipleTable
-          ref="multipleTable"
-          @selection-change="handleSelectionChange"
-          stripe
-          border
-          :default-sort="{ prop: 'date', order: 'descending' }"
-          :max-height="666"
-          :data="historyDownloadRecord.actions"
-          style="width: 100%"
-        >
+        <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
+          ref="multipleTable" @selection-change="handleSelectionChange" stripe border
+          :default-sort="{ prop: 'date', order: 'descending' }" :max-height="666" :data="historyDownloadRecord.actions"
+          style="width: 100%">
           <el-table-column prop="date" label="触发时间" width="200">
             <template #default="scope">{{
-              formatDate(new Date(scope.row.date))
-            }}</template>
+          formatDate(new Date(scope.row.date))
+        }}</template>
           </el-table-column>
           <el-table-column prop="tip" label="文件信息"></el-table-column>
           <el-table-column prop="type" label="任务类型">
             <template #default="scope">
-              <el-link
-                v-if="scope.row.type === ActionType.Compress"
-                type="primary"
-                >归档下载</el-link
-              >
+              <el-link v-if="scope.row.type === ActionType.Compress" type="primary">归档下载</el-link>
               <el-link v-else type="default">普通下载</el-link>
             </template>
           </el-table-column>
           <el-table-column prop="size" label="大小" width="100">
             <template #default="scope">
-              <span v-if="scope.row.status === DownloadStatus.ARCHIVE"
-                ><el-link type="danger">归档中...</el-link></span
-              >
+              <span v-if="scope.row.status === DownloadStatus.ARCHIVE"><el-link type="danger">归档中...</el-link></span>
               <span v-else-if="scope.row.status !== DownloadStatus.FAIL">{{
-                !scope.row.size ? '未知大小' : formatSize(scope.row.size)
-              }}</span>
-              <span v-if="scope.row.status === DownloadStatus.FAIL"
-                ><el-link type="danger">归档失败</el-link></span
-              >
+          !scope.row.size ? '未知大小' : formatSize(scope.row.size)
+        }}</span>
+              <span v-if="scope.row.status === DownloadStatus.FAIL"><el-link type="danger">归档失败</el-link></span>
             </template>
           </el-table-column>
           <el-table-column fixed="right" label="操作" width="140">
             <template #default="scope">
-              <div
-                v-loading="true"
-                v-if="scope.row.status === DownloadStatus.ARCHIVE"
-              >
+              <div v-loading="true" v-if="scope.row.status === DownloadStatus.ARCHIVE">
                 归档中...
               </div>
               <div v-if="scope.row.status === DownloadStatus.EXPIRED">
@@ -266,89 +149,60 @@
                 联系开发者，提供错误信息：{{ scope.row.error }}
               </div>
               <div v-if="scope.row.status === DownloadStatus.SUCCESS">
-                <el-link @click="downLoadByUrl(scope.row.url)" type="primary"
-                  >下载</el-link
-                >
-                <el-link
-                  type="success"
-                  style="margin-left: 10px"
-                  @click="copyRes(scope.row.url)"
-                  >链接</el-link
-                >
-                <el-link
-                  type="warning"
-                  style="margin-left: 10px"
-                  @click="
-                    () => {
-                      showLinkModel = true
-                      downloadUrl = scope.row.url
-                    }
-                  "
-                  >二维码</el-link
-                >
+                <el-link @click="downLoadByUrl(scope.row.url)" type="primary">下载</el-link>
+                <el-link type="success" style="margin-left: 10px" @click="copyRes(scope.row.url)">链接</el-link>
+                <el-link type="warning" style="margin-left: 10px" @click="() => {
+          showLinkModel = true
+          downloadUrl = scope.row.url
+        }
+          ">二维码</el-link>
               </div>
             </template>
           </el-table-column>
         </el-table>
         <div class="flex fc">
-          <el-pagination
-            small
-            :current-page="historyDownloadRecord.pageCurrent"
-            :page-count="historyDownloadRecord.pageCount"
-            :total="historyDownloadRecord.pageTotal"
-            layout="total, prev, pager, next"
-            @current-change="handleHistoryActionPageChange"
-          ></el-pagination>
+          <el-pagination small :current-page="historyDownloadRecord.pageCurrent"
+            :page-count="historyDownloadRecord.pageCount" :total="historyDownloadRecord.pageTotal"
+            layout="total, prev, pager, next" @current-change="handleHistoryActionPageChange"></el-pagination>
         </div>
       </div>
     </div>
     <!-- 主体内容 -->
     <div class="panel">
-      <Tip>空间占用情况：{{ filterFileSize }} / {{ fileListSize }}</Tip>
-      <Tip>↑ 仅供使用者参考，应用无存储空间上限，也不收费</Tip>
-      <Tip
-        ><strong
-          >如果你觉得应用不错，<a
-            style="color: #409eff"
-            href="http://docs.ep.sugarat.top/praise/index.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            >请作者喝茶 🍵</a
-          ></strong
-        >
+      <Tip>全部文件大小：{{fileListSize}}，当前任务大小：{{ filterFileSize }}</Tip>
+      <!-- <Tip>↑ 仅供使用者参考，应用无存储空间上限，也不收费</Tip> -->
+      <Tip v-if="isOpenPraise"><span style="color: #f56c6c">↑ 由于部分用户用量较大，小站无法承担这笔开销，固限制每个账户为 2GB 可用空间</span></Tip>
+      <Tip><span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ spaceUsageText }}</span></Tip>
+      <Tip v-if="limitDownload"><span style="color:#f56c6c">超限将无法上传/下载文件</span>，如需要使用，请联系管理员扩容</Tip>
+      <Tip>
+        <strong>如果你觉得应用不错，<a style="color: #409eff" href="http://docs.ep.sugarat.top/praise/index.html" target="_blank"
+            rel="noopener noreferrer">给他发电⚡</a></strong>
+        <strong v-if="isOpenPraise">，其它问题<a style="color: #409eff"
+            href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
+            rel="noopener noreferrer">联系作者🔗</a></strong>
         <!-- <Praise>
           <el-button style="margin:0 0 2px;" size="small" type="primary" text>Go！Go！❓</el-button>
         </Praise> -->
       </Tip>
-      <el-table
-        v-loading="isLoadingData"
-        element-loading-text="Loading..."
-        tooltip-effect="dark"
-        multipleTable
-        ref="multipleTable"
-        @selection-change="handleSelectionChange"
-        stripe
-        border
-        :max-height="666"
-        :data="showFilterFiles"
-        style="width: 100%"
-      >
+      <Tip v-if="isOpenPraise">
+        <span style="color: #f56c6c">你可以通过赞助作者⚡来换取更大的空间</span>，
+        <strong>
+          <a style="color: #409eff" href="https://docs.ep.sugarat.top/"
+            target="_blank" rel="noopener noreferrer">我要自己搭建💡
+          </a>
+        </strong>
+      </Tip>
+      <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
+        ref="multipleTable" @selection-change="handleSelectionChange" stripe border :max-height="666"
+        :data="showFilterFiles" style="width: 100%">
         <el-table-column type="selection" width="55" />
         <el-table-column prop="date" label="提交时间" width="160">
           <template #default="scope">{{
-            formatDate(new Date(scope.row.date))
-          }}</template>
+          formatDate(new Date(scope.row.date))
+        }}</template>
         </el-table-column>
-        <el-table-column
-          prop="task_name"
-          label="任务"
-          width="150"
-        ></el-table-column>
-        <el-table-column
-          prop="name"
-          label="文件名"
-          width="200"
-        ></el-table-column>
+        <el-table-column prop="task_name" label="任务" width="150"></el-table-column>
+        <el-table-column prop="name" label="文件名" width="200"></el-table-column>
         <template v-if="showOriginName">
           <el-table-column prop="origin_name" label="原文件名" width="200">
             <template #default="scope">
@@ -358,23 +212,15 @@
         </template>
         <el-table-column prop="size" label="大小">
           <template #default="scope">{{
-            scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size)
-          }}</template>
+          scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size)
+        }}</template>
         </el-table-column>
         <template v-if="showImg">
           <el-table-column label="缩略图" width="120">
             <template #default="scope">
-              <el-image
-                @switch="handleSwitchImage"
-                @click="handleSwitchImage(scope.$index)"
-                preview-teleported
-                :preview-src-list="previewImages"
-                :initial-index="scope.$index"
-                lazy
-                style="width: 100px; height: 100px"
-                :src="scope.row.cover"
-                fit="cover"
-              >
+              <el-image @switch="handleSwitchImage" @click="handleSwitchImage(scope.$index)" preview-teleported
+                :preview-src-list="previewImages" :initial-index="scope.$index" lazy style="width: 100px; height: 100px"
+                :src="scope.row.cover" fit="cover">
                 <template #viewer>
                   <div class="imageDes">{{ viewImageFilename }}</div>
                 </template>
@@ -403,34 +249,10 @@
         <el-table-column fixed="right" label="操作" width="140">
           <template #default="scope">
             <div class="text-btns">
-              <el-button
-                @click="checkInfo(scope.row)"
-                type="primary"
-                text
-                size="small"
-                >查看提交信息</el-button
-              >
-              <el-button
-                @click="rewriteFilename(scope.row)"
-                type="primary"
-                text
-                size="small"
-                >修改文件名</el-button
-              >
-              <el-button
-                @click="downloadOne(scope.row)"
-                type="primary"
-                text
-                size="small"
-                >下载</el-button
-              >
-              <el-button
-                @click="handleDelete(scope.row)"
-                type="primary"
-                text
-                size="small"
-                >删除</el-button
-              >
+              <el-button @click="checkInfo(scope.row)" type="primary" text size="small">查看提交信息</el-button>
+              <el-button @click="rewriteFilename(scope.row)" type="primary" text size="small">修改文件名</el-button>
+              <el-button @click="downloadOne(scope.row)" type="primary" text size="small">下载</el-button>
+              <el-button @click="handleDelete(scope.row)" type="primary" text size="small">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -438,36 +260,16 @@
     </div>
     <!-- 分页 -->
     <div class="panel flex fc">
-      <el-pagination
-        :current-page="pageCurrent"
-        @current-change="handlePageChange"
-        background
-        :page-count="pageCount"
-        :page-sizes="[6, 10, 50, 100]"
-        :page-size="pageSize"
-        @size-change="handleSizeChange"
-        :total="filterFiles.length"
-        layout="total, sizes, prev, pager, next, jumper"
-      ></el-pagination>
+      <el-pagination :current-page="pageCurrent" @current-change="handlePageChange" background :page-count="pageCount"
+        :page-sizes="[6, 10, 50, 100]" :page-size="pageSize" @size-change="handleSizeChange" :total="filterFiles.length"
+        layout="total, sizes, prev, pager, next, jumper"></el-pagination>
     </div>
     <!-- 信息弹窗 -->
-    <el-dialog
-      :fullscreen="isMobile"
-      title="提交填写的信息"
-      v-model="showInfoDialog"
-    >
+    <el-dialog :fullscreen="isMobile" title="提交填写的信息" v-model="showInfoDialog">
       <InfosForm :infos="infos" :disabled="true" />
     </el-dialog>
-    <LinkDialog
-      v-model:value="showLinkModel"
-      title="下载链接"
-      :link="downloadUrl"
-    ></LinkDialog>
-    <el-dialog
-      :fullscreen="isMobile"
-      title="修改文件名"
-      v-model="showRenameDialog"
-    >
+    <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
+    <el-dialog :fullscreen="isMobile" title="修改文件名" v-model="showRenameDialog">
       <div>
         <el-form label-width="100px" :model="renameForm">
           <el-form-item label="原文件名" prop="newName">
@@ -481,9 +283,7 @@
             </el-input>
           </el-form-item>
           <el-form-item>
-            <el-button type="success" @click="handleSaveNewName"
-              >保存</el-button
-            >
+            <el-button type="success" @click="handleSaveNewName">保存</el-button>
             <el-button @click="showRenameDialog = false">取消</el-button>
           </el-form-item>
         </el-form>
@@ -517,6 +317,10 @@ import { downLoadByUrl, tableItem, tableToExcel } from '@/utils/networkUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
 import { DownloadStatus, ActionType, filenamePattern } from '@/constants'
+import { useSpaceUsage } from '@/composables'
+const isOpenPraise = import.meta.env.VITE_APP_OPEN_PRAISE === 'true'
+
+const { limitDownload, spaceUsageText } = useSpaceUsage()
 
 const $store = useStore()
 const $route = useRoute()
@@ -652,7 +456,7 @@ const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
     headers,
     body,
     filename ||
-      `数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`
+    `数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`
   )
   ElMessage.success('导出成功')
 }
@@ -722,16 +526,16 @@ const filterFiles = computed(() =>
     .filter((t) =>
       searchWord.value
         ? JSON.stringify([
-            formatDate(new Date(t.date)),
-            formatSize(t.size),
-            t.people,
-            t.name,
-            t.task_name,
-            // eslint-disable-next-line no-useless-escape
-            t.info
-          ])
-            .replace(/[:'"{},[\]]/g, '')
-            .includes(searchWord.value)
+          formatDate(new Date(t.date)),
+          formatSize(t.size),
+          t.people,
+          t.name,
+          t.task_name,
+          // eslint-disable-next-line no-useless-escape
+          t.info
+        ])
+          .replace(/[:'"{},[\]]/g, '')
+          .includes(searchWord.value)
         : true
     )
 )
@@ -1098,6 +902,7 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   justify-content: center;
   height: 100%;
 }
+
 .imageDes {
   position: absolute;
   bottom: 80px;

@@ -45,6 +45,11 @@ function checkLoginStatus(): UserApiTypes.checkLoginStatus {
 function logout(): UserApiTypes.logout {
   return ajax.get('user/logout')
 }
+
+function usage(): UserApiTypes.usage {
+  return ajax.get('user/usage')
+}
+
 export default {
   register,
   login,
@@ -52,5 +57,6 @@ export default {
   resetPwd,
   checkPower,
   checkLoginStatus,
-  logout
+  logout,
+  usage
 }

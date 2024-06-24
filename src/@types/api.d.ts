@@ -79,6 +79,10 @@ declare namespace UserApiTypes {
     system: boolean
   }>
   type logout = ResponseData
+  type usage = ResponseData<{
+    size: number
+    usage: number
+  }>
   type checkLoginStatus = ResponseData<boolean>
 }
 
