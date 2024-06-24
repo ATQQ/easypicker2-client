@@ -62,15 +62,17 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { onMounted, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import { Fold } from '@element-plus/icons-vue'
+import { useSupportRegister } from '@/composables';
+import { computed } from 'vue';
 
 const $route = useRoute()
-const links = reactive([])
-onMounted(() => {
+const supportRegister = useSupportRegister()
+
+const links = computed(()=>{
   const { path } = $route
-  const navList = [
+  return [
     {
       href: '/',
       text: '首页'
@@ -84,11 +86,8 @@ onMounted(() => {
       text: '快速注册'
     }
   ]
-  for (const nav of navList) {
-    if (nav.href !== path) {
-      links.push(nav)
-    }
-  }
+  .filter(nav => nav.href !== path)
+  .filter(nav => supportRegister.value || nav.href !== '/register')
 })
 </script>
 <style lang="scss" scoped>

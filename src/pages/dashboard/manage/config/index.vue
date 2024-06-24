@@ -4,16 +4,12 @@
       <el-divider>部分路由管理</el-divider>
       <ul class="routes">
         <li v-for="r in showRoutes" :key="r.name">
-          <el-switch
-            @change="handleChangeRoute(r)"
-            :value="!r.disabled"
-            style="
+          <el-switch @change="handleChangeRoute(r)" :value="!r.disabled" style="
               --el-switch-on-color: #13ce66;
               --el-switch-off-color: #ff4949;
-            "
-          />
+            " />
           <span class="title">{{ r.title }}</span>
-          <span class="path">{{ r.path }}</span>
+          <span class="path">{{ r.path }}{{ r.path === '/register' ? ' 关闭后将同时禁用注册功能' : '' }}</span>
         </li>
       </ul>
     </div>
@@ -40,9 +36,10 @@ const showRoutes = reactive<
   }[]
 >([])
 
-const handleChangeRoute = (r: typeof showRoutes[0]) => {
+const handleChangeRoute = (r: (typeof showRoutes)[0]) => {
   SuperOverviewApi.addDisabledRoute(r.path, !r.disabled).then(() => {
     r.disabled = !r.disabled
+    ElMessage.success('切换成功')
   })
 }
 onMounted(() => {
@@ -84,10 +81,12 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
 .routes {
   max-width: 500px;
   margin: 0 auto;
+
   li {
     display: flex;
     padding: 20px;
     align-items: center;
+
     .title {
       font-weight: bold;
       margin: 0 10px;
