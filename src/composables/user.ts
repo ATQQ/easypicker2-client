@@ -6,7 +6,7 @@ export function useSpaceUsage() {
     // 实际使用空间
     const usage = ref(0)
     // 总空间
-    const size = ref(-1)
+    const size = ref(0)
     const percentage = computed(() => `${(usage.value / size.value * 100).toFixed(2)}%`)
     const limitDownload = computed(() => size.value < usage.value)
 
