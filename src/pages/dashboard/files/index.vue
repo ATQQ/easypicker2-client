@@ -169,9 +169,11 @@
     </div>
     <!-- 主体内容 -->
     <div class="panel">
-      <Tip>全部文件大小：{{fileListSize}}，当前任务大小：{{ filterFileSize }}</Tip>
+      <Tip>全部文件大小：{{ fileListSize }}，当前任务大小：{{ filterFileSize }}</Tip>
       <!-- <Tip>↑ 仅供使用者参考，应用无存储空间上限，也不收费</Tip> -->
-      <Tip v-if="isOpenPraise"><span style="color: #f56c6c">↑ 由于部分用户用量较大，小站无法承担这笔开销，固限制每个账户为 2GB 可用空间</span></Tip>
+      <Tip v-if="isOpenPraise">
+        <h2 style="color: #f56c6c">↑ 由于部分用户用量较大，小站无法承担这笔开销，故限制每个账户为 2GB 可用空间</h2>
+      </Tip>
       <Tip><span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ spaceUsageText }}</span></Tip>
       <Tip v-if="limitDownload"><span style="color:#f56c6c">超限将无法上传/下载文件</span>，如需要使用，请联系管理员扩容</Tip>
       <Tip>
@@ -185,12 +187,16 @@
         </Praise> -->
       </Tip>
       <Tip v-if="isOpenPraise">
-        <span style="color: #f56c6c">你可以通过赞助作者⚡来换取更大的空间</span>，
-        <strong>
-          <a style="color: #409eff" href="https://docs.ep.sugarat.top/"
-            target="_blank" rel="noopener noreferrer">我要自己搭建💡
-          </a>
-        </strong>
+        <h3>
+          <span style="color: #f56c6c">你可以通过<a style="color: #409eff"
+              href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
+              rel="noopener noreferrer"> 联系作者进行赞助⚡ </a>来换取更大的空间</span>，
+          <strong>
+            <a style="color: #409eff" href="https://docs.ep.sugarat.top/" target="_blank"
+              rel="noopener noreferrer">或自己搭建💡
+            </a>
+          </strong>
+        </h3>
       </Tip>
       <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
         ref="multipleTable" @selection-change="handleSelectionChange" stripe border :max-height="666"
@@ -557,6 +563,10 @@ const handleDropdownClick = (e: string) => {
   const ids: number[] = selectItem.map((v) => v.id)
   switch (e) {
     case 'download':
+      if (limitDownload.value) {
+        ElMessage.error('下载功能已被限制，请联系管理员扩容，或自行删除历史无用文件')
+        return
+      }
       if (selectItem.length === 0) {
         ElMessage.warning('没有选中需要下载的内容')
         return
@@ -663,6 +673,10 @@ const handleSaveNewName = () => {
 }
 
 const downloadOne = (e: any) => {
+  if (limitDownload.value) {
+    ElMessage.error('下载功能已被限制，请联系管理员扩容，或自行删除历史无用文件')
+    return
+  }
   const { id, name } = e
   FileApi.getOneFileUrl(id)
     .then((res) => {
