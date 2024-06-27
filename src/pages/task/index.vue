@@ -35,7 +35,9 @@
       <h1 class="name">
         {{ taskInfo.name }}
       </h1>
-      <h2 v-if="disabledUpload" style="color: red">任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间</h2>
+      <h2 v-if="disabledUpload" style="color: red">
+        任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间
+      </h2>
       <!-- 提示信息 -->
       <!-- 时间截止了也不再展示 -->
       <template v-if="tipData.text && (ddlStr ? !isOver : true)">
@@ -252,6 +254,7 @@ import HomeFooter from '@components/HomeFooter/index.vue'
 import LinkDialog from '@components/linkDialog.vue'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { useStore } from 'vuex'
+import { useLocalStorage } from '@vueuse/core'
 import {
   formatDate,
   formatSize,
@@ -265,7 +268,7 @@ import { downLoadByUrl, qiniuUpload } from '@/utils/networkUtil'
 import { FileApi, PeopleApi, PublicApi, TaskApi } from '@/apis'
 import Tip from '../dashboard/tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
-import { useLocalStorage } from '@vueuse/core'
+
 const $store = useStore()
 const isMobile = computed(() => $store.getters['public/isMobile'])
 // 顶部导航
@@ -525,7 +528,9 @@ const handleChangeFile = (file: any) => {
   const { name } = file
   if (formatData.value.format.length && formatData.value.status) {
     const suffix = getFileSuffix(name)
-    if (!formatData.value.format.find((v) => suffix.endsWith(v))) {
+    if (
+      !formatData.value.format.find((v) => suffix.toLowerCase().endsWith(v))
+    ) {
       ElMessage.error(`${name} 格式不符合要求`)
       fileUpload.value.handleRemove(file)
       return
@@ -759,8 +764,10 @@ onMounted(() => {
       .then((res) => {
         Object.assign(taskInfo, res.data)
         disabledUpload.value = !!res.data.limitUpload
-        if(disabledUpload.value){
-          ElMessageBox.alert('任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间')
+        if (disabledUpload.value) {
+          ElMessageBox.alert(
+            '任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间'
+          )
         }
       })
       .catch((err) => {
