@@ -1,31 +1,12 @@
-<template>
-  <div class="user">
-    <div class="panel">
-      <el-divider>禁用路由管理</el-divider>
-      <ul class="routes">
-        <li v-for="r in showRoutes" :key="r.name">
-          <el-switch @change="handleChangeRoute(r)" :value="!r.disabled" style="
-              --el-switch-on-color: #13ce66;
-              --el-switch-off-color: #ff4949;
-            " />
-          <span class="title">{{ r.title }}</span>
-          <span class="path">{{ r.path }}{{ r.path === '/register' ? ' 关闭后将同时禁用注册功能' : '' }}</span>
-        </li>
-      </ul>
-    </div>
-  </div>
-</template>
 <script lang="ts" setup>
 import { ElMessage } from 'element-plus'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useStore } from 'vuex'
+import { computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { SuperOverviewApi } from '@/apis'
 
-const $store = useStore()
 const $router = useRouter()
 const routes = computed(() =>
-  $router.options.routes.filter((v) => v.meta?.allowDisabled)
+  $router.options.routes.filter(v => v.meta?.allowDisabled),
 )
 const showRoutes = reactive<
   {
@@ -36,7 +17,7 @@ const showRoutes = reactive<
   }[]
 >([])
 
-const handleChangeRoute = (r: (typeof showRoutes)[0]) => {
+function handleChangeRoute(r: (typeof showRoutes)[0]) {
   SuperOverviewApi.addDisabledRoute(r.path, !r.disabled).then(() => {
     r.disabled = !r.disabled
     ElMessage.success('切换成功')
@@ -49,13 +30,32 @@ onMounted(() => {
         path: r.path,
         name: r.name.toString(),
         title: r.meta.title,
-        disabled: !!v.data?.status
+        disabled: !!v.data?.status,
       })
     })
   }
 })
-const isMobile = computed(() => $store.getters['public/isMobile'])
 </script>
+
+<template>
+  <div class="user">
+    <div class="panel">
+      <el-divider>禁用路由管理</el-divider>
+      <ul class="routes">
+        <li v-for="r in showRoutes" :key="r.name">
+          <el-switch
+            :value="!r.disabled" style="
+              --el-switch-on-color: #13ce66;
+              --el-switch-off-color: #ff4949;
+            " @change="handleChangeRoute(r)"
+          />
+          <span class="title">{{ r.title }}</span>
+          <span class="path">{{ r.path }}{{ r.path === '/register' ? ' 关闭后将同时禁用注册功能' : '' }}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="scss">
 @media screen and (max-width: 700px) {

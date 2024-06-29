@@ -1,6 +1,7 @@
 import { onMounted } from 'vue'
-import { SuperOverviewApi } from '@/apis'
 import { useLocalStorage } from '@vueuse/core'
+import { SuperOverviewApi } from '@/apis'
+
 export function useSupportRegister() {
   const supportRegister = useLocalStorage('supportRegister', true)
   // 检查注册功能是否禁用
