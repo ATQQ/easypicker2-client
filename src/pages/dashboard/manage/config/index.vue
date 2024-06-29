@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ElMessage } from 'element-plus'
-import { computed, onMounted, reactive } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { SuperOverviewApi } from '@/apis'
 
@@ -23,6 +23,27 @@ function handleChangeRoute(r: (typeof showRoutes)[0]) {
     ElMessage.success('切换成功')
   })
 }
+
+const editConfig = ref(false)
+const jsonData = ref({
+  maxInput: 100,
+})
+const editJSON = ref('')
+
+function handleEditConfig() {
+  editConfig.value = true
+  editJSON.value = JSON.stringify(jsonData.value, null, 2)
+}
+function handleSaveConfig() {
+  try {
+    const data = JSON.parse(editJSON.value)
+    // TODO: 调用接口
+  }
+  catch (e) {
+    return ElMessage.error('JSON 格式错误')
+  }
+  editConfig.value = true
+}
 onMounted(() => {
   for (const r of routes.value) {
     SuperOverviewApi.checkDisabledRoute(r.path).then((v) => {
@@ -34,6 +55,8 @@ onMounted(() => {
       })
     })
   }
+
+  // TODO：获取配置信息
 })
 </script>
 
@@ -53,6 +76,38 @@ onMounted(() => {
           <span class="path">{{ r.path }}{{ r.path === '/register' ? ' 关闭后将同时禁用注册功能' : '' }}</span>
         </li>
       </ul>
+      <el-divider>全局配置管理（JSON）</el-divider>
+      <div class="config-btn">
+        <el-button v-if="!editConfig" size="small" type="primary" @click="handleEditConfig">
+          更新
+        </el-button>
+        <template v-else>
+          <el-button size="small" type="danger" @click="editConfig = false">
+            取消
+          </el-button>
+          <el-button size="small" type="success" @click="handleSaveConfig">
+            保存
+          </el-button>
+        </template>
+      </div>
+      <div class="config-panel">
+        <json-viewer
+          v-if="!editConfig"
+          :value="jsonData"
+          :expand-depth="5"
+          copyable
+          boxed
+          sort
+        />
+        <!-- TODO: JSON editor -->
+        <el-input
+          v-else
+          v-model="editJSON"
+          :autosize="{ minRows: 2, maxRows: 4 }"
+          type="textarea"
+          placeholder="Please input"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -92,5 +147,12 @@ onMounted(() => {
       margin: 0 10px;
     }
   }
+}
+.config-btn {
+  text-align: center;
+}
+.config-panel {
+  max-width: 500px;
+  margin: 0 auto;
 }
 </style>
