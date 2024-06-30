@@ -209,12 +209,24 @@ declare namespace SuperUserApiTypes {
   interface UserItem {
     account: string
     id: number
-    join_time: string
-    login_count: number
-    login_time: string
-    open_time: string
+    joinTime: string
+    loginCount: number
+    loginTime: string
+    openTime: string
     phone: string
     status: number
+    // 补充信息
+    fileCount: number
+    limitSize: string
+    limitUpload: boolean
+    percentage: string
+    resources: string
+    monthAgoSize: string
+    quarterAgoSize: string
+    halfYearSize: string
+    onlineCount: number
+    usage: number
+    lastLoginTime: number
   }
   interface MessageItem {
     id: string

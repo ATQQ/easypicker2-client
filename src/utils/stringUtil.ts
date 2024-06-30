@@ -4,7 +4,7 @@ import copy from 'clipboard-copy'
 import { jsonp } from './networkUtil'
 /**
  * 将结果写入的剪贴板
- * @param {String} text
+ * @param {string} text
  */
 export function copyRes(text: string, msg = '结果已成功复制到剪贴板') {
   // 自定义
@@ -38,7 +38,7 @@ export function getShortUrl(text: string): Promise<string> {
   return new Promise((resolve, reject) => {
     jsonp(
       `https://api.suowo.cn/api.htm?format=jsonp&url=${encodeURIComponent(
-        text
+        text,
       )}&key=5ec8a001be96bd79a37f19b8@bf33c7483d0c6900bb7bc90a0e6dfdf0&expireDate=2030-03-31&domain=0`,
       'shortLink',
       (res) => {
@@ -47,7 +47,7 @@ export function getShortUrl(text: string): Promise<string> {
           reject(err)
         }
         resolve(url)
-      }
+      },
     )
   })
 }
@@ -56,7 +56,7 @@ export function base64(s: string) {
   return window.btoa(unescape(encodeURIComponent(s)))
 }
 
-export function formatDate(d: Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
+export function formatDate(d: any, fmt = 'yyyy-MM-dd hh:mm:ss') {
   if (!(d instanceof Date)) {
     d = new Date(d)
   }
@@ -67,21 +67,22 @@ export function formatDate(d: Date, fmt = 'yyyy-MM-dd hh:mm:ss') {
     'm+': d.getMinutes(), // 分
     's+': d.getSeconds(), // 秒
     'q+': Math.floor((d.getMonth() + 3) / 3), // 季度
-    S: d.getMilliseconds() // 毫秒
+    'S': d.getMilliseconds(), // 毫秒
   }
   if (/(y+)/.test(fmt)) {
     fmt = fmt.replace(
       RegExp.$1,
-      `${d.getFullYear()}`.substr(4 - RegExp.$1.length)
+      `${d.getFullYear()}`.substr(4 - RegExp.$1.length),
     )
   }
-  // eslint-disable-next-line no-restricted-syntax
+
   for (const k in o) {
-    if (new RegExp(`(${k})`).test(fmt))
+    if (new RegExp(`(${k})`).test(fmt)) {
       fmt = fmt.replace(
         RegExp.$1,
-        RegExp.$1.length === 1 ? o[k] : `00${o[k]}`.substr(`${o[k]}`.length)
+        RegExp.$1.length === 1 ? o[k] : `00${o[k]}`.substr(`${o[k]}`.length),
       )
+    }
   }
   return fmt
 }
@@ -113,7 +114,8 @@ export function getFileMd5Hash(file: File) {
 
       if (currentChunk < chunks) {
         loadNext()
-      } else {
+      }
+      else {
         // console.log('finished loading')
         const hashResult = spark.end()
         // console.info('computed hash', hashResult) // Compute hash
@@ -132,7 +134,7 @@ export function getFileMd5Hash(file: File) {
 export function formatSize(
   size: number,
   pointLength?: number,
-  units?: string[]
+  units?: string[],
 ) {
   let unit
   units = units || ['B', 'K', 'M', 'G', 'TB']
@@ -160,20 +162,21 @@ function getSupportPreviewType() {
     'image/svg+xml',
     'application/pdf',
     'text/plain',
-    'video/mp4'
+    'video/mp4',
   ]
   const supportTypes = []
   types.forEach((type) => {
     if (
-      typeof FileReader !== 'undefined' &&
-      typeof FileReader.prototype.readAsDataURL !== 'undefined'
+      typeof FileReader !== 'undefined'
+      && typeof FileReader.prototype.readAsDataURL !== 'undefined'
     ) {
       const fileReader = new FileReader()
       if (fileReader.readAsDataURL) {
         try {
           fileReader.readAsDataURL(new Blob([new ArrayBuffer(1)], { type }))
           supportTypes.push(type)
-        } catch (e) {
+        }
+        catch (e) {
           // console.log(e)
         }
       }
@@ -209,14 +212,14 @@ export function normalizeFileName(name: string) {
   return name.replace(/[\\/:*?"<>|]/g, '-')
 }
 
-export const getDefaultFormat = () => {
+export function getDefaultFormat() {
   return {
     size: 0,
     sizeUnit: 'MB',
     status: false,
     format: [],
     limit: 10,
-    splitChar: '-'
+    splitChar: '-',
   }
 }
 export function parseFileFormat(format: string) {
@@ -228,11 +231,12 @@ export function parseFileFormat(format: string) {
       // format 小写去重
       if (key === 'format') {
         formatData[key] = Array.from(
-          new Set(formatData[key].map((v) => v.toLowerCase()))
+          new Set(formatData[key].map(v => v.toLowerCase())),
         )
       }
     })
-  } catch (_) {
+  }
+  catch (_) {
     return formatData
   }
   return formatData
@@ -241,7 +245,7 @@ export function parseFileFormat(format: string) {
 export function getTipImageKey(
   key: string,
   name: string,
-  uid?: number | string
+  uid?: number | string,
 ) {
   return `easypicker2/tip/${key}/${uid || Date.now()}/${name}`
 }
