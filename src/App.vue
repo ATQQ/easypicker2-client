@@ -1,23 +1,11 @@
 <script lang="ts" setup>
-import { onMounted } from 'vue'
-import { useStore } from 'vuex'
 import { ElConfigProvider } from 'element-plus'
 import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/message-box/style/css'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import { useSiteConfig } from './composables'
 
-const $store = useStore()
-function refreshWidth() {
-  const clientWIdth = window.document.body.clientWidth
-  $store.commit('public/setWidth', clientWIdth)
-}
 const { value: siteConfig } = useSiteConfig()
-
-onMounted(() => {
-  window.addEventListener('load', refreshWidth)
-  window.addEventListener('resize', refreshWidth)
-})
 </script>
 
 <template>

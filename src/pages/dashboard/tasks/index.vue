@@ -14,9 +14,11 @@ import TipInfoPanel from './components/infoPanel/tipInfo.vue'
 import FileInfoPanel from './components/infoPanel/file.vue'
 import { copyRes } from '@/utils/stringUtil'
 import { TaskApi } from '@/apis'
+import { useIsMobile } from '@/composables'
 
 const $store = useStore()
-const isMobile = computed(() => $store.getters['public/isMobile'])
+
+const isMobile = useIsMobile()
 // 分类相关
 const categorys = computed(() => $store.state.category.categoryList)
 

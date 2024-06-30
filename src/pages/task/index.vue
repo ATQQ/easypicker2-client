@@ -1,253 +1,6 @@
-<template>
-  <div class="task-panel">
-    <div class="pc-nav">
-      <div class="nav">
-        <!-- LOGO -->
-        <div class="logo">
-          <router-link to="/">
-            <img
-              style="height: 40px; width: 170px"
-              src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png"
-              alt="logo"
-            />
-          </router-link>
-        </div>
-        <nav>
-          <div
-            class="nav-item"
-            v-for="(n, idx) in pcNavs"
-            :key="idx"
-            @click="handleNav(idx)"
-          >
-            {{ n.title }}
-          </div>
-        </nav>
-      </div>
-    </div>
-    <!-- 有效 -->
-    <div
-      v-loading="isLoadingData"
-      element-loading-text="Loading..."
-      class="panel tc"
-      v-if="k"
-    >
-      <!-- 任务名 -->
-      <h1 class="name">
-        {{ taskInfo.name }}
-      </h1>
-      <h2 v-if="disabledUpload" style="color: red">
-        任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间
-      </h2>
-      <!-- 提示信息 -->
-      <!-- 时间截止了也不再展示 -->
-      <template v-if="tipData.text && (ddlStr ? !isOver : true)">
-        <el-divider>⚠️ 注意事项 ⚠️</el-divider>
-        <Tip>
-          <div class="tip-wrapper">
-            <p v-for="(t, i) in tipData.text.split('\n')" :key="i">
-              {{ t.replace(/\s/g, '&nbsp;') }}
-            </p>
-          </div>
-        </Tip>
-      </template>
-      <template v-if="imageList.length && (ddlStr ? !isOver : true)">
-        <el-image
-          hide-on-click-modal
-          v-for="(img, idx) in imageList"
-          :key="img.uid"
-          style="width: 100px; height: 100px; margin: 10px"
-          :src="img.url"
-          :zoom-rate="1.2"
-          :preview-src-list="imageList.map((v) => v.preview)"
-          :initial-index="idx"
-          fit="contain"
-        />
-      </template>
-      <!-- 截止时间字符串 -->
-      <template v-if="ddlStr">
-        <el-divider>截止时间</el-divider>
-        <h2 class="ddl">
-          {{ timeInfo }}
-        </h2>
-        <div v-if="isOver">
-          <el-empty description="已经结束啦！"> </el-empty>
-        </div>
-      </template>
-      <!-- 未设置ddl 或者 设置了还未结束 -->
-      <div v-if="!ddlStr || !isOver">
-        <el-divider>必要信息填写</el-divider>
-        <div class="infos">
-          <div v-show="taskMoreInfo.people">
-            <Tip>“{{ limitBindField }}”在参与名单里才能正常提交</Tip>
-          </div>
-          <div v-if="showValidForm">
-            <div class="infos">
-              <el-form
-                ref="validModalRef"
-                :rules="validModalRules"
-                status-icon
-                :model="validModal"
-                :disabled="disableForm"
-                label-position="top"
-              >
-                <el-form-item prop="peopleName" :label="limitBindField">
-                  <el-input
-                    :maxlength="14"
-                    clearable
-                    show-word-limit
-                    :placeholder="`请输入 ${limitBindField}`"
-                    v-model="validModal.peopleName"
-                  ></el-input>
-                </el-form-item>
-              </el-form>
-            </div>
-          </div>
-          <InfosForm :infos="infos" :disabled="disableForm"></InfosForm>
-        </div>
-        <el-upload
-          style="max-width: 400px; margin: 0 auto"
-          :drag="!isMobile"
-          action=""
-          ref="fileUpload"
-          :on-change="handleChangeFile"
-          :before-remove="handleRemoveFile"
-          :on-exceed="handleExceed"
-          :auto-upload="false"
-          multiple
-          :limit="limitUploadCount"
-          v-model:file-list="fileList"
-        >
-          <el-button v-if="isMobile" type="primary">选择文件</el-button>
-          <template v-else>
-            <el-icon class="el-icon--upload">
-              <upload-filled />
-            </el-icon>
-            <div class="el-upload__text">
-              将文件拖于此处 or <em>直接选择文件</em>
-            </div>
-          </template>
-          <template #tip>
-            <div class="p10" v-show="!!calculateMd5Count">
-              <tip
-                >还有
-                {{ calculateMd5Count }}
-                个文件正在生成校验信息，请稍等(1G通常需要20s)</tip
-              >
-            </div>
-          </template>
-        </el-upload>
-        <div class="p10">
-          <el-button
-            v-if="isWithdraw"
-            size="default"
-            @click="startWithdraw"
-            type="warning"
-            :disabled="!allowWithdraw || !!calculateMd5Count"
-            >一键撤回</el-button
-          >
-          <el-button
-            v-else-if="!disabledUpload"
-            size="default"
-            @click="submitUpload"
-            type="success"
-            :disabled="!allowUpload || !!calculateMd5Count"
-            >提交文件</el-button
-          >
-          <el-button @click="checkSubmitStatus" size="default"
-            >查询提交情况</el-button
-          >
-        </div>
-        <!-- 提示信息 -->
-        <div class="p10 option-tips">
-          <tip v-if="formatData.status && formatData.format.length"
-            >限制格式为:
-            <span style="color: red">{{
-              formatData.format.join(', ')
-            }}</span></tip
-          >
-          <tip v-if="formatData.size"
-            >限制文件大小不超过:
-            <span style="color: red">{{
-              formatSize(formatData.size)
-            }}</span></tip
-          >
-          <template v-if="isWithdraw">
-            <tip
-              >① 须保证选择的文件与提交时的文件一致<br />
-              ② 填写表单信息一致 <br />
-              ③
-              完全一模一样的文件的提交记录（内容md5+命名），将会一次性全部撤回</tip
-            >
-          </template>
-          <template v-else>
-            <tip
-              >① 选择完文件，点击 ”提交文件“即可 <br />
-              ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
-              <template v-if="taskMoreInfo.template && !disabledUpload"
-                ><br />
-                ③
-                <strong>
-                  <el-button
-                    type="primary"
-                    text
-                    style="color: #85ce61"
-                    size="small"
-                    @click="downloadTemplate"
-                    >右下角可 “查看提交示例”
-                  </el-button>
-                </strong></template
-              >
-            </tip>
-          </template>
-        </div>
-        <div class="withdraw">
-          <el-button
-            type="primary"
-            text
-            style="color: #85ce61"
-            v-if="taskMoreInfo.template && !disabledUpload"
-            size="small"
-            @click="downloadTemplate"
-            >查看提交示例</el-button
-          >
-          <el-button
-            v-if="isWithdraw"
-            @click="isWithdraw = false"
-            size="small"
-            type="primary"
-            text
-            >正常提交</el-button
-          >
-          <el-button
-            v-else
-            size="small"
-            @click="isWithdraw = true"
-            type="primary"
-            text
-            >我要撤回</el-button
-          >
-        </div>
-      </div>
-    </div>
-    <!-- 无效任务 -->
-    <div class="panel tc" v-else>
-      <h1 class="name">
-        {{ taskInfo.name }}
-      </h1>
-    </div>
-    <LinkDialog
-      v-model:value="showLinkModel"
-      title="示例文件下载链接"
-      :link="templateLink"
-    ></LinkDialog>
-    <div style="padding-top: 20px">
-      <home-footer type="task"></home-footer>
-    </div>
-  </div>
-</template>
 <script lang="ts" setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { UploadUserFile, UploadInstance, FormInstance } from 'element-plus'
+import type { FormInstance, UploadInstance, UploadUserFile } from 'element-plus'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import HomeFooter from '@components/HomeFooter/index.vue'
@@ -255,6 +8,7 @@ import LinkDialog from '@components/linkDialog.vue'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { useStore } from 'vuex'
 import { useLocalStorage } from '@vueuse/core'
+import Tip from '../dashboard/tasks/components/infoPanel/tip.vue'
 import {
   formatDate,
   formatSize,
@@ -262,41 +16,40 @@ import {
   getFileSuffix,
   normalizeFileName,
   parseFileFormat,
-  parseInfo
+  parseInfo,
 } from '@/utils/stringUtil'
 import { downLoadByUrl, qiniuUpload } from '@/utils/networkUtil'
 import { FileApi, PeopleApi, PublicApi, TaskApi } from '@/apis'
-import Tip from '../dashboard/tasks/components/infoPanel/tip.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
+import { useIsMobile } from '@/composables'
 
-const $store = useStore()
-const isMobile = computed(() => $store.getters['public/isMobile'])
+const isMobile = useIsMobile()
 // 顶部导航
 const $router = useRouter()
 const $route = useRoute()
 const pcNavs = reactive([
   {
     title: '我也要收集',
-    path: 'https://docs.ep.sugarat.top/'
-  }
+    path: 'https://docs.ep.sugarat.top/',
+  },
 ])
-const handleNav = (idx: number) => {
+function handleNav(idx: number) {
   if (pcNavs[idx].path.startsWith('http')) {
     window.location.href = pcNavs[idx].path
     return
   }
   $router.push({
-    path: pcNavs[idx].path
+    path: pcNavs[idx].path,
   })
 }
 
 // 任务基本信息展示
 const taskInfo = reactive<TaskApiTypes.TaskInfo>({
   name: '',
-  category: ''
+  category: '',
 })
 const taskMoreInfo = reactive<Partial<TaskApiTypes.TaskInfo>>({
-  bindField: ''
+  bindField: '',
 })
 const formatData = computed(() => parseFileFormat(taskMoreInfo.format))
 const k = ref('')
@@ -314,11 +67,12 @@ const waitTimeStr = computed(() => {
   seconds %= 60
   return `剩余${day}天${hour}时${minute}分${seconds}秒`
 })
-const refreshWaitTime = (loop = true) => {
+function refreshWaitTime(loop = true) {
   if (taskMoreInfo?.ddl) {
     const date = new Date(taskMoreInfo.ddl)
     waitTime.value = date.getTime() - Date.now()
-  } else {
+  }
+  else {
     waitTime.value = 0
   }
   if (loop) {
@@ -341,18 +95,18 @@ const infos = reactive<InfoItem[]>([])
 // 文件上传部分
 
 // 文件上传
-const fileList = ref<(UploadUserFile & { md5: string; subscription: any })[]>(
-  []
+const fileList = ref<(UploadUserFile & { md5: string, subscription: any })[]>(
+  [],
 )
 const fileUpload = ref<UploadInstance>()
 const disableForm = computed(
-  () => fileList.value.filter((item) => item.status === 'uploading').length > 0
+  () => fileList.value.filter(item => item.status === 'uploading').length > 0,
 )
 const handleRemoveFile: any = (file: any) => {
   if (file.status === 'uploading' || file.status === 'success') {
     return ElMessageBox.confirm(
       '不影响已经上传成功的，正在上传的将取消上传',
-      '确定从列表移除文件吗？'
+      '确定从列表移除文件吗？',
     )
       .then(() => {
         if (file.status === 'uploading') {
@@ -368,7 +122,7 @@ const handleRemoveFile: any = (file: any) => {
 }
 
 // 校验表单填写
-const isWriteFinish = computed(() => infos.every((item) => item.value))
+const isWriteFinish = computed(() => infos.every(item => item.value))
 // 提交文件
 
 const limitBindField = computed(() => {
@@ -377,16 +131,16 @@ const limitBindField = computed(() => {
 
 // 身份核验表单
 const isSameFieldName = computed(() =>
-  infos.find((v) => v.text === limitBindField.value)
+  infos.find(v => v.text === limitBindField.value),
 )
 const showValidForm = computed(
-  () => taskMoreInfo.people && !isSameFieldName.value
+  () => taskMoreInfo.people && !isSameFieldName.value,
 )
 const validModal = reactive({
-  peopleName: ''
+  peopleName: '',
 })
 
-const validatePeopleName = (rule: any, value: any, callback: any) => {
+function validatePeopleName(rule: any, value: any, callback: any) {
   if (!value) {
     const message = `请输入${limitBindField.value}`
     callback(new Error(message))
@@ -401,47 +155,48 @@ const validatePeopleName = (rule: any, value: any, callback: any) => {
     callback(
       res.data.exist
         ? undefined
-        : new Error('你不在此次提交名单中,如有疑问请联系管理员')
+        : new Error('你不在此次提交名单中,如有疑问请联系管理员'),
     )
   })
 }
 
 const validModalRef = ref<FormInstance>()
 const validModalRules = reactive({
-  peopleName: [{ validator: validatePeopleName, trigger: 'blur' }]
+  peopleName: [{ validator: validatePeopleName, trigger: 'blur' }],
 })
-const confirmPeopleName = () => {
+function confirmPeopleName() {
   // 处理表单必填项含有 limitBindField 的情况
   if (isSameFieldName.value) {
-    const value = infos.find((v) => v.text === limitBindField.value)?.value
+    const value = infos.find(v => v.text === limitBindField.value)?.value
     validModal.peopleName = value || ''
     return new Promise((resolve) => {
       validatePeopleName(null, value, resolve)
-    }).then((v) => !v)
+    }).then(v => !v)
   }
   return validModalRef.value.validate((isValid: boolean) => isValid)
 }
 
-const startUpload = () => {
+function startUpload() {
   const uploadFiles = fileList.value
   for (const file of uploadFiles) {
     if (!file.md5) {
       ElMessage.info(
-        `文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`
+        `文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`,
       )
       setTimeout(() => {
         ElMessage.info('文件越大计算时间越长(1G通常需要20s)')
       }, 100)
-    } else if (file.status === 'ready') {
+    }
+    else if (file.status === 'ready') {
       // 开始上传
       file.status = 'uploading'
       let { name } = file
       const originName = name
       // 如果开启了自动重命名,这里重命名一下
       if (taskMoreInfo.rewrite) {
-        name =
-          infos.map((v) => v.value).join(formatData.value.splitChar || '-') +
-          getFileSuffix(name)
+        name
+          = infos.map(v => v.value).join(formatData.value.splitChar || '-')
+          + getFileSuffix(name)
       }
       // 替换不合法的字符
       name = normalizeFileName(name)
@@ -459,7 +214,7 @@ const startUpload = () => {
               size: fsize,
               hash: file.md5,
               info: JSON.stringify(infos),
-              people: validModal.peopleName
+              people: validModal.peopleName,
             }).then(() => {
               file.status = 'success'
               ElMessage.success(`文件:${file.name}提交成功`)
@@ -469,7 +224,7 @@ const startUpload = () => {
                   k.value,
                   name,
                   validModal.peopleName,
-                  file.md5
+                  file.md5,
                 )
               }
             })
@@ -478,14 +233,14 @@ const startUpload = () => {
             file.percentage = Math.floor(per)
             // 挂载取消上传的方法
             file.subscription = subscription
-          }
+          },
         })
       })
     }
   }
 }
 
-const submitUpload = async () => {
+async function submitUpload() {
   if (!isWriteFinish.value) {
     ElMessage.warning('请先完成必要信息的填写')
     return
@@ -523,13 +278,13 @@ const allowWithdraw = computed(() => {
 // 添加文件
 // 正在计算MD5值的文件个数
 const calculateMd5Count = ref(0)
-const handleChangeFile = (file: any) => {
+function handleChangeFile(file: any) {
   // 校验文件后缀名
   const { name } = file
   if (formatData.value.format.length && formatData.value.status) {
     const suffix = getFileSuffix(name)
     if (
-      !formatData.value.format.find((v) => suffix.toLowerCase().endsWith(v))
+      !formatData.value.format.find(v => suffix.toLowerCase().endsWith(v))
     ) {
       ElMessage.error(`${name} 格式不符合要求`)
       fileUpload.value.handleRemove(file)
@@ -553,32 +308,33 @@ const handleChangeFile = (file: any) => {
 }
 
 const limitUploadCount = computed(() => formatData.value.limit || 10)
-const handleExceed = () => {
+function handleExceed() {
   ElMessage.warning(
-    `一次提交最多只能选择${limitUploadCount.value}个文件，请移除已经上传成功的或刷新页面`
+    `一次提交最多只能选择${limitUploadCount.value}个文件，请移除已经上传成功的或刷新页面`,
   )
 }
 const showLinkModel = ref(false)
 const templateLink = ref('')
-const runWithdraw = () => {
+function runWithdraw() {
   const uploadFiles = fileList.value
   for (const file of uploadFiles) {
     if (!file.md5) {
       ElMessage.info(
-        `文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`
+        `文件(${file.name})的唯一指纹还在计算中,再等待一会儿再点击上传`,
       )
       setTimeout(() => {
         ElMessage.info('文件越大计算时间越长(1G通常需要20s)')
       }, 100)
-    } else if (!['fail', 'uploading'].includes(file.status)) {
+    }
+    else if (!['fail', 'uploading'].includes(file.status)) {
       // 准备开始撤回
       let { name } = file
 
       // 如果开启了自动重命名,这里重命名一下
       if (taskMoreInfo.rewrite) {
-        name =
-          infos.map((v) => v.value).join(formatData.value.splitChar || '-') +
-          getFileSuffix(name)
+        name
+          = infos.map(v => v.value).join(formatData.value.splitChar || '-')
+          + getFileSuffix(name)
       }
 
       FileApi.withdrawFile({
@@ -587,7 +343,7 @@ const runWithdraw = () => {
         filename: name,
         hash: file.md5,
         info: JSON.stringify(infos),
-        peopleName: validModal.peopleName
+        peopleName: validModal.peopleName,
       })
         .then(() => {
           ElMessage.success(`文件:${file.name}撤回成功`)
@@ -600,7 +356,7 @@ const runWithdraw = () => {
     }
   }
 }
-const downloadTemplate = () => {
+function downloadTemplate() {
   FileApi.getTemplateUrl(taskMoreInfo.template, k.value)
     .then((res) => {
       showLinkModel.value = true
@@ -615,7 +371,7 @@ const downloadTemplate = () => {
 
 // 撤回相关逻辑
 const isWithdraw = ref(false)
-const startWithdraw = async () => {
+async function startWithdraw() {
   // 校验表单填写
   if (!isWriteFinish.value) {
     ElMessage.warning('请先完成必要信息的填写')
@@ -631,7 +387,7 @@ const startWithdraw = async () => {
 }
 
 // 查询提交情况
-const checkSubmitStatus = async () => {
+async function checkSubmitStatus() {
   // 校验表单填写
   if (!isWriteFinish.value) {
     ElMessage.warning('请先完成必要信息的填写,需和提交时信息完全一致')
@@ -648,26 +404,27 @@ const checkSubmitStatus = async () => {
     (res) => {
       if (res.data.isSubmit) {
         ElMessage.success('已经提交过啦')
-      } else {
+      }
+      else {
         ElMessage.warning('还未提交过哟')
       }
-    }
+    },
   )
 }
 const isLoadingData = ref(false)
 const readyRefresh = ref(false)
-const isEqualInfos = (a: InfoItem[] = [], b: InfoItem[] = []) => {
+function isEqualInfos(a: InfoItem[] = [], b: InfoItem[] = []) {
   if (a.length !== b.length) {
     return false
   }
   return a.every(
     (v, i) =>
-      v.type === b[i].type &&
-      v.text === b[i].text &&
-      isEqualInfos(v.children, b[i].children)
+      v.type === b[i].type
+      && v.text === b[i].text
+      && isEqualInfos(v.children, b[i].children),
   )
 }
-const refreshTaskMoreInfo = (hot = false) => {
+function refreshTaskMoreInfo(hot = false) {
   TaskApi.getTaskMoreInfo(k.value).then((res) => {
     Object.assign(taskMoreInfo, res.data)
     if (!isEqualInfos(infos, parseInfo(taskMoreInfo.info))) {
@@ -681,10 +438,10 @@ const refreshTaskMoreInfo = (hot = false) => {
     isLoadingData.value = false
   })
 }
-const handleBlur = () => {
+function handleBlur() {
   readyRefresh.value = true
 }
-const handleFocus = () => {
+function handleFocus() {
   if (readyRefresh.value && !disableForm.value) {
     readyRefresh.value = false
     refreshTaskMoreInfo(true)
@@ -708,10 +465,10 @@ const tipData = reactive<{
   }[]
 }>({
   text: '',
-  imgs: []
+  imgs: [],
 })
 const imageList = ref<
-  { name: string; uid: number; preview?: string; url: string }[]
+  { name: string, uid: number, preview?: string, url: string }[]
 >([])
 
 watch(
@@ -725,32 +482,33 @@ watch(
       imageList.value = tipData.imgs.map((v) => {
         return {
           ...v,
-          url: 'https://img.cdn.sugarat.top/mdImg/MTY3NzkxMDI1NTU1Nw==20140524124237518.gif'
+          url: 'https://img.cdn.sugarat.top/mdImg/MTY3NzkxMDI1NTU1Nw==20140524124237518.gif',
         }
       })
       if (imageList.value.length) {
         // 异步填充url
         PublicApi.getTipImageUrl(
           k.value,
-          imageList.value.map((v) => ({
+          imageList.value.map(v => ({
             uid: v.uid,
-            name: v.name
-          }))
+            name: v.name,
+          })),
         ).then((v) => {
           v.data.forEach((url, idx) => {
             imageList.value[idx].url = url.cover
             Object.assign(imageList.value[idx], {
-              preview: url.preview
+              preview: url.preview,
             })
           })
         })
       }
-    } catch {
+    }
+    catch {
       tipData.text = ''
       tipData.imgs = []
       imageList.value = []
     }
-  }
+  },
 )
 
 // 禁用上传
@@ -766,7 +524,7 @@ onMounted(() => {
         disabledUpload.value = !!res.data.limitUpload
         if (disabledUpload.value) {
           ElMessageBox.alert(
-            '任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间'
+            '任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间',
           )
         }
       })
@@ -794,6 +552,262 @@ onUnmounted(() => {
   window.removeEventListener('focus', handleFocus)
 })
 </script>
+
+<template>
+  <div class="task-panel">
+    <div class="pc-nav">
+      <div class="nav">
+        <!-- LOGO -->
+        <div class="logo">
+          <router-link to="/">
+            <img
+              style="height: 40px; width: 170px"
+              src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png"
+              alt="logo"
+            >
+          </router-link>
+        </div>
+        <nav>
+          <div
+            v-for="(n, idx) in pcNavs"
+            :key="idx"
+            class="nav-item"
+            @click="handleNav(idx)"
+          >
+            {{ n.title }}
+          </div>
+        </nav>
+      </div>
+    </div>
+    <!-- 有效 -->
+    <div
+      v-if="k"
+      v-loading="isLoadingData"
+      element-loading-text="Loading..."
+      class="panel tc"
+    >
+      <!-- 任务名 -->
+      <h1 class="name">
+        {{ taskInfo.name }}
+      </h1>
+      <h2 v-if="disabledUpload" style="color: red">
+        任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间
+      </h2>
+      <!-- 提示信息 -->
+      <!-- 时间截止了也不再展示 -->
+      <template v-if="tipData.text && (ddlStr ? !isOver : true)">
+        <el-divider>⚠️ 注意事项 ⚠️</el-divider>
+        <Tip>
+          <div class="tip-wrapper">
+            <p v-for="(t, i) in tipData.text.split('\n')" :key="i">
+              {{ t.replace(/\s/g, '&nbsp;') }}
+            </p>
+          </div>
+        </Tip>
+      </template>
+      <template v-if="imageList.length && (ddlStr ? !isOver : true)">
+        <el-image
+          v-for="(img, idx) in imageList"
+          :key="img.uid"
+          hide-on-click-modal
+          style="width: 100px; height: 100px; margin: 10px"
+          :src="img.url"
+          :zoom-rate="1.2"
+          :preview-src-list="imageList.map((v) => v.preview)"
+          :initial-index="idx"
+          fit="contain"
+        />
+      </template>
+      <!-- 截止时间字符串 -->
+      <template v-if="ddlStr">
+        <el-divider>截止时间</el-divider>
+        <h2 class="ddl">
+          {{ timeInfo }}
+        </h2>
+        <div v-if="isOver">
+          <el-empty description="已经结束啦！" />
+        </div>
+      </template>
+      <!-- 未设置ddl 或者 设置了还未结束 -->
+      <div v-if="!ddlStr || !isOver">
+        <el-divider>必要信息填写</el-divider>
+        <div class="infos">
+          <div v-show="taskMoreInfo.people">
+            <Tip>“{{ limitBindField }}”在参与名单里才能正常提交</Tip>
+          </div>
+          <div v-if="showValidForm">
+            <div class="infos">
+              <el-form
+                ref="validModalRef"
+                :rules="validModalRules"
+                status-icon
+                :model="validModal"
+                :disabled="disableForm"
+                label-position="top"
+              >
+                <el-form-item prop="peopleName" :label="limitBindField">
+                  <el-input
+                    v-model="validModal.peopleName"
+                    :maxlength="14"
+                    clearable
+                    show-word-limit
+                    :placeholder="`请输入 ${limitBindField}`"
+                  />
+                </el-form-item>
+              </el-form>
+            </div>
+          </div>
+          <InfosForm :infos="infos" :disabled="disableForm" />
+        </div>
+        <el-upload
+          ref="fileUpload"
+          v-model:file-list="fileList"
+          style="max-width: 400px; margin: 0 auto"
+          :drag="!isMobile"
+          action=""
+          :on-change="handleChangeFile"
+          :before-remove="handleRemoveFile"
+          :on-exceed="handleExceed"
+          :auto-upload="false"
+          multiple
+          :limit="limitUploadCount"
+        >
+          <el-button v-if="isMobile" type="primary">
+            选择文件
+          </el-button>
+          <template v-else>
+            <el-icon class="el-icon--upload">
+              <UploadFilled />
+            </el-icon>
+            <div class="el-upload__text">
+              将文件拖于此处 or <em>直接选择文件</em>
+            </div>
+          </template>
+          <template #tip>
+            <div v-show="!!calculateMd5Count" class="p10">
+              <Tip>
+                还有
+                {{ calculateMd5Count }}
+                个文件正在生成校验信息，请稍等(1G通常需要20s)
+              </Tip>
+            </div>
+          </template>
+        </el-upload>
+        <div class="p10">
+          <el-button
+            v-if="isWithdraw"
+            size="default"
+            type="warning"
+            :disabled="!allowWithdraw || !!calculateMd5Count"
+            @click="startWithdraw"
+          >
+            一键撤回
+          </el-button>
+          <el-button
+            v-else-if="!disabledUpload"
+            size="default"
+            type="success"
+            :disabled="!allowUpload || !!calculateMd5Count"
+            @click="submitUpload"
+          >
+            提交文件
+          </el-button>
+          <el-button size="default" @click="checkSubmitStatus">
+            查询提交情况
+          </el-button>
+        </div>
+        <!-- 提示信息 -->
+        <div class="p10 option-tips">
+          <Tip v-if="formatData.status && formatData.format.length">
+            限制格式为:
+            <span style="color: red">{{
+              formatData.format.join(', ')
+            }}</span>
+          </Tip>
+          <Tip v-if="formatData.size">
+            限制文件大小不超过:
+            <span style="color: red">{{
+              formatSize(formatData.size)
+            }}</span>
+          </Tip>
+          <template v-if="isWithdraw">
+            <Tip>
+              ① 须保证选择的文件与提交时的文件一致<br>
+              ② 填写表单信息一致 <br>
+              ③
+              完全一模一样的文件的提交记录（内容md5+命名），将会一次性全部撤回
+            </Tip>
+          </template>
+          <template v-else>
+            <Tip>
+              ① 选择完文件，点击 ”提交文件“即可 <br>
+              ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
+              <template v-if="taskMoreInfo.template && !disabledUpload">
+                <br>
+                ③
+                <strong>
+                  <el-button
+                    type="primary"
+                    text
+                    style="color: #85ce61"
+                    size="small"
+                    @click="downloadTemplate"
+                  >右下角可 “查看提交示例”
+                  </el-button>
+                </strong>
+              </template>
+            </Tip>
+          </template>
+        </div>
+        <div class="withdraw">
+          <el-button
+            v-if="taskMoreInfo.template && !disabledUpload"
+            type="primary"
+            text
+            style="color: #85ce61"
+            size="small"
+            @click="downloadTemplate"
+          >
+            查看提交示例
+          </el-button>
+          <el-button
+            v-if="isWithdraw"
+            size="small"
+            type="primary"
+            text
+            @click="isWithdraw = false"
+          >
+            正常提交
+          </el-button>
+          <el-button
+            v-else
+            size="small"
+            type="primary"
+            text
+            @click="isWithdraw = true"
+          >
+            我要撤回
+          </el-button>
+        </div>
+      </div>
+    </div>
+    <!-- 无效任务 -->
+    <div v-else class="panel tc">
+      <h1 class="name">
+        {{ taskInfo.name }}
+      </h1>
+    </div>
+    <LinkDialog
+      v-model:value="showLinkModel"
+      title="示例文件下载链接"
+      :link="templateLink"
+    />
+    <div style="padding-top: 20px">
+      <HomeFooter type="task" />
+    </div>
+  </div>
+</template>
+
 <style scoped lang="scss">
 .task-panel :deep(ul.el-upload-list) {
   border: 1px dashed #d4d4d4;
