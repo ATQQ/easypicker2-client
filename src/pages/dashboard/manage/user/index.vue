@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { ElMessage, ElMessageBox, linkEmits } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useStore } from 'vuex'
 import { DeleteFilled, Message, Refresh, Search } from '@element-plus/icons-vue'
+import { useLocalStorage } from '@vueuse/core'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate } from '@/utils/stringUtil'
@@ -11,7 +11,7 @@ import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { useIsMobile } from '@/composables'
 
 // 用户
-const users: any[] = reactive([])
+const users = reactive<SuperUserApiTypes.UserItem[]>([])
 function refreshUsers() {
   SuperUserApi.getUserList().then((res) => {
     users.splice(0, users.length, ...res.data.list)
@@ -20,9 +20,9 @@ function refreshUsers() {
 }
 
 // 筛选用户状态
-const filterLogType = ref(USER_STATUS.NORMAL)
+const userStatusType = useLocalStorage('userStatusType', USER_STATUS.NORMAL)
 const searchWord = ref('')
-const logTypeList = reactive([
+const statusTypeList = reactive([
   {
     label: '正常',
     type: USER_STATUS.NORMAL,
@@ -36,32 +36,93 @@ const logTypeList = reactive([
     type: USER_STATUS.BAN,
   },
 ])
+const sortType = useLocalStorage('userListSortType', 'id')
+const sortTypeList = [
+  {
+    label: 'ID',
+    value: 'id',
+  },
+  {
+    label: '文件数量',
+    value: 'fileCount',
+  },
+  {
+    label: '最后登录时间',
+    value: 'lastLoginTime',
+  },
+  {
+    label: '登录次数',
+    value: 'login_count',
+  },
+  {
+    label: '容量大小',
+    value: 'size',
+  },
+  {
+    label: '占用空间',
+    value: 'usage',
+  },
+  {
+    label: '限制使用',
+    value: 'limitUpload',
+  },
+  {
+    label: '下载次数',
+    value: 'downloadCount',
+  },
+  {
+    label: '累计下载大小',
+    value: 'downloadSize',
+  },
+  {
+    label: '累计费用',
+    value: 'cost',
+  },
+]
 
-const filterUsers = computed(() =>
-  users
-    .filter(v => v.status === filterLogType.value)
+// 升降序
+const sortOrder = useLocalStorage('userListSortOrder', 'desc')
+const sortOrderList = [
+  {
+    label: '升序',
+    value: 'asc',
+  },
+  {
+    label: '降序',
+    value: 'desc',
+  },
+]
+const filterUsers = computed(() => {
+  const copyUsers = [...users]
+  copyUsers.sort((a, b) => {
+    return sortOrder.value === 'asc'
+      ? a[sortType.value] - b[sortType.value]
+      : b[sortType.value] - a[sortType.value]
+  })
+  return copyUsers
+    .filter(v => v.status === userStatusType.value)
     .filter((v) => {
       const {
         id,
         account,
         phone,
-        join_time,
-        login_count,
-        login_time,
-        open_time,
+        joinTime,
+        loginCount,
+        loginTime,
+        openTime,
       } = v
       if (searchWord.value.length === 0)
         return true
-      return `${id} ${account} ${phone} ${login_count} ${formatDate(
-        open_time,
-      )} ${formatDate(login_time)} ${formatDate(join_time)}`.includes(
+      return `${id} ${account} ${phone} ${loginTime} ${formatDate(
+        openTime,
+      )} ${formatDate(loginCount)} ${formatDate(joinTime)}`.includes(
         searchWord.value,
       )
-    }),
-)
+    })
+})
 
 // 分页
-const pageSize = ref(10)
+const pageSize = useLocalStorage<number>('userListPageSize', 10)
 function handleSizeChange(v: number) {
   pageSize.value = v
 }
@@ -83,7 +144,7 @@ function handlePageChange(idx: number) {
 const showUserStatusDialog = ref(false)
 const selectUserId = ref(0)
 const selectStatus = ref(USER_STATUS.NORMAL)
-const userStatusList = logTypeList
+const userStatusList = statusTypeList
 const openTime = ref('')
 function handleChangeStatus(userId: number, status: USER_STATUS, oTime: string) {
   selectUserId.value = userId
@@ -98,14 +159,14 @@ function handleSaveStatus() {
       ElMessage.warning('请设置解冻时间')
       return
     }
-    user.open_time = openTime.value
+    user.openTime = openTime.value
   }
   else {
-    user.open_time = ''
+    user.openTime = ''
   }
   user.status = selectStatus.value
   showUserStatusDialog.value = false
-  SuperUserApi.updateUserStatus(user.id, user.status, user.open_time).then(
+  SuperUserApi.updateUserStatus(user.id, user.status, user.openTime).then(
     () => {
       ElMessage.success('修改成功')
     },
@@ -321,15 +382,42 @@ const isMobile = useIsMobile()
         <span class="item">
           <span class="label">状态</span>
           <el-select
-            v-model="filterLogType"
+            v-model="userStatusType"
             size="default"
-            placeholder="请选择日志类型"
+            class="w100"
           >
             <el-option
-              v-for="(item, idx) in logTypeList"
+              v-for="(item, idx) in statusTypeList"
               :key="idx"
               :label="item.label"
               :value="item.type"
+            />
+          </el-select>
+        </span>
+        <span class="item">
+          <span class="label">排序</span>
+          <el-select
+            v-model="sortType"
+            size="default"
+            class="w100"
+          >
+            <el-option
+              v-for="(item, idx) in sortTypeList"
+              :key="idx"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+          <el-select
+            v-model="sortOrder"
+            size="default"
+            class="w100"
+          >
+            <el-option
+              v-for="(item, idx) in sortOrderList"
+              :key="idx"
+              :label="item.label"
+              :value="item.value"
             />
           </el-select>
         </span>
@@ -365,55 +453,52 @@ const isMobile = useIsMobile()
         <el-table-column
           prop="account"
           label="账号"
-          width="120"
+          width="130"
         />
         <el-table-column prop="onlineCount" label="token" width="80" />
         <el-table-column
           prop="phone"
           label="手机号"
-          width="100"
+          width="80"
         />
         <el-table-column
-          sortable
-          prop="login_time"
+          prop="loginTime"
           label="最后登录"
           width="190"
         >
           <template #default="scope">
             {{
-              scope.row.login_time && formatDate(new Date(scope.row.login_time))
+              scope.row.loginTime && formatDate(new Date(scope.row.loginTime))
             }}
           </template>
         </el-table-column>
-        <el-table-column prop="join_time" label="注册时间" width="190">
+        <el-table-column prop="joinTime" label="注册时间" width="190">
           <template #default="scope">
             {{
-              formatDate(new Date(scope.row.join_time))
+              formatDate(new Date(scope.row.joinTime))
             }}
           </template>
         </el-table-column>
         <el-table-column
-          sortable
-          prop="login_count"
+          prop="loginCount"
           label="登录次数"
         />
         <el-table-column
-          v-if="filterLogType === 1"
-          prop="open_time"
+          v-if="userStatusType === 1"
+          prop="openTime"
           label="解封时间"
         >
           <template #default="scope">
             {{
-              scope.row.open_time && formatDate(new Date(scope.row.open_time))
+              scope.row.openTime && formatDate(new Date(scope.row.openTime))
             }}
           </template>
         </el-table-column>
         <el-table-column
-          sortable
           prop="fileCount"
           label="收集文件"
         />
-        <el-table-column label="占用云空间" width="200">
+        <el-table-column label="云空间" width="200">
           <template
             #default="{
               row: { resources, monthAgoSize, quarterAgoSize, halfYearSize, id, limitSize, limitUpload, percentage },
@@ -468,7 +553,7 @@ const isMobile = useIsMobile()
                   handleChangeStatus(
                     scope.row.id,
                     scope.row.status,
-                    scope.row.open_time,
+                    scope.row.openTime,
                   )
                 "
               >
@@ -716,7 +801,9 @@ const isMobile = useIsMobile()
     justify-content: center;
   }
 }
-
+.w100 {
+  width: 100px;
+}
 .user {
   margin: 0 auto;
 }
@@ -738,7 +825,6 @@ const isMobile = useIsMobile()
   .item {
     margin-right: 10px;
     margin-bottom: 10px;
-
     .label {
       margin-right: 10px;
       font-size: 12px;
