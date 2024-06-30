@@ -1,8 +1,25 @@
-export function useGlobalConfig() {
-  //   const maxInputLength = useLocalStorage(
-  //     'maxInputLength',
-  //     +import.meta.env.VITE_APP_INPUT_MAX_LENGTH || 10
-  //   )
-  //   // TODO: 接口获取一些配置
-  //   return maxInputLength
+import { useLocalStorage } from '@vueuse/core'
+import { onMounted } from 'vue'
+import { SuperOverviewApi } from '@/apis'
+
+export function useSiteConfig() {
+  const value = useLocalStorage('siteConfig', {
+    maxInputLength: 20, // 最大输入长度
+    openPraise: false, // 是否开启赞赏相关提示文案
+    formLength: 10, // 表单项数量
+  })
+
+  onMounted(() => {
+    SuperOverviewApi.getGlobalConfig('site').then((res) => {
+      value.value = res.data
+    })
+  })
+
+  const updateValue = () => {
+    return SuperOverviewApi.updateGlobalConfig('site', value.value)
+  }
+  return {
+    value,
+    updateValue,
+  }
 }

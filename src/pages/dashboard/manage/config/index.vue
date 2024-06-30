@@ -3,6 +3,7 @@ import { ElMessage } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { SuperOverviewApi } from '@/apis'
+import { useSiteConfig } from '@/composables'
 
 const $router = useRouter()
 const routes = computed(() =>
@@ -25,24 +26,25 @@ function handleChangeRoute(r: (typeof showRoutes)[0]) {
 }
 
 const editConfig = ref(false)
-const jsonData = ref({
-  maxInput: 100,
-})
+const { value: jsonData, updateValue: updateJsonData } = useSiteConfig()
+
 const editJSON = ref('')
 
 function handleEditConfig() {
   editConfig.value = true
   editJSON.value = JSON.stringify(jsonData.value, null, 2)
 }
-function handleSaveConfig() {
+async function handleSaveConfig() {
   try {
     const data = JSON.parse(editJSON.value)
-    // TODO: 调用接口
+    jsonData.value = data
+    await updateJsonData()
+    editConfig.value = false
+    ElMessage.success('保存成功')
   }
   catch (e) {
     return ElMessage.error('JSON 格式错误')
   }
-  editConfig.value = true
 }
 onMounted(() => {
   for (const r of routes.value) {
@@ -55,8 +57,6 @@ onMounted(() => {
       })
     })
   }
-
-  // TODO：获取配置信息
 })
 </script>
 
@@ -67,7 +67,7 @@ onMounted(() => {
       <ul class="routes">
         <li v-for="r in showRoutes" :key="r.name">
           <el-switch
-            :value="!r.disabled" style="
+            :model-value="!r.disabled" style="
               --el-switch-on-color: #13ce66;
               --el-switch-off-color: #ff4949;
             " @change="handleChangeRoute(r)"
