@@ -1,177 +1,24 @@
-<template>
-  <div class="overview">
-    <div
-      class="card-list"
-      v-loading="isLoadingOverview"
-      element-loading-text="Loading..."
-    >
-      <div v-for="c in cardList" :key="c.type" class="card">
-        <div class="logo">
-          <el-icon :color="c.color">
-            <component :is="c.icon"></component>
-          </el-icon>
-        </div>
-        <div class="content">
-          <div class="title">{{ c.title }}</div>
-          <div class="text">{{ c.value }}</div>
-          <div class="supplement">{{ c.supplement }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="p10 log-filter">
-        <span class="item">
-          <span class="label">类型</span>
-          <el-select
-            v-model="filterLogType"
-            size="default"
-            placeholder="请选择日志类型"
-          >
-            <el-option
-              v-for="(item, idx) in logTypeList"
-              :key="idx"
-              :label="item.label"
-              :value="item.type"
-            ></el-option>
-          </el-select>
-        </span>
-        <span class="item">
-          <el-input
-            size="default"
-            clearable
-            placeholder="请输入要检索的内容"
-            :prefix-icon="Search"
-            v-model="searchWord"
-          >
-          </el-input>
-        </span>
-        <span class="item">
-          <el-button size="default" :icon="Refresh" @click="refreshLogs"
-            >刷新</el-button
-          >
-        </span>
-        <span class="item">
-          <el-button
-            size="default"
-            type="primary"
-            :icon="DataAnalysis"
-            @click="exportLogData"
-            >导出日志 {{ logs.length }} 条</el-button
-          >
-        </span>
-        <span class="item">
-          <el-button
-            size="default"
-            type="danger"
-            :icon="TakeawayBox"
-            :disabled="disableDelete"
-            @click="clearExpiredCompressFile"
-            v-loading="disableDelete"
-            >清理无效文件</el-button
-          >
-        </span>
-      </div>
-      <el-table
-        tooltip-effect="dark"
-        height="400"
-        stripe
-        border
-        :default-sort="{ prop: 'date', order: 'descending' }"
-        :data="logs"
-        style="width: 100%"
-      >
-        <el-table-column sortable prop="date" label="日期" width="180">
-          <template #default="scope">{{
-            formatDate(new Date(scope.row.date))
-          }}</template>
-        </el-table-column>
-        <!-- <el-table-column prop="type" label="类型" width="100">
-          <template #default="scope">{{ getLogsTypeText(scope.row.type) }}</template>
-        </el-table-column>-->
-        <el-table-column
-          sortable
-          prop="ip"
-          label="IP"
-          width="100"
-        ></el-table-column>
-        <el-table-column
-          min-width="160"
-          prop="msg"
-          label="内容"
-        ></el-table-column>
-        <el-table-column fixed="right" label="操作" width="100">
-          <template #default="scope">
-            <el-button
-              @click="handleDetail(scope.row.id)"
-              type="primary"
-              text
-              size="small"
-              >查看详情</el-button
-            >
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="flex fc p10">
-        <el-pagination
-          :current-page="pageCurrent"
-          @current-change="handlePageChange"
-          background
-          :page-count="pageCount"
-          :page-sizes="[10, 50, 100, 200, 500, 1000]"
-          :page-size="pageSize"
-          @size-change="handleSizeChange"
-          :total="logSumCount"
-          layout="total, sizes, prev, pager, next, jumper"
-        ></el-pagination>
-      </div>
-    </div>
-    <el-dialog
-      v-model="showDetail"
-      title="详细信息"
-      width="50%"
-      center
-      :fullscreen="isMobile"
-    >
-      <json-viewer
-        :value="jsonData"
-        :expand-depth="5"
-        copyable
-        boxed
-        sort
-      ></json-viewer>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button type="default" @click="handleCopyDetail">复制</el-button>
-          <el-button type="primary" @click="showDetail = false">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-  </div>
-</template>
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watchEffect } from 'vue'
 import {
-  User,
-  Document,
-  Tickets,
-  DataBoard,
-  Search,
-  Refresh,
-  DataAnalysis,
   Coin,
-  TakeawayBox
+  DataAnalysis,
+  DataBoard,
+  Document,
+  Refresh,
+  Search,
+  TakeawayBox,
+  Tickets,
+  User,
 } from '@element-plus/icons-vue'
-import { useStore } from 'vuex'
 import { ElMessage } from 'element-plus'
 import { SuperOverviewApi } from '@/apis'
 import { copyRes, formatDate } from '@/utils/stringUtil'
 import { tableToExcel } from '@/utils/networkUtil'
 import { debounce } from '@/utils/other'
+import { useIsMobile } from '@/composables'
 
-const $store = useStore()
-
-const isMobile = computed(() => $store.getters['public/isMobile'])
+const isMobile = useIsMobile()
 
 const isLoadingOverview = ref(false)
 const cardList = reactive([
@@ -181,7 +28,7 @@ const cardList = reactive([
     value: '0',
     supplement: '较昨日 +0',
     icon: User,
-    color: '#40c9c6'
+    color: '#40c9c6',
   },
   {
     type: 'file',
@@ -189,7 +36,7 @@ const cardList = reactive([
     value: '0',
     supplement: '记录较昨日 +0',
     icon: Document,
-    color: '#36a3f7'
+    color: '#36a3f7',
   },
   {
     type: 'log',
@@ -197,7 +44,7 @@ const cardList = reactive([
     value: '0',
     supplement: '较昨日 +0',
     icon: Tickets,
-    color: '#f4516c'
+    color: '#f4516c',
   },
   {
     type: 'pv',
@@ -205,7 +52,7 @@ const cardList = reactive([
     value: '0/0',
     supplement: '',
     icon: DataBoard,
-    color: '#34bfa3'
+    color: '#34bfa3',
   },
   {
     type: 'compress',
@@ -213,11 +60,11 @@ const cardList = reactive([
     value: '0/0KB',
     supplement: '已失效0个',
     icon: Coin,
-    color: '#e38013'
-  }
+    color: '#e38013',
+  },
 ])
 // 刷新记录条数
-const refreshCount = () => {
+function refreshCount() {
   isLoadingOverview.value = true
   SuperOverviewApi.getCount().then((res) => {
     const { user, file, log, pv, compress } = res.data
@@ -236,7 +83,7 @@ const refreshCount = () => {
 }
 
 const disableDelete = ref(false)
-const clearExpiredCompressFile = () => {
+function clearExpiredCompressFile() {
   disableDelete.value = true
   SuperOverviewApi.clearExpiredCompressFile().then(() => {
     setTimeout(() => {
@@ -265,26 +112,26 @@ const searchWord = ref('')
 const logTypeList = reactive([
   {
     label: '用户行为',
-    type: 'behavior'
+    type: 'behavior',
   },
   {
     label: '网络请求',
-    type: 'request'
+    type: 'request',
   },
   {
     label: '服务端错误',
-    type: 'error'
+    type: 'error',
   },
   {
     label: '页面访问',
-    type: 'pv'
-  }
+    type: 'pv',
+  },
 ])
 
 // 分页
 // 页大小
 const pageSize = ref(10)
-const handleSizeChange = (v: number) => {
+function handleSizeChange(v: number) {
   pageSize.value = v
 }
 // 总条数
@@ -294,7 +141,7 @@ const pageCount = computed(() => {
   return t
 })
 const pageCurrent = ref(1)
-const handlePageChange = (idx: number) => {
+function handlePageChange(idx: number) {
   pageCurrent.value = idx
 }
 
@@ -304,7 +151,7 @@ const refreshLogs = debounce(
       pageSize.value,
       pageCurrent.value,
       filterLogType.value,
-      searchWord.value
+      searchWord.value,
     ).then((res) => {
       logs.splice(0, logs.length)
       logs.push(...res.data.logs)
@@ -312,7 +159,7 @@ const refreshLogs = debounce(
     })
   },
   100,
-  false
+  false,
 )
 
 watchEffect(() => {
@@ -341,7 +188,7 @@ watchEffect(() => {
 
 const showDetail = ref(false)
 const showData = ref('')
-const handleDetail = (id) => {
+function handleDetail(id) {
   SuperOverviewApi.getLogMsgDetail(id).then((res) => {
     showDetail.value = true
     showData.value = JSON.stringify(res.data, null, 2)
@@ -350,15 +197,16 @@ const handleDetail = (id) => {
 const jsonData = computed(() => {
   try {
     return JSON.parse(showData.value)
-  } catch (e) {
+  }
+  catch (e) {
     return {}
   }
 })
-const handleCopyDetail = () => {
+function handleCopyDetail() {
   copyRes(showData.value)
 }
 
-const exportLogData = () => {
+function exportLogData() {
   if (logs.length === 0) {
     return
   }
@@ -372,8 +220,8 @@ const exportLogData = () => {
     body,
     `导出日志_${logs.length}条${formatDate(
       new Date(),
-      'yyyy年MM月日hh时mm分ss秒'
-    )}.xlsx`
+      'yyyy年MM月日hh时mm分ss秒',
+    )}.xlsx`,
   )
   ElMessage.success('导出成功')
 }
@@ -381,6 +229,162 @@ onMounted(() => {
   refreshCount()
 })
 </script>
+
+<template>
+  <div class="overview">
+    <div
+      v-loading="isLoadingOverview"
+      class="card-list"
+      element-loading-text="Loading..."
+    >
+      <div v-for="c in cardList" :key="c.type" class="card">
+        <div class="logo">
+          <el-icon :color="c.color">
+            <component :is="c.icon" />
+          </el-icon>
+        </div>
+        <div class="content">
+          <div class="title">
+            {{ c.title }}
+          </div>
+          <div class="text">
+            {{ c.value }}
+          </div>
+          <div class="supplement">
+            {{ c.supplement }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="p10 log-filter">
+        <span class="item">
+          <span class="label">类型</span>
+          <el-select
+            v-model="filterLogType"
+            size="default"
+            placeholder="请选择日志类型"
+          >
+            <el-option
+              v-for="(item, idx) in logTypeList"
+              :key="idx"
+              :label="item.label"
+              :value="item.type"
+            />
+          </el-select>
+        </span>
+        <span class="item">
+          <el-input
+            v-model="searchWord"
+            size="default"
+            clearable
+            placeholder="请输入要检索的内容"
+            :prefix-icon="Search"
+          />
+        </span>
+        <span class="item">
+          <el-button size="default" :icon="Refresh" @click="refreshLogs">刷新</el-button>
+        </span>
+        <span class="item">
+          <el-button
+            size="default"
+            type="primary"
+            :icon="DataAnalysis"
+            @click="exportLogData"
+          >导出日志 {{ logs.length }} 条</el-button>
+        </span>
+        <span class="item">
+          <el-button
+            v-loading="disableDelete"
+            size="default"
+            type="danger"
+            :icon="TakeawayBox"
+            :disabled="disableDelete"
+            @click="clearExpiredCompressFile"
+          >清理无效文件</el-button>
+        </span>
+      </div>
+      <el-table
+        tooltip-effect="dark"
+        height="400"
+        stripe
+        border
+        :default-sort="{ prop: 'date', order: 'descending' }"
+        :data="logs"
+        style="width: 100%"
+      >
+        <el-table-column sortable prop="date" label="日期" width="180">
+          <template #default="scope">
+            {{
+              formatDate(new Date(scope.row.date))
+            }}
+          </template>
+        </el-table-column>
+        <!-- <el-table-column prop="type" label="类型" width="100">
+          <template #default="scope">{{ getLogsTypeText(scope.row.type) }}</template>
+        </el-table-column> -->
+        <el-table-column
+          sortable
+          prop="ip"
+          label="IP"
+          width="100"
+        />
+        <el-table-column
+          min-width="160"
+          prop="msg"
+          label="内容"
+        />
+        <el-table-column fixed="right" label="操作" width="100">
+          <template #default="scope">
+            <el-button
+              type="primary"
+              text
+              size="small"
+              @click="handleDetail(scope.row.id)"
+            >
+              查看详情
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div class="flex fc p10">
+        <el-pagination
+          :current-page="pageCurrent"
+          background
+          :page-count="pageCount"
+          :page-sizes="[10, 50, 100, 200, 500, 1000]"
+          :page-size="pageSize"
+          :total="logSumCount"
+          layout="total, sizes, prev, pager, next, jumper"
+          @current-change="handlePageChange"
+          @size-change="handleSizeChange"
+        />
+      </div>
+    </div>
+    <el-dialog
+      v-model="showDetail"
+      title="详细信息"
+      width="50%"
+      center
+      :fullscreen="isMobile"
+    >
+      <json-viewer
+        :value="jsonData"
+        :expand-depth="5"
+        copyable
+        boxed
+        sort
+      />
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="default" @click="handleCopyDetail">复制</el-button>
+          <el-button type="primary" @click="showDetail = false">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </div>
+</template>
 
 <style scoped lang="scss">
 @media screen and (max-width: 700px) {

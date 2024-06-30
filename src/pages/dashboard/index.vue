@@ -1,3 +1,112 @@
+<script lang="ts" setup>
+import { ArrowDown, Close, Expand } from '@element-plus/icons-vue'
+import HomeFooter from '@components/HomeFooter/index.vue'
+
+import { onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useStore } from 'vuex'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import MessagePanel from '@/components/MessagePanel/index.vue'
+import { UserApi } from '@/apis'
+import { useIsMobile } from '@/composables'
+
+const isMobile = useIsMobile()
+
+const $router = useRouter()
+const $store = useStore()
+const $route = useRoute()
+const navList = reactive<
+  { title: string, path: string, isExternal?: boolean }[]
+>([
+  {
+    title: '文件管理',
+    path: '/dashboard/files',
+  },
+  {
+    title: '任务管理',
+    path: '/dashboard/tasks',
+  },
+])
+const navActiveIdx = ref(0)
+function handleNav(idx: number) {
+  const n = navList[idx]
+  if (!n.isExternal && idx !== navActiveIdx.value) {
+    $router.push({
+      path: n.path,
+    })
+  }
+  if (n.isExternal) {
+    window.open(n.path, '_blank')
+  }
+}
+
+// 自动切换激活的标题栏
+watch(
+  () => $route.path,
+  (path: string) => {
+    const idx = navList.findIndex(n => path.startsWith(n.path))
+    if (idx !== -1) {
+      navActiveIdx.value = idx
+    }
+  },
+)
+
+function handleLogout() {
+  ElMessageBox.confirm('确认退出登录？', '登出提示', {
+    draggable: true,
+  })
+    .then(() => {
+      // 登出接口
+      UserApi.logout().finally(() => {
+        $store.commit('user/setToken', null)
+        $router.replace({
+          name: 'home',
+        })
+      })
+    })
+    .catch(() => {
+      ElMessage.info('取消')
+    })
+}
+const userName = ref('World')
+
+function refreshActiveTab() {
+  // 动态修改active的项
+  navActiveIdx.value = navList.findIndex(v => $route.path.startsWith(v.path))
+}
+onMounted(() => {
+  // 动态添加管理页面入口
+  UserApi.checkPower().then((r) => {
+    const isSuperAdmin = r.data?.power
+    userName.value = r.data?.name
+    $store.commit('user/setSuperAdmin', isSuperAdmin)
+    if (isSuperAdmin) {
+      const superNavList = [
+        {
+          title: '应用管理',
+          path: '/dashboard/manage',
+        },
+        {
+          title: '网站监控',
+          path: 'https://www.frontjs.com/app/87c1ef7667a513f313b4abb22a88dc78',
+          isExternal: true,
+        },
+      ]
+      navList.push(...superNavList)
+    }
+    const isSystem = r.data?.system
+    if (isSystem) {
+      navList.splice(0, navList.length)
+      navList.push({
+        title: '系统管理',
+        path: '/dashboard/config',
+      })
+    }
+    refreshActiveTab()
+  })
+})
+</script>
+
 <template>
   <div class="dashboard">
     <div class="pc-nav">
@@ -8,31 +117,30 @@
             <img
               src="https://img.cdn.sugarat.top/easypicker/EasyPicker.png"
               alt="logo"
-            />
+            >
           </router-link>
         </div>
-        <input v-if="isMobile" type="checkbox" id="navActive" />
+        <input v-if="isMobile" id="navActive" type="checkbox">
         <nav>
           <label v-if="isMobile" for="navActive" class="nav-item">
             <span>Hello💐，</span>
             {{ userName }}
           </label>
           <label
-            for="navActive"
-            class="nav-item"
             v-for="(n, idx) in navList"
             :key="idx"
+            for="navActive"
+            class="nav-item"
             :class="{
-              active: navActiveIdx === idx
+              active: navActiveIdx === idx,
             }"
             @click="handleNav(idx)"
-            >{{ n.title }}</label
-          >
+          >{{ n.title }}</label>
           <label
-            @click="handleLogout"
             v-if="isMobile"
             for="navActive"
             class="nav-item"
+            @click="handleLogout"
           >
             <span style="margin-right: 6px">退出</span>
             <el-icon size="16">
@@ -55,19 +163,19 @@
             </el-icon>
           </label>
         </nav>
-        <div class="mask"></div>
+        <div class="mask" />
       </div>
       <!-- 移动端展示 -->
       <span id="navMenu">
-        <message-panel v-if="isMobile" class="mobile-message-bell" />
+        <MessagePanel v-if="isMobile" class="mobile-message-bell" />
         <label for="navActive">
           <el-icon size="32">
             <Expand />
           </el-icon>
         </label>
       </span>
-      <div class="flex fac" v-if="!isMobile">
-        <message-panel />
+      <div v-if="!isMobile" class="flex fac">
+        <MessagePanel />
         <span>Hello 💐，</span>
         <el-dropdown class="exit">
           <span class="exit-info">
@@ -78,126 +186,21 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="handleLogout" :icon="Close"
-                >退出</el-dropdown-item
-              >
+              <el-dropdown-item :icon="Close" @click="handleLogout">
+                退出
+              </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
       </div>
     </div>
-    <router-view></router-view>
+    <router-view />
     <div>
-      <home-footer type="dashboard"></home-footer>
+      <HomeFooter type="dashboard" />
     </div>
   </div>
 </template>
-<script lang="ts" setup>
-import { Expand, Close, ArrowDown, Bell } from '@element-plus/icons-vue'
-import HomeFooter from '@components/HomeFooter/index.vue'
 
-import { onMounted, reactive, ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useStore } from 'vuex'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import MessagePanel from '@/components/MessagePanel/index.vue'
-import { UserApi } from '@/apis'
-
-const $router = useRouter()
-const $store = useStore()
-const $route = useRoute()
-const isMobile = computed(() => $store.getters['public/isMobile'])
-const navList = reactive<
-  { title: string; path: string; isExternal?: boolean }[]
->([
-  {
-    title: '文件管理',
-    path: '/dashboard/files'
-  },
-  {
-    title: '任务管理',
-    path: '/dashboard/tasks'
-  }
-])
-const navActiveIdx = ref(0)
-const handleNav = (idx: number) => {
-  const n = navList[idx]
-  if (!n.isExternal && idx !== navActiveIdx.value) {
-    $router.push({
-      path: n.path
-    })
-  }
-  if (n.isExternal) {
-    window.open(n.path, '_blank')
-  }
-}
-
-// 自动切换激活的标题栏
-watch(
-  () => $route.path,
-  (path: string) => {
-    const idx = navList.findIndex((n) => path.startsWith(n.path))
-    if (idx !== -1) {
-      navActiveIdx.value = idx
-    }
-  }
-)
-
-const handleLogout = () => {
-  ElMessageBox.confirm('确认退出登录？', '登出提示', {
-    draggable: true
-  })
-    .then(() => {
-      // 登出接口
-      UserApi.logout().finally(() => {
-        $store.commit('user/setToken', null)
-        $router.replace({
-          name: 'home'
-        })
-      })
-    })
-    .catch(() => {
-      ElMessage.info('取消')
-    })
-}
-const userName = ref('World')
-
-const refreshActiveTab = () => {
-  // 动态修改active的项
-  navActiveIdx.value = navList.findIndex((v) => $route.path.startsWith(v.path))
-}
-onMounted(() => {
-  // 动态添加管理页面入口
-  UserApi.checkPower().then((r) => {
-    const isSuperAdmin = r.data?.power
-    userName.value = r.data?.name
-    $store.commit('user/setSuperAdmin', isSuperAdmin)
-    if (isSuperAdmin) {
-      const superNavList = [
-        {
-          title: '应用管理',
-          path: '/dashboard/manage'
-        },
-        {
-          title: '网站监控',
-          path: 'https://www.frontjs.com/app/87c1ef7667a513f313b4abb22a88dc78',
-          isExternal: true
-        }
-      ]
-      navList.push(...superNavList)
-    }
-    const isSystem = r.data?.system
-    if (isSystem) {
-      navList.splice(0, navList.length)
-      navList.push({
-        title: '系统管理',
-        path: '/dashboard/config'
-      })
-    }
-    refreshActiveTab()
-  })
-})
-</script>
 <style scoped lang="scss">
 .dashboard {
   background-color: #fafafa;

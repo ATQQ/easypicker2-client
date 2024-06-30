@@ -1,3 +1,93 @@
+<script lang="ts" setup>
+import { ElMessage } from 'element-plus'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { CloseBold, Refresh, Select } from '@element-plus/icons-vue'
+import Tip from '../tasks/components/infoPanel/tip.vue'
+import { ConfigServiceAPI } from '@/apis'
+
+const serviceList = reactive([
+  {
+    name: 'MySQL',
+    key: 'mysql',
+    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTAyMjIwNA==657359022204',
+    status: false,
+    des: '存储用户数据',
+    errMsg: '',
+  },
+  {
+    name: '七牛云',
+    key: 'qiniu',
+    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1ODcyODM0Mg==657358728342',
+    status: false,
+    des: '文件存储',
+  },
+  {
+    name: 'MongoDB',
+    key: 'mongodb',
+    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTA4OTc3Nw==657359089777',
+    status: false,
+    des: '用户数据与日志',
+  },
+  {
+    name: 'Redis',
+    key: 'redis',
+    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1ODgyNzM1MA==657358827350',
+    status: false,
+    des: '持久化缓存数据',
+    error: '确保安装redis，且监听端口6379',
+  },
+  {
+    name: '腾讯云',
+    key: 'tx',
+    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTE1MzQzOQ==657359153439',
+    status: false,
+    des: '短信服务',
+  },
+])
+
+const loading = ref(false)
+const showErrorList = computed(() => serviceList.filter(item => item.errMsg))
+function refreshStatus() {
+  if (loading.value)
+    return
+  loading.value = true
+  ConfigServiceAPI.getServiceOverview().then((v) => {
+    const { data } = v
+    serviceList.forEach((item) => {
+      const { status, errMsg } = data[item.key]
+      item.status = status
+      item.errMsg = errMsg
+    })
+    ElMessage.success('服务状态刷新完成')
+    loading.value = false
+  })
+}
+
+const serverConfig = ref([])
+function getServiceConfig() {
+  ConfigServiceAPI.getServiceConfig().then((v) => {
+    // console.log(v.data)
+    v.data.forEach((v) => {
+      v.data.forEach((v) => {
+        v.disabled = true
+      })
+    })
+    serverConfig.value = v.data
+  })
+}
+function updateCfg(item: ConfigServiceAPITypes.ServiceConfigItem) {
+  ConfigServiceAPI.updateCfg(item).then(() => {
+    item.disabled = true
+    ElMessage.success('更新成功')
+    refreshStatus()
+  })
+}
+onMounted(() => {
+  refreshStatus()
+  getServiceConfig()
+})
+</script>
+
 <template>
   <div class="user">
     <div class="panel">
@@ -7,10 +97,10 @@
           <span>服务概况</span>
           <el-icon
             :class="{
-              loading
+              loading,
             }"
-            @click="refreshStatus"
             style="cursor: pointer; margin-left: 10px"
+            @click="refreshStatus"
           >
             <Refresh />
           </el-icon>
@@ -23,7 +113,7 @@
             :key="service.key"
             class="service-item"
           >
-            <img :src="service.logo" :alt="service.name" />
+            <img :src="service.logo" :alt="service.name">
             <!-- <p>{{ service.name }}</p> -->
             <p>
               <Tip>{{ service.des }}</Tip>
@@ -62,49 +152,50 @@
           <a
             href="https://docs.ep.sugarat.top/deploy/online-new.html#_5-%E6%9C%80%E5%90%8E%E6%9B%B4%E6%96%B0%E9%85%8D%E7%BD%AE"
           >
-            <el-button type="primary" link>配置手册?</el-button></a
-          >
+            <el-button type="primary" link>配置手册?</el-button></a>
         </Tip>
       </div>
       <div class="config-container">
         <div
-          class="config-panel"
           v-for="serverItem in serverConfig"
           :key="serverItem.title"
+          class="config-panel"
         >
           <h2>
             {{ serverItem.title }}
           </h2>
           <el-form
-            :label-position="'right'"
+            label-position="right"
             label-width="100px"
             style="max-width: 400px; margin: 0 auto"
           >
             <el-form-item
-              :label-width="'auto'"
               v-for="cfgItem in serverItem.data"
-              :label="cfgItem.label || cfgItem.key"
               :key="cfgItem.key"
+              label-width="auto"
+              :label="cfgItem.label || cfgItem.key"
             >
               <div class="flex" style="flex: 1">
                 <el-input
-                  :disabled="cfgItem.disabled"
                   v-model="cfgItem.value"
+                  :disabled="cfgItem.disabled"
                 />
                 <el-button
                   v-if="cfgItem.disabled"
-                  @click="cfgItem.disabled = false"
                   type="primary"
                   text
-                  >更新</el-button
+                  @click="cfgItem.disabled = false"
                 >
+                  更新
+                </el-button>
                 <el-button
                   v-else
-                  @click="updateCfg(cfgItem)"
                   type="success"
                   text
-                  >完成</el-button
+                  @click="updateCfg(cfgItem)"
                 >
+                  完成
+                </el-button>
               </div>
             </el-form-item>
           </el-form>
@@ -113,96 +204,6 @@
     </div>
   </div>
 </template>
-<script lang="ts" setup>
-import { ElMessage } from 'element-plus'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useStore } from 'vuex'
-import { Select, CloseBold, Refresh } from '@element-plus/icons-vue'
-import { ConfigServiceAPI } from '@/apis'
-import Tip from '../tasks/components/infoPanel/tip.vue'
-
-const serviceList = reactive([
-  {
-    name: 'MySQL',
-    key: 'mysql',
-    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTAyMjIwNA==657359022204',
-    status: false,
-    des: '存储用户数据',
-    errMsg: ''
-  },
-  {
-    name: '七牛云',
-    key: 'qiniu',
-    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1ODcyODM0Mg==657358728342',
-    status: false,
-    des: '文件存储'
-  },
-  {
-    name: 'MongoDB',
-    key: 'mongodb',
-    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTA4OTc3Nw==657359089777',
-    status: false,
-    des: '用户数据与日志'
-  },
-  {
-    name: 'Redis',
-    key: 'redis',
-    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1ODgyNzM1MA==657358827350',
-    status: false,
-    des: '持久化缓存数据',
-    error: '确保安装redis，且监听端口6379'
-  },
-  {
-    name: '腾讯云',
-    key: 'tx',
-    logo: 'https://img.cdn.sugarat.top/mdImg/MTY1NzM1OTE1MzQzOQ==657359153439',
-    status: false,
-    des: '短信服务'
-  }
-])
-const $store = useStore()
-const loading = ref(false)
-const showErrorList = computed(() => serviceList.filter((item) => item.errMsg))
-const refreshStatus = () => {
-  if (loading.value) return
-  loading.value = true
-  ConfigServiceAPI.getServiceOverview().then((v) => {
-    const { data } = v
-    serviceList.forEach((item) => {
-      const { status, errMsg } = data[item.key]
-      item.status = status
-      item.errMsg = errMsg
-    })
-    ElMessage.success('服务状态刷新完成')
-    loading.value = false
-  })
-}
-
-const serverConfig = ref([])
-const getServiceConfig = () => {
-  ConfigServiceAPI.getServiceConfig().then((v) => {
-    // console.log(v.data)
-    v.data.forEach((v) => {
-      v.data.forEach((v) => {
-        v.disabled = true
-      })
-    })
-    serverConfig.value = v.data
-  })
-}
-const updateCfg = (item: ConfigServiceAPITypes.ServiceConfigItem) => {
-  ConfigServiceAPI.updateCfg(item).then(() => {
-    item.disabled = true
-    ElMessage.success('更新成功')
-    refreshStatus()
-  })
-}
-onMounted(() => {
-  refreshStatus()
-  getServiceConfig()
-})
-const isMobile = computed(() => $store.getters['public/isMobile'])
-</script>
 
 <style scoped lang="scss">
 @media screen and (max-width: 700px) {

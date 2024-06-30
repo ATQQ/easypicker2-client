@@ -25,7 +25,7 @@ import type { tableItem } from '@/utils/networkUtil'
 import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
 import InfosForm from '@/components/InfosForm/index.vue'
 import { ActionType, DownloadStatus, filenamePattern } from '@/constants'
-import { useSiteConfig, useSpaceUsage } from '@/composables'
+import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
 
 const { value: siteConfig } = useSiteConfig()
 const isOpenPraise = computed(() => siteConfig.value.openPraise)
@@ -537,7 +537,7 @@ onMounted(() => {
   $store.dispatch('task/getTask')
 })
 
-const isMobile = computed(() => $store.getters['public/isMobile'])
+const isMobile = useIsMobile()
 </script>
 
 <template>

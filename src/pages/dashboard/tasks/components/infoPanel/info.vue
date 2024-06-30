@@ -16,7 +16,7 @@ import {
   parseFileFormat,
   parseInfo,
 } from '@/utils/stringUtil'
-import { useSiteConfig } from '@/composables'
+import { useIsMobile, useSiteConfig } from '@/composables'
 
 const props = defineProps({
   rewrite: {
@@ -171,8 +171,7 @@ function handleSaveImportInfo() {
   needSave.value = true
 }
 
-const $store = useStore()
-const isMobile = computed(() => $store.getters['public/isMobile'])
+const isMobile = useIsMobile()
 const importPanelFlexStyle = computed(() => (isMobile.value ? '0 0 auto' : 0.5))
 
 function showHelp() {
@@ -294,8 +293,8 @@ watchEffect(() => {
             class="radio-list"
           >
             <el-input
-              v-for="(v, idx) in item.children"
-              :key="idx"
+              v-for="(v, idx2) in item.children"
+              :key="idx2"
               v-model="v.text"
               size="small"
               placeholder="输入内容"
