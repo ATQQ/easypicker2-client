@@ -1,5 +1,5 @@
-import { mergeRequest } from '@/utils/networkUtil'
 import ajax from '../../ajax'
+import { mergeRequest } from '@/utils/networkUtil'
 
 const baseUrl = '/super/overview'
 function getCount(): OverviewApiTypes.getCount {
@@ -14,13 +14,13 @@ function getLogMsg(
   pageSize: number,
   pageIndex: number,
   type: string,
-  search: string
+  search: string,
 ): OverviewApiTypes.getLogMsg {
   return ajax.post(`${baseUrl}/log`, {
     pageSize,
     pageIndex,
     type,
-    search
+    search,
   })
 }
 
@@ -35,8 +35,8 @@ function clearExpiredCompressFile() {
 function _checkDisabledRoute(route: string): OverviewApiTypes.disabledStatus {
   return ajax.get(`${baseUrl}/route/disabled`, {
     params: {
-      route
-    }
+      route,
+    },
   })
 }
 
@@ -45,9 +45,18 @@ const checkDisabledRoute = mergeRequest(_checkDisabledRoute)
 function addDisabledRoute(route: string, status: boolean) {
   return ajax.post(`${baseUrl}/route/disabled`, {
     route,
-    status
+    status,
   })
 }
+
+function getGlobalConfig(type = 'site'): OverviewApiTypes.getGlobalConfig {
+  return ajax.get(`/config/global`, { params: { type } })
+}
+
+function updateGlobalConfig(key: string, value: any) {
+  return ajax.put(`/config/global`, { key, value })
+}
+
 export default {
   getCount,
   getAllLogMsg,
@@ -55,5 +64,7 @@ export default {
   getLogMsgDetail,
   clearExpiredCompressFile,
   checkDisabledRoute,
-  addDisabledRoute
+  addDisabledRoute,
+  getGlobalConfig,
+  updateGlobalConfig,
 }

@@ -43,16 +43,16 @@ declare namespace FileApiTypes {
   type addFile = ResponseData<any>
   type getFileList = ResponseData<{ files: File[] }>
   type getTemplateUrl = ResponseData<{ link: string }>
-  type getOneFileUrl = ResponseData<{ link: string; mimeType: string }>
+  type getOneFileUrl = ResponseData<{ link: string, mimeType: string }>
   type deleteOneFile = ResponseData
   type batchDownload = ResponseData<{ k: string }>
   type batchDel = ResponseData
-  type checkCompressStatus = ResponseData<{ code: number; key?: string }>
+  type checkCompressStatus = ResponseData<{ code: number, key?: string }>
   type getCompressDownUrl = ResponseData<{ url: string }>
   type withdrawFile = ResponseData
-  type checkSubmitStatus = ResponseData<{ isSubmit: boolean; txt?: string }>
+  type checkSubmitStatus = ResponseData<{ isSubmit: boolean, txt?: string }>
   type checkImageFilePreviewUrl = ResponseData<
-    { cover: string; preview: string }[]
+    { cover: string, preview: string }[]
   >
   type updateFilename = ResponseData
 }
@@ -71,8 +71,8 @@ declare namespace UserApiTypes {
     openTime?: string
     system: boolean
   }>
-  type codeLogin = ResponseData<{ token?: string; openTime?: string }>
-  type resetPwd = ResponseData<{ token?: string; openTime?: string }>
+  type codeLogin = ResponseData<{ token?: string, openTime?: string }>
+  type resetPwd = ResponseData<{ token?: string, openTime?: string }>
   type checkPower = ResponseData<{
     power: boolean
     name: string
@@ -116,11 +116,11 @@ declare namespace TaskApiTypes {
   type create = ResponseData
   type deleteOne = ResponseData
   type updateBaseInfo = ResponseData
-  type getTaskInfo = ResponseData<TaskInfo&{limitUpload:boolean}>
+  type getTaskInfo = ResponseData<TaskInfo & { limitUpload: boolean }>
   type getTaskMoreInfo = ResponseData<TaskInfo>
   type updateTaskMoreInfo = ResponseData
   type getUsefulTemplate = ResponseData<
-    { taskKey: string; name: string; info: string }[]
+    { taskKey: string, name: string, info: string }[]
   >
 }
 
@@ -138,15 +138,15 @@ declare namespace PeopleApiTypes {
     name: string
     statue: number
   }
-  type importPeople = ResponseData<{ success: number; fail: string[] }>
+  type importPeople = ResponseData<{ success: number, fail: string[] }>
   type getPeople = ResponseData<{ people: People[] }>
   type deletePeople = ResponseData
   type updatePeopleStatus = ResponseData
   type checkPeopleIsExist = ResponseData<{ exist: boolean }>
   type getUsefulTemplate = ResponseData<
-    { taskKey: string; name: string; count: number }[]
+    { taskKey: string, name: string, count: number }[]
   >
-  type importFromTpl = ResponseData<{ fail: string[]; success: number }>
+  type importFromTpl = ResponseData<{ fail: string[], success: number }>
 }
 
 declare namespace CateGoryApiTypes {
@@ -197,6 +197,12 @@ declare namespace OverviewApiTypes {
     pageSize: number
   }>
   type disabledStatus = ResponseData<{ status: boolean }>
+  interface GlobalSiteConfig {
+    maxInputLength: number
+    openPraise: boolean
+    formLength: number
+  }
+  type getGlobalConfig = ResponseData<GlobalSiteConfig>
 }
 
 declare namespace SuperUserApiTypes {
@@ -252,7 +258,7 @@ declare namespace WishApiTypes {
 
   type updateWish = ResponseData
 
-  type DocsWishItem = {
+  interface DocsWishItem {
     id: string
     title: string
     des: string
