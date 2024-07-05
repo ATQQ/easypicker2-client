@@ -702,8 +702,8 @@ const isMobile = useIsMobile()
               }}
             </template>
           </el-table-column>
-          <el-table-column prop="tip" label="文件信息" />
-          <el-table-column prop="type" label="任务类型">
+          <el-table-column prop="tip" label="文件名" />
+          <el-table-column prop="type" label="类型">
             <template #default="scope">
               <el-link v-if="scope.row.type === ActionType.Compress" type="primary">
                 归档下载
