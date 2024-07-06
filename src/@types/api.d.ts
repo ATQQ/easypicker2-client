@@ -201,6 +201,9 @@ declare namespace OverviewApiTypes {
     maxInputLength: number
     openPraise: boolean
     formLength: number
+    downloadOneExpired: number
+    downloadCompressExpired: number
+    compressSizeLimit: number
   }
   type getGlobalConfig = ResponseData<GlobalSiteConfig>
 }
