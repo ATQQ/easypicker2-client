@@ -1,100 +1,10 @@
-<template>
-  <div class="register">
-    <login-panel>
-      <div class="inputArea">
-        <div>
-          <el-input
-            maxlength="11"
-            placeholder="输入账号"
-            :prefix-icon="User"
-            v-model="account"
-            clearable
-          ></el-input>
-        </div>
-        <div>
-          <el-input
-            maxlength="16"
-            minlength="6"
-            type="password"
-            placeholder="请输入密码"
-            :prefix-icon="Lock"
-            v-model="pwd1"
-            show-password
-            clearable
-          ></el-input>
-        </div>
-        <div>
-          <el-input
-            maxlength="16"
-            minlength="6"
-            type="password"
-            placeholder="请再次输入密码"
-            :prefix-icon="Lock"
-            v-model="pwd2"
-            show-password
-            clearable
-          ></el-input>
-        </div>
-        <div class="tc">
-          <el-checkbox v-model="bindPhone">绑定手机</el-checkbox>
-          <el-tooltip
-            effect="dark"
-            content="可用于修改/找回密码"
-            placement="top-start"
-          >
-            <el-icon :size="16">
-              <QuestionFilled />
-            </el-icon>
-          </el-tooltip>
-        </div>
-        <div v-if="bindPhone">
-          <el-input
-            maxlength="11"
-            placeholder="输入手机号"
-            :prefix-icon="Phone"
-            v-model="phone"
-            clearable
-          ></el-input>
-        </div>
-        <div v-if="bindPhone">
-          <el-input
-            maxlength="4"
-            type="number"
-            placeholder="请输入验证码"
-            :prefix-icon="Lock"
-            v-model="code"
-            clearable
-          >
-            <template #append>
-              <el-button :disabled="time !== 0" @click="getCode">{{
-                codeText
-              }}</el-button>
-            </template>
-          </el-input>
-        </div>
-        <div class="tc">
-          <el-button @click="handleRegister" type="primary">注册</el-button>
-        </div>
-        <el-divider></el-divider>
-        <div class="links">
-          <router-link to="/login">已有账号,去登陆</router-link>
-        </div>
-        <div class="links" style="margin-top: 20px">
-          <el-link target="_blank" href="https://support.qq.com/product/444158"
-            >问题反馈?</el-link
-          >
-        </div>
-      </div>
-    </login-panel>
-  </div>
-</template>
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import loginPanel from '@components/loginPanel.vue'
 import { useStore } from 'vuex'
-import { User, Lock, Phone, QuestionFilled } from '@element-plus/icons-vue'
+import { Lock, Phone, QuestionFilled, User } from '@element-plus/icons-vue'
 import { rAccount, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { PublicApi, UserApi } from '@/apis'
 
@@ -108,7 +18,7 @@ const $router = useRouter()
 const bindPhone = ref(false)
 const codeText = ref('获取验证码')
 const time = ref(0)
-const refreshCodeText = () => {
+function refreshCodeText() {
   if (time.value === 0) {
     codeText.value = '获取验证码'
     return
@@ -117,7 +27,7 @@ const refreshCodeText = () => {
   time.value -= 1
   setTimeout(refreshCodeText, 1000)
 }
-const getCode = () => {
+function getCode() {
   if (!rMobilePhone.test(phone.value)) {
     ElMessage.warning('手机号格式不正确')
     return
@@ -128,7 +38,7 @@ const getCode = () => {
     ElMessage.success('获取成功,请注意查看手机短信')
   })
 }
-const checkForm = () => {
+function checkForm() {
   if (!rAccount.test(account.value)) {
     ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
     return false
@@ -154,7 +64,7 @@ const checkForm = () => {
   }
   return true
 }
-const handleRegister = () => {
+function handleRegister() {
   if (!checkForm()) {
     return
   }
@@ -163,14 +73,14 @@ const handleRegister = () => {
     pwd: pwd1.value,
     bindPhone: bindPhone.value,
     phone: phone.value,
-    code: code.value
+    code: code.value,
   })
     .then((res) => {
       const { token } = res.data
       $store.commit('user/setToken', token)
       ElMessage.success('注册成功')
       $router.replace({
-        name: 'dashboard'
+        name: 'dashboard',
       })
     })
     .catch((err) => {
@@ -182,12 +92,113 @@ const handleRegister = () => {
         1003: '验证码不正确',
         1004: '密码格式不正确',
         1006: '手机号格式不正确',
-        1011: '系统暂不开放注册'
+        1011: '系统暂不开放注册',
+        1012: '必须绑定手机号',
       }
       ElMessage.error(options[c] || msg)
     })
 }
 </script>
+
+<template>
+  <div class="register">
+    <login-panel>
+      <div class="inputArea">
+        <div>
+          <el-input
+            v-model="account"
+            maxlength="11"
+            placeholder="输入账号"
+            :prefix-icon="User"
+            clearable
+          />
+        </div>
+        <div>
+          <el-input
+            v-model="pwd1"
+            maxlength="16"
+            minlength="6"
+            type="password"
+            placeholder="请输入密码"
+            :prefix-icon="Lock"
+            show-password
+            clearable
+          />
+        </div>
+        <div>
+          <el-input
+            v-model="pwd2"
+            maxlength="16"
+            minlength="6"
+            type="password"
+            placeholder="请再次输入密码"
+            :prefix-icon="Lock"
+            show-password
+            clearable
+          />
+        </div>
+        <div class="tc">
+          <el-checkbox v-model="bindPhone">
+            绑定手机
+          </el-checkbox>
+          <el-tooltip
+            effect="dark"
+            content="可用于修改/找回密码"
+            placement="top-start"
+          >
+            <el-icon :size="16">
+              <QuestionFilled />
+            </el-icon>
+          </el-tooltip>
+        </div>
+        <div v-if="bindPhone">
+          <el-input
+            v-model="phone"
+            maxlength="11"
+            placeholder="输入手机号"
+            :prefix-icon="Phone"
+            clearable
+          />
+        </div>
+        <div v-if="bindPhone">
+          <el-input
+            v-model="code"
+            maxlength="4"
+            type="number"
+            placeholder="请输入验证码"
+            :prefix-icon="Lock"
+            clearable
+          >
+            <template #append>
+              <el-button :disabled="time !== 0" @click="getCode">
+                {{
+                  codeText
+                }}
+              </el-button>
+            </template>
+          </el-input>
+        </div>
+        <div class="tc">
+          <el-button type="primary" @click="handleRegister">
+            注册
+          </el-button>
+        </div>
+        <el-divider />
+        <div class="links">
+          <router-link to="/login">
+            已有账号,去登陆
+          </router-link>
+        </div>
+        <div class="links" style="margin-top: 20px">
+          <el-link target="_blank" href="https://support.qq.com/product/444158">
+            问题反馈?
+          </el-link>
+        </div>
+      </div>
+    </login-panel>
+  </div>
+</template>
+
 <style scoped lang="scss">
 .register {
   background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
