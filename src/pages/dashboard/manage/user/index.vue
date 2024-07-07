@@ -47,6 +47,10 @@ const sortTypeList = [
     value: 'fileCount',
   },
   {
+    label: '累计占用空间',
+    value: 'originFileSize',
+  },
+  {
     label: 'OSS文件数量',
     value: 'ossCount',
   },
@@ -515,9 +519,10 @@ const isMobile = useIsMobile()
           label="文件"
         >
           <template #default="scope">
-            累计：{{ scope.row.fileCount }}<br>
-            OSS：{{ scope.row.ossCount }}<br>
-            平均：<span>{{ scope.row.size && scope.row.ossCount && formatSize(Math.round(scope.row.size / scope.row.ossCount)) }}</span>
+            累计：{{ scope.row.fileCount }}/{{ formatSize(scope.row.originFileSize) }}<br>
+            OSS：{{ scope.row.ossCount }}/{{ formatSize(scope.row.usage) }}<br>
+            平均：{{ scope.row.originFileSize && scope.row.fileCount && formatSize(Math.round(scope.row.originFileSize / scope.row.fileCount)) }}<br>
+            平均：{{ scope.row.usage && scope.row.ossCount && formatSize(Math.round(scope.row.usage / scope.row.ossCount)) }}<br>
           </template>
         </el-table-column>
         <el-table-column label="云空间" width="200">
