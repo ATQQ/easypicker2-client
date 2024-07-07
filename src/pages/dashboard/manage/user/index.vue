@@ -466,27 +466,35 @@ const isMobile = useIsMobile()
           width="80"
         />
         <el-table-column
-          prop="loginTime"
-          label="最后登录"
+          label="时间"
           width="190"
         >
           <template #default="scope">
-            {{
+            最后登录：{{
               scope.row.loginTime && formatDate(new Date(scope.row.loginTime))
-            }}
+            }}<br>
+            注册时间：{{ formatDate(new Date(scope.row.joinTime)) }}
           </template>
         </el-table-column>
-        <el-table-column prop="joinTime" label="注册时间" width="190">
+        <!-- <el-table-column prop="joinTime" label="注册时间" width="190">
           <template #default="scope">
             {{
               formatDate(new Date(scope.row.joinTime))
             }}
           </template>
-        </el-table-column>
+        </el-table-column> -->
         <el-table-column
           prop="loginCount"
           label="登录次数"
         />
+        <el-table-column
+          prop="downloadCount"
+          label="累计下载"
+        >
+          <template #default="scope">
+            {{ scope.row.downloadCount }} / {{ formatSize(scope.row.downloadSize) }}
+          </template>
+        </el-table-column>
         <el-table-column
           v-if="userStatusType === 1"
           prop="openTime"
@@ -500,11 +508,12 @@ const isMobile = useIsMobile()
         </el-table-column>
         <el-table-column
           prop="fileCount"
-          label="收集文件"
+          label="文件"
         >
           <template #default="scope">
-            {{ scope.row.fileCount }}/{{ scope.row.ossCount }}<br>
-            <span>{{ scope.row.size && scope.row.ossCount && formatSize(Math.round(scope.row.size / scope.row.ossCount)) }}</span>
+            累计：{{ scope.row.fileCount }}<br>
+            OSS：{{ scope.row.ossCount }}<br>
+            平均：<span>{{ scope.row.size && scope.row.ossCount && formatSize(Math.round(scope.row.size / scope.row.ossCount)) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="云空间" width="200">
