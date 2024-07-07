@@ -30,6 +30,7 @@ declare namespace FileApiTypes {
     hash: string
     cover?: string
     preview?: string
+    downloadCount?: number
   }
   interface WithdrawFileOptions {
     taskKey: string

@@ -390,6 +390,10 @@ function downloadOne(e: any) {
       downLoadByUrl(link, name)
       // 刷新
       loadActions()
+      // 刷新次数
+      setTimeout(() => {
+        refreshFilesDownloadCount()
+      }, 1000)
     })
     .catch(() => {
       ElMessage.error('文件已从服务器上移除')
@@ -518,6 +522,32 @@ function refreshFilesCover() {
     })
   })
 }
+
+function refreshFilesDownloadCount() {
+  const ids = showFilterFiles.value.map(v => v.id)
+  if (ids.length === 0 || fetching) {
+    return
+  }
+
+  FileApi.fileDownloadCount(ids).then((r) => {
+    const { data } = r
+    if (data.length === 0 || data.length !== showFilterFiles.value.length) {
+      return
+    }
+
+    showFilterFiles.value.forEach((v, idx) => {
+      v.downloadCount = data[idx]
+    })
+  })
+}
+watchEffect(() => {
+  if (searchWord.value || pageCurrent.value || pageSize.value) {
+    refreshFilesDownloadCount()
+    return
+  }
+  refreshFilesDownloadCount()
+})
+
 watchEffect(() => {
   window.localStorage.setItem('ep-show-images', `${showImg.value}`)
   if (!showImg.value) {
@@ -838,6 +868,7 @@ const isMobile = useIsMobile()
             }}
           </template>
         </el-table-column>
+        <el-table-column prop="downloadCount" width="90" label="下载次数" />
         <template v-if="showImg">
           <el-table-column label="缩略图" width="120">
             <template #default="scope">
