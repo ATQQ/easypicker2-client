@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import loginPanel from '@components/loginPanel.vue'
@@ -7,7 +7,15 @@ import { useStore } from 'vuex'
 import { Lock, Phone, QuestionFilled, User } from '@element-plus/icons-vue'
 import { rAccount, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { PublicApi, UserApi } from '@/apis'
+import { useSiteConfig } from '@/composables'
 
+const bindPhone = ref(false)
+const { value: siteConfig } = useSiteConfig()
+watch(siteConfig, () => {
+  if (siteConfig.value.needBindPhone) {
+    bindPhone.value = true
+  }
+})
 const $store = useStore()
 const account = ref('')
 const pwd1 = ref('')
@@ -15,7 +23,6 @@ const pwd2 = ref('')
 const phone = ref('')
 const code = ref('')
 const $router = useRouter()
-const bindPhone = ref(false)
 const codeText = ref('获取验证码')
 const time = ref(0)
 function refreshCodeText() {
@@ -138,7 +145,7 @@ function handleRegister() {
           />
         </div>
         <div class="tc">
-          <el-checkbox v-model="bindPhone">
+          <el-checkbox v-model="bindPhone" :disabled="siteConfig.needBindPhone">
             绑定手机
           </el-checkbox>
           <el-tooltip
