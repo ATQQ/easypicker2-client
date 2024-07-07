@@ -459,21 +459,22 @@ const isMobile = useIsMobile()
           label="账号"
           width="130"
         />
-        <el-table-column prop="onlineCount" label="token" width="80" />
         <el-table-column
           prop="phone"
           label="手机号"
           width="80"
         />
         <el-table-column
-          label="时间"
+          label="统计"
           width="190"
         >
           <template #default="scope">
             最后登录：{{
               scope.row.loginTime && formatDate(new Date(scope.row.loginTime))
             }}<br>
-            注册时间：{{ formatDate(new Date(scope.row.joinTime)) }}
+            注册时间：{{ formatDate(new Date(scope.row.joinTime)) }}<br>
+            登录次数：{{ scope.row.loginCount }}<br>
+            token: {{ scope.row.onlineCount }}<br>
           </template>
         </el-table-column>
         <!-- <el-table-column prop="joinTime" label="注册时间" width="190">
@@ -483,16 +484,19 @@ const isMobile = useIsMobile()
             }}
           </template>
         </el-table-column> -->
-        <el-table-column
+        <!-- <el-table-column
           prop="loginCount"
           label="登录次数"
-        />
+        /> -->
         <el-table-column
           prop="downloadCount"
           label="累计下载"
         >
-          <template #default="scope">
-            {{ scope.row.downloadCount }} / {{ formatSize(scope.row.downloadSize) }}
+          <template #default="{ row: { downloadCount, downloadSize, oneFile, compressFile, templateFile } }">
+            {{ downloadCount }} / {{ formatSize(downloadSize) }}<br>
+            单文件：{{ oneFile.count }} / {{ formatSize(oneFile.size) }}<br>
+            归档：{{ compressFile.count }} / {{ formatSize(compressFile.size) }}<br>
+            模板：{{ templateFile.count }} / {{ formatSize(templateFile.size) }}
           </template>
         </el-table-column>
         <el-table-column
