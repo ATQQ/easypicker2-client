@@ -205,6 +205,7 @@ declare namespace OverviewApiTypes {
     downloadCompressExpired: number
     compressSizeLimit: number
     needBindPhone: boolean
+    limitSpace: boolean
   }
   type getGlobalConfig = ResponseData<GlobalSiteConfig>
 }

@@ -771,7 +771,9 @@ const isMobile = useIsMobile()
           ↑ 由于部分用户用量较大，小站无法承担这笔开销，故限制每个账户为 2GB 可用空间
         </h2>
       </Tip>
-      <Tip><span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ spaceUsageText }}</span></Tip>
+      <Tip v-if="siteConfig.limitSpace">
+        <span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ spaceUsageText }}</span>
+      </Tip>
       <Tip v-if="limitDownload">
         <h2 style="color:#f56c6c">
           空间超限将无法上传/下载文件，如需要使用，请联系管理员扩容，或自行删除无关文件
