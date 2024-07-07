@@ -5,7 +5,7 @@ import { DeleteFilled, Message, Refresh, Search } from '@element-plus/icons-vue'
 import { useLocalStorage } from '@vueuse/core'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
-import { formatDate } from '@/utils/stringUtil'
+import { formatDate, formatSize } from '@/utils/stringUtil'
 import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 
 import { useIsMobile } from '@/composables'
@@ -43,8 +43,12 @@ const sortTypeList = [
     value: 'id',
   },
   {
-    label: '文件数量',
+    label: '累计上传数量',
     value: 'fileCount',
+  },
+  {
+    label: 'OSS文件数量',
+    value: 'ossCount',
   },
   {
     label: '最后登录时间',
@@ -497,7 +501,12 @@ const isMobile = useIsMobile()
         <el-table-column
           prop="fileCount"
           label="收集文件"
-        />
+        >
+          <template #default="scope">
+            {{ scope.row.fileCount }}/{{ scope.row.ossCount }}<br>
+            <span>{{ scope.row.size && scope.row.ossCount && formatSize(Math.round(scope.row.size / scope.row.ossCount)) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="云空间" width="200">
           <template
             #default="{
