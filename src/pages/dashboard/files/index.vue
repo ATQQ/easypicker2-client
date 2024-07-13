@@ -132,11 +132,20 @@ function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
   }))
 
   const infosHeader = files.reduce((pre, value) => {
-    JSON.parse(value.info).forEach((i: any) => {
-      if (!pre.includes(i.text)) {
-        pre.push(i.text)
-      }
-    })
+    try {
+      JSON.parse(value.info).forEach((i: any) => {
+        if (!pre.includes(i.text)) {
+          pre.push(i.text)
+        }
+      })
+    }
+    catch (error) {
+      ElMessage.error({
+        message: `数据异常${value.name}，可联系平台管理员处理`,
+        duration: 5000,
+      })
+      console.log(value)
+    }
     return pre
   }, [])
   headers.push({
@@ -146,21 +155,31 @@ function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
 
   const body = files.map((v) => {
     const { date, task_name: taskName, name, size, people } = v
-    const infoObj = JSON.parse(v.info).reduce((pre, v) => {
-      pre[v.text] = v.value
-      return pre
-    }, {})
-    const info = infosHeader.map(v => infoObj[v] ?? '-')
-    const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
-    if (showOriginName.value) {
-      rows.push(v.origin_name || '-')
+    try {
+      const infoObj = JSON.parse(v.info).reduce((pre, v) => {
+        pre[v.text] = `${v.value}`
+        return pre
+      }, {})
+      const info = infosHeader.map(v => infoObj[v] ?? '-')
+      const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
+      if (showOriginName.value) {
+        rows.push(v.origin_name || '-')
+      }
+      if (showPeople.value) {
+        rows.push(people || '-')
+      }
+      rows.push(...info)
+      return rows
     }
-    if (showPeople.value) {
-      rows.push(people || '-')
+    catch (error) {
+      ElMessage.error({
+        message: `数据异常${v.name}，可联系平台管理员处理`,
+        duration: 5000,
+      })
+      console.log(v)
     }
-    rows.push(...info)
-    return rows
-  })
+    return []
+  }).filter(v => !!v.length)
   body.unshift(infosHeader)
   tableToExcel(
     headers,
