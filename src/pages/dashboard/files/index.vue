@@ -18,6 +18,7 @@ import {
   formatDate,
   formatSize,
   getFileSuffix,
+  normalizeFileName,
   parseInfo,
 } from '@/utils/stringUtil'
 import { ActionServiceAPI, FileApi } from '@/apis'
@@ -113,6 +114,37 @@ function handleHistoryActionPageChange(v) {
   historyDownloadRecord.pageCurrent = v
   loadActions()
 }
+
+// 分类相关
+const categories = computed(() => $store.state.category.categoryList)
+const selectCategory = ref('all')
+// 任务相关
+const tasks = computed<TaskApiTypes.TaskItem[]>(
+  () => $store.state.task.taskList,
+)
+const selectTask = ref('all')
+const filterTasks = computed(() => {
+  if (selectCategory.value === 'all') {
+    return tasks.value
+  }
+  // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+  selectTask.value = 'all'
+  return tasks.value.filter(t => t.category === selectCategory.value)
+})
+const selectTaskName = computed(() => {
+  const t = filterTasks.value.find(v => v.key === selectTask.value)
+  return t?.name
+})
+
+watchEffect(() => {
+  if (
+    tasks.value.length
+    && tasks.value.some(v => v.key === $route.query.task)
+  ) {
+    selectTask.value = `${$route.query.task}`
+  }
+})
+
 // 记录导出
 function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
   if (files.length === 0) {
@@ -181,43 +213,17 @@ function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
     return []
   }).filter(v => !!v.length)
   body.unshift(infosHeader)
+
+  const _filename = filename || `数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`
+  const resFileName = selectTaskName.value ? `${normalizeFileName(selectTaskName.value)}_${_filename}` : _filename
+
   tableToExcel(
     headers,
     body,
-    filename
-    || `数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`,
+    resFileName,
   )
   ElMessage.success('导出成功')
 }
-// 分类相关
-const categories = computed(() => $store.state.category.categoryList)
-const selectCategory = ref('all')
-// 任务相关
-const tasks = computed<TaskApiTypes.TaskItem[]>(
-  () => $store.state.task.taskList,
-)
-const selectTask = ref('all')
-const filterTasks = computed(() => {
-  if (selectCategory.value === 'all') {
-    return tasks.value
-  }
-  // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-  selectTask.value = 'all'
-  return tasks.value.filter(t => t.category === selectCategory.value)
-})
-const selectTaskName = computed(() => {
-  const t = filterTasks.value.find(v => v.key === selectTask.value)
-  return t?.name
-})
-
-watchEffect(() => {
-  if (
-    tasks.value.length
-    && tasks.value.some(v => v.key === $route.query.task)
-  ) {
-    selectTask.value = `${$route.query.task}`
-  }
-})
 
 const isLoadingData = ref(false)
 // 提交的所有文件
