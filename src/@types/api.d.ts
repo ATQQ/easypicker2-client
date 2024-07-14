@@ -207,6 +207,11 @@ declare namespace OverviewApiTypes {
     compressSizeLimit: number
     needBindPhone: boolean
     limitSpace: boolean
+    qiniuOSSPrice: number
+    qiniuCDNPrice: number
+    qiniuBackhaulTrafficPrice: number
+    qiniuBackhaulTrafficPercentage: number
+    qiniuCompressPrice: number
   }
   type getGlobalConfig = ResponseData<GlobalSiteConfig>
 }

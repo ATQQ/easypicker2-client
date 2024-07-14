@@ -12,6 +12,11 @@ export function useSiteConfig() {
     compressSizeLimit: 10, // 压缩文件大小限制（GB）
     needBindPhone: false, // 是否需要绑定手机号
     limitSpace: false, // 是否限制空间
+    qiniuOSSPrice: 0.099, // 七牛云存储价格
+    qiniuCDNPrice: 0.28, // 七牛云CDN价格
+    qiniuBackhaulTrafficPrice: 0.15, // 七牛云回源流量价格
+    qiniuBackhaulTrafficPercentage: 0.8, // 七牛云回源流量占比
+    qiniuCompressPrice: 0.05, // 七牛云压缩价格
   })
 
   onMounted(() => {
