@@ -496,11 +496,12 @@ const isMobile = useIsMobile()
           prop="downloadCount"
           label="累计下载"
         >
-          <template #default="{ row: { downloadCount, downloadSize, oneFile, compressFile, templateFile } }">
+          <template #default="{ row: { downloadCount, downloadSize, oneFile, compressFile, templateFile, price } }">
             {{ downloadCount }} / {{ formatSize(downloadSize) }}<br>
             单文件：{{ oneFile.count }} / {{ formatSize(oneFile.size) }}<br>
             归档：{{ compressFile.count }} / {{ formatSize(compressFile.size) }}<br>
-            模板：{{ templateFile.count }} / {{ formatSize(templateFile.size) }}
+            模板：{{ templateFile.count }} / {{ formatSize(templateFile.size) }}<br>
+            费用：{{ price.total }}￥<br>
           </template>
         </el-table-column>
         <el-table-column

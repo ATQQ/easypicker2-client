@@ -31,7 +31,7 @@ import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
 const { value: siteConfig } = useSiteConfig()
 const isOpenPraise = computed(() => siteConfig.value.openPraise)
 
-const { limitDownload, spaceUsageText } = useSpaceUsage()
+const { limitDownload, spaceUsageText, moneyUsageText } = useSpaceUsage()
 
 const $store = useStore()
 const $route = useRoute()
@@ -593,6 +593,9 @@ onMounted(() => {
 })
 
 const isMobile = useIsMobile()
+function handleShowDetail() {
+  // TODO：弹窗展示详细信息
+}
 </script>
 
 <template>
@@ -829,6 +832,12 @@ const isMobile = useIsMobile()
       <Tip v-if="siteConfig.limitSpace">
         <span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ spaceUsageText }}</span>
       </Tip>
+      <!-- <Tip v-if="siteConfig.limitSpace">
+        <span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ moneyUsageText }}</span>
+        <strong class="money-detail" @click="handleShowDetail">
+          <span>查看详细</span>
+        </strong>
+      </Tip> -->
       <Tip v-if="limitDownload">
         <h2 style="color:#f56c6c">
           空间超限将无法上传/下载文件，如需要使用，请联系管理员扩容，或自行删除无关文件
@@ -1117,5 +1126,9 @@ const isMobile = useIsMobile()
 
     text-align: center;
   }
+}
+.money-detail {
+  color: #409eff;
+  cursor: pointer;
 }
 </style>

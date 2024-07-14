@@ -16,6 +16,10 @@ export function useSpaceUsage() {
     return `已用空间 ${percentage.value}: ${formatSize(usage.value)} / ${formatSize(size.value)}`
   })
 
+  const moneyUsageText = computed(() => {
+    return `可用余额：2 ￥，累计费用 ，每月免费 2￥`
+  })
+
   onMounted(() => {
     UserApi.usage().then((res) => {
       usage.value = res.data.usage
@@ -28,5 +32,6 @@ export function useSpaceUsage() {
     percentage,
     limitDownload,
     spaceUsageText,
+    moneyUsageText,
   }
 }
