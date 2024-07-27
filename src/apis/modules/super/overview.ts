@@ -53,6 +53,10 @@ function getGlobalConfig(type = 'site'): OverviewApiTypes.getGlobalConfig {
   return ajax.get(`/config/global`, { params: { type } })
 }
 
+function getGlobalAllConfig(type = 'site'): OverviewApiTypes.getGlobalConfig {
+  return ajax.get(`/config/global/all`, { params: { type } })
+}
+
 function updateGlobalConfig(key: string, value: any) {
   return ajax.put(`/config/global`, { key, value })
 }
@@ -67,4 +71,5 @@ export default {
   addDisabledRoute,
   getGlobalConfig,
   updateGlobalConfig,
+  getGlobalAllConfig,
 }

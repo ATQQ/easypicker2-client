@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { SuperOverviewApi } from '@/apis'
-import { useSiteConfig } from '@/composables'
+import { useSiteAllConfig } from '@/composables'
 
 const $router = useRouter()
 const routes = computed(() =>
@@ -26,7 +26,7 @@ function handleChangeRoute(r: (typeof showRoutes)[0]) {
 }
 
 const editConfig = ref(false)
-const { value: jsonData, updateValue: updateJsonData } = useSiteConfig()
+const { value: jsonData, updateValue: updateJsonData } = useSiteAllConfig()
 
 const editJSON = ref('')
 

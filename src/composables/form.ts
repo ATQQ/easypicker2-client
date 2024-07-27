@@ -7,9 +7,30 @@ export function useSiteConfig() {
     maxInputLength: 20, // 最大输入长度
     openPraise: false, // 是否开启赞赏相关提示文案
     formLength: 10, // 表单项数量
+    compressSizeLimit: 10, // TODO: 压缩文件大小限制（GB）
+    needBindPhone: false, // 是否需要绑定手机号
+    limitSpace: false, // 是否限制空间
+  })
+
+  onMounted(() => {
+    SuperOverviewApi.getGlobalConfig('site').then((res) => {
+      value.value = res.data
+    })
+  })
+
+  return {
+    value,
+  }
+}
+
+export function useSiteAllConfig() {
+  const value = useLocalStorage('siteConfig', {
+    maxInputLength: 20, // 最大输入长度
+    openPraise: false, // 是否开启赞赏相关提示文案
+    formLength: 10, // 表单项数量
     downloadOneExpired: 1, // 单个文件链接下载过期时间（min）
     downloadCompressExpired: 60, // 归档文件下载过期时间（min）
-    compressSizeLimit: 10, // 压缩文件大小限制（GB）
+    compressSizeLimit: 10, // TODO: 压缩文件大小限制（GB）
     needBindPhone: false, // 是否需要绑定手机号
     limitSpace: false, // 是否限制空间
     qiniuOSSPrice: 0.099, // 七牛云存储价格
@@ -20,7 +41,7 @@ export function useSiteConfig() {
   })
 
   onMounted(() => {
-    SuperOverviewApi.getGlobalConfig('site').then((res) => {
+    SuperOverviewApi.getGlobalAllConfig('site').then((res) => {
       value.value = res.data
     })
   })
