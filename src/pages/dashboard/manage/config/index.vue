@@ -103,9 +103,8 @@ onMounted(() => {
         <el-input
           v-else
           v-model="editJSON"
-          :autosize="{ minRows: 2, maxRows: 4 }"
+          :autosize="{ minRows: 2, maxRows: 30 }"
           type="textarea"
-          placeholder="Please input"
         />
       </div>
     </div>
