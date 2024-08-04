@@ -9,13 +9,13 @@ function updateUserStatus(id: number, status: number, openTime: string) {
   return ajax.put(`${baseUrl}/status`, {
     id,
     status,
-    openTime
+    openTime,
   })
 }
 function resetPassword(id: number, password: string) {
   return ajax.put(`${baseUrl}/password`, {
     id,
-    password
+    password,
   })
 }
 
@@ -23,13 +23,13 @@ function resetPhone(id: number, phone: string, code: string) {
   return ajax.put(`${baseUrl}/phone`, {
     id,
     phone,
-    code
+    code,
   })
 }
 
 function clearOssFile(id: number, type: string) {
   return ajax.delete(`${baseUrl}/clear/oss`, {
-    params: { id, type }
+    params: { id, type },
   })
 }
 
@@ -39,7 +39,7 @@ function getMessageList(): SuperUserApiTypes.getMessageList {
 
 function readMessage(id: string) {
   return ajax.put(`${baseUrl}/message`, {
-    id
+    id,
   })
 }
 
@@ -47,21 +47,29 @@ function sendMessage(text: string, type: number, target?: number) {
   return ajax.post(`${baseUrl}/message`, {
     text,
     type,
-    target
+    target,
   })
 }
 function logout(account: string) {
   return ajax.delete(`${baseUrl}/logout`, {
-    params: { account }
+    params: { account },
   })
 }
 
-function resetLimitSpace(id: number, size: number){
+function resetLimitSpace(id: number, size: number) {
   return ajax.put(`${baseUrl}/size`, {
     id,
-    size
+    size,
   })
 }
+
+function updateWallet(id: number, value: number) {
+  return ajax.put(`${baseUrl}/wallet`, {
+    id,
+    value,
+  })
+}
+
 export default {
   getUserList,
   updateUserStatus,
@@ -72,5 +80,6 @@ export default {
   readMessage,
   sendMessage,
   logout,
-  resetLimitSpace
+  resetLimitSpace,
+  updateWallet,
 }

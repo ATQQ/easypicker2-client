@@ -247,6 +247,28 @@ async function handleSaveSize() {
   showLimitSizeDialog.value = false
   refreshUsers()
 }
+// TODO: 重复代码优化
+// 修改余额
+const showWalletDialog = ref(false)
+const walletForm = reactive({
+  money: 2,
+})
+function handleRewriteWallet(id: number, money: number) {
+  selectUserId.value = id
+  walletForm.money = money
+  showWalletDialog.value = true
+}
+async function handleSaveWallet() {
+  if (+walletForm.money < 0) {
+    ElMessage.warning('余额不能小于0')
+    return
+  }
+  await SuperUserApi.updateWallet(selectUserId.value, +walletForm.money)
+  // 接口调用修改
+  ElMessage.success('修改成功')
+  showWalletDialog.value = false
+  refreshUsers()
+}
 
 // 绑定手机号
 const showPhoneDialog = ref(false)
@@ -496,12 +518,11 @@ const isMobile = useIsMobile()
           prop="downloadCount"
           label="累计下载"
         >
-          <template #default="{ row: { downloadCount, downloadSize, oneFile, compressFile, templateFile, price } }">
+          <template #default="{ row: { downloadCount, downloadSize, oneFile, compressFile, templateFile } }">
             {{ downloadCount }} / {{ formatSize(downloadSize) }}<br>
             单文件：{{ oneFile.count }} / {{ formatSize(oneFile.size) }}<br>
             归档：{{ compressFile.count }} / {{ formatSize(compressFile.size) }}<br>
-            模板：{{ templateFile.count }} / {{ formatSize(templateFile.size) }}<br>
-            费用：{{ price.total }}￥<br>
+            模板：{{ templateFile.count }} / {{ formatSize(templateFile.size) }}
           </template>
         </el-table-column>
         <el-table-column
@@ -529,10 +550,11 @@ const isMobile = useIsMobile()
         <el-table-column label="云空间" width="200">
           <template
             #default="{
-              row: { resources, monthAgoSize, quarterAgoSize, halfYearSize, id, limitSize, limitUpload, percentage },
+              row: { wallet, price, balance, resources, monthAgoSize, quarterAgoSize, halfYearSize, id, limitSize, limitUpload, percentage },
             }"
           >
             <ul class="user-oss-info" :class="{ disabled: limitUpload }">
+              <li>￥：{{ price.total }} / {{ wallet }} = {{ balance }}</li>
               <li>{{ percentage }}% {{ resources }}/{{ limitSize }}</li>
               <li>
                 一月前：{{ monthAgoSize
@@ -618,6 +640,14 @@ const isMobile = useIsMobile()
                 @click="handleRewriteSize(scope.row.id, scope.row.size)"
               >
                 修改上限
+              </el-button>
+              <el-button
+                type="danger"
+                text
+                size="small"
+                @click="handleRewriteWallet(scope.row.id, scope.row.wallet)"
+              >
+                修改余额
               </el-button>
               <el-button
                 v-if="scope.row.onlineCount !== 0"
@@ -813,6 +843,38 @@ const isMobile = useIsMobile()
         <span class="dialog-footer">
           <el-button @click="showLimitSizeDialog = false">取 消</el-button>
           <el-button type="primary" @click="handleSaveSize">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 修改余额 -->
+    <el-dialog
+      v-model="showWalletDialog"
+      :fullscreen="isMobile"
+      center
+      title="修改空间上限"
+    >
+      <div class="tc">
+        <el-form :model="walletForm" label-width="60px">
+          <el-form-item label="余额">
+            <el-input
+              v-model="walletForm.money"
+              show-word-limit
+              clearable
+              placeholder="请输入新的余额"
+              maxlength="4"
+              type="number"
+            >
+              <template #append>
+                ￥
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showWalletDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSaveWallet">确 定</el-button>
         </span>
       </template>
     </el-dialog>
