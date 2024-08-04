@@ -1,29 +1,41 @@
-import { computed, onMounted, ref } from 'vue'
-import { useSiteConfig } from './form'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { UserApi } from '@/apis'
 import { formatSize } from '@/utils/stringUtil'
 
 export function useSpaceUsage() {
-  const { value: siteConfig } = useSiteConfig()
-  // 实际使用空间
-  const usage = ref(0)
-  // 总空间
-  const size = ref(0)
-  const percentage = computed(() => `${(usage.value / size.value * 100).toFixed(2)}%`)
-  const limitDownload = computed(() => siteConfig.value.limitSpace && size.value < usage.value)
-
-  const spaceUsageText = computed(() => {
-    return `已用空间 ${percentage.value}: ${formatSize(usage.value)} / ${formatSize(size.value)}`
+  const usageData = reactive({
+    size: 0,
+    usage: 0,
+    limitUpload: false,
+    wallet: '0:00',
+    cost: '0.00',
+    limitSpace: false,
+    limitWallet: false,
+    price: {
+      storage: '0:00',
+      download: '0:00',
+    },
   })
-
+  const usage = computed(() => usageData.usage)
+  const size = computed(() => usageData.size)
+  const percentage = computed(() => `${(usageData.usage / usageData.size * 100).toFixed(2)}%`)
+  const walletPercentage = computed(() => `${(+usageData.cost / +usageData.wallet * 100).toFixed(2)}%`)
+  const limitDownload = computed(() => usageData.limitUpload)
+  const limitSpace = computed(() => usageData.limitSpace)
+  const limitWallet = computed(() => usageData.limitWallet)
+  const spaceUsageText = computed(() => {
+    return `空间 ${percentage.value}: ${formatSize(usageData.usage)} / ${formatSize(usageData.size)}`
+  })
   const moneyUsageText = computed(() => {
-    return `可用余额：2 ￥，累计费用 ，每月免费 2￥`
+    return `钱包 ${walletPercentage.value}: ${usageData.cost} / ${usageData.wallet}￥`
+  })
+  const priceText = computed(() => {
+    return `存储 ${usageData.price.storage}￥ + 下载 ${usageData.price.download}￥`
   })
 
   onMounted(() => {
     UserApi.usage().then((res) => {
-      usage.value = res.data.usage
-      size.value = res.data.size
+      Object.assign(usageData, res.data)
     })
   })
   return {
@@ -31,7 +43,10 @@ export function useSpaceUsage() {
     size,
     percentage,
     limitDownload,
+    limitSpace,
+    limitWallet,
     spaceUsageText,
     moneyUsageText,
+    priceText,
   }
 }

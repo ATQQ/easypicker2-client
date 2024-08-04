@@ -1,7 +1,15 @@
+<script setup lang="ts">
+import { Opportunity } from '@element-plus/icons-vue'
+
+defineProps<{
+  imgs?: string[]
+}>()
+</script>
+
 <template>
   <div class="tip tc">
     <div>
-      <slot></slot>
+      <slot />
     </div>
     <div v-if="imgs?.length" class="preview">
       <el-image
@@ -13,18 +21,11 @@
         fit="cover"
       />
       <el-icon class="icon">
-        <opportunity />
+        <Opportunity />
       </el-icon>
     </div>
   </div>
 </template>
-<script setup lang="ts">
-import { Opportunity } from '@element-plus/icons-vue'
-
-defineProps<{
-  imgs?: string[]
-}>()
-</script>
 
 <style scoped>
 .tip {
