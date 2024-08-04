@@ -853,7 +853,7 @@ function handleShowDetail() {
       </Tip>
       <Tip v-if="isOpenPraise">
         <h3 style="color: #f56c6c">
-          由于部分用户用量较大，小站无法承担这笔开销，故限制每个账户为 2GB 可用空间，2￥的默认余额
+          由于部分用户用量较大，小站无法承担这笔开销，限制每个账户为 2GB 可用空间，2￥的默认余额
         </h3>
         <h3>
           <span style="color: #f56c6c">你可以通过<a
