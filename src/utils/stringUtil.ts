@@ -137,7 +137,7 @@ export function formatSize(
   units?: string[],
 ) {
   let unit
-  units = units || ['B', 'K', 'M', 'G', 'TB']
+  units = units || ['B', 'K', 'M', 'G', 'TB', 'PB']
   // eslint-disable-next-line no-cond-assign
   while ((unit = units.shift()) && size > 1024) {
     size /= 1024
