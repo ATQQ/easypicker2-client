@@ -740,6 +740,9 @@ onUnmounted(() => {
           </template>
           <template v-else>
             <Tip>
+              <strong>查询提交情况，需填写和提交时一样的表单信息</strong>
+            </Tip>
+            <Tip>
               ① 选择完文件，点击 ”提交文件“即可 <br>
               ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
               <template v-if="taskMoreInfo.template && !disabledUpload">
