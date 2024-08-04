@@ -83,6 +83,15 @@ declare namespace UserApiTypes {
   type usage = ResponseData<{
     size: number
     usage: number
+    limitUpload: boolean
+    wallet: string
+    cost: string
+    limitSpace: boolean
+    limitWallet: boolean
+    price: {
+      storage: string
+      download: string
+    }
   }>
   type checkLoginStatus = ResponseData<boolean>
 }
@@ -207,6 +216,7 @@ declare namespace OverviewApiTypes {
     compressSizeLimit: number
     needBindPhone: boolean
     limitSpace: boolean
+    limitWallet: boolean
     qiniuOSSPrice: number
     qiniuCDNPrice: number
     qiniuBackhaulTrafficPrice: number

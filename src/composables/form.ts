@@ -10,6 +10,7 @@ export function useSiteConfig() {
     compressSizeLimit: 10, // TODO: 压缩文件大小限制（GB）
     needBindPhone: false, // 是否需要绑定手机号
     limitSpace: false, // 是否限制空间
+    limitWallet: false, // 是否限制费用
   })
 
   onMounted(() => {

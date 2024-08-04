@@ -31,7 +31,7 @@ import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
 const { value: siteConfig } = useSiteConfig()
 const isOpenPraise = computed(() => siteConfig.value.openPraise)
 
-const { limitDownload, spaceUsageText, moneyUsageText } = useSpaceUsage()
+const { limitDownload, spaceUsageText, moneyUsageText, limitSpace, limitWallet, priceText } = useSpaceUsage()
 
 const $store = useStore()
 const $route = useRoute()
@@ -594,7 +594,7 @@ onMounted(() => {
 
 const isMobile = useIsMobile()
 function handleShowDetail() {
-  // TODO：弹窗展示详细信息
+  ElMessageBox.confirm(priceText.value)
 }
 </script>
 
@@ -823,21 +823,15 @@ function handleShowDetail() {
     <!-- 主体内容 -->
     <div class="panel">
       <Tip>全部文件大小：{{ fileListSize }}，当前任务大小：{{ filterFileSize }}</Tip>
-      <!-- <Tip>↑ 仅供使用者参考，应用无存储空间上限，也不收费</Tip> -->
-      <Tip v-if="isOpenPraise">
-        <h2 style="color: #f56c6c">
-          ↑ 由于部分用户用量较大，小站无法承担这笔开销，故限制每个账户为 2GB 可用空间
-        </h2>
-      </Tip>
       <Tip v-if="siteConfig.limitSpace">
-        <span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ spaceUsageText }}</span>
+        <span :class="{ warnColor: limitSpace }">{{ spaceUsageText }}</span>
       </Tip>
-      <!-- <Tip v-if="siteConfig.limitSpace">
-        <span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ moneyUsageText }}</span>
+      <Tip v-if="siteConfig.limitWallet">
+        <span :class="{ warnColor: limitWallet }">{{ moneyUsageText }}</span>
         <strong class="money-detail" @click="handleShowDetail">
           <span>查看详细</span>
         </strong>
-      </Tip> -->
+      </Tip>
       <Tip v-if="limitDownload">
         <h2 style="color:#f56c6c">
           空间超限将无法上传/下载文件，如需要使用，请联系管理员扩容，或自行删除无关文件
@@ -858,17 +852,20 @@ function handleShowDetail() {
         </Praise> -->
       </Tip>
       <Tip v-if="isOpenPraise">
+        <h3 style="color: #f56c6c">
+          由于部分用户用量较大，小站无法承担这笔开销，故限制每个账户为 2GB 可用空间，2￥的默认余额
+        </h3>
         <h3>
           <span style="color: #f56c6c">你可以通过<a
             style="color: #409eff"
             href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
             rel="noopener noreferrer"
-          > 联系作者进行赞助⚡ </a>来换取更大的空间</span>，
+          > 联系作者进行赞助⚡ </a>增加空间 或 充值余额</span>，
           <strong>
             <a
               style="color: #409eff" href="https://docs.ep.sugarat.top/" target="_blank"
               rel="noopener noreferrer"
-            >或自己搭建💡
+            >也可以选择自己搭建💡
             </a>
           </strong>
         </h3>
@@ -1001,6 +998,9 @@ function handleShowDetail() {
 </template>
 
 <style scoped lang="scss">
+.warnColor {
+  color: #f56c6c;
+}
 .files {
   max-width: 1024px;
   margin: 0 auto;
