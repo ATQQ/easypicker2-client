@@ -1,11 +1,10 @@
 import { base64 } from './stringUtil'
 
-/* eslint-disable no-restricted-syntax */
 type SuccessCallback = (data: any) => void
 export function jsonp(
   url: string,
   jsonpCallback: string,
-  success: SuccessCallback
+  success: SuccessCallback,
 ) {
   const $script = document.createElement('script')
   $script.src = `${url}&callback=${jsonpCallback}`
@@ -28,7 +27,7 @@ interface UploadFileOptions {
 export function uploadFile(
   file: File,
   url: string,
-  options?: UploadFileOptions
+  options?: UploadFileOptions,
 ) {
   const form = new FormData()
   // ajax对象
@@ -81,7 +80,7 @@ export interface tableItem {
 export function tableToExcel(
   headers: (string | tableItem)[],
   body: any[],
-  filename = 'res.xlsx'
+  filename = 'res.xlsx',
 ) {
   // 列标题
   let str = `<tr>${headers
@@ -141,14 +140,14 @@ export function qiniuUpload(
   token: string,
   file: File,
   key: string,
-  options?: UploadFileOptions
+  options?: UploadFileOptions,
 ) {
   const observable = qiniu.upload(file, key, token)
   const { success, error, process } = options || {}
   const subscription = observable.subscribe({
     next(res) {
       const {
-        total: { percent }
+        total: { percent },
       } = res
       if (process) {
         process(percent.toFixed(2), res, subscription)
@@ -163,7 +162,7 @@ export function qiniuUpload(
       if (success) {
         success(res, subscription)
       }
-    }
+    },
   })
   // subscription.close() // 取消上传
 }
@@ -187,7 +186,7 @@ export function downLoadByXhr(
   options?: {
     progress: (loaded: number, total: number) => void
     success: (res) => void
-  }
+  },
 ) {
   const { progress, success } = options || {}
   const xhr = new XMLHttpRequest()
@@ -235,17 +234,17 @@ export function downLoadByXhr(
   xhr.send()
 }
 
-export function mergeRequest<T extends Function>(callback: T, delay = 1000){
-  let pMap = new Map<string, Promise<any>>()
-  const cb: any  = (...args)=>{
+export function mergeRequest<T extends Function>(callback: T, delay = 1000) {
+  const pMap = new Map<string, Promise<any>>()
+  const cb: any = (...args) => {
     const key = JSON.stringify(args)
     let p = pMap.get(key)
     if (!p) {
       p = callback(...args)
       pMap.set(key, p)
-      setTimeout(()=>{
+      setTimeout(() => {
         pMap.delete(key)
-      },delay)
+      }, delay)
     }
     return p
   }
