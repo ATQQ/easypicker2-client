@@ -11,6 +11,7 @@ export function useSiteConfig() {
     needBindPhone: false, // 是否需要绑定手机号
     limitSpace: false, // 是否限制空间
     limitWallet: false, // 是否限制费用
+    moneyStartDay: +new Date('2024/08/01'),
   })
 
   onMounted(() => {
