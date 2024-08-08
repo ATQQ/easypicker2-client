@@ -827,6 +827,9 @@ function handleShowDetail() {
         <span :class="{ warnColor: limitSpace }">{{ spaceUsageText }}</span>
       </Tip>
       <Tip v-if="siteConfig.limitWallet">
+        统计时间：{{ formatDate(siteConfig.moneyStartDay, 'yyyy-MM-dd') }} - 至今
+      </Tip>
+      <Tip v-if="siteConfig.limitWallet">
         <span :class="{ warnColor: limitWallet }">{{ moneyUsageText }}</span>
         <strong class="money-detail" @click="handleShowDetail">
           <span>查看详细</span>
