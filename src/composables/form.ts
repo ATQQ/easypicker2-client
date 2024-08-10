@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@vueuse/core'
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { SuperOverviewApi } from '@/apis'
+import { formatDate } from '@/utils/stringUtil'
 
 export function useSiteConfig() {
   const value = useLocalStorage('siteConfig', {
@@ -14,6 +15,7 @@ export function useSiteConfig() {
     moneyStartDay: +new Date('2024/08/01'),
   })
 
+  const moneyStartDay = computed(() => formatDate(value.value.moneyStartDay))
   onMounted(() => {
     SuperOverviewApi.getGlobalConfig('site').then((res) => {
       value.value = res.data
@@ -22,6 +24,7 @@ export function useSiteConfig() {
 
   return {
     value,
+    moneyStartDay,
   }
 }
 

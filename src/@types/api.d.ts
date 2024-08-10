@@ -222,6 +222,7 @@ declare namespace OverviewApiTypes {
     qiniuBackhaulTrafficPrice: number
     qiniuBackhaulTrafficPercentage: number
     qiniuCompressPrice: number
+    moneyStartDay: number
   }
   type getGlobalConfig = ResponseData<GlobalSiteConfig>
 }
@@ -248,6 +249,13 @@ declare namespace SuperUserApiTypes {
     onlineCount: number
     usage: number
     lastLoginTime: number
+    price: {
+      backhaulTrafficPrice: string
+      cdnPrice: string
+      compressPrice: string
+      ossPrice: string
+      total: string
+    }
   }
   interface MessageItem {
     id: string
