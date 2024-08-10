@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { DeleteFilled, Message, Refresh, Search } from '@element-plus/icons-vue'
+import { DeleteFilled, Message, Money, Refresh, Search } from '@element-plus/icons-vue'
 import { useLocalStorage } from '@vueuse/core'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate, formatSize } from '@/utils/stringUtil'
 import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 
-import { useIsMobile } from '@/composables'
+import { useIsMobile, useSiteConfig } from '@/composables'
 
 // 用户
 const users = reactive<SuperUserApiTypes.UserItem[]>([])
@@ -403,6 +403,15 @@ onMounted(() => {
 })
 
 const isMobile = useIsMobile()
+
+const { moneyStartDay } = useSiteConfig()
+
+function handleCheckDetail(price) {
+  const { backhaulTrafficPrice, cdnPrice, compressPrice, ossPrice } = price
+  ElMessageBox.confirm(`存储：${ossPrice}, 下载：${cdnPrice},压缩：${compressPrice},回源：${backhaulTrafficPrice}`, {
+    showCancelButton: false,
+  })
+}
 </script>
 
 <template>
@@ -470,6 +479,9 @@ const isMobile = useIsMobile()
             @click="sendMessage(null, 0)"
           >推送全局消息</el-button>
         </span>
+        <span class="item">
+          计费起始时间：{{ formatDate(moneyStartDay) }}
+        </span>
       </div>
       <el-table
         height="550"
@@ -503,17 +515,6 @@ const isMobile = useIsMobile()
             token: {{ scope.row.onlineCount }}<br>
           </template>
         </el-table-column>
-        <!-- <el-table-column prop="joinTime" label="注册时间" width="190">
-          <template #default="scope">
-            {{
-              formatDate(new Date(scope.row.joinTime))
-            }}
-          </template>
-        </el-table-column> -->
-        <!-- <el-table-column
-          prop="loginCount"
-          label="登录次数"
-        /> -->
         <el-table-column
           prop="downloadCount"
           label="累计下载"
@@ -547,14 +548,21 @@ const isMobile = useIsMobile()
             平均：{{ scope.row.usage && scope.row.ossCount && formatSize(Math.round(scope.row.usage / scope.row.ossCount)) }}<br>
           </template>
         </el-table-column>
-        <el-table-column label="云空间" width="200">
+        <el-table-column label="云空间" width="240">
           <template
             #default="{
               row: { wallet, price, balance, resources, monthAgoSize, quarterAgoSize, halfYearSize, id, limitSize, limitUpload, percentage },
             }"
           >
             <ul class="user-oss-info" :class="{ disabled: limitUpload }">
-              <li>￥：{{ price.total }} / {{ wallet }} = {{ balance }}</li>
+              <li>
+                ￥:{{ price.total }} / {{ wallet }} = {{ balance }} <el-button
+                  :icon="Money"
+                  circle
+                  size="small"
+                  @click="handleCheckDetail(price)"
+                />
+              </li>
               <li>{{ percentage }}% {{ resources }}/{{ limitSize }}</li>
               <li>
                 一月前：{{ monthAgoSize
