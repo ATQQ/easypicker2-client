@@ -19,6 +19,6 @@
     "sourceMap": true,
     "esModuleInterop": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "docs/**/*.ts", "docs/**/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "docs/**/*.ts", "docs/**/*.d.ts", "docs/vite.config.mts"],
   "exclude": ["vite.config.mts"]
 }
