@@ -1,450 +1,140 @@
-<template>
-  <div class="user">
-    <div class="panel">
-      <div class="p10 log-filter">
-        <span class="item">
-          <span class="label">状态</span>
-          <el-select
-            v-model="filterLogType"
-            size="default"
-            placeholder="请选择日志类型"
-          >
-            <el-option
-              v-for="(item, idx) in logTypeList"
-              :key="idx"
-              :label="item.label"
-              :value="item.type"
-            ></el-option>
-          </el-select>
-        </span>
-        <span class="item">
-          <el-input
-            size="default"
-            clearable
-            placeholder="请输入要检索的内容"
-            :prefix-icon="Search"
-            v-model="searchWord"
-          >
-          </el-input>
-        </span>
-        <span class="item">
-          <el-button size="default" :icon="Refresh" @click="refreshUsers"
-            >刷新</el-button
-          >
-        </span>
-        <span class="item">
-          <el-button
-            size="warning"
-            :icon="Message"
-            @click="sendMessage(null, 0)"
-            >推送全局消息</el-button
-          >
-        </span>
-      </div>
-      <el-table
-        height="550"
-        stripe
-        border
-        :default-sort="{ prop: 'date', order: 'descending' }"
-        :data="pageUsers"
-        style="width: 100%"
-      >
-        <el-table-column prop="id" label="ID" width="60"></el-table-column>
-        <el-table-column
-          prop="account"
-          label="账号"
-          width="120"
-        ></el-table-column>
-        <el-table-column prop="onlineCount" label="token" width="80">
-        </el-table-column>
-        <el-table-column
-          prop="phone"
-          label="手机号"
-          width="100"
-        ></el-table-column>
-        <el-table-column
-          sortable
-          prop="login_time"
-          label="最后登录"
-          width="190"
-        >
-          <template #default="scope">{{
-            scope.row.login_time && formatDate(new Date(scope.row.login_time))
-          }}</template>
-        </el-table-column>
-        <el-table-column prop="join_time" label="注册时间" width="190">
-          <template #default="scope">{{
-            formatDate(new Date(scope.row.join_time))
-          }}</template>
-        </el-table-column>
-        <el-table-column
-          sortable
-          prop="login_count"
-          label="登录次数"
-        ></el-table-column>
-        <el-table-column
-          prop="open_time"
-          label="解封时间"
-          v-if="filterLogType === 1"
-        >
-          <template #default="scope">{{
-            scope.row.open_time && formatDate(new Date(scope.row.open_time))
-          }}</template>
-        </el-table-column>
-        <el-table-column
-          sortable
-          prop="fileCount"
-          label="收集文件"
-        ></el-table-column>
-        <el-table-column label="占用云空间" width="200">
-          <template
-            #default="{
-              row: { resources, monthAgoSize, quarterAgoSize, halfYearSize, id, limitSize, limitUpload, percentage }
-            }"
-          >
-            <ul class="user-oss-info" :class="{ 'disabled': limitUpload}">
-              <li>{{ percentage }}% {{ resources }}/{{ limitSize }}</li>
-              <li>
-                一月前：{{ monthAgoSize
-                }}<el-button
-                  v-if="resources !== '0B'"
-                  class="clear-btn"
-                  @click="handleClearFiles(id, 'month')"
-                  :icon="DeleteFilled"
-                  circle
-                  size="small"
-                ></el-button>
-              </li>
-              <li>
-                三月前：{{ quarterAgoSize
-                }}<el-button
-                  v-if="quarterAgoSize !== '0B'"
-                  class="clear-btn"
-                  @click="handleClearFiles(id, 'quarter')"
-                  :icon="DeleteFilled"
-                  circle
-                  size="small"
-                ></el-button>
-              </li>
-              <li>
-                半年前：{{ halfYearSize
-                }}<el-button
-                  v-if="halfYearSize !== '0B'"
-                  class="clear-btn"
-                  @click="handleClearFiles(id, 'half')"
-                  :icon="DeleteFilled"
-                  circle
-                  size="small"
-                ></el-button>
-              </li>
-            </ul>
-          </template>
-        </el-table-column>
-        <el-table-column fixed="right" label="操作" width="100">
-          <template #default="scope">
-            <div class="text-btn-list">
-              <el-button
-                @click="
-                  handleChangeStatus(
-                    scope.row.id,
-                    scope.row.status,
-                    scope.row.open_time
-                  )
-                "
-                type="primary"
-                text
-                size="small"
-                >修改状态</el-button
-              >
-              <el-button
-                @click="handleResetPassword(scope.row.id)"
-                type="primary"
-                text
-                size="small"
-                >重置密码</el-button
-              >
-              <el-button
-                @click="handleBindPhone(scope.row.id)"
-                type="primary"
-                text
-                size="small"
-                >绑定手机号</el-button
-              >
-              <el-button
-                @click="sendMessage(scope.row.id)"
-                type="warning"
-                text
-                size="small"
-                >发送消息</el-button
-              >
-              <el-button
-                @click="handleRewriteSize(scope.row.id, scope.row.size)"
-                type="danger"
-                text
-                size="small"
-                >修改上限</el-button
-              >
-              <el-button
-                v-if="scope.row.onlineCount !== 0"
-                @click="logout(scope.row.account)"
-                type="danger"
-                text
-                size="small"
-                >一键下线</el-button
-              >
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="flex fc p10">
-        <el-pagination
-          :current-page="pageCurrent"
-          @current-change="handlePageChange"
-          background
-          :page-count="pageCount"
-          :page-sizes="[10, 50, 100, 200]"
-          :page-size="pageSize"
-          @size-change="handleSizeChange"
-          :total="filterUsers.length"
-          layout="total, sizes, prev, pager, next, jumper"
-        ></el-pagination>
-      </div>
-    </div>
-    <!-- 消息推送弹窗 -->
-    <el-dialog
-      :fullscreen="isMobile"
-      center
-      title="消息推送"
-      v-model="showMessageDialog"
-    >
-      <div class="tc">
-        <el-input
-          v-model="pushMessageText"
-          :autosize="{ minRows: 6, maxRows: 20 }"
-          type="textarea"
-          placeholder="输入要推送的消息，支持HTML内容（推荐使用mdnice 转 markdown 转html）"
-        />
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showMessageDialog = false">取 消</el-button>
-          <el-button type="primary" @click="sureSendMessage">确 定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-    <!-- 用户状态修改弹窗 -->
-    <el-dialog
-      :fullscreen="isMobile"
-      center
-      title="状态修改"
-      v-model="showUserStatusDialog"
-    >
-      <div class="tc">
-        <el-select v-model="selectStatus" placeholder="请选择新分类">
-          <el-option
-            v-for="s in userStatusList"
-            :key="s.type"
-            :label="s.label"
-            :value="s.type"
-          ></el-option>
-        </el-select>
-      </div>
-      <div style="margin-top: 10px" class="tc" v-if="selectStatus === 1">
-        <el-date-picker
-          :editable="false"
-          v-model="openTime"
-          type="datetime"
-          placeholder="点击设置解封日期"
-        ></el-date-picker>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showUserStatusDialog = false">取 消</el-button>
-          <el-button type="primary" @click="handleSaveStatus">确 定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
-    <!-- 重置密码 -->
-    <el-dialog
-      :fullscreen="isMobile"
-      center
-      title="密码重置"
-      v-model="showResetPasswordDialog"
-    >
-      <div class="tc">
-        <el-form :model="pwdForm" label-width="80px">
-          <el-form-item label="新密码">
-            <el-input
-              show-word-limit
-              clearable
-              v-model="pwdForm.pwd1"
-              placeholder="请输入新密码"
-              maxlength="16"
-              minlength="6"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-input
-              show-word-limit
-              clearable
-              v-model="pwdForm.pwd2"
-              placeholder="请再次输入"
-              maxlength="16"
-              minlength="6"
-            />
-          </el-form-item>
-        </el-form>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showResetPasswordDialog = false">取 消</el-button>
-          <el-button type="primary" @click="handleSavePassword"
-            >确 定</el-button
-          >
-        </span>
-      </template>
-    </el-dialog>
-    <!-- 重绑定手机号 -->
-    <el-dialog
-      :fullscreen="isMobile"
-      center
-      title="绑定手机号"
-      v-model="showPhoneDialog"
-    >
-      <div class="tc">
-        <el-form :model="phoneForm" label-width="60px">
-          <el-form-item label="手机号">
-            <el-input
-              show-word-limit
-              clearable
-              v-model="phoneForm.phone"
-              placeholder="请输入手机号"
-              maxlength="11"
-            >
-              <template #append>
-                <!-- 获取验证码 -->
-                <el-button :disabled="time !== 0" @click="getCode">{{
-                  codeText
-                }}</el-button>
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item>
-            <el-input
-              show-word-limit
-              clearable
-              v-model="phoneForm.code"
-              placeholder="请输入验证码"
-              maxlength="4"
-            />
-          </el-form-item>
-        </el-form>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showPhoneDialog = false">取 消</el-button>
-          <el-button type="primary" @click="handleSavePhone">确 定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-    <!-- 修改空间上限 -->
-    <el-dialog
-      :fullscreen="isMobile"
-      center
-      title="修改空间上限"
-      v-model="showLimitSizeDialog"
-    >
-      <div class="tc">
-        <el-form :model="limitSizeForm" label-width="60px">
-          <el-form-item label="大小">
-            <el-input
-              show-word-limit
-              clearable
-              v-model="limitSizeForm.size"
-              placeholder="请输入空间上限"
-              maxlength="4"
-              type="number"
-            >
-              <template #append>
-                GB
-              </template>
-            </el-input>
-          </el-form-item>
-        </el-form>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showLimitSizeDialog = false">取 消</el-button>
-          <el-button type="primary" @click="handleSaveSize">确 定</el-button>
-        </span>
-      </template>
-    </el-dialog>
-  </div>
-</template>
 <script lang="ts" setup>
-import { ElMessage, ElMessageBox, linkEmits } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useStore } from 'vuex'
-import { Search, DeleteFilled, Refresh, Message } from '@element-plus/icons-vue'
+import { DeleteFilled, Message, Money, Refresh, Search } from '@element-plus/icons-vue'
+import { useLocalStorage } from '@vueuse/core'
+import Tip from '../../tasks/components/infoPanel/tip.vue'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
-import { formatDate } from '@/utils/stringUtil'
+import { formatDate, formatSize } from '@/utils/stringUtil'
 import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 
-const $store = useStore()
+import { useIsMobile, useSiteConfig } from '@/composables'
+
+const sumCost = ref('')
 // 用户
-const users: any[] = reactive([])
-const refreshUsers = () => {
+const users = reactive<SuperUserApiTypes.UserItem[]>([])
+function refreshUsers() {
   SuperUserApi.getUserList().then((res) => {
     users.splice(0, users.length, ...res.data.list)
+    sumCost.value = res.data.sumCost
     ElMessage.success('列表数据刷新成功')
   })
 }
 
 // 筛选用户状态
-const filterLogType = ref(USER_STATUS.NORMAL)
+const userStatusType = useLocalStorage('userStatusType', USER_STATUS.NORMAL)
 const searchWord = ref('')
-const logTypeList = reactive([
+const statusTypeList = reactive([
   {
     label: '正常',
-    type: USER_STATUS.NORMAL
+    type: USER_STATUS.NORMAL,
   },
   {
     label: '冻结',
-    type: USER_STATUS.FREEZE
+    type: USER_STATUS.FREEZE,
   },
   {
     label: '封禁',
-    type: USER_STATUS.BAN
-  }
+    type: USER_STATUS.BAN,
+  },
 ])
+const sortType = useLocalStorage('userListSortType', 'id')
+const sortTypeList = [
+  {
+    label: 'ID',
+    value: 'id',
+  },
+  {
+    label: '累计上传数量',
+    value: 'fileCount',
+  },
+  {
+    label: '累计占用空间',
+    value: 'originFileSize',
+  },
+  {
+    label: 'OSS文件数量',
+    value: 'ossCount',
+  },
+  {
+    label: '最后登录时间',
+    value: 'lastLoginTime',
+  },
+  {
+    label: '登录次数',
+    value: 'login_count',
+  },
+  {
+    label: '容量大小',
+    value: 'size',
+  },
+  {
+    label: '占用空间',
+    value: 'usage',
+  },
+  {
+    label: '限制使用',
+    value: 'limitUpload',
+  },
+  {
+    label: '下载次数',
+    value: 'downloadCount',
+  },
+  {
+    label: '累计下载大小',
+    value: 'downloadSize',
+  },
+  {
+    label: '累计费用',
+    value: 'cost',
+  },
+]
 
-const filterUsers = computed(() =>
-  users
-    .filter((v) => v.status === filterLogType.value)
+// 升降序
+const sortOrder = useLocalStorage('userListSortOrder', 'desc')
+const sortOrderList = [
+  {
+    label: '升序',
+    value: 'asc',
+  },
+  {
+    label: '降序',
+    value: 'desc',
+  },
+]
+const filterUsers = computed(() => {
+  const copyUsers = [...users]
+  copyUsers.sort((a, b) => {
+    return sortOrder.value === 'asc'
+      ? a[sortType.value] - b[sortType.value]
+      : b[sortType.value] - a[sortType.value]
+  })
+  return copyUsers
+    .filter(v => v.status === userStatusType.value)
     .filter((v) => {
       const {
         id,
         account,
         phone,
-        join_time,
-        login_count,
-        login_time,
-        open_time
+        joinTime,
+        loginCount,
+        loginTime,
+        openTime,
       } = v
-      if (searchWord.value.length === 0) return true
-      return `${id} ${account} ${phone} ${login_count} ${formatDate(
-        open_time
-      )} ${formatDate(login_time)} ${formatDate(join_time)}`.includes(
-        searchWord.value
+      if (searchWord.value.length === 0)
+        return true
+      return `${id} ${account} ${phone} ${loginTime} ${formatDate(
+        openTime,
+      )} ${formatDate(loginCount)} ${formatDate(joinTime)}`.includes(
+        searchWord.value,
       )
     })
-)
+})
 
 // 分页
-const pageSize = ref(10)
-const handleSizeChange = (v: number) => {
+const pageSize = useLocalStorage<number>('userListPageSize', 10)
+function handleSizeChange(v: number) {
   pageSize.value = v
 }
 const pageCount = computed(() => {
@@ -457,7 +147,7 @@ const pageUsers = computed(() => {
   const end = pageCurrent.value * pageSize.value
   return filterUsers.value.slice(start, end)
 })
-const handlePageChange = (idx: number) => {
+function handlePageChange(idx: number) {
   pageCurrent.value = idx
 }
 
@@ -465,35 +155,32 @@ const handlePageChange = (idx: number) => {
 const showUserStatusDialog = ref(false)
 const selectUserId = ref(0)
 const selectStatus = ref(USER_STATUS.NORMAL)
-const userStatusList = logTypeList
+const userStatusList = statusTypeList
 const openTime = ref('')
-const handleChangeStatus = (
-  userId: number,
-  status: USER_STATUS,
-  oTime: string
-) => {
+function handleChangeStatus(userId: number, status: USER_STATUS, oTime: string) {
   selectUserId.value = userId
   selectStatus.value = status
   openTime.value = oTime
   showUserStatusDialog.value = true
 }
-const handleSaveStatus = () => {
-  const user = users.find((u) => u.id === selectUserId.value)
+function handleSaveStatus() {
+  const user = users.find(u => u.id === selectUserId.value)
   if (selectStatus.value === USER_STATUS.FREEZE) {
     if (!openTime.value) {
       ElMessage.warning('请设置解冻时间')
       return
     }
-    user.open_time = openTime.value
-  } else {
-    user.open_time = ''
+    user.openTime = openTime.value
+  }
+  else {
+    user.openTime = ''
   }
   user.status = selectStatus.value
   showUserStatusDialog.value = false
-  SuperUserApi.updateUserStatus(user.id, user.status, user.open_time).then(
+  SuperUserApi.updateUserStatus(user.id, user.status, user.openTime).then(
     () => {
       ElMessage.success('修改成功')
-    }
+    },
   )
 }
 
@@ -501,16 +188,16 @@ const handleSaveStatus = () => {
 const showResetPasswordDialog = ref(false)
 const pwdForm = reactive({
   pwd1: '',
-  pwd2: ''
+  pwd2: '',
 })
-const handleResetPassword = (userId: number) => {
+function handleResetPassword(userId: number) {
   selectUserId.value = userId
   showResetPasswordDialog.value = true
   pwdForm.pwd1 = ''
   pwdForm.pwd2 = ''
 }
 
-const checkPwdForm = () => {
+function checkPwdForm() {
   if (!rPassword.test(pwdForm.pwd1)) {
     ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
     return false
@@ -523,12 +210,13 @@ const checkPwdForm = () => {
   return true
 }
 
-const handleSavePassword = () => {
-  if (!checkPwdForm()) return
+function handleSavePassword() {
+  if (!checkPwdForm())
+    return
   ElMessageBox.confirm('此操作不可逆，请谨慎操作', '确定要重置用户的密码吗?', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
-    type: 'warning'
+    type: 'warning',
   })
     .then(() => {
       SuperUserApi.resetPassword(selectUserId.value, pwdForm.pwd1).then(() => {
@@ -544,15 +232,15 @@ const handleSavePassword = () => {
 // 限制空间大小
 const showLimitSizeDialog = ref(false)
 const limitSizeForm = reactive({
-  size: 2
+  size: 2,
 })
-const handleRewriteSize = (id: number, size: number) => {
+function handleRewriteSize(id: number, size: number) {
   selectUserId.value = id
   limitSizeForm.size = size
   showLimitSizeDialog.value = true
 }
-const handleSaveSize = async () => {
-  if(+limitSizeForm.size<0){
+async function handleSaveSize() {
+  if (+limitSizeForm.size < 0) {
     ElMessage.warning('空间上限不能小于0')
     return
   }
@@ -562,16 +250,38 @@ const handleSaveSize = async () => {
   showLimitSizeDialog.value = false
   refreshUsers()
 }
+// TODO: 重复代码优化
+// 修改余额
+const showWalletDialog = ref(false)
+const walletForm = reactive({
+  money: 2,
+})
+function handleRewriteWallet(id: number, money: number) {
+  selectUserId.value = id
+  walletForm.money = money
+  showWalletDialog.value = true
+}
+async function handleSaveWallet() {
+  if (+walletForm.money < 0) {
+    ElMessage.warning('余额不能小于0')
+    return
+  }
+  await SuperUserApi.updateWallet(selectUserId.value, +walletForm.money)
+  // 接口调用修改
+  ElMessage.success('修改成功')
+  showWalletDialog.value = false
+  refreshUsers()
+}
 
 // 绑定手机号
 const showPhoneDialog = ref(false)
 const phoneForm = reactive({
   phone: '',
-  code: ''
+  code: '',
 })
 const codeText = ref('获取验证码')
 const time = ref(0)
-const refreshCodeText = () => {
+function refreshCodeText() {
   if (time.value === 0) {
     codeText.value = '获取验证码'
     return
@@ -580,7 +290,7 @@ const refreshCodeText = () => {
   time.value -= 1
   setTimeout(refreshCodeText, 1000)
 }
-const getCode = () => {
+function getCode() {
   if (!rMobilePhone.test(phoneForm.phone)) {
     ElMessage.warning('手机号格式不正确')
     return
@@ -599,12 +309,12 @@ const getCode = () => {
       const msg = '注册失败,未知错误'
       const options: any = {
         1002: '手机号已被注册',
-        1006: '手机号格式不正确'
+        1006: '手机号格式不正确',
       }
       ElMessage.error(options[c] || msg)
     })
 }
-const checkPhoneForm = () => {
+function checkPhoneForm() {
   if (!rMobilePhone.test(phoneForm.phone)) {
     ElMessage.warning('手机号格式不正确')
     return false
@@ -616,11 +326,11 @@ const checkPhoneForm = () => {
 
   return true
 }
-const handleBindPhone = (id: number) => {
+function handleBindPhone(id: number) {
   selectUserId.value = id
   showPhoneDialog.value = true
 }
-const handleSavePhone = async () => {
+async function handleSavePhone() {
   if (!checkPhoneForm()) {
     return
   }
@@ -638,31 +348,27 @@ const handleSavePhone = async () => {
       const msg = '绑定失败,未知错误'
       const options: any = {
         1002: '手机号已被注册',
-        1003: '验证码不正确'
+        1003: '验证码不正确',
       }
       ElMessage.error(options[c] || msg)
     })
 }
 
-const handleClearFiles = (
-  userId: number,
-  type: 'month' | 'quarter' | 'half'
-) => {
+function handleClearFiles(userId: number, type: 'month' | 'quarter' | 'half') {
   const tipWords = {
     month: '一个月前',
     quarter: '三个月前',
-    half: '半年前'
+    half: '半年前',
   }
   selectUserId.value = userId
   ElMessageBox.confirm('移除后这些文件将无法恢复，请谨慎操作', '删除前确认？', {
-    confirmButtonText: `确认删除 ${tipWords[type]}文件`
+    confirmButtonText: `确认删除 ${tipWords[type]}文件`,
   })
     .then(() => {
       SuperUserApi.clearOssFile(userId, type).then(() => {
         ElMessage.success('清理成功')
       })
     })
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     .catch(() => {})
 }
 
@@ -670,17 +376,17 @@ const handleClearFiles = (
 const pushMessageType = ref(1)
 const showMessageDialog = ref(false)
 const pushMessageText = ref('')
-const sendMessage = (id: number, type = 1) => {
+function sendMessage(id: number, type = 1) {
   selectUserId.value = id
   pushMessageType.value = type
   showMessageDialog.value = true
 }
 
-const sureSendMessage = () => {
+function sureSendMessage() {
   SuperUserApi.sendMessage(
     pushMessageText.value,
     pushMessageType.value,
-    selectUserId.value
+    selectUserId.value,
   ).then(() => {
     ElMessage.success('推送成功')
     // 推送成功
@@ -688,7 +394,7 @@ const sureSendMessage = () => {
     showMessageDialog.value = false
   })
 }
-const logout = (account: string) => {
+function logout(account: string) {
   SuperUserApi.logout(account).then(() => {
     ElMessage.success(`下线成功 ${account}`)
     refreshUsers()
@@ -698,8 +404,494 @@ const logout = (account: string) => {
 onMounted(() => {
   refreshUsers()
 })
-const isMobile = computed(() => $store.getters['public/isMobile'])
+
+const isMobile = useIsMobile()
+
+const { moneyStartDay } = useSiteConfig()
+
+function handleCheckDetail(price) {
+  const { backhaulTrafficPrice, cdnPrice, compressPrice, ossPrice } = price
+  ElMessageBox.confirm(`存储：${ossPrice}, 下载：${cdnPrice},压缩：${compressPrice},回源：${backhaulTrafficPrice}`, {
+    showCancelButton: false,
+  })
+}
 </script>
+
+<template>
+  <div class="user">
+    <div class="panel">
+      <div class="p10 log-filter">
+        <span class="item">
+          <span class="label">状态</span>
+          <el-select
+            v-model="userStatusType"
+            size="default"
+            class="w100"
+          >
+            <el-option
+              v-for="(item, idx) in statusTypeList"
+              :key="idx"
+              :label="item.label"
+              :value="item.type"
+            />
+          </el-select>
+        </span>
+        <span class="item">
+          <span class="label">排序</span>
+          <el-select
+            v-model="sortType"
+            size="default"
+            class="w100"
+          >
+            <el-option
+              v-for="(item, idx) in sortTypeList"
+              :key="idx"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+          <el-select
+            v-model="sortOrder"
+            size="default"
+            class="w100"
+          >
+            <el-option
+              v-for="(item, idx) in sortOrderList"
+              :key="idx"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </span>
+        <span class="item">
+          <el-input
+            v-model="searchWord"
+            size="default"
+            clearable
+            placeholder="请输入要检索的内容"
+            :prefix-icon="Search"
+          />
+        </span>
+        <span class="item">
+          <el-button size="default" :icon="Refresh" @click="refreshUsers">刷新</el-button>
+        </span>
+        <span class="item">
+          <el-button
+            size="warning"
+            :icon="Message"
+            @click="sendMessage(null, 0)"
+          >推送全局消息</el-button>
+        </span>
+      </div>
+      <Tip>
+        预估费用：{{ sumCost }}￥，
+        计费起始时间：{{ formatDate(moneyStartDay) }}
+      </Tip>
+      <el-table
+        height="550"
+        stripe
+        border
+        :default-sort="{ prop: 'date', order: 'descending' }"
+        :data="pageUsers"
+        style="width: 100%"
+      >
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column
+          prop="account"
+          label="账号"
+          width="130"
+        />
+        <el-table-column
+          prop="phone"
+          label="手机号"
+          width="80"
+        />
+        <el-table-column
+          label="统计"
+          width="190"
+        >
+          <template #default="scope">
+            最后登录：{{
+              scope.row.loginTime && formatDate(new Date(scope.row.loginTime))
+            }}<br>
+            注册时间：{{ formatDate(new Date(scope.row.joinTime)) }}<br>
+            登录次数：{{ scope.row.loginCount }}<br>
+            token: {{ scope.row.onlineCount }}<br>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="downloadCount"
+          label="累计下载"
+        >
+          <template #default="{ row: { downloadCount, downloadSize, oneFile, compressFile, templateFile } }">
+            {{ downloadCount }} / {{ formatSize(downloadSize) }}<br>
+            单文件：{{ oneFile.count }} / {{ formatSize(oneFile.size) }}<br>
+            归档：{{ compressFile.count }} / {{ formatSize(compressFile.size) }}<br>
+            模板：{{ templateFile.count }} / {{ formatSize(templateFile.size) }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          v-if="userStatusType === 1"
+          prop="openTime"
+          label="解封时间"
+        >
+          <template #default="scope">
+            {{
+              scope.row.openTime && formatDate(new Date(scope.row.openTime))
+            }}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="fileCount"
+          label="文件"
+        >
+          <template #default="scope">
+            累计：{{ scope.row.fileCount }}/{{ formatSize(scope.row.originFileSize) }}<br>
+            OSS：{{ scope.row.ossCount }}/{{ formatSize(scope.row.usage) }}<br>
+            平均：{{ scope.row.originFileSize && scope.row.fileCount && formatSize(Math.round(scope.row.originFileSize / scope.row.fileCount)) }}<br>
+            平均：{{ scope.row.usage && scope.row.ossCount && formatSize(Math.round(scope.row.usage / scope.row.ossCount)) }}<br>
+          </template>
+        </el-table-column>
+        <el-table-column label="云空间" width="240">
+          <template
+            #default="{
+              row: { wallet, price, balance, resources, monthAgoSize, quarterAgoSize, halfYearSize, id, limitSize, limitUpload, percentage },
+            }"
+          >
+            <ul class="user-oss-info" :class="{ disabled: limitUpload }">
+              <li>
+                ￥:{{ price.total }} / {{ wallet }} = {{ balance }} <el-button
+                  :icon="Money"
+                  circle
+                  size="small"
+                  @click="handleCheckDetail(price)"
+                />
+              </li>
+              <li>{{ percentage }}% {{ resources }}/{{ limitSize }}</li>
+              <li>
+                一月前：{{ monthAgoSize
+                }}<el-button
+                  v-if="resources !== '0B'"
+                  class="clear-btn"
+                  :icon="DeleteFilled"
+                  circle
+                  size="small"
+                  @click="handleClearFiles(id, 'month')"
+                />
+              </li>
+              <li>
+                三月前：{{ quarterAgoSize
+                }}<el-button
+                  v-if="quarterAgoSize !== '0B'"
+                  class="clear-btn"
+                  :icon="DeleteFilled"
+                  circle
+                  size="small"
+                  @click="handleClearFiles(id, 'quarter')"
+                />
+              </li>
+              <li>
+                半年前：{{ halfYearSize
+                }}<el-button
+                  v-if="halfYearSize !== '0B'"
+                  class="clear-btn"
+                  :icon="DeleteFilled"
+                  circle
+                  size="small"
+                  @click="handleClearFiles(id, 'half')"
+                />
+              </li>
+            </ul>
+          </template>
+        </el-table-column>
+        <el-table-column fixed="right" label="操作" width="100">
+          <template #default="scope">
+            <div class="text-btn-list">
+              <el-button
+                type="primary"
+                text
+                size="small"
+                @click="
+                  handleChangeStatus(
+                    scope.row.id,
+                    scope.row.status,
+                    scope.row.openTime,
+                  )
+                "
+              >
+                修改状态
+              </el-button>
+              <el-button
+                type="primary"
+                text
+                size="small"
+                @click="handleResetPassword(scope.row.id)"
+              >
+                重置密码
+              </el-button>
+              <el-button
+                type="primary"
+                text
+                size="small"
+                @click="handleBindPhone(scope.row.id)"
+              >
+                绑定手机号
+              </el-button>
+              <el-button
+                type="warning"
+                text
+                size="small"
+                @click="sendMessage(scope.row.id)"
+              >
+                发送消息
+              </el-button>
+              <el-button
+                type="danger"
+                text
+                size="small"
+                @click="handleRewriteSize(scope.row.id, scope.row.size)"
+              >
+                修改上限
+              </el-button>
+              <el-button
+                type="danger"
+                text
+                size="small"
+                @click="handleRewriteWallet(scope.row.id, scope.row.wallet)"
+              >
+                修改余额
+              </el-button>
+              <el-button
+                v-if="scope.row.onlineCount !== 0"
+                type="danger"
+                text
+                size="small"
+                @click="logout(scope.row.account)"
+              >
+                一键下线
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="flex fc p10">
+        <el-pagination
+          :current-page="pageCurrent"
+          background
+          :page-count="pageCount"
+          :page-sizes="[10, 50, 100, 200]"
+          :page-size="pageSize"
+          :total="filterUsers.length"
+          layout="total, sizes, prev, pager, next, jumper"
+          @current-change="handlePageChange"
+          @size-change="handleSizeChange"
+        />
+      </div>
+    </div>
+    <!-- 消息推送弹窗 -->
+    <el-dialog
+      v-model="showMessageDialog"
+      :fullscreen="isMobile"
+      center
+      title="消息推送"
+    >
+      <div class="tc">
+        <el-input
+          v-model="pushMessageText"
+          :autosize="{ minRows: 6, maxRows: 20 }"
+          type="textarea"
+          placeholder="输入要推送的消息，支持HTML内容（推荐使用mdnice 转 markdown 转html）"
+        />
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showMessageDialog = false">取 消</el-button>
+          <el-button type="primary" @click="sureSendMessage">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 用户状态修改弹窗 -->
+    <el-dialog
+      v-model="showUserStatusDialog"
+      :fullscreen="isMobile"
+      center
+      title="状态修改"
+    >
+      <div class="tc">
+        <el-select v-model="selectStatus" placeholder="请选择新分类">
+          <el-option
+            v-for="s in userStatusList"
+            :key="s.type"
+            :label="s.label"
+            :value="s.type"
+          />
+        </el-select>
+      </div>
+      <div v-if="selectStatus === 1" style="margin-top: 10px" class="tc">
+        <el-date-picker
+          v-model="openTime"
+          :editable="false"
+          type="datetime"
+          placeholder="点击设置解封日期"
+        />
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showUserStatusDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSaveStatus">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 重置密码 -->
+    <el-dialog
+      v-model="showResetPasswordDialog"
+      :fullscreen="isMobile"
+      center
+      title="密码重置"
+    >
+      <div class="tc">
+        <el-form :model="pwdForm" label-width="80px">
+          <el-form-item label="新密码">
+            <el-input
+              v-model="pwdForm.pwd1"
+              show-word-limit
+              clearable
+              placeholder="请输入新密码"
+              maxlength="16"
+              minlength="6"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-input
+              v-model="pwdForm.pwd2"
+              show-word-limit
+              clearable
+              placeholder="请再次输入"
+              maxlength="16"
+              minlength="6"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showResetPasswordDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSavePassword">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 重绑定手机号 -->
+    <el-dialog
+      v-model="showPhoneDialog"
+      :fullscreen="isMobile"
+      center
+      title="绑定手机号"
+    >
+      <div class="tc">
+        <el-form :model="phoneForm" label-width="60px">
+          <el-form-item label="手机号">
+            <el-input
+              v-model="phoneForm.phone"
+              show-word-limit
+              clearable
+              placeholder="请输入手机号"
+              maxlength="11"
+            >
+              <template #append>
+                <!-- 获取验证码 -->
+                <el-button :disabled="time !== 0" @click="getCode">
+                  {{
+                    codeText
+                  }}
+                </el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-input
+              v-model="phoneForm.code"
+              show-word-limit
+              clearable
+              placeholder="请输入验证码"
+              maxlength="4"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showPhoneDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSavePhone">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 修改空间上限 -->
+    <el-dialog
+      v-model="showLimitSizeDialog"
+      :fullscreen="isMobile"
+      center
+      title="修改空间上限"
+    >
+      <div class="tc">
+        <el-form :model="limitSizeForm" label-width="60px">
+          <el-form-item label="大小">
+            <el-input
+              v-model="limitSizeForm.size"
+              show-word-limit
+              clearable
+              placeholder="请输入空间上限"
+              maxlength="4"
+              type="number"
+            >
+              <template #append>
+                GB
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showLimitSizeDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSaveSize">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 修改余额 -->
+    <el-dialog
+      v-model="showWalletDialog"
+      :fullscreen="isMobile"
+      center
+      title="修改空间上限"
+    >
+      <div class="tc">
+        <el-form :model="walletForm" label-width="60px">
+          <el-form-item label="余额">
+            <el-input
+              v-model="walletForm.money"
+              show-word-limit
+              clearable
+              placeholder="请输入新的余额"
+              maxlength="4"
+              type="number"
+            >
+              <template #append>
+                ￥
+              </template>
+            </el-input>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showWalletDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSaveWallet">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </div>
+</template>
 
 <style scoped lang="scss">
 @media screen and (max-width: 700px) {
@@ -711,7 +903,9 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
     justify-content: center;
   }
 }
-
+.w100 {
+  width: 100px;
+}
 .user {
   margin: 0 auto;
 }
@@ -733,7 +927,6 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   .item {
     margin-right: 10px;
     margin-bottom: 10px;
-
     .label {
       margin-right: 10px;
       font-size: 12px;
@@ -758,7 +951,7 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
   .clear-btn {
     margin-left: 10px;
   }
-  &.disabled{
+  &.disabled {
     background-color: rgb(245 108 108 / 30%);
   }
 }

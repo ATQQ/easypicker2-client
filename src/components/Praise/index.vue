@@ -1,10 +1,58 @@
+<script setup lang="ts">
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { reactive, ref } from 'vue'
+import { useIsMobile } from '@/composables'
+
+const showPraise = ref(false)
+function openPraise() {
+  showPraise.value = true
+}
+
+const praiseImg = reactive([
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQ0MjMzNA==651547442334',
+    title: '微信',
+  },
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY0Nzc1NTYyOTE5Mw==647755629193',
+    title: '微信赞赏',
+  },
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQyOTg0OA==651547429848',
+    title: '支付宝',
+  },
+])
+function Thanks() {
+  ElMessageBox.alert(
+    `
+  <p class="tc">
+    <img width="140px" src="https://img.cdn.sugarat.top/mdImg/MTY1MTUwNjkwNDc4OQ==thanks.gif" />
+  </p>
+  <p class="tc">
+    <img width="240px" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354" />
+  </p>
+  `,
+    '💐 谢谢老板 💐',
+    {
+      confirmButtonText: '不客气',
+      dangerouslyUseHTMLString: true,
+    },
+  )
+}
+function NextPraise() {
+  showPraise.value = false
+  ElMessage.success('下次一定！下次一定！')
+}
+const isMobile = useIsMobile()
+</script>
+
 <template>
   <span class="praise" @click="openPraise">
     <!-- 赞赏弹窗 -->
     <slot />
     <el-dialog
-      append-to-body
       v-model="showPraise"
+      append-to-body
       title="😄 嘻嘻 😄"
       :fullscreen="isMobile"
     >
@@ -45,55 +93,7 @@
     </el-dialog>
   </span>
 </template>
-<script setup lang="ts">
-import { ElMessageBox, ElMessage } from 'element-plus'
-import { computed, reactive, ref } from 'vue'
-import { useStore } from 'vuex'
 
-const $store = useStore()
-const showPraise = ref(false)
-const openPraise = () => {
-  showPraise.value = true
-}
-
-const praiseImg = reactive([
-  {
-    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQ0MjMzNA==651547442334',
-    title: '微信'
-  },
-  {
-    url: 'https://img.cdn.sugarat.top/mdImg/MTY0Nzc1NTYyOTE5Mw==647755629193',
-    title: '微信赞赏'
-  },
-  {
-    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQyOTg0OA==651547429848',
-    title: '支付宝'
-  }
-])
-const Thanks = () => {
-  ElMessageBox.alert(
-    `
-  <p class="tc">
-    <img width="140px" src="https://img.cdn.sugarat.top/mdImg/MTY1MTUwNjkwNDc4OQ==thanks.gif" />
-  </p>
-  <p class="tc">
-    <img width="240px" src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354" />
-  </p>
-  `,
-    '💐 谢谢老板 💐',
-    {
-      confirmButtonText: '不客气',
-      dangerouslyUseHTMLString: true
-    }
-  )
-}
-const NextPraise = () => {
-  showPraise.value = false
-  ElMessage.success('下次一定！下次一定！')
-}
-
-const isMobile = computed(() => $store.getters['public/isMobile'])
-</script>
 <style scoped>
 .praise {
   cursor: pointer;

@@ -14,58 +14,58 @@ function getFileList(): FileApiTypes.getFileList {
 
 function getTemplateUrl(
   template: string,
-  key: string
+  key: string,
 ): FileApiTypes.getTemplateUrl {
   return ajax.get('file/template', {
     params: {
       template,
-      key
-    }
+      key,
+    },
   })
 }
 
 function getOneFileUrl(id: number): FileApiTypes.getOneFileUrl {
   return ajax.get('file/one', {
     params: {
-      id
-    }
+      id,
+    },
   })
 }
 
 function deleteOneFile(id: number): FileApiTypes.deleteOneFile {
   return ajax.delete('file/one', {
     params: {
-      id
-    }
+      id,
+    },
   })
 }
 
 function batchDownload(
   ids: number[],
-  zipName?: string
+  zipName?: string,
 ): FileApiTypes.batchDownload {
   return ajax.post('file/batch/down', {
     ids,
-    zipName
+    zipName,
   })
 }
 
 function batchDel(ids: number[]): FileApiTypes.batchDel {
   return ajax.delete('file/batch/del', {
     params: {
-      ids
-    }
+      ids,
+    },
   })
 }
 
 function checkCompressStatus(id: string): FileApiTypes.checkCompressStatus {
   return ajax.post('file/compress/status', {
-    id
+    id,
   })
 }
 function getCompressDownUrl(key: string): FileApiTypes.getCompressDownUrl {
   return ajax.post('file/compress/down', {
-    key
+    key,
   })
 }
 function getCompressFileUrl(id: string): Promise<string> {
@@ -78,7 +78,8 @@ function getCompressFileUrl(id: string): Promise<string> {
             const { url } = v.data
             _r(url)
           })
-        } else {
+        }
+        else {
           setTimeout(() => {
             check(_r, _rej)
           }, 1000)
@@ -95,40 +96,46 @@ function getCompressFileUrl(id: string): Promise<string> {
 }
 
 function withdrawFile(
-  options: FileApiTypes.WithdrawFileOptions
+  options: FileApiTypes.WithdrawFileOptions,
 ): FileApiTypes.withdrawFile {
   return ajax.delete('file/withdraw', {
-    params: options
+    params: options,
   })
 }
 
 function checkSubmitStatus(
   taskKey: string,
   info: any,
-  name = ''
+  name = '',
 ): FileApiTypes.checkSubmitStatus {
   return ajax.post('file/submit/people', {
     taskKey,
     info,
-    name
+    name,
   })
 }
 
 function checkImageFilePreviewUrl(
-  ids: number[]
+  ids: number[],
 ): FileApiTypes.checkImageFilePreviewUrl {
   return ajax.post('file/image/preview', {
-    ids
+    ids,
+  })
+}
+
+function fileDownloadCount(ids: number[]) {
+  return ajax.post('file/download/count', {
+    ids,
   })
 }
 
 function updateFilename(
   id: number,
-  newName: string
+  newName: string,
 ): FileApiTypes.updateFilename {
   return ajax.put('file/name/rewrite', {
     id,
-    name: newName
+    name: newName,
   })
 }
 export default {
@@ -146,5 +153,6 @@ export default {
   getCompressDownUrl,
   checkSubmitStatus,
   checkImageFilePreviewUrl,
-  updateFilename
+  updateFilename,
+  fileDownloadCount,
 }

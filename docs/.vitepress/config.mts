@@ -1,8 +1,9 @@
-import { getThemeConfig, defineConfig } from '@sugarat/theme/node'
+import { getThemeConfig } from '@sugarat/theme/node'
+import { defineConfig } from 'vitepress'
 import Pkg from '../../package.json'
 
 const blogTheme = getThemeConfig({
-  // search: true,
+  search: false,
   blog: false,
   author: '粥里有勺糖',
   themeColor: 'el-blue',
@@ -10,10 +11,10 @@ const blogTheme = getThemeConfig({
     repo: 'atqq/easypicker2-client',
     repoId: 'MDEwOlJlcG9zaXRvcnkzNTQxNzc0NjA=',
     category: 'Announcements',
-    categoryId: 'DIC_kwDOFRxRtM4CUThN'
+    categoryId: 'DIC_kwDOFRxRtM4CUThN',
   },
   footer: {
-    copyright: `MIT Licensed | 2019 - ${new Date().getFullYear()} 粥里有勺糖`
+    copyright: `MIT Licensed | 2019 - ${new Date().getFullYear()} 粥里有勺糖`,
   },
   popover: {
     title: '广而告之',
@@ -21,27 +22,27 @@ const blogTheme = getThemeConfig({
       {
         type: 'image',
         src: '/group.png',
-        style: 'width:60%;margin:0 auto;display:block'
+        style: 'width:60%;margin:0 auto;display:block',
       },
       {
         type: 'text',
-        content: '欢迎加群交流&吐槽 💐'
+        content: '欢迎加群交流&吐槽 💐',
       },
       {
         type: 'button',
         content: '关于作者',
-        link: '/author.html'
+        link: '/author.html',
       },
       {
         type: 'button',
         content: '发电⚡',
         props: {
-          type: 'success'
+          type: 'success',
         },
         link: '/praise/index.html',
-      }
+      },
     ],
-    duration: 0
+    duration: 0,
   },
 })
 
@@ -59,34 +60,34 @@ export default defineConfig({
         rel: 'alternate icon',
         href: '/favicon.ico',
         type: 'image/png',
-        sizes: '16x16'
-      }
+        sizes: '16x16',
+      },
     ],
     ['meta', { name: 'author', content: '粥里有勺糖' }],
     ['link', { rel: 'mask-icon', href: '/favicon.ico', color: '#ffffff' }],
     [
       'link',
-      { rel: 'apple-touch-icon', href: '/favicon.ico', sizes: '180x180' }
+      { rel: 'apple-touch-icon', href: '/favicon.ico', sizes: '180x180' },
     ],
     [
       'script',
       {
         charset: 'UTF-8',
         id: 'LA_COLLECT',
-        src: '//sdk.51.la/js-sdk-pro.min.js'
-      }
+        src: '//sdk.51.la/js-sdk-pro.min.js',
+      },
     ],
     [
       'script',
       {},
-      'LA.init({id: "JiqK2jS5HmnB4s8G",ck: "JiqK2jS5HmnB4s8G",hashMode:true})'
-    ]
+      'LA.init({id: "JiqK2jS5HmnB4s8G",ck: "JiqK2jS5HmnB4s8G",hashMode:true})',
+    ],
   ],
   vite: {
     server: {
       port: 4000,
-      host: '0.0.0.0'
-    }
+      host: '0.0.0.0',
+    },
   },
   lastUpdated: true,
   themeConfig: {
@@ -99,12 +100,15 @@ export default defineConfig({
     //     placeholder: '请输入要搜索的内容...'
     //   }
     // },
+    search: {
+      provider: 'local',
+    },
     lastUpdatedText: '上次更新于',
     logo: '/logo.png',
     editLink: {
       pattern:
         'https://github.com/ATQQ/easypicker2-client/edit/main/docs/:path',
-      text: '去 GitHub 上编辑内容'
+      text: '去 GitHub 上编辑内容',
     },
     nav: [
       {
@@ -112,53 +116,53 @@ export default defineConfig({
         items: [
           {
             text: '本地启动&源码修改',
-            link: '/deploy/local'
+            link: '/deploy/local',
           },
           {
             text: '使用docker',
-            link: '/deploy/docker'
+            link: '/deploy/docker',
           },
           {
             text: '线上部署',
-            link: '/deploy/online-v3'
+            link: '/deploy/online-v3',
           },
           {
             text: '七牛云OSS配置',
-            link: '/deploy/qiniu'
+            link: '/deploy/qiniu',
           },
           {
             text: '常见问题❓',
-            link: '/deploy/faq'
+            link: '/deploy/faq',
           },
           {
             text: '相关设计',
-            link: '/deploy/design/index'
+            link: '/deploy/design/index',
           },
         ],
-        activeMatch: '/deploy/'
+        activeMatch: '/deploy/',
       },
       {
         text: '功能介绍',
-        link: '/introduction/feature/index'
+        link: '/introduction/feature/index',
       },
       {
         text: `v${Pkg.version}`,
         items: [
           { text: '⭐️ 需求墙', link: '/plan/wish' },
           { text: '🥔 近期规划', link: '/plan/todo' },
-          { text: '📅 更新日志', link: '/plan/log' }
+          { text: '📅 更新日志', link: '/plan/log' },
         ],
-        activeMatch: '/plan/'
+        activeMatch: '/plan/',
       },
       {
         text: '作者信息',
-        link: '/author'
+        link: '/author',
       },
       {
         text: '打赏',
-        link: '/praise/index'
+        link: '/praise/index',
       },
-      { text: '⭐️ 需求墙', link: '/plan/wish' }
+      { text: '⭐️ 需求墙', link: '/plan/wish' },
     ],
     sidebar: {
       deploy: [
@@ -167,59 +171,59 @@ export default defineConfig({
           items: [
             {
               text: 'Getting Started',
-              link: '/deploy/'
+              link: '/deploy/',
             },
             {
               text: '本地启动&源码修改',
-              link: '/deploy/local'
+              link: '/deploy/local',
             },
             {
               text: '使用docker',
-              link: '/deploy/docker'
+              link: '/deploy/docker',
             },
             {
               text: '线上部署 - v3（推荐）',
-              link: '/deploy/online-v3'
+              link: '/deploy/online-v3',
             },
             {
               text: '线上部署 - v2',
-              link: '/deploy/online-new'
+              link: '/deploy/online-new',
             },
             {
               text: '线上部署 - v1',
-              link: '/deploy/online'
+              link: '/deploy/online',
             },
             {
               text: '接入七牛云OSS服务',
-              link: '/deploy/qiniu'
+              link: '/deploy/qiniu',
             },
             {
               text: '常见问题❓',
-              link: '/deploy/faq'
-            }
-          ]
+              link: '/deploy/faq',
+            },
+          ],
         },
         {
           text: '相关设计',
           items: [
             {
               text: '自动部署脚本',
-              link: '/deploy/design/shell'
+              link: '/deploy/design/shell',
             },
             {
               text: '概述',
-              link: '/deploy/design/index'
+              link: '/deploy/design/index',
             },
             {
               text: '数据库设计',
-              link: '/deploy/design/db'
+              link: '/deploy/design/db',
             },
             {
               text: '接口设计',
-              link: '/deploy/design/api'
-            }
-          ]
-        }
+              link: '/deploy/design/api',
+            },
+          ],
+        },
       ],
       plan: [
         {
@@ -227,18 +231,18 @@ export default defineConfig({
           items: [
             {
               text: '⭐️ 需求墙',
-              link: '/plan/wish'
+              link: '/plan/wish',
             },
             {
               text: '🥔 TODO-LIST',
-              link: '/plan/todo'
+              link: '/plan/todo',
             },
             {
               text: '更新日志',
-              link: '/plan/log'
-            }
-          ]
-        }
+              link: '/plan/log',
+            },
+          ],
+        },
       ],
       introduction: [
         {
@@ -246,32 +250,32 @@ export default defineConfig({
           items: [
             {
               text: '应用介绍',
-              link: '/introduction/about/index'
+              link: '/introduction/about/index',
             },
             {
               text: '相关源码',
-              link: '/introduction/about/code'
-            }
-          ]
+              link: '/introduction/about/code',
+            },
+          ],
         },
         {
           text: '功能介绍',
           items: [
             {
               text: '概述',
-              link: '/introduction/feature/index'
+              link: '/introduction/feature/index',
             },
             {
               text: '管理员功能',
 
-              link: '/introduction/feature/admin'
-            }
-          ]
-        }
-      ]
+              link: '/introduction/feature/admin',
+            },
+          ],
+        },
+      ],
     },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/ATQQ/easypicker2-client' }
-    ]
-  }
+      { icon: 'github', link: 'https://github.com/ATQQ/easypicker2-client' },
+    ],
+  },
 })

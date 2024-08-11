@@ -1,302 +1,3 @@
-<template>
-  <div class="files">
-    <!-- 筛选框 -->
-    <div class="panel header">
-      <div class="item">
-        <span class="label">分类</span>
-        <!--TODO: multiple 多选待评估 -->
-        <el-select size="default" v-model="selectCategory" filterable placeholder="请选择">
-          <el-option label="全部" value="all" />
-          <el-option label="默认" value="default" />
-          <el-option v-for="item in categories" :key="item.k" :label="item.name" :value="item.k" />
-          <el-option label="无关联任务" value="no-task" />
-          <el-option label="♻️回收站♻️" value="trash" />
-        </el-select>
-      </div>
-      <div class="item">
-        <span class="label">任务</span>
-        <el-select size="default" v-model="selectTask" filterable placeholder="请选择">
-          <el-option label="全部" value="all" />
-          <el-option v-for="item in filterTasks" :key="item.key" :label="item.name" :value="item.key"></el-option>
-        </el-select>
-      </div>
-      <div class="item">
-        <el-button :loading="batchDownStart" :disabled="selectTask === 'all'" type="primary" size="default"
-          :icon="Download" @click="handleDownloadTask">下载任务中的文件</el-button>
-      </div>
-      <div class="item">
-        <el-input size="default" clearable placeholder="请输入要检索的内容" :prefix-icon="Search" v-model="searchWord">
-        </el-input>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="export-btns flex fac">
-        <el-dropdown trigger="click" @command="handleDropdownClick">
-          <el-button type="primary" size="default">
-            批量操作<el-icon class="el-icon--right">
-              <arrow-down />
-            </el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item :disabled="selectItem.length === 0" command="download">下载</el-dropdown-item>
-              <el-dropdown-item :disabled="selectItem.length === 0" command="delete">删除</el-dropdown-item>
-              <el-dropdown-item :disabled="selectItem.length === 0" command="excel">导出记录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-        <div v-show="false">
-          <!-- 迷惑的解决bug的手段 -->
-          <el-dropdown trigger="click" @command="handleDropdownClick">
-            <el-button type="primary" :disabled="selectItem.length === 0" size="default">
-              批量操作
-              <el-icon>
-                <ArrowDown />
-              </el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="download">下载</el-dropdown-item>
-                <el-dropdown-item command="delete">删除</el-dropdown-item>
-                <el-dropdown-item command="excel">导出记录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </div>
-        <el-button size="default" :icon="Refresh" @click="handleRefresh">刷新</el-button>
-        <el-button title="导出表格中所有的数据" type="success" size="default" :icon="DataAnalysis" @click="() => {
-          handleExportExcel(
-            filterFiles,
-            `筛选数据导出_${formatDate(
-              new Date(),
-              'yyyy年MM月日hh时mm分ss秒'
-            )}.xlsx`
-          )
-        }
-          " :disabled="showFilterFiles.length === 0">导出记录</el-button>
-        <div class="control-item">
-          显示图片
-          <el-switch inline-prompt v-model="showImg" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
-            inactive-text="否" />
-        </div>
-        <div class="control-item">
-          展示原文件名
-          <el-switch inline-prompt v-model="showOriginName" active-color="#13ce66" inactive-color="#ff4949"
-            active-text="是" inactive-text="否" />
-        </div>
-        <div class="control-item">
-          显示提交人姓名
-          <el-switch inline-prompt v-model="showPeople" active-color="#13ce66" inactive-color="#ff4949" active-text="是"
-            inactive-text="否" />
-        </div>
-        <div class="control-item">
-          ⏰ 查看下载历史
-          <el-switch v-model="showHistoryPanel" style="
-              --el-switch-on-color: #13ce66;
-              --el-switch-off-color: #ff4949;
-            " />
-        </div>
-      </div>
-    </div>
-    <div class="panel" v-show="historyDownloadRecord.compressTask.length && !showHistoryPanel">
-      <tip style="font-size: 16px">正在进行归档的任务
-        {{ historyDownloadRecord.compressTask.length }}个</tip>
-      <tip>详细归档记录点击右上角 “⏰查看下载历史”</tip>
-      <p v-for="(record, idx) in historyDownloadRecord.compressTask" :key="record.id" class="tc"
-        style="margin-top: 10px">
-        {{ idx + 1 }}. {{ record.tip }}
-        <span v-loading="true" element-loading-text="..." style="--el-loading-spinner-size: 20px"></span>
-      </p>
-    </div>
-    <div class="panel" v-show="showHistoryPanel">
-      <tip style="font-size: 16px">”❤️下面展示历史的下载记录与归档任务完成情况❤️“</tip>
-      <tip>”再也不需要在页面停留等待归档完成“</tip>
-      <div>
-        <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
-          ref="multipleTable" @selection-change="handleSelectionChange" stripe border
-          :default-sort="{ prop: 'date', order: 'descending' }" :max-height="666" :data="historyDownloadRecord.actions"
-          style="width: 100%">
-          <el-table-column prop="date" label="触发时间" width="200">
-            <template #default="scope">{{
-          formatDate(new Date(scope.row.date))
-        }}</template>
-          </el-table-column>
-          <el-table-column prop="tip" label="文件信息"></el-table-column>
-          <el-table-column prop="type" label="任务类型">
-            <template #default="scope">
-              <el-link v-if="scope.row.type === ActionType.Compress" type="primary">归档下载</el-link>
-              <el-link v-else type="default">普通下载</el-link>
-            </template>
-          </el-table-column>
-          <el-table-column prop="size" label="大小" width="100">
-            <template #default="scope">
-              <span v-if="scope.row.status === DownloadStatus.ARCHIVE"><el-link type="danger">归档中...</el-link></span>
-              <span v-else-if="scope.row.status !== DownloadStatus.FAIL">{{
-          !scope.row.size ? '未知大小' : formatSize(scope.row.size)
-        }}</span>
-              <span v-if="scope.row.status === DownloadStatus.FAIL"><el-link type="danger">归档失败</el-link></span>
-            </template>
-          </el-table-column>
-          <el-table-column fixed="right" label="操作" width="140">
-            <template #default="scope">
-              <div v-loading="true" v-if="scope.row.status === DownloadStatus.ARCHIVE">
-                归档中...
-              </div>
-              <div v-if="scope.row.status === DownloadStatus.EXPIRED">
-                链接已失效
-              </div>
-              <div v-if="scope.row.status === DownloadStatus.FAIL">
-                联系开发者，提供错误信息：{{ scope.row.error }}
-              </div>
-              <div v-if="scope.row.status === DownloadStatus.SUCCESS">
-                <el-link @click="downLoadByUrl(scope.row.url)" type="primary">下载</el-link>
-                <el-link type="success" style="margin-left: 10px" @click="copyRes(scope.row.url)">链接</el-link>
-                <el-link type="warning" style="margin-left: 10px" @click="() => {
-          showLinkModel = true
-          downloadUrl = scope.row.url
-        }
-          ">二维码</el-link>
-              </div>
-            </template>
-          </el-table-column>
-        </el-table>
-        <div class="flex fc">
-          <el-pagination small :current-page="historyDownloadRecord.pageCurrent"
-            :page-count="historyDownloadRecord.pageCount" :total="historyDownloadRecord.pageTotal"
-            layout="total, prev, pager, next" @current-change="handleHistoryActionPageChange"></el-pagination>
-        </div>
-      </div>
-    </div>
-    <!-- 主体内容 -->
-    <div class="panel">
-      <Tip>全部文件大小：{{ fileListSize }}，当前任务大小：{{ filterFileSize }}</Tip>
-      <!-- <Tip>↑ 仅供使用者参考，应用无存储空间上限，也不收费</Tip> -->
-      <Tip v-if="isOpenPraise">
-        <h2 style="color: #f56c6c">↑ 由于部分用户用量较大，小站无法承担这笔开销，故限制每个账户为 2GB 可用空间</h2>
-      </Tip>
-      <Tip><span :style="{ color: limitDownload ? '#f56c6c' : '' }">{{ spaceUsageText }}</span></Tip>
-      <Tip v-if="limitDownload"><h2 style="color:#f56c6c">空间超限将无法上传/下载文件，如需要使用，请联系管理员扩容，或自行删除无关文件</h2></Tip>
-      <Tip>
-        <strong>如果你觉得应用不错，<a style="color: #409eff" href="http://docs.ep.sugarat.top/praise/index.html" target="_blank"
-            rel="noopener noreferrer">给他发电⚡</a></strong>
-        <strong v-if="isOpenPraise">，其它问题<a style="color: #409eff"
-            href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
-            rel="noopener noreferrer">联系作者🔗</a></strong>
-        <!-- <Praise>
-          <el-button style="margin:0 0 2px;" size="small" type="primary" text>Go！Go！❓</el-button>
-        </Praise> -->
-      </Tip>
-      <Tip v-if="isOpenPraise">
-        <h3>
-          <span style="color: #f56c6c">你可以通过<a style="color: #409eff"
-              href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
-              rel="noopener noreferrer"> 联系作者进行赞助⚡ </a>来换取更大的空间</span>，
-          <strong>
-            <a style="color: #409eff" href="https://docs.ep.sugarat.top/" target="_blank"
-              rel="noopener noreferrer">或自己搭建💡
-            </a>
-          </strong>
-        </h3>
-      </Tip>
-      <el-table v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark" multipleTable
-        ref="multipleTable" @selection-change="handleSelectionChange" stripe border :max-height="666"
-        :data="showFilterFiles" style="width: 100%">
-        <el-table-column type="selection" width="55" />
-        <el-table-column prop="date" label="提交时间" width="160">
-          <template #default="scope">{{
-          formatDate(new Date(scope.row.date))
-        }}</template>
-        </el-table-column>
-        <el-table-column prop="task_name" label="任务" width="150"></el-table-column>
-        <el-table-column prop="name" label="文件名" width="200"></el-table-column>
-        <template v-if="showOriginName">
-          <el-table-column prop="origin_name" label="原文件名" width="200">
-            <template #default="scope">
-              {{ scope.row.origin_name || '-' }}
-            </template>
-          </el-table-column>
-        </template>
-        <el-table-column prop="size" label="大小">
-          <template #default="scope">{{
-          scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size)
-        }}</template>
-        </el-table-column>
-        <template v-if="showImg">
-          <el-table-column label="缩略图" width="120">
-            <template #default="scope">
-              <el-image @switch="handleSwitchImage" @click="handleSwitchImage(scope.$index)" preview-teleported
-                :preview-src-list="previewImages" :initial-index="scope.$index" lazy style="width: 100px; height: 100px"
-                :src="scope.row.cover" fit="cover">
-                <template #viewer>
-                  <div class="imageDes">{{ viewImageFilename }}</div>
-                </template>
-                <template #placeholder>
-                  <div class="imageLoading">Loading...</div>
-                </template>
-                <template #error>
-                  <div class="imageLoading">
-                    不支持
-                    <el-icon>
-                      <Picture />
-                    </el-icon>
-                  </div>
-                </template>
-              </el-image>
-            </template>
-          </el-table-column>
-        </template>
-        <template v-if="showPeople">
-          <el-table-column prop="people" width="100" label="限制名单">
-            <template #default="scope">
-              {{ scope.row.people || '-' }}
-            </template>
-          </el-table-column>
-        </template>
-        <el-table-column fixed="right" label="操作" width="140">
-          <template #default="scope">
-            <div class="text-btns">
-              <el-button @click="checkInfo(scope.row)" type="primary" text size="small">查看提交信息</el-button>
-              <el-button @click="rewriteFilename(scope.row)" type="primary" text size="small">修改文件名</el-button>
-              <el-button @click="downloadOne(scope.row)" type="primary" text size="small">下载</el-button>
-              <el-button @click="handleDelete(scope.row)" type="primary" text size="small">删除</el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
-    <!-- 分页 -->
-    <div class="panel flex fc">
-      <el-pagination :current-page="pageCurrent" @current-change="handlePageChange" background :page-count="pageCount"
-        :page-sizes="[6, 10, 50, 100]" :page-size="pageSize" @size-change="handleSizeChange" :total="filterFiles.length"
-        layout="total, sizes, prev, pager, next, jumper"></el-pagination>
-    </div>
-    <!-- 信息弹窗 -->
-    <el-dialog :fullscreen="isMobile" title="提交填写的信息" v-model="showInfoDialog">
-      <InfosForm :infos="infos" :disabled="true" />
-    </el-dialog>
-    <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl"></LinkDialog>
-    <el-dialog :fullscreen="isMobile" title="修改文件名" v-model="showRenameDialog">
-      <div>
-        <el-form label-width="100px" :model="renameForm">
-          <el-form-item label="原文件名" prop="newName">
-            <el-input v-model="renameForm.oldName" disabled />
-          </el-form-item>
-          <el-form-item label="新文件名" prop="newName">
-            <el-input v-model="renameForm.newName" placeholder="请输入新文件名">
-              <template #append>
-                {{ renameForm.suffix }}
-              </template>
-            </el-input>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="success" @click="handleSaveNewName">保存</el-button>
-            <el-button @click="showRenameDialog = false">取消</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
-    </el-dialog>
-  </div>
-</template>
 <script lang="ts" setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watchEffect } from 'vue'
@@ -304,29 +5,33 @@ import { useStore } from 'vuex'
 import LinkDialog from '@components/linkDialog.vue'
 import {
   ArrowDown,
-  Refresh,
   DataAnalysis,
   Download,
+  Picture,
+  Refresh,
   Search,
-  Picture
 } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
+import Tip from '../tasks/components/infoPanel/tip.vue'
 import {
   copyRes,
   formatDate,
   formatSize,
   getFileSuffix,
-  parseInfo
+  normalizeFileName,
+  parseInfo,
 } from '@/utils/stringUtil'
 import { ActionServiceAPI, FileApi } from '@/apis'
-import { downLoadByUrl, tableItem, tableToExcel } from '@/utils/networkUtil'
-import Tip from '../tasks/components/infoPanel/tip.vue'
+import type { tableItem } from '@/utils/networkUtil'
+import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
 import InfosForm from '@/components/InfosForm/index.vue'
-import { DownloadStatus, ActionType, filenamePattern } from '@/constants'
-import { useSpaceUsage } from '@/composables'
-const isOpenPraise = import.meta.env.VITE_APP_OPEN_PRAISE === 'true'
+import { ActionType, DownloadStatus, filenamePattern } from '@/constants'
+import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
 
-const { limitDownload, spaceUsageText } = useSpaceUsage()
+const { value: siteConfig } = useSiteConfig()
+const isOpenPraise = computed(() => siteConfig.value.openPraise)
+
+const { limitDownload, spaceUsageText, moneyUsageText, limitSpace, limitWallet, priceText } = useSpaceUsage()
 
 const $store = useStore()
 const $route = useRoute()
@@ -345,30 +50,30 @@ const historyDownloadRecord = reactive({
   pageCount: 0,
   pageCurrent: 1,
   pageTotal: 0,
-  compressTask: []
+  compressTask: [],
 })
 
-const loadActions = () => {
+function loadActions() {
   // 已记录的task
   const compressTask: ActionApiTypes.DownloadActionData[] = JSON.parse(
-    localStorage.getItem('ep_compress_task') || '[]'
+    localStorage.getItem('ep_compress_task') || '[]',
   )
   historyDownloadRecord.compressTask = compressTask
 
   ActionServiceAPI.getDownloadActions(
     historyDownloadRecord.pageSize,
     historyDownloadRecord.pageCurrent,
-    compressTask.map((v) => v.id)
+    compressTask.map(v => v.id),
   ).then((v) => {
     const { actions, sum } = v.data
     const haveArchive = !!actions.find(
-      (v) => v.status === DownloadStatus.ARCHIVE
+      v => v.status === DownloadStatus.ARCHIVE,
     )
 
     actions
-      .filter((v) => v.type === ActionType.Compress)
+      .filter(v => v.type === ActionType.Compress)
       .forEach((action) => {
-        const existIndex = compressTask.findIndex((v) => v.id === action.id)
+        const existIndex = compressTask.findIndex(v => v.id === action.id)
         // 判断状态
         // SUCCESS
         //  存在，触发下载，从compressTask移除
@@ -401,16 +106,47 @@ const loadActions = () => {
     historyDownloadRecord.pageTotal = sum
     historyDownloadRecord.actions = actions
     historyDownloadRecord.pageCount = Math.ceil(
-      sum / historyDownloadRecord.pageSize
+      sum / historyDownloadRecord.pageSize,
     )
   })
 }
-const handleHistoryActionPageChange = (v) => {
+function handleHistoryActionPageChange(v) {
   historyDownloadRecord.pageCurrent = v
   loadActions()
 }
+
+// 分类相关
+const categories = computed(() => $store.state.category.categoryList)
+const selectCategory = ref('all')
+// 任务相关
+const tasks = computed<TaskApiTypes.TaskItem[]>(
+  () => $store.state.task.taskList,
+)
+const selectTask = ref('all')
+const filterTasks = computed(() => {
+  if (selectCategory.value === 'all') {
+    return tasks.value
+  }
+  // eslint-disable-next-line vue/no-side-effects-in-computed-properties
+  selectTask.value = 'all'
+  return tasks.value.filter(t => t.category === selectCategory.value)
+})
+const selectTaskName = computed(() => {
+  const t = filterTasks.value.find(v => v.key === selectTask.value)
+  return t?.name
+})
+
+watchEffect(() => {
+  if (
+    tasks.value.length
+    && tasks.value.some(v => v.key === $route.query.task)
+  ) {
+    selectTask.value = `${$route.query.task}`
+  }
+})
+
 // 记录导出
-const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
+function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
   if (files.length === 0) {
     ElMessage.warning('表格中没有可导出的内容')
     return
@@ -422,84 +158,77 @@ const handleExportExcel = (files: FileApiTypes.File[], filename?: string) => {
   if (showPeople.value) {
     baseHeaders.push('姓名')
   }
-  const headers: (string | tableItem)[] = baseHeaders.map((v) => ({
+  const headers: (string | tableItem)[] = baseHeaders.map(v => ({
     value: v,
-    row: 2
+    row: 2,
   }))
 
   const infosHeader = files.reduce((pre, value) => {
-    JSON.parse(value.info).forEach((i: any) => {
-      if (!pre.includes(i.text)) {
-        pre.push(i.text)
-      }
-    })
+    try {
+      JSON.parse(value.info).forEach((i: any) => {
+        if (!pre.includes(i.text)) {
+          pre.push(i.text)
+        }
+      })
+    }
+    catch (error) {
+      ElMessage.error({
+        message: `数据异常${value.name}，可联系平台管理员处理`,
+        duration: 5000,
+      })
+      console.log(value)
+    }
     return pre
   }, [])
   headers.push({
     value: '提交信息',
-    col: infosHeader.length
+    col: infosHeader.length,
   })
 
   const body = files.map((v) => {
     const { date, task_name: taskName, name, size, people } = v
-    const infoObj = JSON.parse(v.info).reduce((pre, v) => {
-      pre[v.text] = v.value
-      return pre
-    }, {})
-    const info = infosHeader.map((v) => infoObj[v] ?? '-')
-    const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
-    if (showOriginName.value) {
-      rows.push(v.origin_name || '-')
+    try {
+      const infoObj = JSON.parse(v.info).reduce((pre, v) => {
+        pre[v.text] = `${v.value}`
+        return pre
+      }, {})
+      const info = infosHeader.map(v => infoObj[v] ?? '-')
+      const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
+      if (showOriginName.value) {
+        rows.push(v.origin_name || '-')
+      }
+      if (showPeople.value) {
+        rows.push(people || '-')
+      }
+      rows.push(...info)
+      return rows
     }
-    if (showPeople.value) {
-      rows.push(people || '-')
+    catch (error) {
+      ElMessage.error({
+        message: `数据异常${v.name}，可联系平台管理员处理`,
+        duration: 5000,
+      })
+      console.log(v)
     }
-    rows.push(...info)
-    return rows
-  })
+    return []
+  }).filter(v => !!v.length)
   body.unshift(infosHeader)
+
+  const _filename = filename || `数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`
+  const resFileName = selectTaskName.value ? `${normalizeFileName(selectTaskName.value)}_${_filename}` : _filename
+
   tableToExcel(
     headers,
     body,
-    filename ||
-    `数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`
+    resFileName,
   )
   ElMessage.success('导出成功')
 }
-// 分类相关
-const categories = computed(() => $store.state.category.categoryList)
-const selectCategory = ref('all')
-// 任务相关
-const tasks = computed<TaskApiTypes.TaskItem[]>(
-  () => $store.state.task.taskList
-)
-const selectTask = ref('all')
-const filterTasks = computed(() => {
-  if (selectCategory.value === 'all') {
-    return tasks.value
-  }
-  // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-  selectTask.value = 'all'
-  return tasks.value.filter((t) => t.category === selectCategory.value)
-})
-const selectTaskName = computed(() => {
-  const t = filterTasks.value.find((v) => v.key === selectTask.value)
-  return t?.name
-})
-
-watchEffect(() => {
-  if (
-    tasks.value.length &&
-    tasks.value.some((v) => v.key === $route.query.task)
-  ) {
-    selectTask.value = `${$route.query.task}`
-  }
-})
 
 const isLoadingData = ref(false)
 // 提交的所有文件
 const files: FileApiTypes.File[] = reactive([])
-const loadFiles = () => {
+function loadFiles() {
   isLoadingData.value = true
   files.splice(0, files.length)
   FileApi.getFileList().then((res) => {
@@ -516,20 +245,20 @@ const filterFiles = computed(() =>
   files
     .filter((f) => {
       if (selectCategory.value === 'no-task') {
-        return tasks.value.every((t) => t.key !== f.task_key)
+        return tasks.value.every(t => t.key !== f.task_key)
       }
       if (filterTasks.value.length === 0) {
         return false
       }
 
       if (selectTask.value === 'all') {
-        return filterTasks.value.find((t) => t.key === f.task_key)
+        return filterTasks.value.find(t => t.key === f.task_key)
       }
 
       return selectTask.value === f.task_key
       // 2. 过滤关键词(精细优化)
     })
-    .filter((t) =>
+    .filter(t =>
       searchWord.value
         ? JSON.stringify([
           formatDate(new Date(t.date)),
@@ -537,30 +266,30 @@ const filterFiles = computed(() =>
           t.people,
           t.name,
           t.task_name,
-          // eslint-disable-next-line no-useless-escape
-          t.info
+
+          t.info,
         ])
           .replace(/[:'"{},[\]]/g, '')
           .includes(searchWord.value)
-        : true
-    )
+        : true,
+    ),
 )
 
 /**
  * 清空所有选项
  */
-const clearSelection = () => {
+function clearSelection() {
   multipleTable.value.clearSelection()
 }
 // 多选选中的项
 const selectItem: any[] = reactive([])
-const handleSelectionChange = (e: any) => {
+function handleSelectionChange(e: any) {
   selectItem.splice(0, selectItem.length)
   selectItem.push(...e)
 }
 const batchDownStart = ref(false)
-const handleDropdownClick = (e: string) => {
-  const ids: number[] = selectItem.map((v) => v.id)
+function handleDropdownClick(e: string) {
+  const ids: number[] = selectItem.map(v => v.id)
   switch (e) {
     case 'download':
       if (limitDownload.value) {
@@ -577,7 +306,7 @@ const handleDropdownClick = (e: string) => {
       }
       FileApi.batchDownload(
         ids,
-        `批量下载_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}`
+        `批量下载_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}`,
       )
         .then(() => {
           loadActions()
@@ -599,7 +328,7 @@ const handleDropdownClick = (e: string) => {
             files.splice(
               0,
               files.length,
-              ...files.filter((v) => !ids.includes(v.id))
+              ...files.filter(v => !ids.includes(v.id)),
             )
             ElMessage.success('删除成功')
           })
@@ -615,7 +344,7 @@ const handleDropdownClick = (e: string) => {
       }
       handleExportExcel(
         selectItem,
-        `批量导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`
+        `批量导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`,
       )
       ElMessage.success('导出成功')
       break
@@ -626,7 +355,7 @@ const handleDropdownClick = (e: string) => {
 }
 const showInfoDialog = ref(false)
 const infos: any[] = reactive([])
-const checkInfo = (e: any) => {
+function checkInfo(e: any) {
   infos.splice(0, infos.length)
   infos.push(...parseInfo(e.info))
   showInfoDialog.value = true
@@ -637,9 +366,9 @@ const renameForm = reactive({
   oldName: '',
   newName: '',
   suffix: '',
-  id: -1
+  id: -1,
 })
-const rewriteFilename = (e: any) => {
+function rewriteFilename(e: any) {
   const { id, name } = e
   const suffix = getFileSuffix(name)
   renameForm.oldName = name
@@ -648,7 +377,7 @@ const rewriteFilename = (e: any) => {
   showRenameDialog.value = true
 }
 
-const handleSaveNewName = () => {
+function handleSaveNewName() {
   // 文件名校验，不能有系统不支持的字符
   if (filenamePattern.test(renameForm.newName)) {
     ElMessage.error(`文件名不能包含${filenamePattern.source}等字符`)
@@ -657,11 +386,11 @@ const handleSaveNewName = () => {
   }
   FileApi.updateFilename(
     renameForm.id,
-    `${renameForm.newName}${renameForm.suffix}`
+    `${renameForm.newName}${renameForm.suffix}`,
   )
     .then(() => {
       ElMessage.success('修改成功')
-      const file = files.find((v) => v.id === renameForm.id)
+      const file = files.find(v => v.id === renameForm.id)
       file.name = `${renameForm.newName}${renameForm.suffix}`
     })
     .catch(() => {
@@ -672,7 +401,7 @@ const handleSaveNewName = () => {
     })
 }
 
-const downloadOne = (e: any) => {
+function downloadOne(e: any) {
   if (limitDownload.value) {
     ElMessage.error('下载功能已被限制，请联系管理员扩容，或自行删除历史无用文件')
     return
@@ -686,13 +415,17 @@ const downloadOne = (e: any) => {
       downLoadByUrl(link, name)
       // 刷新
       loadActions()
+      // 刷新次数
+      setTimeout(() => {
+        refreshFilesDownloadCount()
+      }, 1000)
     })
     .catch(() => {
       ElMessage.error('文件已从服务器上移除')
     })
 }
-const handleDelete = (e: any) => {
-  const idx = files.findIndex((v) => v === e)
+function handleDelete(e: any) {
+  const idx = files.findIndex(v => v === e)
   ElMessageBox.confirm('确认删除此文件吗？', '数据无价，请谨慎操作')
     .then(() => {
       FileApi.deleteOneFile(e.id).then(() => {
@@ -707,7 +440,7 @@ const handleDelete = (e: any) => {
 
 // 分页
 const pageSize = ref(6)
-const handleSizeChange = (v: number) => {
+function handleSizeChange(v: number) {
   pageSize.value = v
 }
 const pageCount = computed(() => {
@@ -723,27 +456,27 @@ const showFilterFiles = computed(() => {
 })
 
 const filterFileSize = computed(() =>
-  formatSize(filterFiles.value.reduce((acc, cur) => acc + cur.size, 0))
+  formatSize(filterFiles.value.reduce((acc, cur) => acc + cur.size, 0)),
 )
 const fileListSize = computed(() =>
-  formatSize(files.reduce((acc, cur) => acc + cur.size, 0))
+  formatSize(files.reduce((acc, cur) => acc + cur.size, 0)),
 )
-const handlePageChange = (idx: number) => {
+function handlePageChange(idx: number) {
   pageCurrent.value = idx
 }
 
 // 刷新文件列表
 
-const handleRefresh = () => {
+function handleRefresh() {
   ElMessage.success({
-    message: '刷新成功'
+    message: '刷新成功',
   })
   loadFiles()
 }
-const handleDownloadTask = () => {
+function handleDownloadTask() {
   const ids: number[] = files
-    .filter((f) => f.task_key === selectTask.value)
-    .map((v) => v.id)
+    .filter(f => f.task_key === selectTask.value)
+    .map(v => v.id)
   if (ids.length === 0) {
     ElMessage.warning('该任务中没有数据')
     return
@@ -769,20 +502,14 @@ const handleDownloadTask = () => {
 }
 
 const previewData = reactive<
-  { cover: string; preview: string; name: string; date: string; id: number }[]
+  { cover: string, preview: string, name: string, date: string, id: number }[]
 >([])
-const sortProps = reactive({
-  order: null,
-  prop: null
-})
+
 const viewImageFilename = ref('')
-const handleFilesSortChange = (v) => {
-  sortProps.prop = v.prop
-  sortProps.order = v.order
-}
+
 const previewImages = computed(() => {
   // if (!sortProps.prop) {
-  return previewData.map((v) => v.preview)
+  return previewData.map(v => v.preview)
   // }
   // TODO：下面代码暂不生效，后续再支持表格排序场景
   // const temp = [...previewData]
@@ -795,13 +522,13 @@ const previewImages = computed(() => {
   // return temp.map((v) => v.preview)
 })
 
-const handleSwitchImage = (idx: number) => {
+function handleSwitchImage(idx: number) {
   viewImageFilename.value = showFilterFiles.value[idx].name
 }
 
 let fetching = false
-const refreshFilesCover = () => {
-  const ids = showFilterFiles.value.map((v) => v.id)
+function refreshFilesCover() {
+  const ids = showFilterFiles.value.map(v => v.id)
   if (ids.length === 0 || fetching) {
     return
   }
@@ -820,6 +547,32 @@ const refreshFilesCover = () => {
     })
   })
 }
+
+function refreshFilesDownloadCount() {
+  const ids = showFilterFiles.value.map(v => v.id)
+  if (ids.length === 0 || fetching) {
+    return
+  }
+
+  FileApi.fileDownloadCount(ids).then((r) => {
+    const { data } = r
+    if (data.length === 0 || data.length !== showFilterFiles.value.length) {
+      return
+    }
+
+    showFilterFiles.value.forEach((v, idx) => {
+      v.downloadCount = data[idx]
+    })
+  })
+}
+watchEffect(() => {
+  if (searchWord.value || pageCurrent.value || pageSize.value) {
+    refreshFilesDownloadCount()
+    return
+  }
+  refreshFilesDownloadCount()
+})
+
 watchEffect(() => {
   window.localStorage.setItem('ep-show-images', `${showImg.value}`)
   if (!showImg.value) {
@@ -839,9 +592,418 @@ onMounted(() => {
   $store.dispatch('task/getTask')
 })
 
-const isMobile = computed(() => $store.getters['public/isMobile'])
+const isMobile = useIsMobile()
+function handleShowDetail() {
+  ElMessageBox.confirm(priceText.value)
+}
 </script>
+
+<template>
+  <div class="files">
+    <!-- 筛选框 -->
+    <div class="panel header">
+      <div class="item">
+        <span class="label">分类</span>
+        <!-- TODO: multiple 多选待评估 -->
+        <el-select v-model="selectCategory" size="default" filterable placeholder="请选择">
+          <el-option label="全部" value="all" />
+          <el-option label="默认" value="default" />
+          <el-option v-for="item in categories" :key="item.k" :label="item.name" :value="item.k" />
+          <el-option label="无关联任务" value="no-task" />
+          <el-option label="♻️回收站♻️" value="trash" />
+        </el-select>
+      </div>
+      <div class="item">
+        <span class="label">任务</span>
+        <el-select v-model="selectTask" size="default" filterable placeholder="请选择">
+          <el-option label="全部" value="all" />
+          <el-option v-for="item in filterTasks" :key="item.key" :label="item.name" :value="item.key" />
+        </el-select>
+      </div>
+      <div class="item">
+        <el-button
+          :loading="batchDownStart" :disabled="selectTask === 'all'" type="primary" size="default"
+          :icon="Download" @click="handleDownloadTask"
+        >
+          下载任务中的文件
+        </el-button>
+      </div>
+      <div class="item">
+        <el-input v-model="searchWord" size="default" clearable placeholder="请输入要检索的内容" :prefix-icon="Search" />
+      </div>
+    </div>
+    <div class="panel">
+      <div class="export-btns flex fac">
+        <el-dropdown trigger="click" @command="handleDropdownClick">
+          <el-button type="primary" size="default">
+            批量操作<el-icon class="el-icon--right">
+              <ArrowDown />
+            </el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item :disabled="selectItem.length === 0" command="download">
+                下载
+              </el-dropdown-item>
+              <el-dropdown-item :disabled="selectItem.length === 0" command="delete">
+                删除
+              </el-dropdown-item>
+              <el-dropdown-item :disabled="selectItem.length === 0" command="excel">
+                导出记录
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <div v-show="false">
+          <!-- 迷惑的解决bug的手段 -->
+          <el-dropdown trigger="click" @command="handleDropdownClick">
+            <el-button type="primary" :disabled="selectItem.length === 0" size="default">
+              批量操作
+              <el-icon>
+                <ArrowDown />
+              </el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="download">
+                  下载
+                </el-dropdown-item>
+                <el-dropdown-item command="delete">
+                  删除
+                </el-dropdown-item>
+                <el-dropdown-item command="excel">
+                  导出记录
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+        <el-button size="default" :icon="Refresh" @click="handleRefresh">
+          刷新
+        </el-button>
+        <el-button
+          title="导出表格中所有的数据" type="success" size="default" :icon="DataAnalysis" :disabled="showFilterFiles.length === 0" @click="() => {
+            handleExportExcel(
+              filterFiles,
+              `筛选数据导出_${formatDate(
+                new Date(),
+                'yyyy年MM月日hh时mm分ss秒',
+              )}.xlsx`,
+            )
+          }
+          "
+        >
+          导出记录
+        </el-button>
+        <div class="control-item">
+          显示图片
+          <el-switch
+            v-model="showImg" inline-prompt active-color="#13ce66" inactive-color="#ff4949" active-text="是"
+            inactive-text="否"
+          />
+        </div>
+        <div class="control-item">
+          展示原文件名
+          <el-switch
+            v-model="showOriginName" inline-prompt active-color="#13ce66" inactive-color="#ff4949"
+            active-text="是" inactive-text="否"
+          />
+        </div>
+        <div class="control-item">
+          显示提交人姓名
+          <el-switch
+            v-model="showPeople" inline-prompt active-color="#13ce66" inactive-color="#ff4949" active-text="是"
+            inactive-text="否"
+          />
+        </div>
+        <div class="control-item">
+          ⏰ 查看下载历史
+          <el-switch
+            v-model="showHistoryPanel" style="
+              --el-switch-on-color: #13ce66;
+              --el-switch-off-color: #ff4949;
+            "
+          />
+        </div>
+      </div>
+    </div>
+    <div v-show="historyDownloadRecord.compressTask.length && !showHistoryPanel" class="panel">
+      <Tip style="font-size: 16px">
+        正在进行归档的任务
+        {{ historyDownloadRecord.compressTask.length }}个
+      </Tip>
+      <Tip>详细归档记录点击右上角 “⏰查看下载历史”</Tip>
+      <p
+        v-for="(record, idx) in historyDownloadRecord.compressTask" :key="record.id" class="tc"
+        style="margin-top: 10px"
+      >
+        {{ idx + 1 }}. {{ record.tip }}
+        <span v-loading="true" element-loading-text="..." style="--el-loading-spinner-size: 20px" />
+      </p>
+    </div>
+    <div v-show="showHistoryPanel" class="panel">
+      <Tip style="font-size: 16px">
+        ”❤️下面展示历史的下载记录与归档任务完成情况❤️“
+      </Tip>
+      <Tip>”再也不需要在页面停留等待归档完成“</Tip>
+      <div>
+        <el-table
+          ref="multipleTable" v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark"
+          multiple-table stripe border :default-sort="{ prop: 'date', order: 'descending' }"
+          :max-height="666" :data="historyDownloadRecord.actions" style="width: 100%"
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column prop="date" label="触发时间" width="200">
+            <template #default="scope">
+              {{
+                formatDate(new Date(scope.row.date))
+              }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="tip" label="文件名" />
+          <el-table-column prop="type" label="类型">
+            <template #default="scope">
+              <el-link v-if="scope.row.type === ActionType.Compress" type="primary">
+                归档下载
+              </el-link>
+              <el-link v-else type="default">
+                普通下载
+              </el-link>
+            </template>
+          </el-table-column>
+          <el-table-column prop="size" label="大小" width="100">
+            <template #default="scope">
+              <span v-if="scope.row.status === DownloadStatus.ARCHIVE"><el-link type="danger">归档中...</el-link></span>
+              <span v-else-if="scope.row.status !== DownloadStatus.FAIL">{{
+                !scope.row.size ? '未知大小' : formatSize(scope.row.size)
+              }}</span>
+              <span v-if="scope.row.status === DownloadStatus.FAIL"><el-link type="danger">归档失败</el-link></span>
+            </template>
+          </el-table-column>
+          <el-table-column fixed="right" label="操作" width="140">
+            <template #default="scope">
+              <div v-if="scope.row.status === DownloadStatus.ARCHIVE" v-loading="true">
+                归档中...
+              </div>
+              <div v-if="scope.row.status === DownloadStatus.EXPIRED">
+                链接已失效
+              </div>
+              <div v-if="scope.row.status === DownloadStatus.FAIL">
+                联系开发者，提供错误信息：{{ scope.row.error }}
+              </div>
+              <div v-if="scope.row.status === DownloadStatus.SUCCESS">
+                <el-link type="primary" @click="downLoadByUrl(scope.row.url)">
+                  下载
+                </el-link>
+                <el-link type="success" style="margin-left: 10px" @click="copyRes(scope.row.url)">
+                  链接
+                </el-link>
+                <el-link
+                  type="warning" style="margin-left: 10px" @click="() => {
+                    showLinkModel = true
+                    downloadUrl = scope.row.url
+                  }
+                  "
+                >
+                  二维码
+                </el-link>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="flex fc">
+          <el-pagination
+            small :current-page="historyDownloadRecord.pageCurrent"
+            :page-count="historyDownloadRecord.pageCount" :total="historyDownloadRecord.pageTotal"
+            layout="total, prev, pager, next" @current-change="handleHistoryActionPageChange"
+          />
+        </div>
+      </div>
+    </div>
+    <!-- 主体内容 -->
+    <div class="panel">
+      <Tip>全部文件大小：{{ fileListSize }}，当前任务大小：{{ filterFileSize }}</Tip>
+      <Tip v-if="siteConfig.limitSpace">
+        <span :class="{ warnColor: limitSpace }">{{ spaceUsageText }}</span>
+      </Tip>
+      <Tip v-if="siteConfig.limitWallet">
+        统计时间：{{ formatDate(siteConfig.moneyStartDay, 'yyyy-MM-dd') }} - 至今
+      </Tip>
+      <Tip v-if="siteConfig.limitWallet">
+        <span :class="{ warnColor: limitWallet }">{{ moneyUsageText }}</span>
+        <strong class="money-detail" @click="handleShowDetail">
+          <span>查看详细</span>
+        </strong>
+      </Tip>
+      <Tip v-if="limitDownload">
+        <h2 style="color:#f56c6c">
+          空间超限将无法上传/下载文件，如需要使用，请联系管理员扩容，或自行删除无关文件
+        </h2>
+      </Tip>
+      <Tip>
+        <strong>如果你觉得应用不错，<a
+          style="color: #409eff" href="http://docs.ep.sugarat.top/praise/index.html" target="_blank"
+          rel="noopener noreferrer"
+        >给他发电⚡</a></strong>
+        <strong v-if="isOpenPraise">，其它问题<a
+          style="color: #409eff"
+          href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
+          rel="noopener noreferrer"
+        >联系作者🔗</a></strong>
+        <!-- <Praise>
+          <el-button style="margin:0 0 2px;" size="small" type="primary" text>Go！Go！❓</el-button>
+        </Praise> -->
+      </Tip>
+      <Tip v-if="isOpenPraise">
+        <h3 style="color: #f56c6c">
+          由于部分用户用量较大，小站无法承担这笔开销，限制每个账户为 2GB 可用空间，2￥的默认余额
+        </h3>
+        <h3>
+          <span style="color: #f56c6c">你可以通过<a
+            style="color: #409eff"
+            href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
+            rel="noopener noreferrer"
+          > 联系作者进行赞助⚡ </a>增加空间 或 充值余额</span>，
+          <strong>
+            <a
+              style="color: #409eff" href="https://docs.ep.sugarat.top/" target="_blank"
+              rel="noopener noreferrer"
+            >也可以选择自己搭建💡
+            </a>
+          </strong>
+        </h3>
+      </Tip>
+      <el-table
+        ref="multipleTable" v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark"
+        multiple-table stripe border :max-height="666" :data="showFilterFiles"
+        style="width: 100%" @selection-change="handleSelectionChange"
+      >
+        <el-table-column type="selection" width="55" />
+        <el-table-column prop="date" label="提交时间" width="160">
+          <template #default="scope">
+            {{
+              formatDate(new Date(scope.row.date))
+            }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="task_name" label="任务" width="150" />
+        <el-table-column prop="name" label="文件名" width="200" />
+        <template v-if="showOriginName">
+          <el-table-column prop="origin_name" label="原文件名" width="200">
+            <template #default="scope">
+              {{ scope.row.origin_name || '-' }}
+            </template>
+          </el-table-column>
+        </template>
+        <el-table-column prop="size" label="大小">
+          <template #default="scope">
+            {{
+              scope.row.size === 0 ? '未知大小' : formatSize(scope.row.size)
+            }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="downloadCount" width="90" label="下载次数" />
+        <template v-if="showImg">
+          <el-table-column label="缩略图" width="120">
+            <template #default="scope">
+              <el-image
+                preview-teleported :preview-src-list="previewImages" :initial-index="scope.$index"
+                lazy style="width: 100px; height: 100px" :src="scope.row.cover" fit="cover"
+                @switch="handleSwitchImage" @click="handleSwitchImage(scope.$index)"
+              >
+                <template #viewer>
+                  <div class="imageDes">
+                    {{ viewImageFilename }}
+                  </div>
+                </template>
+                <template #placeholder>
+                  <div class="imageLoading">
+                    Loading...
+                  </div>
+                </template>
+                <template #error>
+                  <div class="imageLoading">
+                    不支持
+                    <el-icon>
+                      <Picture />
+                    </el-icon>
+                  </div>
+                </template>
+              </el-image>
+            </template>
+          </el-table-column>
+        </template>
+        <template v-if="showPeople">
+          <el-table-column prop="people" width="100" label="限制名单">
+            <template #default="scope">
+              {{ scope.row.people || '-' }}
+            </template>
+          </el-table-column>
+        </template>
+        <el-table-column fixed="right" label="操作" width="140">
+          <template #default="scope">
+            <div class="text-btns">
+              <el-button type="primary" text size="small" @click="checkInfo(scope.row)">
+                查看提交信息
+              </el-button>
+              <el-button type="primary" text size="small" @click="rewriteFilename(scope.row)">
+                修改文件名
+              </el-button>
+              <el-button type="primary" text size="small" @click="downloadOne(scope.row)">
+                下载
+              </el-button>
+              <el-button type="primary" text size="small" @click="handleDelete(scope.row)">
+                删除
+              </el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <!-- 分页 -->
+    <div class="panel flex fc">
+      <el-pagination
+        :current-page="pageCurrent" background :page-count="pageCount" :page-sizes="[6, 10, 50, 100]"
+        :page-size="pageSize" :total="filterFiles.length" layout="total, sizes, prev, pager, next, jumper" @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
+    </div>
+    <!-- 信息弹窗 -->
+    <el-dialog v-model="showInfoDialog" :fullscreen="isMobile" title="提交填写的信息">
+      <InfosForm :infos="infos" :disabled="true" />
+    </el-dialog>
+    <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl" />
+    <el-dialog v-model="showRenameDialog" :fullscreen="isMobile" title="修改文件名">
+      <div>
+        <el-form label-width="100px" :model="renameForm">
+          <el-form-item label="原文件名" prop="newName">
+            <el-input v-model="renameForm.oldName" disabled />
+          </el-form-item>
+          <el-form-item label="新文件名" prop="newName">
+            <el-input v-model="renameForm.newName" placeholder="请输入新文件名">
+              <template #append>
+                {{ renameForm.suffix }}
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="success" @click="handleSaveNewName">
+              保存
+            </el-button>
+            <el-button @click="showRenameDialog = false">
+              取消
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
 <style scoped lang="scss">
+.warnColor {
+  color: #f56c6c;
+}
 .files {
   max-width: 1024px;
   margin: 0 auto;
@@ -967,5 +1129,9 @@ const isMobile = computed(() => $store.getters['public/isMobile'])
 
     text-align: center;
   }
+}
+.money-detail {
+  color: #409eff;
+  cursor: pointer;
 }
 </style>
