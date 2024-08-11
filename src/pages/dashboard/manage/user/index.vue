@@ -3,6 +3,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { DeleteFilled, Message, Money, Refresh, Search } from '@element-plus/icons-vue'
 import { useLocalStorage } from '@vueuse/core'
+import Tip from '../../tasks/components/infoPanel/tip.vue'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { USER_STATUS } from '@/constants'
 import { formatDate, formatSize } from '@/utils/stringUtil'
@@ -10,11 +11,13 @@ import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 
 import { useIsMobile, useSiteConfig } from '@/composables'
 
+const sumCost = ref('')
 // 用户
 const users = reactive<SuperUserApiTypes.UserItem[]>([])
 function refreshUsers() {
   SuperUserApi.getUserList().then((res) => {
     users.splice(0, users.length, ...res.data.list)
+    sumCost.value = res.data.sumCost
     ElMessage.success('列表数据刷新成功')
   })
 }
@@ -479,10 +482,11 @@ function handleCheckDetail(price) {
             @click="sendMessage(null, 0)"
           >推送全局消息</el-button>
         </span>
-        <span class="item">
-          计费起始时间：{{ formatDate(moneyStartDay) }}
-        </span>
       </div>
+      <Tip>
+        预估费用：{{ sumCost }}￥，
+        计费起始时间：{{ formatDate(moneyStartDay) }}
+      </Tip>
       <el-table
         height="550"
         stripe

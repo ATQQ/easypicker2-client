@@ -265,7 +265,7 @@ declare namespace SuperUserApiTypes {
     text: string
     read: boolean
   }
-  type getUserList = ResponseData<{ list: UserItem[] }>
+  type getUserList = ResponseData<{ list: UserItem[], sumCost: string }>
   type getMessageList = ResponseData<MessageItem[]>
   type updateUserStatus = ResponseData
 }
