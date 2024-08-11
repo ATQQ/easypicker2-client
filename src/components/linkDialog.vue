@@ -1,69 +1,37 @@
-<template>
-  <div>
-    <el-dialog
-      :fullscreen="isMobile"
-      @close="handleClose"
-      :title="title"
-      v-model="showModel"
-      center
-    >
-      <!-- 链接 -->
-      <div>
-        <el-input placeholder="生成的链接" v-model="shareLink">
-          <template #prepend>
-            <el-button type="primary" @click="createShortLink"
-              >生成短链</el-button
-            >
-          </template>
-          <template #append>
-            <el-button type="primary" @click="copyLink">复制</el-button>
-          </template>
-        </el-input>
-      </div>
-      <!-- 二维码 -->
-      <div style="margin-top: 10px; text-align: center">
-        <qr-code :value="shareLink"></qr-code>
-      </div>
-      <!-- <template #footer>
-          <span class="dialog-footer">
-              <el-button type="primary" @click="$emit('update:value',false)">关闭</el-button>
-          </span>
-      </template>-->
-    </el-dialog>
-  </div>
-</template>
 <script lang="ts">
 import { ElMessage } from 'element-plus'
-import { computed, defineComponent, ref, watchEffect } from 'vue'
+import { defineComponent, ref, watchEffect } from 'vue'
 import QrCode from '@components/QrCode.vue'
-import { useStore } from 'vuex'
 import { copyRes, getShortUrl } from '@/utils/stringUtil'
+import { useIsMobile } from '@/composables'
 
 export default defineComponent({
-  name: 'linkDialog',
+  name: 'LinkDialog',
   components: {
-    QrCode
+    QrCode,
   },
   props: {
     title: {
       type: String,
-      default: '链接面板'
+      default: '链接面板',
     },
     value: {
-      type: Boolean
+      type: Boolean,
     },
     link: {
       type: String,
-      default: ''
+      default: '',
     },
     download: {
       type: Boolean,
-      default: true
-    }
+      default: true,
+    },
   },
+  emits: ['update:value'],
   setup(props, context) {
     const shareLink = ref('')
     const showModel = ref(false)
+    const isMobile = useIsMobile()
     const copyLink = () => {
       copyRes(shareLink.value)
     }
@@ -88,17 +56,51 @@ export default defineComponent({
       })
     }
 
-    const $store = useStore()
-    const isMobile = computed(() => $store.getters['public/isMobile'])
-
     return {
       shareLink,
       createShortLink,
       copyLink,
       handleClose,
       showModel,
-      isMobile
+      isMobile,
     }
-  }
+  },
 })
 </script>
+
+<template>
+  <div>
+    <el-dialog
+      v-model="showModel"
+      :fullscreen="isMobile"
+      :title="title"
+      center
+      @close="handleClose"
+    >
+      <!-- 链接 -->
+      <div>
+        <el-input v-model="shareLink" placeholder="生成的链接">
+          <template #prepend>
+            <el-button type="primary" @click="createShortLink">
+              生成短链
+            </el-button>
+          </template>
+          <template #append>
+            <el-button type="primary" @click="copyLink">
+              复制
+            </el-button>
+          </template>
+        </el-input>
+      </div>
+      <!-- 二维码 -->
+      <div style="margin-top: 10px; text-align: center">
+        <QrCode :value="shareLink" />
+      </div>
+      <!-- <template #footer>
+          <span class="dialog-footer">
+              <el-button type="primary" @click="$emit('update:value',false)">关闭</el-button>
+          </span>
+      </template> -->
+    </el-dialog>
+  </div>
+</template>

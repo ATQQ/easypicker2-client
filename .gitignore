@@ -3,7 +3,6 @@ node_modules
 dist
 dist-ssr
 *.local
-.vscode
 cache
 *.tar.gz
 ep_backup

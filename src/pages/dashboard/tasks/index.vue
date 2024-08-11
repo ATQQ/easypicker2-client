@@ -1,134 +1,8 @@
-<template>
-  <div class="tasks">
-    <!-- 分类管理 -->
-    <div class="categorys-area">
-      <CategoryPanel v-model:category="selectCategory"></CategoryPanel>
-    </div>
-
-    <!-- 任务管理 -->
-    <div class="panel task-panel">
-      <!-- 创建任务 -->
-      <create-task :activeCategoryKey="selectCategory"></create-task>
-
-      <!-- 任务列表 -->
-      <div class="task-list">
-        <TaskInfo
-          @edit="editBaseInfo"
-          @delete="deleteTask"
-          @share="shareTask"
-          @more="editMore"
-          v-for="item in filterTasks"
-          :key="item.key"
-          :item="item"
-        ></TaskInfo>
-        <el-empty
-          v-if="filterTasks.length === 0"
-          description="此分类下没有任务哟，快去创建吧"
-        ></el-empty>
-      </div>
-    </div>
-
-    <!-- 任务基本信息维护弹窗 -->
-    <el-dialog
-      draggable
-      :fullscreen="isMobile"
-      title="基本信息修改"
-      v-model="showBaseInfoDialog"
-    >
-      <el-form :model="taskBaseInfo">
-        <el-form-item label="任务名称" label-width="100px">
-          <el-input v-model="taskBaseInfo.name" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="新的分类" label-width="100px">
-          <el-select v-model="taskBaseInfo.category" placeholder="请选择新分类">
-            <el-option label="默认" value="default"></el-option>
-            <el-option
-              v-for="c in categorys"
-              :key="c.k"
-              :label="c.name"
-              :value="c.k"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showBaseInfoDialog = false">取 消</el-button>
-          <el-button type="primary" @click="handleSaveEditInfo"
-            >确 定</el-button
-          >
-        </span>
-      </template>
-    </el-dialog>
-
-    <!-- 分享链接弹窗(二维码/链接/短链) -->
-    <LinkDialog
-      v-model:value="showLinkModal"
-      :download="false"
-      title="收取链接"
-      :link="shareTaskLink"
-    >
-    </LinkDialog>
-    <!-- 附加属性编辑弹窗 -->
-    <el-dialog
-      :fullscreen="isMobile"
-      title="更多设置"
-      v-model="showTaskInfoPanel"
-      center
-    >
-      <div>
-        <h3 class="tc" style="font-size: 14px; color: #9e9e9e">
-          任务名：<strong style="color: #000000">{{ activeTask.name }}</strong
-          >，
-          <el-button type="primary" text @click="openTaskPage"
-            >去查看效果</el-button
-          >
-        </h3>
-        <el-tabs v-model="activeInfo">
-          <el-tab-pane label="截止日期" name="ddl">
-            <DDlPanel :ddl="taskInfo.ddl" :k="activeTask.key" />
-          </el-tab-pane>
-          <el-tab-pane label="批注信息" name="tip">
-            <TipInfoPanel
-              :rewrite="taskInfo.rewrite"
-              :tip="taskInfo.tip"
-              :k="activeTask.key"
-            />
-          </el-tab-pane>
-          <el-tab-pane label="限制名单" name="people">
-            <PeoplePanel
-              :name="activeTask.name"
-              :value="taskInfo.people"
-              :k="activeTask.key"
-              :field="taskInfo.bindField"
-            />
-          </el-tab-pane>
-          <el-tab-pane label="必填信息" name="info">
-            <InfoPanel
-              :rewrite="taskInfo.rewrite"
-              :info="taskInfo.info"
-              :k="activeTask.key"
-              :format="taskInfo.format"
-            />
-          </el-tab-pane>
-          <el-tab-pane label="模板文件" name="template">
-            <TemplatePanel :value="taskInfo.template" :k="activeTask.key" />
-          </el-tab-pane>
-          <el-tab-pane label="文件属性" name="attr">
-            <FileInfoPanel :format="taskInfo.format" :k="activeTask.key" />
-          </el-tab-pane>
-        </el-tabs>
-      </div>
-    </el-dialog>
-  </div>
-</template>
 <script lang="ts" setup>
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watchEffect } from 'vue'
 import { useStore } from 'vuex'
 import LinkDialog from '@components/linkDialog.vue'
-import { TaskApi } from '@/apis'
-import { copyRes } from '@/utils/stringUtil'
 import CategoryPanel from './components/CategoryPanel.vue'
 import CreateTask from './components/CreateTask.vue'
 import TaskInfo from './components/TaskInfo.vue'
@@ -138,33 +12,38 @@ import TemplatePanel from './components/infoPanel/template.vue'
 import InfoPanel from './components/infoPanel/info.vue'
 import TipInfoPanel from './components/infoPanel/tipInfo.vue'
 import FileInfoPanel from './components/infoPanel/file.vue'
+import { copyRes } from '@/utils/stringUtil'
+import { TaskApi } from '@/apis'
+import { useIsMobile } from '@/composables'
 
 const $store = useStore()
-const isMobile = computed(() => $store.getters['public/isMobile'])
+
+const isMobile = useIsMobile()
 // 分类相关
 const categorys = computed(() => $store.state.category.categoryList)
 
 // 任务相关
 const selectCategory = ref('default')
 const tasks = computed<TaskApiTypes.TaskItem[]>(
-  () => $store.state.task.taskList
+  () => $store.state.task.taskList,
 )
 const filterTasks = computed(() => {
-  const t = tasks.value.filter((v) => v.category === selectCategory.value)
+  const t = tasks.value.filter(v => v.category === selectCategory.value)
   return t
 })
 
 // 删除任务
-const deleteTask = (k: string, isTrash = false) => {
-  if (!k) return
+function deleteTask(k: string, isTrash = false) {
+  if (!k)
+    return
   ElMessageBox.confirm(
     '确认删除此任务吗?',
     isTrash ? '!!回收站的删除后无法再恢复' : '数据无价，请谨慎操作',
     {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      type: isTrash ? 'error' : 'info'
-    }
+      type: isTrash ? 'error' : 'info',
+    },
   )
     .then(() => {
       $store.dispatch('task/deleteTask', k).then(() => {
@@ -179,13 +58,13 @@ const deleteTask = (k: string, isTrash = false) => {
 // 基本信息编辑
 const showBaseInfoDialog = ref(false)
 const taskBaseInfo = reactive({ name: '', category: '', key: '' })
-const editBaseInfo = (task: any) => {
+function editBaseInfo(task: any) {
   taskBaseInfo.name = task.name
   taskBaseInfo.category = task.category
   taskBaseInfo.key = task.key
   showBaseInfoDialog.value = true
 }
-const handleSaveEditInfo = () => {
+function handleSaveEditInfo() {
   showBaseInfoDialog.value = false
   if (!taskBaseInfo.name.trim()) {
     ElMessage.warning('不能为空')
@@ -199,7 +78,7 @@ const handleSaveEditInfo = () => {
 // 生成分享链接
 const shareTaskLink = ref('')
 const showLinkModal = ref(false)
-const shareTask = (k: string) => {
+function shareTask(k: string) {
   shareTaskLink.value = 'default'
   const { origin } = window.location
   shareTaskLink.value = `${origin}/task/${k}`
@@ -215,9 +94,9 @@ const activeTask: TaskApiTypes.TaskItem = reactive({
   category: '',
   key: '',
   name: '',
-  recentLog: []
+  recentLog: [],
 })
-const editMore = (item: any) => {
+function editMore(item: any) {
   Object.assign(activeTask, item)
   TaskApi.getTaskMoreInfo(item.key).then((res) => {
     // 先初始化,再赋值
@@ -260,10 +139,132 @@ onMounted(() => {
   $store.dispatch('task/getTask')
 })
 
-const openTaskPage = () => {
+function openTaskPage() {
   window.open(`/task/${activeTask.key}`)
 }
 </script>
+
+<template>
+  <div class="tasks">
+    <!-- 分类管理 -->
+    <div class="categorys-area">
+      <CategoryPanel v-model:category="selectCategory" />
+    </div>
+
+    <!-- 任务管理 -->
+    <div class="panel task-panel">
+      <!-- 创建任务 -->
+      <CreateTask :active-category-key="selectCategory" />
+
+      <!-- 任务列表 -->
+      <div class="task-list">
+        <TaskInfo
+          v-for="item in filterTasks"
+          :key="item.key"
+          :item="item"
+          @edit="editBaseInfo"
+          @delete="deleteTask"
+          @share="shareTask"
+          @more="editMore"
+        />
+        <el-empty
+          v-if="filterTasks.length === 0"
+          description="此分类下没有任务哟，快去创建吧"
+        />
+      </div>
+    </div>
+
+    <!-- 任务基本信息维护弹窗 -->
+    <el-dialog
+      v-model="showBaseInfoDialog"
+      draggable
+      :fullscreen="isMobile"
+      title="基本信息修改"
+    >
+      <el-form :model="taskBaseInfo">
+        <el-form-item label="任务名称" label-width="100px">
+          <el-input v-model="taskBaseInfo.name" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="新的分类" label-width="100px">
+          <el-select v-model="taskBaseInfo.category" placeholder="请选择新分类">
+            <el-option label="默认" value="default" />
+            <el-option
+              v-for="c in categorys"
+              :key="c.k"
+              :label="c.name"
+              :value="c.k"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showBaseInfoDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSaveEditInfo">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 分享链接弹窗(二维码/链接/短链) -->
+    <LinkDialog
+      v-model:value="showLinkModal"
+      :download="false"
+      title="收取链接"
+      :link="shareTaskLink"
+    />
+    <!-- 附加属性编辑弹窗 -->
+    <el-dialog
+      v-model="showTaskInfoPanel"
+      :fullscreen="isMobile"
+      title="更多设置"
+      center
+    >
+      <div>
+        <h3 class="tc" style="font-size: 14px; color: #9e9e9e">
+          任务名：<strong style="color: #000000">{{ activeTask.name }}</strong>，
+          <el-button type="primary" text @click="openTaskPage">
+            去查看效果
+          </el-button>
+        </h3>
+        <el-tabs v-model="activeInfo">
+          <el-tab-pane label="截止日期" name="ddl">
+            <DDlPanel :ddl="taskInfo.ddl" :k="activeTask.key" />
+          </el-tab-pane>
+          <el-tab-pane label="批注信息" name="tip">
+            <TipInfoPanel
+              :rewrite="taskInfo.rewrite"
+              :tip="taskInfo.tip"
+              :k="activeTask.key"
+            />
+          </el-tab-pane>
+          <el-tab-pane label="限制名单" name="people">
+            <PeoplePanel
+              :name="activeTask.name"
+              :value="taskInfo.people"
+              :k="activeTask.key"
+              :field="taskInfo.bindField"
+            />
+          </el-tab-pane>
+          <el-tab-pane label="必填信息" name="info">
+            <InfoPanel
+              :rewrite="taskInfo.rewrite"
+              :info="taskInfo.info"
+              :k="activeTask.key"
+              :format="taskInfo.format"
+            />
+          </el-tab-pane>
+          <el-tab-pane label="模板文件" name="template">
+            <TemplatePanel :value="taskInfo.template" :k="activeTask.key" />
+          </el-tab-pane>
+          <el-tab-pane label="文件属性" name="attr">
+            <FileInfoPanel :format="taskInfo.format" :k="activeTask.key" />
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+
 <style scoped lang="scss">
 .tasks {
   max-width: 1024px;
