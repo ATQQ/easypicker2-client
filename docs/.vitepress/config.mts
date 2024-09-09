@@ -1,5 +1,6 @@
 import { getThemeConfig } from '@sugarat/theme/node'
 import { defineConfig } from 'vitepress'
+import { La51Plugin } from 'vitepress-plugin-51la'
 import Pkg from '../../package.json'
 
 const blogTheme = getThemeConfig({
@@ -69,25 +70,16 @@ export default defineConfig({
       'link',
       { rel: 'apple-touch-icon', href: '/favicon.ico', sizes: '180x180' },
     ],
-    [
-      'script',
-      {
-        charset: 'UTF-8',
-        id: 'LA_COLLECT',
-        src: '//sdk.51.la/js-sdk-pro.min.js',
-      },
-    ],
-    [
-      'script',
-      {},
-      'LA.init({id: "JiqK2jS5HmnB4s8G",ck: "JiqK2jS5HmnB4s8G",hashMode:true})',
-    ],
   ],
   vite: {
     server: {
       port: 4000,
       host: '0.0.0.0',
     },
+    plugins: [La51Plugin({
+      id: 'JiqK2jS5HmnB4s8G',
+      ck: 'JiqK2jS5HmnB4s8G',
+    })],
   },
   lastUpdated: true,
   themeConfig: {
