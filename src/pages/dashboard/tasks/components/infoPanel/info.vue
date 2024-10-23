@@ -6,7 +6,6 @@ import {
   CirclePlusFilled,
   Top,
 } from '@element-plus/icons-vue'
-import { useStore } from 'vuex'
 import { updateTaskInfo } from '../../public'
 import Tip from './tip.vue'
 import { TaskApi } from '@/apis'
@@ -306,11 +305,11 @@ watchEffect(() => {
                 <div class="form-item-wrapper">
                   <el-icon
                     :color="item.children.length > 2 ? 'red' : 'grey'"
-                    @click="deleteInfo(idx, item.children, 2)"
+                    @click="deleteInfo(idx2, item.children, 2)"
                   >
                     <CircleCloseFilled />
                   </el-icon>
-                  <template v-if="idx + 1 === item.children.length">
+                  <template v-if="idx2 + 1 === item.children.length">
                     <el-icon
                       style="margin-left: 10px"
                       color="#67C23A"
