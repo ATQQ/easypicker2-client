@@ -2,8 +2,8 @@
 
 > 问题反馈交流新“地盘” => [EasyPicker](https://support.qq.com/product/444158)
 
-- 线上测试地址1：<https://ep.dev.sugarat.top/>
-- 线上测试地址2：<https://ep.test.sugarat.top/>
+- 线上测试地址 1：<https://ep.dev.sugarat.top/>
+- 线上测试地址 2：<https://ep.test.sugarat.top/>
 
 :::tip 线上重新部署
 
@@ -96,7 +96,14 @@ q update
 
 :::
 
-## v2.7.0 (2024/08/11) <Badge text="最新版" type="tip"/>
+## v2.7.1 (2024/10/24) <Badge text="最新版" type="tip"/>
+
+### Bugfix
+
+- 下拉和多选无法设置超过 2 个
+- 导入 sql 错误
+
+## v2.7.0 (2024/08/11)
 
 ### Feature
 
