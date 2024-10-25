@@ -621,7 +621,7 @@ location ^~ /api/
 <!-- ### 4.1 使用面板设置 -->
 打开网站的设置面板，点击添加反向代理，勾选`高级功能`
 
-![](https://img.cdn.sugarat.top/mdImg/MTY0NzY2Njc0Nzg4Mw==647666747883)
+插入图一
 
 
 :::danger 重要提示，请一定按照指示进行操作！！！
@@ -704,7 +704,7 @@ location ^~ /api/
   * SecretKey
   * 存储空间名
   * 绑定的域名
-  * 存储区域
+  * 存储区域(全小写)
 :::
 
 :::danger 从哪获取这些变量？
