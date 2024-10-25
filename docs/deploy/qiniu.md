@@ -83,7 +83,7 @@
 
 获取位置如下
 
-控制面板右上角，的秘钥管理
+控制面板右上角的秘钥管理
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzU3MDI3MDQwMw==647570270403)
 
