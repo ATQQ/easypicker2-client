@@ -21,7 +21,7 @@
 
 新建空间，输入一些必要的数据
 
-![](https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTYwOTY3Nw==647569609677)
+插入图二
 
 其中**访问控制**一定记得选私有，避免文件不通过鉴权就被下载
 
@@ -53,6 +53,10 @@
 进入我们创建的空间`easypicker-test`,就能看到提供的测试域名
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTk3NjcwMQ==647569976702)
+
+如果需要添加自己的域名，请在下面的页面自定义源站域名绑定自己的域名映射到空间内
+
+插入图三
 
 :::tip
 域名即为后端服务中`.env`中`QINIU_BUCKET_DOMAIN`的值
