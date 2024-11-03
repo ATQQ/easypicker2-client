@@ -21,7 +21,7 @@
 
 新建空间，输入一些必要的数据
 
-![](https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTYwOTY3Nw==647569609677)
+插入图二
 
 其中**访问控制**一定记得选私有，避免文件不通过鉴权就被下载
 
@@ -54,6 +54,10 @@
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzU2OTk3NjcwMQ==647569976702)
 
+如果需要添加自己的域名，请在下面的页面自定义源站域名绑定自己的域名映射到空间内
+
+插入图三
+
 :::tip
 域名即为后端服务中`.env`中`QINIU_BUCKET_DOMAIN`的值
 :::
@@ -69,7 +73,7 @@
 
 ## 4. 获取ack与sek
 
-:::warning 重要提示！！！
+:::warning 重要提示！！！-
 **这两个东西千万不要泄露!!!**
 
 **这两个东西千万不要泄露!!!**
@@ -79,7 +83,7 @@
 
 获取位置如下
 
-控制面板右上角，的秘钥管理
+控制面板右上角的秘钥管理
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzU3MDI3MDQwMw==647570270403)
 
