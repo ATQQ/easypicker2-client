@@ -863,7 +863,7 @@ function handleShowDetail() {
             style="color: #409eff"
             href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
             rel="noopener noreferrer"
-          > 联系作者进行赞助⚡ </a>增加空间 或 充值余额</span>，
+          > 联系作者进行赞助⚡ </a>调整空间 和 可用余额</span>，
           <strong>
             <a
               style="color: #409eff" href="https://docs.ep.sugarat.top/" target="_blank"
