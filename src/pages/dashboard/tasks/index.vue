@@ -211,6 +211,7 @@ function openTaskPage() {
       :download="false"
       title="收取链接"
       :link="shareTaskLink"
+      :share-text-prefix="activeTask.name"
     />
     <!-- 附加属性编辑弹窗 -->
     <el-dialog

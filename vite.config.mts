@@ -38,7 +38,7 @@ export default defineConfig({
         rewrite: p => p.replace(/^\/api/, ''),
       },
       '/api-test/': {
-        target: 'https://ep.dev.sugarat.top',
+        target: 'https://ep.test.sugarat.top',
         changeOrigin: true,
         rewrite: p => p.replace(/^\/api-test/, 'api/'),
       },
