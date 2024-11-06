@@ -1,6 +1,6 @@
 {
   "name": "@sugarat/easypicker2-client",
-  "version": "2.7.1",
+  "version": "2.7.2",
   "files": [
     "dist",
     "package.json"
