@@ -12,7 +12,8 @@ export function useSiteConfig() {
     needBindPhone: false, // 是否需要绑定手机号
     limitSpace: false, // 是否限制空间
     limitWallet: false, // 是否限制费用
-    moneyStartDay: +new Date('2024/08/01'),
+    moneyStartDay: +new Date('2024/11/01'),
+    appName: '轻取', // 应用名称
   })
 
   const moneyStartDay = computed(() => formatDate(value.value.moneyStartDay))

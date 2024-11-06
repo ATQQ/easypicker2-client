@@ -249,3 +249,8 @@ export function getTipImageKey(
 ) {
   return `easypicker2/tip/${key}/${uid || Date.now()}/${name}`
 }
+
+
+export function shareCopyLink(url: string){
+
+}
