@@ -78,11 +78,13 @@ function handleSaveEditInfo() {
 // 生成分享链接
 const shareTaskLink = ref('')
 const showLinkModal = ref(false)
+const shareTaskName = ref('')
 function shareTask(k: string) {
   shareTaskLink.value = 'default'
   const { origin } = window.location
   shareTaskLink.value = `${origin}/task/${k}`
   copyRes(shareTaskLink.value, '收集链接已自动复制到粘贴板')
+  shareTaskName.value = tasks.value.find(v => v.key === k)?.name
   showLinkModal.value = true
 }
 
@@ -211,6 +213,7 @@ function openTaskPage() {
       :download="false"
       title="收取链接"
       :link="shareTaskLink"
+      :share-text-prefix="shareTaskName"
     />
     <!-- 附加属性编辑弹窗 -->
     <el-dialog

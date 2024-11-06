@@ -1,9 +1,9 @@
 <script lang="ts">
 import { ElMessage } from 'element-plus'
-import { defineComponent, ref, watchEffect } from 'vue'
+import { computed, defineComponent, ref, watchEffect } from 'vue'
 import QrCode from '@components/QrCode.vue'
 import { copyRes, getShortUrl } from '@/utils/stringUtil'
-import { useIsMobile } from '@/composables'
+import { useIsMobile, useSiteConfig } from '@/composables'
 
 export default defineComponent({
   name: 'LinkDialog',
@@ -26,6 +26,10 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
+    shareTextPrefix: {
+      type: String,
+      default: '',
+    },
   },
   emits: ['update:value'],
   setup(props, context) {
@@ -35,6 +39,8 @@ export default defineComponent({
     const copyLink = () => {
       copyRes(shareLink.value)
     }
+    const { value: siteConfig } = useSiteConfig()
+
     watchEffect(() => {
       shareLink.value = props.link
     })
@@ -55,7 +61,15 @@ export default defineComponent({
         ElMessage.success('短链生成成功')
       })
     }
+    const appName = computed(() => siteConfig.value.appName)
+    const shareText = computed(() => {
+      return `${appName.value && `【${appName.value}】`}${props.shareTextPrefix} ${shareLink.value}`
+    })
+    const copyShareText = () => {
+      copyRes(shareText.value)
+    }
 
+    const showShareTextPanel = computed(() => !!props.shareTextPrefix)
     return {
       shareLink,
       createShortLink,
@@ -63,6 +77,9 @@ export default defineComponent({
       handleClose,
       showModel,
       isMobile,
+      shareText,
+      copyShareText,
+      showShareTextPanel,
     }
   },
 })
@@ -70,21 +87,10 @@ export default defineComponent({
 
 <template>
   <div>
-    <el-dialog
-      v-model="showModel"
-      :fullscreen="isMobile"
-      :title="title"
-      center
-      @close="handleClose"
-    >
+    <el-dialog v-model="showModel" :fullscreen="isMobile" :title="title" center @close="handleClose">
       <!-- 链接 -->
       <div>
         <el-input v-model="shareLink" placeholder="生成的链接">
-          <template #prepend>
-            <el-button type="primary" @click="createShortLink">
-              生成短链
-            </el-button>
-          </template>
           <template #append>
             <el-button type="primary" @click="copyLink">
               复制
@@ -93,14 +99,34 @@ export default defineComponent({
         </el-input>
       </div>
       <!-- 二维码 -->
-      <div style="margin-top: 10px; text-align: center">
+      <div class="center">
         <QrCode :value="shareLink" />
       </div>
-      <!-- <template #footer>
-          <span class="dialog-footer">
-              <el-button type="primary" @click="$emit('update:value',false)">关闭</el-button>
-          </span>
-      </template> -->
+      <div class="center">
+        <el-button type="primary" @click="createShortLink">
+          生成短链
+        </el-button>
+      </div>
+      <template v-if="showShareTextPanel">
+        <div class="center">
+          <el-input
+            :value="shareText" style="width: 300px" :autosize="{ minRows: 3, maxRows: 10 }" type="textarea"
+            placeholder="分享信息"
+          />
+        </div>
+        <div class="center">
+          <el-button type="success" round @click="copyShareText">
+            复制分享信息
+          </el-button>
+        </div>
+      </template>
     </el-dialog>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.center {
+  text-align: center;
+  margin-top: 10px;
+}
+</style>
