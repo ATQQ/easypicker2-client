@@ -223,6 +223,7 @@ declare namespace OverviewApiTypes {
     qiniuBackhaulTrafficPercentage: number
     qiniuCompressPrice: number
     moneyStartDay: number
+    appName: string
   }
   type getGlobalConfig = ResponseData<GlobalSiteConfig>
 }
