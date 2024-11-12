@@ -2,7 +2,6 @@
 import type { UploadUserFile } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, reactive, ref, watch, watchEffect } from 'vue'
-import { useStore } from 'vuex'
 import { updateTaskInfo } from '../../public'
 import Tip from './tip.vue'
 import { PeopleApi, TaskApi } from '@/apis'
@@ -159,7 +158,7 @@ function submitUploadPeople() {
                   fail.map((v: string) => [v]),
                   `${props.name}_导入失败名单_${formatDate(
                     new Date(),
-                    'yyyy年MM月日hh时mm分ss秒',
+                    'yyyy年MM月dd日hh时mm分ss秒',
                   )}.xlsx`,
                 )
               }, 1000)
@@ -208,7 +207,7 @@ function handleExportExcel() {
     body,
     `${props.name}_提交情况_${formatDate(
       new Date(),
-      'yyyy年MM月日hh时mm分ss秒',
+      'yyyy年MM月dd日hh时mm分ss秒',
     )}.xlsx`,
   )
   ElMessage.success('导出成功')
@@ -255,7 +254,7 @@ function handleSaveImportInfo() {
           fail.map((v: string) => [v]),
           `${props.name}_导入失败名单_${formatDate(
             new Date(),
-            'yyyy年MM月日hh时mm分ss秒',
+            'yyyy年MM月dd日hh时mm分ss秒',
           )}.xlsx`,
         )
       }, 1000)

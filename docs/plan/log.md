@@ -96,7 +96,14 @@ q update
 
 :::
 
-## v2.7.2 (2024/11/06) <Badge text="最新版" type="tip"/>
+## v2.7.3 (2024/11/12) <Badge text="最新版" type="tip"/>
+
+### Bugfix
+
+- fix: 导出记录文件名异常
+- fix: cli 安装服务端时卡在依赖安装
+
+## v2.7.2 (2024/11/06)
 
 ### Bugfix
 
