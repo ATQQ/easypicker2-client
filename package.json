@@ -1,6 +1,6 @@
 {
   "name": "@sugarat/easypicker2-client",
-  "version": "2.7.2",
+  "version": "2.7.3",
   "files": [
     "dist",
     "package.json"
@@ -20,7 +20,6 @@
     "upload:oss": "pnpm build && q ep client -up",
     "update:version": "npm version prerelease --preid=beta --no-git-tag-version",
     "preinstall": "npm config set registry https://registry.npmmirror.com/",
-    "postinstall": "npx simple-git-hooks",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
