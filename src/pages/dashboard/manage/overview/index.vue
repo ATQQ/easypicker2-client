@@ -220,7 +220,7 @@ function exportLogData() {
     body,
     `导出日志_${logs.length}条${formatDate(
       new Date(),
-      'yyyy年MM月日hh时mm分ss秒',
+      'yyyy年MM月dd日hh时mm分ss秒',
     )}.xlsx`,
   )
   ElMessage.success('导出成功')

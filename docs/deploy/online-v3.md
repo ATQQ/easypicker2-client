@@ -309,47 +309,7 @@ q ep deploy
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY3Njc5MzY0MjgwMw==676793642803)
 
-### 2.4 添加配置防止页面404
-
-> 参考 [vue-router 官方文档:服务器配置示例](https://router.vuejs.org/zh/guide/essentials/history-mode.html#%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E7%A4%BA%E4%BE%8B)
-
-在对应网站设置面板，点击`配置文件`，加入以下配置
-
-:::code-group
-
-```sh [nginx]
-# vue-router
-location / {
-   try_files $uri $uri/ /index.html;
-}
-```
-
-```sh [apache]
-    <Directory "/www/wwwroot/你的网站域名/dist">
-        SetOutputFilter DEFLATE
-        Options FollowSymLinks
-        AllowOverride All
-        Require all granted
-        DirectoryIndex index.php index.html index.htm default.php default.html default.htm
-
-        <IfModule mod_rewrite.c>
-            RewriteEngine On
-            RewriteBase /
-            RewriteRule ^index\.html$ - [L]
-            RewriteCond %{REQUEST_FILENAME} !-f
-            RewriteCond %{REQUEST_FILENAME} !-d
-            RewriteRule . /index.html [L]
-        </IfModule>
-    </Directory>
-```
-
-:::
-
-|                                  Nginx                                  | Apache |
-| :---------------------------------------------------------------------: | :----: |
-| ![](https://img.cdn.sugarat.top/mdImg/MTY0NzY5MzExMDgyMw==647693110823) |  TODO  |
-
-### 2.5 开启HTTPS
+### 2.4 开启HTTPS
 
 为网站添加`SSL`证书，开启 HTTPS 访问
 
@@ -375,7 +335,7 @@ location / {
 当然一般腾讯云/阿里云服务器也有提供免费的SSL证书，详见各厂商文档
 :::
 
-### 2.6 导入数据库表数据
+### 2.5 导入数据库表数据
 
 咱们前面在创建站点的时候已经创建了数据库，这一步只需要做表数据的导入
 
@@ -609,7 +569,9 @@ pm2 log --out 目标的服务名 --lines 100
 pm2 log --err 目标的服务名 --lines 100
 ```
 
-## 4 配置反向代理
+## 4 配置 Nginx
+
+### 4.1 添加反向代理
 
 打开网站的设置面板，点击添加反向代理，勾选`高级功能`
 
@@ -680,6 +642,54 @@ location ^~ /api/
 **如仍无法解决，可以重新尝试创建一个新站点，配置先进行反向代理，在做其它操作。如仍然无法解决可加群反馈。**
 
 完成反向代理的配置后，我们就可以用上面提供的管理账号和密码进行服务相关配置的更新了
+
+### 4.2 添加配置防止页面 404
+
+**一定要在配置完反向代理之后再配置，不然宝塔面板有“伪静态”配置报错**
+
+> 参考 [vue-router 官方文档:服务器配置示例](https://router.vuejs.org/zh/guide/essentials/history-mode.html#%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E7%A4%BA%E4%BE%8B)
+
+在对应网站设置面板，点击`配置文件`，加入以下配置。也可以添加到 宝塔面板的 “伪静态” 配置项中。
+
+:::code-group
+
+```sh [nginx]
+# vue-router
+location / {
+   try_files $uri $uri/ /index.html;
+}
+```
+
+```sh [apache]
+    <Directory "/www/wwwroot/你的网站域名/dist">
+        SetOutputFilter DEFLATE
+        Options FollowSymLinks
+        AllowOverride All
+        Require all granted
+        DirectoryIndex index.php index.html index.htm default.php default.html default.htm
+
+        <IfModule mod_rewrite.c>
+            RewriteEngine On
+            RewriteBase /
+            RewriteRule ^index\.html$ - [L]
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteRule . /index.html [L]
+        </IfModule>
+    </Directory>
+```
+
+:::
+
+方式 1(推荐)：伪静态配置项示意：
+
+![](https://cdn.upyun.sugarat.top/mdImg/sugar/2358eed4bbf45c92284f39e270c23b68)
+
+方式 2：直接加入配置项里示意：
+
+|                                  Nginx                                  | Apache |
+| :---------------------------------------------------------------------: | :----: |
+| ![](https://img.cdn.sugarat.top/mdImg/MTY0NzY5MzExMDgyMw==647693110823) |  TODO  |
 
 ## 5. 最后更新配置
 

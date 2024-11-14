@@ -214,7 +214,7 @@ function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
   }).filter(v => !!v.length)
   body.unshift(infosHeader)
 
-  const _filename = filename || `数据导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`
+  const _filename = filename || `数据导出_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}.xlsx`
   const resFileName = selectTaskName.value ? `${normalizeFileName(selectTaskName.value)}_${_filename}` : _filename
 
   tableToExcel(
@@ -306,7 +306,7 @@ function handleDropdownClick(e: string) {
       }
       FileApi.batchDownload(
         ids,
-        `批量下载_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}`,
+        `批量下载_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}`,
       )
         .then(() => {
           loadActions()
@@ -344,7 +344,7 @@ function handleDropdownClick(e: string) {
       }
       handleExportExcel(
         selectItem,
-        `批量导出_${formatDate(new Date(), 'yyyy年MM月日hh时mm分ss秒')}.xlsx`,
+        `批量导出_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}.xlsx`,
       )
       ElMessage.success('导出成功')
       break
@@ -687,7 +687,7 @@ function handleShowDetail() {
               filterFiles,
               `筛选数据导出_${formatDate(
                 new Date(),
-                'yyyy年MM月日hh时mm分ss秒',
+                'yyyy年MM月dd日hh时mm分ss秒',
               )}.xlsx`,
             )
           }
