@@ -13,7 +13,7 @@ importers:
         version: 1.1.4(vue@3.4.31(typescript@4.9.5))
       '@sugarat/theme':
         specifier: ^0.5.3
-        version: 0.5.3(@element-plus/icons-vue@1.1.4(vue@3.4.31(typescript@4.9.5)))(element-plus@2.2.13(vue@3.4.31(typescript@4.9.5)))(pagefind@1.3.0)(typescript@4.9.5)(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))(vue@3.4.31(typescript@4.9.5))
+        version: 0.5.3(@element-plus/icons-vue@1.1.4(vue@3.4.31(typescript@4.9.5)))(element-plus@2.2.13(vue@3.4.31(typescript@4.9.5)))(pagefind@1.3.0)(typescript@4.9.5)(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))(vue@3.4.31(typescript@4.9.5))
       '@vueuse/core':
         specifier: ^10.11.0
         version: 10.11.0(vue@3.4.31(typescript@4.9.5))
@@ -30,11 +30,11 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
       vitepress:
-        specifier: 1.4.1
-        version: 1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
+        specifier: 1.5.0
+        version: 1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
       vitepress-plugin-51la:
         specifier: ^0.1.0
-        version: 0.1.0(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))
+        version: 0.1.0(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))
       vue:
         specifier: ^3.4.31
         version: 3.4.31(typescript@4.9.5)
@@ -1074,6 +1074,9 @@ packages:
   '@iconify-json/logos@1.2.3':
     resolution: {integrity: sha512-JLHS5hgZP1b55EONAWNeqBUuriRfRNKWXK4cqYx0PpVaJfIIMiiMxFfvoQiX/bkE9XgkLhcKmDUqL3LXPdXPwQ==}
 
+  '@iconify-json/simple-icons@1.2.18':
+    resolution: {integrity: sha512-ae4ig7fxNXME1wl5og7Ocp82TM4jyz6IsOyI8GrteSbvHR9gaPu2Z01Amn5V/xo1Y7A7/+EH/3Ovpy2az/gYbg==}
+
   '@iconify-json/vscode-icons@1.2.2':
     resolution: {integrity: sha512-bTpT0HJDRqGkxQv8oiETNHLEnBZpnA1QaRD35CQyO7M7qgWVLx2xwn/lK6e4waojmlPC3ckMBx3WFIUUn0/Jdg==}
 
@@ -1359,23 +1362,29 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@shikijs/core@1.22.1':
-    resolution: {integrity: sha512-bqAhT/Ri5ixV4oYsvJNH8UJjpjbINWlWyXY6tBTsP4OmD6XnFv43nRJ+lTdxd2rmG5pgam/x+zGR6kLRXrpEKA==}
+  '@shikijs/core@1.26.1':
+    resolution: {integrity: sha512-yeo7sG+WZQblKPclUOKRPwkv1PyoHYkJ4gP9DzhFJbTdueKR7wYTI1vfF/bFi1NTgc545yG/DzvVhZgueVOXMA==}
 
-  '@shikijs/engine-javascript@1.22.1':
-    resolution: {integrity: sha512-540pyoy0LWe4jj2BVbgELwOFu1uFvRI7lg4hdsExrSXA9x7gqfzZ/Nnh4RfX86aDAgJ647gx4TCmRwACbnQSvw==}
+  '@shikijs/engine-javascript@1.26.1':
+    resolution: {integrity: sha512-CRhA0b8CaSLxS0E9A4Bzcb3LKBNpykfo9F85ozlNyArxjo2NkijtiwrJZ6eHa+NT5I9Kox2IXVdjUsP4dilsmw==}
 
-  '@shikijs/engine-oniguruma@1.22.1':
-    resolution: {integrity: sha512-L+1Vmd+a2kk8HtogUFymQS6BjUfJnzcWoUp1BUgxoDiklbKSMvrsMuLZGevTOP1m0rEjgnC5MsDmsr8lX1lC+Q==}
+  '@shikijs/engine-oniguruma@1.26.1':
+    resolution: {integrity: sha512-F5XuxN1HljLuvfXv7d+mlTkV7XukC1cawdtOo+7pKgPD83CAB1Sf8uHqP3PK0u7njFH0ZhoXE1r+0JzEgAQ+kg==}
 
-  '@shikijs/transformers@1.22.1':
-    resolution: {integrity: sha512-KvG49YFV6gV116sC4L3Sn1Rp6HXsioMKBBG373j088rw849440hm8s2r+/dgjsGLvT4p+QB7newev+5a3ARM6w==}
+  '@shikijs/langs@1.26.1':
+    resolution: {integrity: sha512-oz/TQiIqZejEIZbGtn68hbJijAOTtYH4TMMSWkWYozwqdpKR3EXgILneQy26WItmJjp3xVspHdiUxUCws4gtuw==}
 
-  '@shikijs/types@1.22.1':
-    resolution: {integrity: sha512-+45f8mu/Hxqs6Kyhfm98Nld5n7Q7lwhjU8UtdQwrOPs7BnM4VAb929O3IQ2ce+4D7SlNFlZGd8CnKRSnwbQreQ==}
+  '@shikijs/themes@1.26.1':
+    resolution: {integrity: sha512-JDxVn+z+wgLCiUhBGx2OQrLCkKZQGzNH3nAxFir4PjUcYiyD8Jdms9izyxIogYmSwmoPTatFTdzyrRKbKlSfPA==}
 
-  '@shikijs/vscode-textmate@9.3.0':
-    resolution: {integrity: sha512-jn7/7ky30idSkd/O5yDBfAnVt+JJpepofP/POZ1iMOxK59cOfqIgg/Dj0eFsjOTMw+4ycJN0uhZH/Eb0bs/EUA==}
+  '@shikijs/transformers@1.26.1':
+    resolution: {integrity: sha512-IRLJEP7YxkRMsHo367+7qDlpWjsUu6O79pdlUlkcbF1A5TrF1Ln0FBNrgHA/i9p+IKXiiKNATURa6WXh3iq7Uw==}
+
+  '@shikijs/types@1.26.1':
+    resolution: {integrity: sha512-d4B00TKKAMaHuFYgRf3L0gwtvqpW4hVdVwKcZYbBfAAQXspgkbWqnFfuFl3MDH6gLbsubOcr+prcnsqah3ny7Q==}
+
+  '@shikijs/vscode-textmate@10.0.1':
+    resolution: {integrity: sha512-fTIQwLF+Qhuws31iw7Ncl1R3HUDtGwIipiJ9iU+UsDUwMhegFcQKQHd51nZjb7CArq0MvON8rbgCGQYWHUKAdg==}
 
   '@stylistic/eslint-plugin-js@2.3.0':
     resolution: {integrity: sha512-lQwoiYb0Fs6Yc5QS3uT8+T9CPKK2Eoxc3H8EnYJgM26v/DgtW+1lvy2WNgyBflU+ThShZaHm3a6CdD9QeKx23w==}
@@ -2289,6 +2298,9 @@ packages:
   elkjs@0.9.3:
     resolution: {integrity: sha512-f/ZeWvW/BCXbhGEf1Ujp29EASo/lk1FDnETgNKwJrsVvGZhUWCZyg3xLJjAsxfOmt8KjswHmI5EwCQcPMpOYhQ==}
 
+  emoji-regex-xs@1.0.0:
+    resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
+
   emoji-regex@10.3.0:
     resolution: {integrity: sha512-QpLs9D9v9kArv4lfDEgg1X/gN5XLnf/A6l9cs8SPZLRZR3ZkY9+kwIQTxm+fsSej5UMYGE8fdoaZVIBlqG0XTw==}
 
@@ -2738,8 +2750,8 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  hast-util-to-html@9.0.3:
-    resolution: {integrity: sha512-M17uBDzMJ9RPCqLMO92gNNUDuBSq10a25SDBI08iCCxmorf4Yy6sYHK57n9WAbRAAaU+DuR4W6GN9K4DFZesYg==}
+  hast-util-to-html@9.0.4:
+    resolution: {integrity: sha512-wxQzXtdbhiwGAUKrnQJXlOPmHnEehzphwkK7aluUPQ+lEc1xefC8pblMgpp2w5ldBTEfveRIrADcrhGIWrlTDA==}
 
   hast-util-whitespace@3.0.0:
     resolution: {integrity: sha512-88JUN06ipLwsnv+dVn+OIYOvAuvBMy/Qoi6O7mQHxdPXpjy+Cd6xRkWwux7DKO+4sYILtLBRIKgsdpS2gQc7qw==}
@@ -3262,8 +3274,8 @@ packages:
     resolution: {integrity: sha512-1FlR+gjXK7X+AsAHso35MnyN5KqGwJRi/31ft6x0M194ht7S+rWAvd7PHss9xSKMzE0asv1pyIHaJYq+BbacAQ==}
     engines: {node: '>=12'}
 
-  oniguruma-to-js@0.4.3:
-    resolution: {integrity: sha512-X0jWUcAlxORhOqqBREgPMgnshB7ZGYszBNspP+tS9hPD3l13CdaXcHbgImoHUHlrvGx/7AvFEkTRhAGYh+jzjQ==}
+  oniguruma-to-es@0.10.0:
+    resolution: {integrity: sha512-zapyOUOCJxt+xhiNRPPMtfJkHGsZ98HHB9qJEkdT8BGytO/+kpe4m1Ngf0MzbzTmhacn11w9yGeDP6tzDhnCdg==}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -3386,10 +3398,6 @@ packages:
     resolution: {integrity: sha512-Wglpdk03BSfXkHoQa3b/oulrotAkwrlLDRSOb9D0bN86FdRyE9lppSp33aHNPgBa0JKCoB+drFLZkQoRRYae5A==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postcss@8.4.45:
-    resolution: {integrity: sha512-7KTLTdzdZZYscUc65XmjFiB73vBhBfbPztCYdUNvlaso9PrzjzcmjqBPR0lNGkcVlcO4BjiO5rK/qNz+XAen1Q==}
-    engines: {node: ^10 || ^12 || >=14}
-
   postcss@8.4.47:
     resolution: {integrity: sha512-56rxCq7G/XfB4EkXq9Egn5GCqugWvDFjafDOThIdMBsI15iqPqR5r15TfSr1YPYeEI19YeaXMCbY6u88Y76GLQ==}
     engines: {node: ^10 || ^12 || >=14}
@@ -3449,8 +3457,14 @@ packages:
   regenerator-transform@0.15.2:
     resolution: {integrity: sha512-hfMp2BoF0qOk3uc5V20ALGDS2ddjQaLrdl7xrGXvAIow7qeWRM2VA2HuCHkUKk9slq3VwEwLNK3DFBqDfPGYtg==}
 
-  regex@4.3.3:
-    resolution: {integrity: sha512-r/AadFO7owAq1QJVeZ/nq9jNS1vyZt+6t1p/E59B56Rn2GCya+gr1KSyOzNL/er+r+B7phv5jG2xU2Nz1YkmJg==}
+  regex-recursion@5.1.1:
+    resolution: {integrity: sha512-ae7SBCbzVNrIjgSbh7wMznPcQel1DNlDtzensnFxpiNpXt1U2ju/bHugH422r+4LAVS1FpW1YCwilmnNsjum9w==}
+
+  regex-utilities@2.3.0:
+    resolution: {integrity: sha512-8VhliFJAWRaUiVvREIiW2NXXTmHs4vMNnSzuJVhscgmGav3g9VDxLrQndI3dZZVVdp0ZO/5v0xmX516/7M9cng==}
+
+  regex@5.1.1:
+    resolution: {integrity: sha512-dN5I359AVGPnwzJm2jN1k0W9LPZ+ePvoOeVMMfqIMFz53sSwXkxaJoxr50ptnsC771lK95BnTrVSZxq0b9yCGw==}
 
   regexp-ast-analysis@0.7.1:
     resolution: {integrity: sha512-sZuz1dYW/ZsfG17WSAG7eS85r5a0dDsvg+7BiiYR5o6lKCAtUrEwdmRmaGF6rwVj3LcmAeYkOWKEPlbPzN3Y3A==}
@@ -3580,8 +3594,8 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  shiki@1.22.1:
-    resolution: {integrity: sha512-PbJ6XxrWLMwB2rm3qdjIHNm3zq4SfFnOx0B3rEoi4AN8AUngsdyZ1tRe5slMPtn6jQkbUURLNZPpLR7Do3k78g==}
+  shiki@1.26.1:
+    resolution: {integrity: sha512-Gqg6DSTk3wYqaZ5OaYtzjcdxcBvX5kCy24yvRJEgjT5U+WHlmqCThLuBUx0juyxQBi+6ug53IGeuQS07DWwpcw==}
 
   signal-exit@3.0.7:
     resolution: {integrity: sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==}
@@ -4050,8 +4064,8 @@ packages:
       vitepress: ^1.0.0-alpha.29
       vue: ^3.2.45
 
-  vitepress@1.4.1:
-    resolution: {integrity: sha512-C2rQ7PMlDVqgsaHOa0uJtgGGWaGv74QMaGL62lxKbtFkYtosJB5HAfZ8+pEbfzzvLemYaYwaiQdFLBlexK2sFw==}
+  vitepress@1.5.0:
+    resolution: {integrity: sha512-q4Q/G2zjvynvizdB3/bupdYkCJe2umSAMv9Ju4d92E6/NXJ59z70xB0q5p/4lpRyAwflDsbwy1mLV9Q5+nlB+g==}
     hasBin: true
     peerDependencies:
       markdown-it-mathjax3: ^4
@@ -4078,17 +4092,6 @@ packages:
 
   vue-demi@0.14.5:
     resolution: {integrity: sha512-o9NUVpl/YlsGJ7t+xuqJKx8EBGf1quRhCiT6D/J0pfwmk9zUwYkC7yrF4SZCe6fETvSM3UNL2edcbYrSyc4QHA==}
-    engines: {node: '>=12'}
-    hasBin: true
-    peerDependencies:
-      '@vue/composition-api': ^1.0.0-rc.1
-      vue: ^3.0.0-0 || ^2.6.0
-    peerDependenciesMeta:
-      '@vue/composition-api':
-        optional: true
-
-  vue-demi@0.14.7:
-    resolution: {integrity: sha512-EOG8KXDQNwkJILkx/gPcoL/7vH+hORoBaKgGe+6W7VFMvCYJfmF2dGbvgDroVnI8LU7/kTu8mbjRZGBU1z9NTA==}
     engines: {node: '>=12'}
     hasBin: true
     peerDependencies:
@@ -5362,6 +5365,10 @@ snapshots:
     dependencies:
       '@iconify/types': 2.0.0
 
+  '@iconify-json/simple-icons@1.2.18':
+    dependencies:
+      '@iconify/types': 2.0.0
+
   '@iconify-json/vscode-icons@1.2.2':
     dependencies:
       '@iconify/types': 2.0.0
@@ -5580,36 +5587,44 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.21.2':
     optional: true
 
-  '@shikijs/core@1.22.1':
+  '@shikijs/core@1.26.1':
     dependencies:
-      '@shikijs/engine-javascript': 1.22.1
-      '@shikijs/engine-oniguruma': 1.22.1
-      '@shikijs/types': 1.22.1
-      '@shikijs/vscode-textmate': 9.3.0
+      '@shikijs/engine-javascript': 1.26.1
+      '@shikijs/engine-oniguruma': 1.26.1
+      '@shikijs/types': 1.26.1
+      '@shikijs/vscode-textmate': 10.0.1
       '@types/hast': 3.0.4
-      hast-util-to-html: 9.0.3
+      hast-util-to-html: 9.0.4
 
-  '@shikijs/engine-javascript@1.22.1':
+  '@shikijs/engine-javascript@1.26.1':
     dependencies:
-      '@shikijs/types': 1.22.1
-      '@shikijs/vscode-textmate': 9.3.0
-      oniguruma-to-js: 0.4.3
+      '@shikijs/types': 1.26.1
+      '@shikijs/vscode-textmate': 10.0.1
+      oniguruma-to-es: 0.10.0
 
-  '@shikijs/engine-oniguruma@1.22.1':
+  '@shikijs/engine-oniguruma@1.26.1':
     dependencies:
-      '@shikijs/types': 1.22.1
-      '@shikijs/vscode-textmate': 9.3.0
+      '@shikijs/types': 1.26.1
+      '@shikijs/vscode-textmate': 10.0.1
 
-  '@shikijs/transformers@1.22.1':
+  '@shikijs/langs@1.26.1':
     dependencies:
-      shiki: 1.22.1
+      '@shikijs/types': 1.26.1
 
-  '@shikijs/types@1.22.1':
+  '@shikijs/themes@1.26.1':
     dependencies:
-      '@shikijs/vscode-textmate': 9.3.0
+      '@shikijs/types': 1.26.1
+
+  '@shikijs/transformers@1.26.1':
+    dependencies:
+      shiki: 1.26.1
+
+  '@shikijs/types@1.26.1':
+    dependencies:
+      '@shikijs/vscode-textmate': 10.0.1
       '@types/hast': 3.0.4
 
-  '@shikijs/vscode-textmate@9.3.0': {}
+  '@shikijs/vscode-textmate@10.0.1': {}
 
   '@stylistic/eslint-plugin-js@2.3.0(eslint@9.6.0)':
     dependencies:
@@ -5663,7 +5678,7 @@ snapshots:
       cross-spawn: 7.0.3
       gray-matter: 4.0.3
 
-  '@sugarat/theme@0.5.3(@element-plus/icons-vue@1.1.4(vue@3.4.31(typescript@4.9.5)))(element-plus@2.2.13(vue@3.4.31(typescript@4.9.5)))(pagefind@1.3.0)(typescript@4.9.5)(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))(vue@3.4.31(typescript@4.9.5))':
+  '@sugarat/theme@0.5.3(@element-plus/icons-vue@1.1.4(vue@3.4.31(typescript@4.9.5)))(element-plus@2.2.13(vue@3.4.31(typescript@4.9.5)))(pagefind@1.3.0)(typescript@4.9.5)(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))(vue@3.4.31(typescript@4.9.5))':
     dependencies:
       '@element-plus/icons-vue': 1.1.4(vue@3.4.31(typescript@4.9.5))
       '@giscus/vue': 2.4.0(vue@3.4.31(typescript@4.9.5))
@@ -5678,12 +5693,12 @@ snapshots:
       oh-my-live2d: 0.19.3
       swiper: 11.1.4
       vitepress-markdown-timeline: 1.2.1
-      vitepress-plugin-announcement: 0.1.3(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))
+      vitepress-plugin-announcement: 0.1.3(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))
       vitepress-plugin-group-icons: 1.3.0
-      vitepress-plugin-mermaid: 2.0.13(mermaid@10.9.1)(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))
+      vitepress-plugin-mermaid: 2.0.13(mermaid@10.9.1)(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))
       vitepress-plugin-pagefind: 0.4.12(pagefind@1.3.0)(typescript@4.9.5)
-      vitepress-plugin-rss: 0.3.0(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))
-      vitepress-plugin-tabs: 0.2.0(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))(vue@3.4.31(typescript@4.9.5))
+      vitepress-plugin-rss: 0.3.0(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))
+      vitepress-plugin-tabs: 0.2.0(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))(vue@3.4.31(typescript@4.9.5))
     transitivePeerDependencies:
       - '@vue/composition-api'
       - pagefind
@@ -5715,7 +5730,7 @@ snapshots:
 
   '@types/hast@3.0.4':
     dependencies:
-      '@types/unist': 2.0.7
+      '@types/unist': 3.0.3
 
   '@types/json-schema@7.0.11': {}
 
@@ -5893,7 +5908,7 @@ snapshots:
       '@vue/shared': 3.5.12
       entities: 4.5.0
       estree-walker: 2.0.2
-      source-map-js: 1.2.0
+      source-map-js: 1.2.1
 
   '@vue/compiler-dom@3.4.31':
     dependencies:
@@ -5927,7 +5942,7 @@ snapshots:
       estree-walker: 2.0.2
       magic-string: 0.30.11
       postcss: 8.4.47
-      source-map-js: 1.2.0
+      source-map-js: 1.2.1
 
   '@vue/compiler-ssr@3.4.31':
     dependencies:
@@ -6095,7 +6110,7 @@ snapshots:
 
   '@vueuse/shared@8.9.4(vue@3.4.31(typescript@4.9.5))':
     dependencies:
-      vue-demi: 0.14.7(vue@3.4.31(typescript@4.9.5))
+      vue-demi: 0.14.10(vue@3.4.31(typescript@4.9.5))
     optionalDependencies:
       vue: 3.4.31(typescript@4.9.5)
 
@@ -6671,6 +6686,8 @@ snapshots:
 
   elkjs@0.9.3: {}
 
+  emoji-regex-xs@1.0.0: {}
+
   emoji-regex@10.3.0: {}
 
   emoji-regex@8.0.0: {}
@@ -7219,7 +7236,7 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  hast-util-to-html@9.0.3:
+  hast-util-to-html@9.0.4:
     dependencies:
       '@types/hast': 3.0.4
       '@types/unist': 3.0.3
@@ -7827,9 +7844,11 @@ snapshots:
     dependencies:
       mimic-fn: 4.0.0
 
-  oniguruma-to-js@0.4.3:
+  oniguruma-to-es@0.10.0:
     dependencies:
-      regex: 4.3.3
+      emoji-regex-xs: 1.0.0
+      regex: 5.1.1
+      regex-recursion: 5.1.1
 
   optionator@0.9.4:
     dependencies:
@@ -7948,12 +7967,6 @@ snapshots:
       picocolors: 1.0.1
       source-map-js: 1.2.0
 
-  postcss@8.4.45:
-    dependencies:
-      nanoid: 3.3.7
-      picocolors: 1.0.1
-      source-map-js: 1.2.0
-
   postcss@8.4.47:
     dependencies:
       nanoid: 3.3.7
@@ -8011,7 +8024,16 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.24.7
 
-  regex@4.3.3: {}
+  regex-recursion@5.1.1:
+    dependencies:
+      regex: 5.1.1
+      regex-utilities: 2.3.0
+
+  regex-utilities@2.3.0: {}
+
+  regex@5.1.1:
+    dependencies:
+      regex-utilities: 2.3.0
 
   regexp-ast-analysis@0.7.1:
     dependencies:
@@ -8165,13 +8187,15 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
-  shiki@1.22.1:
+  shiki@1.26.1:
     dependencies:
-      '@shikijs/core': 1.22.1
-      '@shikijs/engine-javascript': 1.22.1
-      '@shikijs/engine-oniguruma': 1.22.1
-      '@shikijs/types': 1.22.1
-      '@shikijs/vscode-textmate': 9.3.0
+      '@shikijs/core': 1.26.1
+      '@shikijs/engine-javascript': 1.26.1
+      '@shikijs/engine-oniguruma': 1.26.1
+      '@shikijs/langs': 1.26.1
+      '@shikijs/themes': 1.26.1
+      '@shikijs/types': 1.26.1
+      '@shikijs/vscode-textmate': 10.0.1
       '@types/hast': 3.0.4
 
   signal-exit@3.0.7: {}
@@ -8527,7 +8551,7 @@ snapshots:
   vite@5.4.10(@types/node@20.14.9)(sass@1.64.1)(terser@5.19.2):
     dependencies:
       esbuild: 0.21.5
-      postcss: 8.4.45
+      postcss: 8.4.47
       rollup: 4.21.2
     optionalDependencies:
       '@types/node': 20.14.9
@@ -8539,14 +8563,14 @@ snapshots:
     dependencies:
       dayjs: 1.11.9
 
-  vitepress-plugin-51la@0.1.0(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)):
+  vitepress-plugin-51la@0.1.0(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)):
     dependencies:
-      vitepress: 1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
+      vitepress: 1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
 
-  vitepress-plugin-announcement@0.1.3(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)):
+  vitepress-plugin-announcement@0.1.3(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)):
     dependencies:
       javascript-stringify: 2.1.0
-      vitepress: 1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
+      vitepress: 1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
 
   vitepress-plugin-group-icons@1.3.0:
     dependencies:
@@ -8556,10 +8580,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  vitepress-plugin-mermaid@2.0.13(mermaid@10.9.1)(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)):
+  vitepress-plugin-mermaid@2.0.13(mermaid@10.9.1)(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)):
     dependencies:
       mermaid: 10.9.1
-      vitepress: 1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
+      vitepress: 1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
     optionalDependencies:
       '@mermaid-js/mermaid-mindmap': 9.3.0
 
@@ -8575,24 +8599,25 @@ snapshots:
       - '@vue/composition-api'
       - typescript
 
-  vitepress-plugin-rss@0.3.0(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)):
+  vitepress-plugin-rss@0.3.0(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)):
     dependencies:
       '@sugarat/theme-shared': 0.0.3
       feed: 4.2.2
-      vitepress: 1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
+      vitepress: 1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
 
-  vitepress-plugin-tabs@0.2.0(vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))(vue@3.4.31(typescript@4.9.5)):
+  vitepress-plugin-tabs@0.2.0(vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5))(vue@3.4.31(typescript@4.9.5)):
     dependencies:
-      vitepress: 1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
+      vitepress: 1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5)
       vue: 3.4.31(typescript@4.9.5)
 
-  vitepress@1.4.1(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5):
+  vitepress@1.5.0(@algolia/client-search@4.20.0)(@types/node@20.14.9)(async-validator@4.2.5)(axios@0.27.2)(postcss@8.4.47)(sass@1.64.1)(search-insights@2.8.3)(terser@5.19.2)(typescript@4.9.5):
     dependencies:
       '@docsearch/css': 3.6.2
       '@docsearch/js': 3.6.2(@algolia/client-search@4.20.0)(search-insights@2.8.3)
-      '@shikijs/core': 1.22.1
-      '@shikijs/transformers': 1.22.1
-      '@shikijs/types': 1.22.1
+      '@iconify-json/simple-icons': 1.2.18
+      '@shikijs/core': 1.26.1
+      '@shikijs/transformers': 1.26.1
+      '@shikijs/types': 1.26.1
       '@types/markdown-it': 14.1.2
       '@vitejs/plugin-vue': 5.1.4(vite@5.4.10(@types/node@20.14.9)(sass@1.64.1)(terser@5.19.2))(vue@3.5.12(typescript@4.9.5))
       '@vue/devtools-api': 7.5.4
@@ -8602,7 +8627,7 @@ snapshots:
       focus-trap: 7.6.0
       mark.js: 8.11.1
       minisearch: 7.1.0
-      shiki: 1.22.1
+      shiki: 1.26.1
       vite: 5.4.10(@types/node@20.14.9)(sass@1.64.1)(terser@5.19.2)
       vue: 3.5.12(typescript@4.9.5)
     optionalDependencies:
@@ -8650,10 +8675,6 @@ snapshots:
       vue: 3.5.12(typescript@4.9.5)
 
   vue-demi@0.14.5(vue@3.4.31(typescript@4.9.5)):
-    dependencies:
-      vue: 3.4.31(typescript@4.9.5)
-
-  vue-demi@0.14.7(vue@3.4.31(typescript@4.9.5)):
     dependencies:
       vue: 3.4.31(typescript@4.9.5)
 
