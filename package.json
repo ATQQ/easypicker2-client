@@ -21,7 +21,8 @@
     "update:version": "npm version prerelease --preid=beta --no-git-tag-version",
     "preinstall": "npm config set registry https://registry.npmmirror.com/",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "build:docker-local-client": "bash scripts/docker/docker-build-local.sh"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.4",
@@ -61,5 +62,13 @@
   },
   "lint-staged": {
     "*": "eslint --fix"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "core-js",
+      "esbuild",
+      "simple-git-hooks",
+      "vue-demi"
+    ]
   }
 }

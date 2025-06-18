@@ -1,0 +1,43 @@
+# 版本控制
+.git
+.github
+.gitignore
+
+# 依赖目录
+node_modules
+
+# 构建输出
+dist
+
+# 日志文件
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 编辑器配置
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 本地环境文件
+.env.local
+.env.*.local
+
+# Docker相关文件
+Dockerfile
+docker-compose.yml
+.dockerignore
+docker-build.sh
+
+# 其他不需要的文件
+README.md
+LICENSE
+
+# 无关目录
+docs
+scripts
+docker
