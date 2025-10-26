@@ -37,6 +37,7 @@ if [ $? -eq 0 ]; then
     fi
     docker run -d \
         -p $PORT:80 \
+        -e BACKEND_HOST=easypicker2-server-app \
         --network easypicker-network \
         --name $CONTAINER_NAME \
         $IMAGE_NAME:$IMAGE_TAG

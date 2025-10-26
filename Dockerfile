@@ -23,14 +23,25 @@ RUN pnpm run build
 # 生产阶段
 FROM nginx:alpine
 
+# 安装envsubst工具（用于环境变量替换）
+RUN apk add --no-cache gettext
+
 # 复制构建产物到nginx目录
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 复制nginx配置
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+# 复制nginx配置模板和入口脚本
+COPY ./nginx.conf.template /etc/nginx/nginx.conf.template
+COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+
+# 设置脚本执行权限
+RUN chmod u+x /docker-entrypoint.sh
+
+# 设置默认环境变量
+ENV BACKEND_HOST=backend
+ENV BACKEND_PORT=3000
 
 # 暴露端口
 EXPOSE 80
 
-# 启动nginx
-CMD ["nginx", "-g", "daemon off;"]
+# 使用自定义入口脚本启动
+ENTRYPOINT ["/docker-entrypoint.sh"]
