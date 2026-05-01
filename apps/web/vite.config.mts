@@ -29,6 +29,13 @@ export default defineConfig({
   build: {
     sourcemap: true,
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['legacy-js-api'],
+      },
+    },
+  },
   server: {
     host: '0.0.0.0',
     proxy: {
