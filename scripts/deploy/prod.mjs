@@ -1,5 +1,7 @@
 #!/usr/bin/env zx
 
+import { $ } from 'zx'
+
 // user config
 const originName = 'ep'
 
@@ -10,11 +12,12 @@ const origin = 'sugarat.top'
 const fullOrigin = `${originName}.${origin}`
 const baseServerDir = '/www/wwwroot'
 const destDir = ''
+const webDir = 'apps/web'
 
 await $`pnpm build`
 
 await $`echo ==🔧 压缩dist ==`
-await $`tar -zvcf ${compressPkgName} dist && rm -rf dist`
+await $`cd ${webDir} && tar -zvcf ../../${compressPkgName} dist && rm -rf dist`
 
 await $`echo ==🚀 上传到服务器 ==`
 await $`scp ${compressPkgName} ${user}@${origin}:./`

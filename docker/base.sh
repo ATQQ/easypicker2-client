@@ -6,9 +6,9 @@ if [ ! -d "./server" ]; then
   mkdir ./server
 fi
 
-# 拷贝服务端资源(不在当前项目里，以后优化)
+# 拷贝前端资源
 rm -rf ./client/dist
-cp -rf ../dist ./client/dist
+cp -rf ../apps/web/dist ./client/dist
 
 # 拷贝服务端资源(不在当前项目里，以后优化)
 rm -rf ./server/dist

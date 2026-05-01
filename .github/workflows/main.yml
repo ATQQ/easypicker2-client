@@ -2,14 +2,14 @@
 
 name: prod-CI
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ release ]
+    branches: [release]
   pull_request:
-    types: [ assigned ]
-    branches: [ release ]
+    types: [assigned]
+    branches: [release]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -28,29 +28,36 @@ jobs:
       # 配置rsa密钥自动登陆
       - uses: webfactory/ssh-agent@v0.4.1
         with:
-            ssh-private-key: ${{ secrets.ACCESS_TOKEN }}
+          ssh-private-key: ${{ secrets.ACCESS_TOKEN }}
       - name: Setup knownhosts
         run: ssh-keyscan ${{ secrets.REMOTE_ORIGIN }} >> ~/.ssh/known_hosts
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
       - name: Install dependence
         run: |
           echo 开始----安装依赖
-          yarn install
+          pnpm install --frozen-lockfile
       - name: Build
         run: |
           echo 开始----构建
-          yarn build
+          pnpm build
       - name: Compress dist
         run: |
           echo 开始----压缩
-          yarn compress
+          tar -zvcf ep-dev-clinet.tar.gz -C apps/web dist
       # 上传压缩的内容
       - name: Upload package
         uses: easingthemes/ssh-deploy@v2.1.5
         env:
           SSH_PRIVATE_KEY: ${{ secrets.ACCESS_TOKEN }}
-          ARGS: "-rltgoDzvO --delete"
-          SOURCE: "ep-dev-clinet.tar.gz"
+          ARGS: -rltgoDzvO --delete
+          SOURCE: ep-dev-clinet.tar.gz
           REMOTE_HOST: ${{ secrets.REMOTE_ORIGIN }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           TARGET: ${{ secrets.TARGET }}
@@ -58,4 +65,4 @@ jobs:
       - name: Deploy
         run: |
           echo 开始----部署
-          yarn deploy
+          ssh -p22 ${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_ORIGIN }} "tar -xf ${{ secrets.TARGET }}/ep-dev-clinet.tar.gz -C ${{ secrets.TARGET }}"

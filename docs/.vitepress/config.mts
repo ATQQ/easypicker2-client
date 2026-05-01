@@ -1,4 +1,9 @@
+import path from 'node:path'
+import process from 'node:process'
 import { getThemeConfig } from '@sugarat/theme/node'
+import AutoImport from 'unplugin-auto-import/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vitepress'
 import { La51Plugin } from 'vitepress-plugin-51la'
 import Pkg from '../../package.json'
@@ -75,11 +80,49 @@ export default defineConfig({
     server: {
       port: 4000,
       host: '0.0.0.0',
+      proxy: {
+        '/api/': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+        },
+      },
     },
-    plugins: [La51Plugin({
-      id: 'JiqK2jS5HmnB4s8G',
-      ck: 'JiqK2jS5HmnB4s8G',
-    })],
+    resolve: {
+      alias: {
+        '@': path.resolve(process.cwd(), 'apps/web/src'),
+        '@components': path.resolve(process.cwd(), 'apps/web/src/components'),
+      },
+    },
+    build: {
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (
+            warning.code === 'INVALID_ANNOTATION'
+            && warning.message.includes('#__PURE__')
+            && warning.id?.includes('@vueuse/core')
+          ) {
+            return
+          }
+
+          warn(warning)
+        },
+      },
+    },
+    plugins: [
+      AutoImport({
+        resolvers: [ElementPlusResolver({ importStyle: false })],
+        dts: 'docs/auto-imports.d.ts',
+      }),
+      Components({
+        include: [/\.vue/, /\.md/],
+        resolvers: [ElementPlusResolver({ importStyle: false })],
+        dts: 'docs/components.d.ts',
+      }),
+      La51Plugin({
+        id: 'JiqK2jS5HmnB4s8G',
+        ck: 'JiqK2jS5HmnB4s8G',
+      }),
+    ],
   },
   lastUpdated: true,
   themeConfig: {

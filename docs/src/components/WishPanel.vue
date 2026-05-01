@@ -1,22 +1,71 @@
+<script lang="ts" setup>
+import { Flag } from '@element-plus/icons-vue'
+import { computed, onMounted, reactive } from 'vue'
+import { WishStatus } from '@/constants'
+import { WishApi } from '../apis'
+
+const data = reactive<WishApiTypes.DocsWishItem[]>([])
+
+const showData = computed(() =>
+  data
+    .map(v => ({
+      ...v,
+      status: WishStatus[v.status].toLowerCase(),
+    }))
+    .filter(v => v.status !== 'end'),
+)
+const successData = computed(() =>
+  data
+    .map(v => ({
+      ...v,
+      status: WishStatus[v.status].toLowerCase(),
+    }))
+    .filter(v => v.status === 'end'),
+)
+
+function praise(id: string, alreadyPraise: boolean) {
+  if (alreadyPraise) {
+    ElMessage.error('你已经投过票了')
+    return
+  }
+  const wish = data.find(v => v.id === id)!
+  wish.alreadyPraise = true
+  WishApi.praiseWish(id)
+    .then(() => {
+      ElMessage.success('投票成功')
+      wish.count += 1
+    })
+    .catch(() => {
+      ElMessage.error('你已经投过票了')
+    })
+}
+
+onMounted(() => {
+  WishApi.getDocsWish().then((res) => {
+    data.push(...res.data)
+  })
+})
+</script>
+
 <template>
-  <div class="wish-panel" v-show="data.length">
+  <div v-show="data.length" class="wish-panel">
     <div class="tips">
       <div>
-        <i class="circle"></i>
+        <i class="circle" />
         <span>规划中</span>
       </div>
       <div>
-        <i class="circle start"></i>
+        <i class="circle start" />
         <span>开发中</span>
       </div>
       <div>
-        <i class="circle end"></i>
+        <i class="circle end" />
         <span>已上线</span>
       </div>
     </div>
     <ul>
       <li v-for="d in showData" :key="d.id">
-        <hr />
+        <hr>
         <div class="wish">
           <div class="content">
             <div class="title">
@@ -36,11 +85,11 @@
         </div>
       </li>
       <!-- 已上线 -->
-      <li><hr /></li>
+      <li><hr></li>
       <details class="details custom-block">
         <summary>💐 已处理完毕的反馈归档 💐</summary>
         <li v-for="d in successData" :key="d.id">
-          <hr />
+          <hr>
           <div class="wish">
             <div class="content">
               <div class="title">
@@ -63,55 +112,7 @@
     </ul>
   </div>
 </template>
-<script lang="ts" setup>
-import { computed, onMounted, reactive } from 'vue'
-import { ElButton, ElIcon, ElMessage } from 'element-plus'
-import { Flag } from '@element-plus/icons-vue'
-import { WishStatus } from '@/constants'
-import { WishApi } from '../apis'
 
-const data = reactive<WishApiTypes.DocsWishItem[]>([])
-
-const showData = computed(() =>
-  data
-    .map((v) => ({
-      ...v,
-      status: WishStatus[v.status].toLowerCase()
-    }))
-    .filter((v) => v.status !== 'end')
-)
-const successData = computed(() =>
-  data
-    .map((v) => ({
-      ...v,
-      status: WishStatus[v.status].toLowerCase()
-    }))
-    .filter((v) => v.status === 'end')
-)
-
-const praise = (id: string, alreadyPraise: boolean) => {
-  if (alreadyPraise) {
-    ElMessage.error('你已经投过票了')
-    return
-  }
-  const wish = data.find((v) => v.id === id)!
-  wish.alreadyPraise = true
-  WishApi.praiseWish(id)
-    .then(() => {
-      ElMessage.success('投票成功')
-      wish.count += 1
-    })
-    .catch(() => {
-      ElMessage.error('你已经投过票了')
-    })
-}
-
-onMounted(() => {
-  WishApi.getDocsWish().then((res) => {
-    data.push(...res.data)
-  })
-})
-</script>
 <style lang="scss" scoped>
 .wish-panel {
   ul {
