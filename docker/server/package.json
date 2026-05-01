@@ -3,6 +3,9 @@
   "version": "2.6.1-beta.1",
   "private": true,
   "description": "",
+  "author": "ATQQ",
+  "license": "ISC",
+  "keywords": [],
   "main": "src/index.ts",
   "scripts": {
     "dev": "cross-env NODE_ENV=development FW_LOGGING=true run-p build:watch dev:server",
@@ -12,14 +15,9 @@
     "start": "cross-env NODE_ENV=production node ./dist/index.js",
     "lint": "eslint --fix ./src --ext .ts,.d.ts,.js",
     "test": "vitest",
-    "deploy": "zx scripts/deploy/env-prod.mjs",
-    "deploy:test": "zx scripts/deploy/env-test.mjs",
     "build": "tsup",
     "upload:oss": "pnpm build && q ep server -up"
   },
-  "keywords": [],
-  "author": "ATQQ",
-  "license": "ISC",
   "dependencies": {
     "@swc/core": "^1.3.68",
     "cross-env": "^7.0.3",

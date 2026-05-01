@@ -22,8 +22,6 @@
     "start:ts": "esno ./src/index.ts",
     "start": "cross-env NODE_ENV=production node ./dist/index.js",
     "test": "vitest",
-    "deploy": "zx scripts/deploy/env-prod.mjs",
-    "deploy:test": "zx scripts/deploy/env-test.mjs",
     "build": "tsup",
     "upload:oss": "pnpm build && q ep server -up",
     "update:version": "npm version prerelease --preid=beta --no-git-tag-version",
