@@ -1,0 +1,83 @@
+import 'reflect-metadata'
+import type { Route } from 'flash-wolves'
+import { App, pathJoin } from 'flash-wolves'
+
+// 配置文件
+import { serverConfig } from './config'
+
+// routes
+import routes from './routes'
+import controllers from './controllers'
+
+// interceptor
+import {
+  beforeRouteMatchInterceptor,
+  beforeRuntimeErrorInterceptor,
+  routeInterceptor,
+  serverInterceptor,
+} from './middleware'
+import {
+  initUserConfig,
+  patchTable,
+  readyServerDepService,
+} from './utils/patch'
+import LocalUserDB from './utils/user-local-db'
+
+console.time('server-start')
+
+const app = new App(serverInterceptor, {
+  beforeMathRoute: beforeRouteMatchInterceptor,
+  beforeRunRoute: routeInterceptor,
+  beforeReturnRuntimeError: beforeRuntimeErrorInterceptor,
+})
+
+function addRoutePrefixAlias(app: App, prefix: string) {
+  const routes = [...app.getRoutes()]
+  const routeKeys = new Set(routes.map(route => `${route.method}:${route.path}`))
+  const aliasRoutes = routes.reduce((prev, route) => {
+    if (route.path === prefix || route.path.startsWith(`${prefix}/`)) {
+      return prev
+    }
+
+    const aliasPath = pathJoin(prefix, route.path)
+    const routeKey = `${route.method}:${aliasPath}`
+    if (routeKeys.has(routeKey)) {
+      return prev
+    }
+
+    routeKeys.add(routeKey)
+    prev.push({
+      ...route,
+      path: aliasPath,
+    })
+    return prev
+  }, [] as Route[])
+
+  app.addRoutes(aliasRoutes)
+}
+
+// 注册路由
+app.addRoutes(routes)
+app.addController(controllers)
+addRoutePrefixAlias(app, '/api')
+
+app.listen(serverConfig.port, serverConfig.hostname, async () => {
+  console.log('-----', new Date().toLocaleString(), '-----')
+  console.timeEnd('server-start')
+  // 存储一些配置
+  await LocalUserDB.initUserConfig()
+  await initUserConfig()
+  try {
+    await readyServerDepService()
+  }
+  catch (err) {
+    console.log('❌ readyServerDepService', err?.message)
+  }
+  try {
+    await patchTable()
+    console.log('😄😄 mysql patch success')
+  }
+  catch (err) {
+    console.log('😭😭 mysql 还未正常配置，请检查数据库是否配置正确或版本不匹配')
+  }
+})

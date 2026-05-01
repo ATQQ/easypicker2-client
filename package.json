@@ -7,6 +7,8 @@
     "dev:test": "pnpm --filter @sugarat/easypicker2-web dev:test",
     "web:dev": "pnpm --filter @sugarat/easypicker2-web dev",
     "web:build": "pnpm --filter @sugarat/easypicker2-web build",
+    "server:dev": "pnpm --filter @sugarat/easypicker2-server dev",
+    "server:build": "pnpm --filter @sugarat/easypicker2-server build",
     "build": "pnpm --filter @sugarat/easypicker2-web build",
     "build:test": "pnpm --filter @sugarat/easypicker2-web build:test",
     "serve": "pnpm --filter @sugarat/easypicker2-web serve",
@@ -44,7 +46,8 @@
     "typescript": "^5",
     "unplugin-auto-import": "^21.0.0",
     "unplugin-vue-components": "^32.0.0",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "zx": "^5.1.0"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged"
