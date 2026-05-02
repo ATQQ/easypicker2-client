@@ -6,3 +6,4 @@ dist-ssr
 cache
 *.tar.gz
 ep_backup
+data

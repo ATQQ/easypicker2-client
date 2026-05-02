@@ -79,6 +79,18 @@ declare namespace NodeJS {
      */
     REDIS_DB_NEED_AUTH: string
 
+    // KV 存储相关
+    /**
+     * KV 存储驱动
+     * @default 'local'
+     */
+    KV_STORE: 'local' | 'redis'
+    /**
+     * 本地 KV 存储目录
+     * @default './data/kv'
+     */
+    KV_STORE_DIR: string
+
     // 服务相关
     /**
      * 启动服务监听端口

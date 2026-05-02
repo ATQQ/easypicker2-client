@@ -1,20 +1,15 @@
-import { getClient } from '@/lib/dbConnect/redis'
-
 // 做一层业务缓存
 import storage from '@/utils/storageUtil'
 
+import { expireKvKey, getKvValue, setKvValue } from './kvStore'
+
+const MEMORY_CACHE_SECONDS = 60
+const DEFAULT_CACHE_SECONDS = 60 * 60 * 24 * 7
+
 export function setRedisValue(k: string, v: string, expiredTime = -1) {
   storage.setItem(k, v, expiredTime)
-  getClient().then((client) => {
-    client.set(k, v, () => {
-      if (expiredTime !== -1) {
-        client.expire(k, expiredTime, () => {
-          client.quit()
-        })
-        return
-      }
-      client.quit()
-    })
+  return setKvValue(k, v, expiredTime).catch((err) => {
+    console.warn('设置 KV 缓存失败', err.message)
   })
 }
 
@@ -31,32 +26,36 @@ export function getRedisVal(k: string, originCallback?: any): Promise<string> {
       }
       return
     }
-    getClient().then((client) => {
-      client.get(k, (err, reply) => {
-        storage.setItem(k, reply, 60 * 60 * 24 * 7)
-        client.quit()
-        if (reply === null && typeof originCallback === 'function') {
+    getKvValue(k)
+      .then((reply) => {
+        if (reply) {
+          storage.setItem(k, reply, MEMORY_CACHE_SECONDS)
+        }
+        if (!reply && typeof originCallback === 'function') {
           originCallback()
             .then((v) => {
               const str = JSON.stringify(v)
-              setRedisValue(k, str, 60 * 60 * 24 * 7)
+              setRedisValue(k, str, DEFAULT_CACHE_SECONDS)
               resolve(str)
             })
             .catch(() => {
               resolve(reply)
             })
-        } else {
+        }
+        else {
           resolve(reply)
         }
       })
-    })
+      .catch(() => {
+        resolve(null)
+      })
   })
 }
 
 export function getRedisValueJSON<T>(
   k: string,
   defaultValue: T,
-  originCallback?: any
+  originCallback?: any,
 ): Promise<T> {
   return getRedisVal(k, originCallback).then((v) => {
     if (v) {
@@ -67,6 +66,8 @@ export function getRedisValueJSON<T>(
 }
 
 export function expiredRedisKey(k: string) {
-  setRedisValue(k, '', 0)
   storage.expireItem(k)
+  return expireKvKey(k).catch((err) => {
+    console.warn('清理 KV 缓存失败', err.message)
+  })
 }

@@ -1,6 +1,6 @@
 export const serverConfig = {
   port: +process.env.SERVER_PORT,
-  hostname: process.env.SERVER_HOST
+  hostname: process.env.SERVER_HOST,
 }
 
 // 开发环境的测试数据库
@@ -9,7 +9,7 @@ export const mysqlConfig = {
   port: +process.env.MYSQL_DB_PORT,
   database: process.env.MYSQL_DB_NAME,
   user: process.env.MYSQL_DB_USER,
-  password: process.env.MYSQL_DB_PWD
+  password: process.env.MYSQL_DB_PWD,
 }
 
 export const mongodbConfig = {
@@ -18,14 +18,19 @@ export const mongodbConfig = {
   database: process.env.MONGO_DB_NAME,
   user: process.env.MONGO_DB_USER,
   password: process.env.MONGO_DB_PWD,
-  auth: String(true) === process.env.MONGO_DB_NEED_AUTH
+  auth: String(true) === process.env.MONGO_DB_NEED_AUTH,
 }
 
 export const redisConfig = {
   host: process.env.REDIS_DB_HOST,
   port: +process.env.REDIS_DB_PORT,
   password: process.env.REDIS_DB_PASSWORD,
-  auth: String(true) === process.env.REDIS_DB_NEED_AUTH
+  auth: String(true) === process.env.REDIS_DB_NEED_AUTH,
+}
+
+export const kvStoreConfig = {
+  driver: process.env.KV_STORE === 'redis' ? 'redis' : 'local',
+  dir: process.env.KV_STORE_DIR || `${process.cwd()}/data/kv`,
 }
 
 // 通过环境变量注入
@@ -43,7 +48,7 @@ export const qiniuConfig = {
     process.env.QINIU_BUCKET_IMAGE_PREVIEW_STYLE === 'false'
       ? ''
       : process.env.QINIU_BUCKET_IMAGE_PREVIEW_STYLE,
-  bucketZone: process.env.QINIU_BUCKET_ZONE
+  bucketZone: process.env.QINIU_BUCKET_ZONE,
 }
 
 // 腾讯云
@@ -52,5 +57,5 @@ export const txConfig = {
   secretKey: process.env.TENCENT_SECRET_KEY,
   templateId: process.env.TENCENT_MESSAGE_TemplateID,
   smsSdkAppid: process.env.TENCENT_MESSAGE_SmsSdkAppid,
-  signName: process.env.TENCENT_MESSAGE_SignName
+  signName: process.env.TENCENT_MESSAGE_SignName,
 }

@@ -96,6 +96,9 @@ importers:
       mysql:
         specifier: ^2.18.1
         version: 2.18.1
+      node-persist:
+        specifier: ^4.0.4
+        version: 4.0.4
       npm-run-all2:
         specifier: ^8.0.4
         version: 8.0.4
@@ -5161,6 +5164,10 @@ packages:
   node-hex@1.0.1:
     resolution: {integrity: sha512-iwpZdvW6Umz12ICmu9IYPRxg0tOLGmU3Tq2tKetejCj3oZd7b2nUXwP3a7QA5M9glWy8wlPS1G3RwM/CdsUbdQ==}
     engines: {node: '>=8.0.0'}
+
+  node-persist@4.0.4:
+    resolution: {integrity: sha512-8sPAz/7tw1mCCc8xBG4f0wi+flHkSSgQeX998iQ75Pu27evA6UUWCjSE7xnrYTg2q33oU5leJ061EKPDv6BocQ==}
+    engines: {node: '>=10.12.0'}
 
   node-releases@2.0.14:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
@@ -11719,6 +11726,10 @@ snapshots:
       formdata-polyfill: 4.0.10
 
   node-hex@1.0.1: {}
+
+  node-persist@4.0.4:
+    dependencies:
+      p-limit: 3.1.0
 
   node-releases@2.0.14: {}
 

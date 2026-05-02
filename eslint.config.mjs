@@ -4,5 +4,6 @@ export default antfu({
   formatters: true,
   rules: {
     'markdown/require-alt-text': 'off',
+    'node/prefer-global/process': 'off',
   },
 })

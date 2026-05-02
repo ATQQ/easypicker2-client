@@ -3,7 +3,7 @@
   "version": "2.7.3",
   "private": true,
   "scripts": {
-    "dev": "pnpm web:dev",
+    "dev": "pnpm -r --parallel --filter @sugarat/easypicker2-web --filter @sugarat/easypicker2-server dev",
     "dev:test": "pnpm web:dev:test",
     "build": "pnpm web:build",
     "build:test": "pnpm web:build:test",
