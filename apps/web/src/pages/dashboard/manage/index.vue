@@ -38,14 +38,6 @@ onMounted(() => {
             概况
           </template>
         </el-menu-item>
-        <el-menu-item index="metrics">
-          <el-icon>
-            <DataAnalysis />
-          </el-icon>
-          <template #title>
-            看板
-          </template>
-        </el-menu-item>
         <el-menu-item index="user">
           <el-icon>
             <User />

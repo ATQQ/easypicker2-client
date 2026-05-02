@@ -148,6 +148,15 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'metrics',
+        path: 'metrics',
+        component: Metrics,
+        meta: {
+          title: '指标看板',
+          isAdmin: true,
+        },
+      },
+      {
         name: 'manage',
         path: 'manage',
         component: Manage,
@@ -165,9 +174,11 @@ const routes: RouteRecordRaw[] = [
             },
           },
           {
-            name: 'metrics',
+            name: 'manage-metrics',
             path: 'metrics',
-            component: Metrics,
+            redirect: {
+              name: 'metrics',
+            },
             meta: {
               title: '指标看板',
               isAdmin: true,

@@ -88,8 +88,7 @@ onMounted(() => {
         },
         {
           title: '网站监控',
-          path: 'https://www.frontjs.com/app/87c1ef7667a513f313b4abb22a88dc78',
-          isExternal: true,
+          path: '/dashboard/metrics',
         },
       ]
       navList.push(...superNavList)
