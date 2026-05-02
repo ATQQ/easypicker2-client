@@ -98,24 +98,42 @@ onMounted(() => {
 @media screen and (max-width: 700px) {
   .monitor {
     margin-top: 70px;
-    padding: 10px 0;
+    padding: 10px 0 0;
     width: 100%;
+    display: block;
+    overflow: visible;
   }
+
   .navs {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
   }
 
   .el-radio-group {
     display: none;
   }
+
   .el-menu-nav {
-    display: flex;
+    display: inline-flex;
+    min-width: max-content;
+    border-right: 0;
+    border-bottom: solid 1px var(--el-menu-border-color);
   }
+
+  .el-menu-nav :deep(.el-menu-item) {
+    flex-shrink: 0;
+    height: 44px;
+    line-height: 44px;
+    padding: 0 14px;
+  }
+
   .container {
     padding-left: 0;
-    margin-top: 30px;
+    margin-top: 12px;
     width: 100%;
   }
 }
