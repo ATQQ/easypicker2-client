@@ -1,5 +1,5 @@
 import { getRedisValueJSON } from '@/db/redisDb'
-import { getOSSFiles } from '@/utils/qiniuUtil'
+import { getFileKeys, getOSSFiles } from '@/utils/qiniuUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
 class SuperService {
@@ -11,7 +11,7 @@ class SuperService {
     const ossFiles = await getRedisValueJSON<Qiniu.ItemInfo[]>(
       cacheKey,
       [],
-      () => getOSSFiles('easypicker2/')
+      () => getOSSFiles('easypicker2/'),
     )
     return ossFiles
   }
@@ -27,9 +27,21 @@ class SuperService {
     const ossFiles = await getRedisValueJSON<Qiniu.ItemInfo[]>(
       cacheKey,
       [],
-      () => getOSSFiles(prefix)
+      () => getOSSFiles(prefix),
     )
     return ossFiles
+  }
+
+  async getCachedFileKeys(prefix: string) {
+    const systemUser = LocalUserDB.getUserConfigByType('server').USER || 'local'
+    const cacheKey = `${systemUser}-file-keys-${prefix}`
+
+    const files = await getRedisValueJSON<Qiniu.ItemInfo[]>(
+      cacheKey,
+      [],
+      () => getFileKeys(prefix),
+    )
+    return files
   }
 }
 

@@ -21,19 +21,20 @@ import {
 } from 'flash-wolves'
 import { ObjectId } from 'mongodb'
 import { addAction, findAction, updateAction } from '@/db/actionDb'
-import { selectFilesNew } from '@/db/fileDb'
+import { getFileOverviewCount } from '@/db/fileDb'
 import {
   addBehavior,
   findLog,
   findLogCount,
+  findLogCountWithTimeRange,
+  findLogDistinctCount,
   findLogReserve,
   findLogWithPageOffset,
-  findLogWithTimeRange,
-  findPvLogWithRange,
+  findRequestMetricLogs,
 } from '@/db/logDb'
 import { ActionType } from '@/db/model/action'
 import { USER_POWER } from '@/db/model/user'
-import { selectAllUser } from '@/db/userDb'
+import { getUserOverviewCount } from '@/db/userDb'
 import SuperService from '@/service/super'
 import { batchDeleteFiles, getFileKeys } from '@/utils/qiniuUtil'
 import { escapeRegexForMongo, formatSize } from '@/utils/stringUtil'
@@ -109,6 +110,121 @@ export default class OverviewController {
     return Date.now() - putTime > 1000 * 60 * (downloadCompressExpired || 60)
   }
 
+  private getPercentile(sorted: number[], percentile: number) {
+    if (sorted.length === 0) {
+      return 0
+    }
+    const idx = Math.min(
+      sorted.length - 1,
+      Math.max(0, Math.ceil(sorted.length * percentile) - 1),
+    )
+    return sorted[idx]
+  }
+
+  private getMetricBucketMs(start: Date, end: Date) {
+    const range = end.getTime() - start.getTime()
+    if (range <= 1000 * 60 * 60 * 12) {
+      return 1000 * 60 * 30
+    }
+    if (range <= 1000 * 60 * 60 * 24 * 2) {
+      return 1000 * 60 * 60
+    }
+    if (range <= 1000 * 60 * 60 * 24 * 14) {
+      return 1000 * 60 * 60 * 6
+    }
+    return 1000 * 60 * 60 * 24
+  }
+
+  private getRequestMetricsSeries(
+    logs: Awaited<ReturnType<typeof findRequestMetricLogs>>,
+    start: Date,
+    end: Date,
+  ) {
+    const bucketMs = this.getMetricBucketMs(start, end)
+    const buckets = new Map<number, number[]>()
+    const first = Math.floor(start.getTime() / bucketMs) * bucketMs
+    const last = Math.floor(end.getTime() / bucketMs) * bucketMs
+
+    for (let time = first; time <= last; time += bucketMs) {
+      buckets.set(time, [])
+    }
+
+    for (const log of logs) {
+      const time = Math.floor(log.date.getTime() / bucketMs) * bucketMs
+      buckets.get(time)?.push(log.duration)
+    }
+
+    return {
+      bucketMs,
+      series: [...buckets.entries()].map(([time, durations]) => {
+        const sorted = durations.sort((a, b) => a - b)
+        const sum = sorted.reduce((acc, cur) => acc + cur, 0)
+        return {
+          time,
+          count: sorted.length,
+          tp9999: this.getPercentile(sorted, 0.9999),
+          tp999: this.getPercentile(sorted, 0.999),
+          tp99: this.getPercentile(sorted, 0.99),
+          tp95: this.getPercentile(sorted, 0.95),
+          avg: sorted.length ? Math.round(sum / sorted.length) : 0,
+        }
+      }),
+    }
+  }
+
+  private getRequestMetricsGroups(
+    logs: Awaited<ReturnType<typeof findRequestMetricLogs>>,
+    start: Date,
+    end: Date,
+  ) {
+    const groups = new Map<string, Awaited<ReturnType<typeof findRequestMetricLogs>>>()
+    for (const log of logs) {
+      const key = `${log.method} ${log.path}`
+      const group = groups.get(key) || []
+      group.push(log)
+      groups.set(key, group)
+    }
+
+    return [...groups.entries()]
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 12)
+      .map(([key, list]) => {
+        const [method, ...path] = key.split(' ')
+        return {
+          key,
+          label: key,
+          method,
+          path: path.join(' '),
+          total: list.length,
+          series: this.getRequestMetricsSeries(list, start, end).series,
+        }
+      })
+  }
+
+  private getRequestPathOptions(logs: Awaited<ReturnType<typeof findRequestMetricLogs>>) {
+    const map = new Map<string, {
+      path: string
+      count: number
+    }>()
+    for (const log of logs) {
+      const key = log.path
+      const item = map.get(key) || {
+        path: log.path,
+        count: 0,
+      }
+      item.count += 1
+      map.set(key, item)
+    }
+    return [...map.entries()]
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([key, item]) => ({
+        label: `${key} (${item.count})`,
+        value: item.path,
+        method: '',
+        count: item.count,
+      }))
+  }
+
   /**
    * 查询某条日志的详细信息
    * TODO:针对不同类型过滤
@@ -126,45 +242,46 @@ export default class OverviewController {
     const nowDate = new Date(
       `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} GMT+8`,
     )
-    const users = await selectAllUser(['join_time'])
-    const userRecent = users.filter(
-      u => new Date(u.join_time) > nowDate,
-    ).length
-
-    const files = await selectFilesNew({}, ['date', 'size'])
-    const fileRecent = files.filter(f => new Date(f.date) > nowDate).length
-
-    // redis做一层缓存
-    const ossFiles = await SuperService.getOssFiles()
-
-    const logCount = await findLogCount({})
-    const logRecent = await findLogWithTimeRange(nowDate)
-
-    // 总
-    const pvList = await findLogReserve({
-      type: 'pv',
-    })
-    const uv = new Set(pvList.map(pv => pv.data.ip)).size
-    // 当日
-    const todayPv = await findPvLogWithRange(nowDate)
-    const todayUv = new Set(todayPv.map(pv => pv.data.ip)).size
-
-    // redis做一层缓存
-    const compressData = await getFileKeys('easypicker2/temp_package')
-    const tempTxtFilesData = await getFileKeys('1').then(v =>
-      v.filter(v => tempTxtFileReg.test(v.key)),
+    const [
+      userCount,
+      fileCount,
+      ossFiles,
+      logCount,
+      logRecent,
+      pvCount,
+      todayPvCount,
+      uv,
+      todayUv,
+      compressData,
+      tempTxtFilesData,
+    ] = await Promise.all([
+      getUserOverviewCount(nowDate),
+      getFileOverviewCount(nowDate),
+      SuperService.getOssFiles(),
+      findLogCount({}),
+      findLogCountWithTimeRange({}, nowDate),
+      findLogCount({ type: 'pv' }),
+      findLogCountWithTimeRange({ type: 'pv' }, nowDate),
+      findLogDistinctCount('data.ip', { type: 'pv' }),
+      findLogDistinctCount('data.ip', { type: 'pv' }, nowDate),
+      SuperService.getCachedFileKeys('easypicker2/temp_package'),
+      SuperService.getCachedFileKeys('1').then(v => v.filter(v => tempTxtFileReg.test(v.key))),
+    ])
+    const tempFiles = compressData.concat(tempTxtFilesData)
+    const expiredFiles = tempFiles.filter(item =>
+      this.isExpiredCompressSource(item.putTime / 10000),
     )
 
     return {
       user: {
-        sum: users.length,
-        recent: userRecent,
+        sum: userCount.sum,
+        recent: userCount.recent,
       },
       file: {
         server: {
-          sum: files.length,
-          recent: fileRecent,
-          size: formatSize(files.reduce((sum, f) => sum + f.size, 0)),
+          sum: fileCount.sum,
+          recent: fileCount.recent,
+          size: formatSize(fileCount.size),
         },
         oss: {
           sum: ossFiles.length,
@@ -173,44 +290,75 @@ export default class OverviewController {
       },
       log: {
         sum: logCount,
-        recent: logRecent.length,
+        recent: logRecent,
       },
       pv: {
         today: {
-          sum: todayPv.length,
+          sum: todayPvCount,
           uv: todayUv,
         },
         all: {
-          sum: pvList.length,
+          sum: pvCount,
           uv,
         },
       },
       compress: {
         all: {
-          sum: compressData.length + tempTxtFilesData.length,
-          size: formatSize(
-            compressData
-              .concat(tempTxtFilesData)
-              .reduce((sum, item) => sum + item.fsize, 0),
-          ),
+          sum: tempFiles.length,
+          size: formatSize(tempFiles.reduce((sum, item) => sum + item.fsize, 0)),
         },
         expired: {
-          sum: compressData
-            .concat(tempTxtFilesData)
-            .filter(item =>
-              this.isExpiredCompressSource(item.putTime / 10000),
-            )
-            .length,
-          size: formatSize(
-            compressData
-              .concat(tempTxtFilesData)
-              .filter(item =>
-                this.isExpiredCompressSource(item.putTime / 10000),
-              )
-              .reduce((sum, item) => sum + item.fsize, 0),
-          ),
+          sum: expiredFiles.length,
+          size: formatSize(expiredFiles.reduce((sum, item) => sum + item.fsize, 0)),
         },
       },
+    }
+  }
+
+  @Post('request-metrics', power)
+  async getRequestMetrics(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+    @ReqBody('method') method = '',
+    @ReqBody('path') path = '',
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    const pathOptionLogsPromise = path
+      ? findRequestMetricLogs(start, end, {
+          method: method || undefined,
+        })
+      : undefined
+    const logs = await findRequestMetricLogs(start, end, {
+      method: method || undefined,
+      path: path ? path.trim() : undefined,
+    })
+    const { bucketMs, series } = this.getRequestMetricsSeries(logs, start, end)
+    const endpointGroups = this.getRequestMetricsGroups(logs, start, end)
+    const groups = [
+      {
+        key: 'all',
+        label: '全部接口',
+        method: '',
+        path: '',
+        total: logs.length,
+        series,
+      },
+      ...(path ? [] : endpointGroups),
+    ]
+    const pathOptionLogs = pathOptionLogsPromise
+      ? await pathOptionLogsPromise
+      : logs
+    return {
+      startTime: start.getTime(),
+      endTime: end.getTime(),
+      bucketMs,
+      total: logs.length,
+      series,
+      groups,
+      paths: this.getRequestPathOptions(pathOptionLogs),
     }
   }
 
@@ -271,75 +419,68 @@ export default class OverviewController {
     @ReqBody('type') type: LogType,
     @ReqBody('pageSize') size = 6,
     @ReqBody('pageIndex') index = 1,
+    /** 关键词：仅匹配文案/路径/method/url 等，不匹配 IP */
     @ReqBody('search') search = '',
+    /** 单独按 IP 筛选（与 search 可同时使用） */
+    @ReqBody('ipSearch') ipSearch = '',
   ) {
-    let query: FilterQuery<Log> = {
-      type,
-    }
     const term = typeof search === 'string' ? search.trim() : ''
+    const ipTerm = typeof ipSearch === 'string' ? ipSearch.trim() : ''
+
+    const clauses: FilterQuery<Log>[] = []
+
     if (term) {
       const rx = escapeRegexForMongo(term)
       const match = { $regex: rx, $options: 'i' as const }
       switch (type) {
         case 'behavior':
-          query = {
-            ...query,
-            $or: [
-              {
-                'data.info.msg': match,
-              },
-              {
-                'data.req.ip': match,
-              },
-            ],
-          }
+          clauses.push({ 'data.info.msg': match })
           break
         case 'request':
-          query = {
-            ...query,
+          clauses.push({
             $or: [
-              {
-                'data.method': match,
-              },
-              {
-                'data.url': match,
-              },
-              {
-                'data.ip': match,
-              },
+              { 'data.method': match },
+              { 'data.url': match },
             ],
-          }
+          })
           break
         case 'pv':
-          query = {
-            ...query,
-            $or: [
-              {
-                'data.path': match,
-              },
-              {
-                'data.ip': match,
-              },
-            ],
-          }
+          clauses.push({ 'data.path': match })
           break
         case 'error':
-          query = {
-            ...query,
-            $or: [
-              {
-                'data.req.ip': match,
-              },
-              {
-                'data.msg': match,
-              },
-            ],
-          }
+          clauses.push({ 'data.msg': match })
           break
         default:
           break
       }
     }
+
+    if (ipTerm) {
+      const rx = escapeRegexForMongo(ipTerm)
+      const ipMatch = { $regex: rx, $options: 'i' as const }
+      switch (type) {
+        case 'behavior':
+          clauses.push({ 'data.req.ip': ipMatch })
+          break
+        case 'request':
+          clauses.push({ 'data.ip': ipMatch })
+          break
+        case 'pv':
+          clauses.push({ 'data.ip': ipMatch })
+          break
+        case 'error':
+          clauses.push({ 'data.req.ip': ipMatch })
+          break
+        default:
+          break
+      }
+    }
+
+    const query: FilterQuery<Log>
+      = clauses.length > 0
+        ? { $and: [{ type }, ...clauses] }
+        : { type }
+
     const logCount = await findLogCount(query)
     const logs = await findLogWithPageOffset((index - 1) * size, size, query)
     return {

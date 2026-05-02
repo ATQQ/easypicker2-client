@@ -15,6 +15,7 @@ const Config = () => import('@/pages/dashboard/config/index.vue')
 const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
 const Manage = () => import('@/pages/dashboard/manage/index.vue')
 const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
+const Metrics = () => import('@/pages/dashboard/manage/metrics/index.vue')
 const User = () => import('@/pages/dashboard/manage/user/index.vue')
 const Wish = () => import('@/pages/dashboard/manage/wish/index.vue')
 const Task = () => import('@/pages/task/index.vue')
@@ -160,6 +161,15 @@ const routes: RouteRecordRaw[] = [
             component: Overview,
             meta: {
               title: '应用概况',
+              isAdmin: true,
+            },
+          },
+          {
+            name: 'metrics',
+            path: 'metrics',
+            component: Metrics,
+            meta: {
+              title: '指标看板',
               isAdmin: true,
             },
           },

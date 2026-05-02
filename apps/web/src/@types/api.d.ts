@@ -206,6 +206,38 @@ declare namespace OverviewApiTypes {
     pageIndex: number
     pageSize: number
   }>
+  interface RequestMetricItem {
+    time: number
+    count: number
+    tp9999: number
+    tp999: number
+    tp99: number
+    tp95: number
+    avg: number
+  }
+  interface RequestMetricGroup {
+    key: string
+    label: string
+    method: string
+    path: string
+    total: number
+    series: RequestMetricItem[]
+  }
+  interface RequestMetricPathOption {
+    label: string
+    value: string
+    method: string
+    count: number
+  }
+  type getRequestMetrics = ResponseData<{
+    startTime: number
+    endTime: number
+    bucketMs: number
+    total: number
+    series: RequestMetricItem[]
+    groups: RequestMetricGroup[]
+    paths: RequestMetricPathOption[]
+  }>
   type disabledStatus = ResponseData<{ status: boolean }>
   interface GlobalSiteConfig {
     maxInputLength: number

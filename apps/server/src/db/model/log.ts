@@ -2,12 +2,12 @@
 // 日志
 export type LogType = 'request' | 'behavior' | 'error' | 'pv'
 
-export type LogData =
-  | LogRequestData
-  | LogBehaviorData
-  | PvData
-  | LogErrorData
-  | any
+export type LogData
+  = | LogRequestData
+    | LogBehaviorData
+    | PvData
+    | LogErrorData
+    | any
 export interface Log {
   id?: string
   type?: LogType
@@ -17,6 +17,7 @@ export interface Log {
 export interface LogRequestData {
   method: string
   url: string
+  path?: string
   query: any
   params: any
   body: any
@@ -29,19 +30,19 @@ export interface LogRequestData {
   duration?: number
 }
 
-// eslint-disable-next-line @typescript-eslint/no-namespace
+// eslint-disable-next-line ts/no-namespace
 export declare namespace LogBehaviorData {
-  type BehaviorInfoModule =
-    | 'user'
-    | 'taskInfo'
-    | 'task'
-    | 'people'
-    | 'file'
-    | 'category'
-    | 'super'
-    | 'public'
-    | 'interceptor'
-    | 'wish'
+  type BehaviorInfoModule
+    = | 'user'
+      | 'taskInfo'
+      | 'task'
+      | 'people'
+      | 'file'
+      | 'category'
+      | 'super'
+      | 'public'
+      | 'interceptor'
+      | 'wish'
   interface Info {
     /**
      * 一句话描述

@@ -15,17 +15,28 @@ function getLogMsg(
   pageIndex: number,
   type: string,
   search: string,
+  ipSearch = '',
 ): OverviewApiTypes.getLogMsg {
   return ajax.post(`${baseUrl}/log`, {
     pageSize,
     pageIndex,
     type,
     search,
+    ipSearch,
   })
 }
 
 function getLogMsgDetail(id: string): any {
   return ajax.get(`${baseUrl}/log/${id}`)
+}
+
+function getRequestMetrics(options: {
+  startTime?: number
+  endTime?: number
+  method?: string
+  path?: string
+}): OverviewApiTypes.getRequestMetrics {
+  return ajax.post(`${baseUrl}/request-metrics`, options)
 }
 
 function clearExpiredCompressFile() {
@@ -66,6 +77,7 @@ export default {
   getAllLogMsg,
   getLogMsg,
   getLogMsgDetail,
+  getRequestMetrics,
   clearExpiredCompressFile,
   checkDisabledRoute,
   addDisabledRoute,

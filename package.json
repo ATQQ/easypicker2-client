@@ -30,6 +30,7 @@
     "upload:oss": "pnpm --filter @sugarat/easypicker2-web upload:oss",
     "update:version": "pnpm --filter @sugarat/easypicker2-web update:version",
     "preinstall": "npm config set registry https://registry.npmmirror.com/",
+    "mongo:restore:ep-prod": "bash scripts/restore-ep-prod-mongo.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

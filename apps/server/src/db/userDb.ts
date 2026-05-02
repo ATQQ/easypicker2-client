@@ -1,15 +1,15 @@
 import type { OkPacket } from 'mysql'
-import { Provide } from 'flash-wolves'
 import type { User } from './model/user'
-import { USER_STATUS } from './model/user'
-import { User as UserEntity } from './entity'
-import { AppDataSource, BaseRepository } from './index'
+import { Provide } from 'flash-wolves'
 import { query } from '@/lib/dbConnect/mysql'
 import {
   insertTableByModel,
   selectTableByModel,
   updateTableByModel,
 } from '@/utils/sqlUtil'
+import { User as UserEntity } from './entity'
+import { AppDataSource, BaseRepository } from './index'
+import { USER_STATUS } from './model/user'
 
 export function selectUserByAccount(account: string): Promise<User[]> {
   const { sql, params } = selectTableByModel('user', {
@@ -58,6 +58,25 @@ export function selectAllUser(columns: string[]): Promise<User[]> {
     order: 'order by id desc',
   })
   return query<User[]>(sql, ...params)
+}
+
+export async function getUserOverviewCount(start: Date) {
+  const [row] = await query<{
+    sum: number
+    recent: number
+  }[]>(
+    'select count(*) as sum, sum(case when join_time > ? then 1 else 0 end) as recent from user',
+    formatMysqlDate(start),
+  )
+  return {
+    sum: Number(row?.sum || 0),
+    recent: Number(row?.recent || 0),
+  }
+}
+
+function formatMysqlDate(date: Date) {
+  const pad = (n: number) => `${n}`.padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
 @Provide()

@@ -1,14 +1,14 @@
 import type { OkPacket } from 'mysql'
-import { Provide } from 'flash-wolves'
 import type { File } from './model/file'
-import { Files } from './entity'
-import { AppDataSource, BaseRepository } from '.'
+import { Provide } from 'flash-wolves'
 import { query } from '@/lib/dbConnect/mysql'
 import {
   insertTableByModel,
   selectTableByModel,
   updateTableByModel,
 } from '@/utils/sqlUtil'
+import { AppDataSource, BaseRepository } from '.'
+import { Files } from './entity'
 
 export function insertFile(file: File) {
   const { sql, params } = insertTableByModel('files', file)
@@ -23,6 +23,27 @@ export function selectFilesNew(options: File, columns: string[] = []) {
     order: 'order by id desc',
   })
   return query<File[]>(sql, ...params)
+}
+
+export async function getFileOverviewCount(start: Date) {
+  const [row] = await query<{
+    sum: number
+    recent: number
+    size: number
+  }[]>(
+    'select count(*) as sum, sum(case when date > ? then 1 else 0 end) as recent, coalesce(sum(size), 0) as size from files',
+    formatMysqlDate(start),
+  )
+  return {
+    sum: Number(row?.sum || 0),
+    recent: Number(row?.recent || 0),
+    size: Number(row?.size || 0),
+  }
+}
+
+function formatMysqlDate(date: Date) {
+  const pad = (n: number) => `${n}`.padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
 export function selectFiles(options: File, columns: string[] = []) {

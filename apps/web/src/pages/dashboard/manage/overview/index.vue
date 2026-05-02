@@ -109,6 +109,8 @@ const logs: any[] = reactive([])
 // 筛选的日志
 const filterLogType = ref('behavior')
 const searchWord = ref('')
+/** 单独按 IP 筛选，与关键词互不干扰 */
+const searchIp = ref('')
 const logTypeList = reactive([
   {
     label: '用户行为',
@@ -145,17 +147,25 @@ function handlePageChange(idx: number) {
   pageCurrent.value = idx
 }
 
+const isLoadingLogs = ref(false)
+
 function loadLogs() {
+  isLoadingLogs.value = true
   SuperOverviewApi.getLogMsg(
     pageSize.value,
     pageCurrent.value,
     filterLogType.value,
     searchWord.value,
-  ).then((res) => {
-    logs.splice(0, logs.length)
-    logs.push(...res.data.logs)
-    logSumCount.value = res.data.sum
-  })
+    searchIp.value,
+  )
+    .then((res) => {
+      logs.splice(0, logs.length)
+      logs.push(...res.data.logs)
+      logSumCount.value = res.data.sum
+    })
+    .finally(() => {
+      isLoadingLogs.value = false
+    })
 }
 
 /** 搜索输入防抖；换页、改每页条数、改类型仍立即请求 */
@@ -172,6 +182,8 @@ watch(
   [pageCurrent, pageSize, filterLogType],
   (newVal, oldVal) => {
     if (oldVal !== undefined && newVal[2] !== oldVal[2]) {
+      searchWord.value = ''
+      searchIp.value = ''
       if (pageCurrent.value !== 1) {
         pageCurrent.value = 1
       }
@@ -186,6 +198,10 @@ watch(
 )
 
 watch(searchWord, () => {
+  debouncedSearchRefresh()
+})
+
+watch(searchIp, () => {
   debouncedSearchRefresh()
 })
 
@@ -281,8 +297,16 @@ onMounted(() => {
             v-model="searchWord"
             size="default"
             clearable
-            placeholder="请输入要检索的内容"
+            placeholder="关键词（文案 / 路径 / 请求等，不含 IP）"
             :prefix-icon="Search"
+          />
+        </span>
+        <span class="item">
+          <el-input
+            v-model="searchIp"
+            size="default"
+            clearable
+            placeholder="IP（可选）"
           />
         </span>
         <span class="item">
@@ -308,6 +332,8 @@ onMounted(() => {
         </span>
       </div>
       <el-table
+        v-loading="isLoadingLogs"
+        element-loading-text="正在加载日志…"
         tooltip-effect="dark"
         height="400"
         stripe
