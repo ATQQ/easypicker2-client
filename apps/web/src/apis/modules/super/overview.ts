@@ -39,6 +39,13 @@ function getRequestMetrics(options: {
   return ajax.post(`${baseUrl}/request-metrics`, options)
 }
 
+function getMonitorMetrics(options: {
+  startTime?: number
+  endTime?: number
+}): OverviewApiTypes.getMonitorMetrics {
+  return ajax.post(`${baseUrl}/monitor-metrics`, options)
+}
+
 function clearExpiredCompressFile() {
   return ajax.delete(`${baseUrl}/compress`)
 }
@@ -78,6 +85,7 @@ export default {
   getLogMsg,
   getLogMsgDetail,
   getRequestMetrics,
+  getMonitorMetrics,
   clearExpiredCompressFile,
   checkDisabledRoute,
   addDisabledRoute,

@@ -229,6 +229,16 @@ declare namespace OverviewApiTypes {
     method: string
     count: number
   }
+  interface MonitorCountMetricItem {
+    time: number
+    count: number
+    uv: number
+  }
+  interface MonitorTopItem {
+    path: string
+    msg: string
+    count: number
+  }
   type getRequestMetrics = ResponseData<{
     startTime: number
     endTime: number
@@ -237,6 +247,23 @@ declare namespace OverviewApiTypes {
     series: RequestMetricItem[]
     groups: RequestMetricGroup[]
     paths: RequestMetricPathOption[]
+  }>
+  type getMonitorMetrics = ResponseData<{
+    startTime: number
+    endTime: number
+    bucketMs: number
+    pv: {
+      total: number
+      uv: number
+      series: MonitorCountMetricItem[]
+      top: MonitorTopItem[]
+    }
+    error: {
+      total: number
+      affectedIp: number
+      series: MonitorCountMetricItem[]
+      top: MonitorTopItem[]
+    }
   }>
   type disabledStatus = ResponseData<{ status: boolean }>
   interface GlobalSiteConfig {

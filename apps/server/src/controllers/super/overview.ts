@@ -30,6 +30,7 @@ import {
   findLogDistinctCount,
   findLogReserve,
   findLogWithPageOffset,
+  findMonitorMetricLogs,
   findRequestMetricLogs,
 } from '@/db/logDb'
 import { ActionType } from '@/db/model/action'
@@ -225,6 +226,70 @@ export default class OverviewController {
       }))
   }
 
+  private getCountMetricSeries(
+    logs: Awaited<ReturnType<typeof findMonitorMetricLogs>>,
+    start: Date,
+    end: Date,
+    type: 'error' | 'pv',
+  ) {
+    const bucketMs = this.getMetricBucketMs(start, end)
+    const buckets = new Map<number, Awaited<ReturnType<typeof findMonitorMetricLogs>>>()
+    const first = Math.floor(start.getTime() / bucketMs) * bucketMs
+    const last = Math.floor(end.getTime() / bucketMs) * bucketMs
+
+    for (let time = first; time <= last; time += bucketMs) {
+      buckets.set(time, [])
+    }
+
+    for (const log of logs) {
+      if (log.type !== type) {
+        continue
+      }
+      const time = Math.floor(log.date.getTime() / bucketMs) * bucketMs
+      buckets.get(time)?.push(log)
+    }
+
+    return {
+      bucketMs,
+      series: [...buckets.entries()].map(([time, list]) => ({
+        time,
+        count: list.length,
+        uv: new Set(list.map(item => item.ip).filter(Boolean)).size,
+      })),
+    }
+  }
+
+  private getTopMonitorItems(
+    logs: Awaited<ReturnType<typeof findMonitorMetricLogs>>,
+    type: 'error' | 'pv',
+  ) {
+    const map = new Map<string, {
+      path: string
+      msg: string
+      count: number
+    }>()
+
+    for (const log of logs) {
+      if (log.type !== type) {
+        continue
+      }
+      const key = type === 'error'
+        ? `${log.path}__${log.msg || '未知错误'}`
+        : log.path
+      const item = map.get(key) || {
+        path: log.path,
+        msg: log.msg || '',
+        count: 0,
+      }
+      item.count += 1
+      map.set(key, item)
+    }
+
+    return [...map.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+  }
+
   /**
    * 查询某条日志的详细信息
    * TODO:针对不同类型过滤
@@ -359,6 +424,40 @@ export default class OverviewController {
       series,
       groups,
       paths: this.getRequestPathOptions(pathOptionLogs),
+    }
+  }
+
+  @Post('monitor-metrics', power)
+  async getMonitorMetrics(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    const logs = await findMonitorMetricLogs(start, end)
+    const pvLogs = logs.filter(log => log.type === 'pv')
+    const errorLogs = logs.filter(log => log.type === 'error')
+    const pvMetric = this.getCountMetricSeries(logs, start, end, 'pv')
+    const errorMetric = this.getCountMetricSeries(logs, start, end, 'error')
+
+    return {
+      startTime: start.getTime(),
+      endTime: end.getTime(),
+      bucketMs: pvMetric.bucketMs,
+      pv: {
+        total: pvLogs.length,
+        uv: new Set(pvLogs.map(log => log.ip).filter(Boolean)).size,
+        series: pvMetric.series,
+        top: this.getTopMonitorItems(logs, 'pv'),
+      },
+      error: {
+        total: errorLogs.length,
+        affectedIp: new Set(errorLogs.map(log => log.ip).filter(Boolean)).size,
+        series: errorMetric.series,
+        top: this.getTopMonitorItems(logs, 'error'),
+      },
     }
   }
 

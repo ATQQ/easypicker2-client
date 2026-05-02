@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { LineChart } from 'echarts/charts'
+import { BarChart, LineChart } from 'echarts/charts'
 import {
   DataZoomComponent,
   GridComponent,
@@ -16,6 +16,7 @@ import { formatDate } from '@/utils/stringUtil'
 use([
   CanvasRenderer,
   LineChart,
+  BarChart,
   GridComponent,
   TooltipComponent,
   LegendComponent,
@@ -31,6 +32,23 @@ const metricKeys = [
   { key: 'avg', label: 'AVG', color: '#34bfa3' },
 ] as const
 type MetricKey = typeof metricKeys[number]['key']
+interface MonitorMetricsData {
+  startTime: number
+  endTime: number
+  bucketMs: number
+  pv: {
+    total: number
+    uv: number
+    series: OverviewApiTypes.MonitorCountMetricItem[]
+    top: OverviewApiTypes.MonitorTopItem[]
+  }
+  error: {
+    total: number
+    affectedIp: number
+    series: OverviewApiTypes.MonitorCountMetricItem[]
+    top: OverviewApiTypes.MonitorTopItem[]
+  }
+}
 
 const now = Date.now()
 const filters = reactive({
@@ -44,6 +62,23 @@ const series = ref<OverviewApiTypes.RequestMetricItem[]>([])
 const groups = ref<OverviewApiTypes.RequestMetricGroup[]>([])
 const pathOptions = ref<OverviewApiTypes.RequestMetricPathOption[]>([])
 const selectedMetric = ref<MetricKey>('avg')
+const monitorMetrics = ref<MonitorMetricsData>({
+  startTime: filters.range[0],
+  endTime: filters.range[1],
+  bucketMs: 1000 * 60 * 30,
+  pv: {
+    total: 0,
+    uv: 0,
+    series: [],
+    top: [],
+  },
+  error: {
+    total: 0,
+    affectedIp: 0,
+    series: [],
+    top: [],
+  },
+})
 
 const filteredPathOptions = computed(() => {
   return pathOptions.value
@@ -142,6 +177,127 @@ const chartOption = computed(() => {
   }
 })
 
+const monitorCards = computed(() => [
+  {
+    title: '接口请求',
+    value: total.value,
+    desc: '当前筛选范围内的接口请求数',
+    className: 'api',
+  },
+  {
+    title: '页面访问',
+    value: monitorMetrics.value.pv.total,
+    desc: `UV ${monitorMetrics.value.pv.uv}`,
+    className: 'pv',
+  },
+  {
+    title: '服务端报错',
+    value: monitorMetrics.value.error.total,
+    desc: `影响 IP ${monitorMetrics.value.error.affectedIp}`,
+    className: 'error',
+  },
+])
+
+const pvChartOption = computed(() => ({
+  tooltip: {
+    trigger: 'axis',
+  },
+  legend: {
+    top: 0,
+  },
+  grid: {
+    top: 42,
+    left: 46,
+    right: 20,
+    bottom: 34,
+  },
+  xAxis: {
+    type: 'category',
+    data: monitorMetrics.value.pv.series.map(item => formatXAxis(item.time)),
+  },
+  yAxis: {
+    type: 'value',
+  },
+  series: [
+    {
+      name: 'PV',
+      type: 'line',
+      smooth: true,
+      showSymbol: false,
+      data: monitorMetrics.value.pv.series.map(item => item.count),
+      itemStyle: { color: '#409eff' },
+    },
+    {
+      name: 'UV',
+      type: 'line',
+      smooth: true,
+      showSymbol: false,
+      data: monitorMetrics.value.pv.series.map(item => item.uv),
+      itemStyle: { color: '#67c23a' },
+    },
+  ],
+}))
+
+const errorChartOption = computed(() => ({
+  tooltip: {
+    trigger: 'axis',
+  },
+  grid: {
+    top: 24,
+    left: 46,
+    right: 20,
+    bottom: 34,
+  },
+  xAxis: {
+    type: 'category',
+    data: monitorMetrics.value.error.series.map(item => formatXAxis(item.time)),
+  },
+  yAxis: {
+    type: 'value',
+  },
+  series: [
+    {
+      name: '服务端报错',
+      type: 'bar',
+      barMaxWidth: 28,
+      data: monitorMetrics.value.error.series.map(item => item.count),
+      itemStyle: { color: '#f56c6c' },
+    },
+  ],
+}))
+
+const pageTopChartOption = computed(() => ({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow',
+    },
+  },
+  grid: {
+    top: 8,
+    left: 110,
+    right: 18,
+    bottom: 24,
+  },
+  xAxis: {
+    type: 'value',
+  },
+  yAxis: {
+    type: 'category',
+    inverse: true,
+    data: monitorMetrics.value.pv.top.map(item => item.path),
+  },
+  series: [
+    {
+      name: '访问次数',
+      type: 'bar',
+      barMaxWidth: 18,
+      data: monitorMetrics.value.pv.top.map(item => item.count),
+      itemStyle: { color: '#36a3f7' },
+    },
+  ],
+}))
+
 const tableData = computed(() => {
   return groups.value
     .flatMap(group =>
@@ -166,17 +322,26 @@ function formatDuration(ms: number) {
 
 function loadMetrics() {
   isLoading.value = true
-  SuperOverviewApi.getRequestMetrics({
+  const options = {
     startTime: Number(filters.range?.[0]),
     endTime: Number(filters.range?.[1]),
     method: filters.method,
     path: filters.path,
-  })
+  }
+  Promise.all([
+    SuperOverviewApi.getRequestMetrics(options),
+    SuperOverviewApi.getMonitorMetrics({
+      startTime: options.startTime,
+      endTime: options.endTime,
+    }),
+  ])
     .then((res) => {
-      series.value = res.data.series
-      groups.value = res.data.groups || []
-      pathOptions.value = res.data.paths || []
-      total.value = res.data.total
+      const [requestRes, monitorRes] = res
+      series.value = requestRes.data.series
+      groups.value = requestRes.data.groups || []
+      pathOptions.value = requestRes.data.paths || []
+      total.value = requestRes.data.total
+      monitorMetrics.value = monitorRes.data
     })
     .finally(() => {
       isLoading.value = false
@@ -254,6 +419,56 @@ onMounted(() => {
       </div>
 
       <div v-loading="isLoading" element-loading-text="正在加载指标…" class="chart-card">
+        <div class="monitor-cards">
+          <div
+            v-for="card in monitorCards"
+            :key="card.title"
+            class="monitor-card"
+            :class="card.className"
+          >
+            <span>{{ card.title }}</span>
+            <strong>{{ card.value }}</strong>
+            <small>{{ card.desc }}</small>
+          </div>
+        </div>
+
+        <div class="monitor-grid">
+          <section class="monitor-panel wide">
+            <div class="panel-title">
+              页面访问趋势
+            </div>
+            <VChart class="small-chart" :option="pvChartOption" autoresize />
+          </section>
+          <section class="monitor-panel">
+            <div class="panel-title">
+              服务端报错趋势
+            </div>
+            <VChart class="small-chart" :option="errorChartOption" autoresize />
+          </section>
+          <section class="monitor-panel">
+            <div class="panel-title">
+              热门访问页面
+            </div>
+            <VChart class="small-chart" :option="pageTopChartOption" autoresize />
+          </section>
+          <section class="monitor-panel">
+            <div class="panel-title">
+              高频服务端报错
+            </div>
+            <el-table
+              :data="monitorMetrics.error.top"
+              size="small"
+              border
+              height="260"
+              empty-text="暂无服务端报错"
+            >
+              <el-table-column prop="path" label="接口" min-width="120" show-overflow-tooltip />
+              <el-table-column prop="msg" label="错误" min-width="160" show-overflow-tooltip />
+              <el-table-column prop="count" label="次数" width="70" />
+            </el-table>
+          </section>
+        </div>
+
         <div class="summary">
           <div>
             <div class="title">
@@ -331,6 +546,79 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.monitor-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.monitor-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f7faff;
+  border: 1px solid #e8edf5;
+
+  span {
+    color: #606266;
+    font-size: 14px;
+  }
+
+  strong {
+    color: #303133;
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  small {
+    color: #909399;
+  }
+
+  &.api {
+    background: linear-gradient(135deg, #f7faff 0%, #edf5ff 100%);
+  }
+
+  &.pv {
+    background: linear-gradient(135deg, #f4fbf6 0%, #ecf9f0 100%);
+  }
+
+  &.error {
+    background: linear-gradient(135deg, #fff7f7 0%, #fff0f0 100%);
+  }
+}
+
+.monitor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.monitor-panel {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #e8edf5;
+  border-radius: 12px;
+  background: #fff;
+
+  &.wide {
+    grid-column: span 2;
+  }
+}
+
+.panel-title {
+  margin-bottom: 8px;
+  color: #303133;
+  font-weight: 700;
+}
+
+.small-chart {
+  width: 100%;
+  height: 260px;
+}
+
 .summary {
   display: flex;
   justify-content: space-between;
@@ -363,5 +651,26 @@ onMounted(() => {
 
 .data-table {
   margin-top: 12px;
+}
+
+@media screen and (max-width: 900px) {
+  .monitor-cards,
+  .monitor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .monitor-panel.wide {
+    grid-column: auto;
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .toolbar > * {
+    width: 100% !important;
+  }
+
+  .summary {
+    display: block;
+  }
 }
 </style>

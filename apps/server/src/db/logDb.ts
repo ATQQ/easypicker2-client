@@ -23,6 +23,14 @@ export interface RequestMetricLog {
   duration: number
 }
 
+export interface MonitorMetricLog {
+  date: Date
+  type: 'error' | 'pv'
+  path: string
+  ip: string
+  msg?: string
+}
+
 /** 启动时创建常用索引，加速按 type 分页与时间排序 */
 export function ensureLogIndexes() {
   return mongoDbQuery<void>((db, resolve) => {
@@ -303,6 +311,55 @@ export function findRequestMetricLogs(
             url: data.url,
             path: data.path || getPathnameFromUrl(data.url),
             duration: data.duration || 0,
+          }
+        }))
+      })
+  })
+}
+
+export function findMonitorMetricLogs(start: Date, end: Date) {
+  return mongoDbQuery<MonitorMetricLog[]>((db, resolve) => {
+    db.collection<Log>('log')
+      .find({
+        type: {
+          $in: ['error', 'pv'],
+        },
+        _id: {
+          $gt: new ObjectId(timeToObjId(start)),
+          $lt: new ObjectId(timeToObjId(end)),
+        },
+      }, {
+        projection: {
+          '_id': 1,
+          'type': 1,
+          'data.path': 1,
+          'data.ip': 1,
+          'data.msg': 1,
+          'data.req.url': 1,
+          'data.req.ip': 1,
+        },
+      })
+      .sort({ _id: 1 })
+      .toArray()
+      .then((logs) => {
+        resolve(logs.map((log) => {
+          const date = (log as any)._id.getTimestamp()
+          if (log.type === 'pv') {
+            const data = log.data as PvData
+            return {
+              date,
+              type: 'pv',
+              path: data.path || '/',
+              ip: data.ip || '未知',
+            }
+          }
+          const data = log.data as LogErrorData
+          return {
+            date,
+            type: 'error',
+            path: getPathnameFromUrl(data.req?.url),
+            ip: data.req?.ip || '未知',
+            msg: data.msg || '未知错误',
           }
         }))
       })
