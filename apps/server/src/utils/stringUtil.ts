@@ -1,9 +1,9 @@
 /* eslint-disable regexp/no-unused-capturing-group */
 /* eslint-disable regexp/no-legacy-features */
+import type { FWRequest } from 'flash-wolves'
 import crypto from 'node:crypto'
 import path from 'node:path'
 import { ObjectId } from 'mongodb'
-import type { FWRequest } from 'flash-wolves'
 /**
  * 加密字符串(md5+base64)
  * @param str 待加密的字符串
@@ -23,6 +23,11 @@ export function lowCamel2Underscore(word: string): string {
 
 export function getUniqueKey() {
   return new ObjectId().toHexString()
+}
+
+/** 将用户输入转义后用于 MongoDB `$regex`，避免特殊字符导致全表扫描或 ReDoS */
+export function escapeRegexForMongo(str: string) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 export function timeToObjId(d: Date) {

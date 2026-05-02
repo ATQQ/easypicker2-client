@@ -1,12 +1,9 @@
-import 'reflect-metadata'
 import type { Route } from 'flash-wolves'
 import { App, pathJoin } from 'flash-wolves'
-
+import { ensureLogIndexes } from '@/db/logDb'
 // 配置文件
 import { serverConfig } from './config'
 
-// routes
-import routes from './routes'
 import controllers from './controllers'
 
 // interceptor
@@ -16,12 +13,16 @@ import {
   routeInterceptor,
   serverInterceptor,
 } from './middleware'
+// routes
+import routes from './routes'
+
 import {
   initUserConfig,
   patchTable,
   readyServerDepService,
 } from './utils/patch'
 import LocalUserDB from './utils/user-local-db'
+import 'reflect-metadata'
 
 console.time('server-start')
 
@@ -74,10 +75,16 @@ app.listen(serverConfig.port, serverConfig.hostname, async () => {
     console.log('❌ readyServerDepService', err?.message)
   }
   try {
+    await ensureLogIndexes()
+  }
+  catch (err: any) {
+    console.warn('❌ ensureLogIndexes', err?.message)
+  }
+  try {
     await patchTable()
     console.log('😄😄 mysql patch success')
   }
-  catch (err) {
+  catch {
     console.log('😭😭 mysql 还未正常配置，请检查数据库是否配置正确或版本不匹配')
   }
 })

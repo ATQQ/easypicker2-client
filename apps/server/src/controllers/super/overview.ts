@@ -1,6 +1,15 @@
 import type {
   FWRequest,
 } from 'flash-wolves'
+import type { FilterQuery } from 'mongodb'
+import type {
+  Log,
+  LogBehaviorData,
+  LogErrorData,
+  LogRequestData,
+  LogType,
+  PvData,
+} from '@/db/model/log'
 import {
   Delete,
   Get,
@@ -10,8 +19,8 @@ import {
   ReqQuery,
   RouterController,
 } from 'flash-wolves'
-import type { FilterQuery } from 'mongodb'
 import { ObjectId } from 'mongodb'
+import { addAction, findAction, updateAction } from '@/db/actionDb'
 import { selectFilesNew } from '@/db/fileDb'
 import {
   addBehavior,
@@ -22,21 +31,12 @@ import {
   findLogWithTimeRange,
   findPvLogWithRange,
 } from '@/db/logDb'
-import type {
-  Log,
-  LogBehaviorData,
-  LogErrorData,
-  LogRequestData,
-  LogType,
-  PvData,
-} from '@/db/model/log'
+import { ActionType } from '@/db/model/action'
 import { USER_POWER } from '@/db/model/user'
 import { selectAllUser } from '@/db/userDb'
-import { batchDeleteFiles, getFileKeys } from '@/utils/qiniuUtil'
-import { formatSize } from '@/utils/stringUtil'
 import SuperService from '@/service/super'
-import { addAction, findAction, updateAction } from '@/db/actionDb'
-import { ActionType } from '@/db/model/action'
+import { batchDeleteFiles, getFileKeys } from '@/utils/qiniuUtil'
+import { escapeRegexForMongo, formatSize } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
 const power = {
@@ -75,7 +75,7 @@ export default class OverviewController {
             (d?.info?.msg || '未知')
             // 特殊展示提交的文件大小
             + ((d.info?.data?.size && ` ${formatSize(d.info?.data?.size)}`)
-            || ''),
+              || ''),
           ip: d?.req?.ip || '未知',
         }
       }
@@ -199,7 +199,8 @@ export default class OverviewController {
             .concat(tempTxtFilesData)
             .filter(item =>
               this.isExpiredCompressSource(item.putTime / 10000),
-            ).length,
+            )
+            .length,
           size: formatSize(
             compressData
               .concat(tempTxtFilesData)
@@ -275,21 +276,20 @@ export default class OverviewController {
     let query: FilterQuery<Log> = {
       type,
     }
-    if (search) {
+    const term = typeof search === 'string' ? search.trim() : ''
+    if (term) {
+      const rx = escapeRegexForMongo(term)
+      const match = { $regex: rx, $options: 'i' as const }
       switch (type) {
         case 'behavior':
           query = {
             ...query,
             $or: [
               {
-                'data.info.msg': {
-                  $regex: `.*${search}.*`,
-                },
+                'data.info.msg': match,
               },
               {
-                'data.req.ip': {
-                  $regex: `.*${search}.*`,
-                },
+                'data.req.ip': match,
               },
             ],
           }
@@ -299,19 +299,13 @@ export default class OverviewController {
             ...query,
             $or: [
               {
-                'data.method': {
-                  $regex: `.*${search}.*`,
-                },
+                'data.method': match,
               },
               {
-                'data.url': {
-                  $regex: `.*${search}.*`,
-                },
+                'data.url': match,
               },
               {
-                'data.ip': {
-                  $regex: `.*${search}.*`,
-                },
+                'data.ip': match,
               },
             ],
           }
@@ -321,14 +315,10 @@ export default class OverviewController {
             ...query,
             $or: [
               {
-                'data.path': {
-                  $regex: `.*${search}.*`,
-                },
+                'data.path': match,
               },
               {
-                'data.ip': {
-                  $regex: `.*${search}.*`,
-                },
+                'data.ip': match,
               },
             ],
           }
@@ -338,14 +328,10 @@ export default class OverviewController {
             ...query,
             $or: [
               {
-                'data.req.ip': {
-                  $regex: `.*${search}.*`,
-                },
+                'data.req.ip': match,
               },
               {
-                'data.msg': {
-                  $regex: `.*${search}.*`,
-                },
+                'data.msg': match,
               },
             ],
           }

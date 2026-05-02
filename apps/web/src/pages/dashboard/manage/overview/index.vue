@@ -11,7 +11,7 @@ import {
   User,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { computed, onMounted, reactive, ref, watchEffect } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { SuperOverviewApi } from '@/apis'
 import { useIsMobile } from '@/composables'
 import { tableToExcel } from '@/utils/networkUtil'
@@ -145,45 +145,48 @@ function handlePageChange(idx: number) {
   pageCurrent.value = idx
 }
 
-const refreshLogs = debounce(
-  () => {
-    SuperOverviewApi.getLogMsg(
-      pageSize.value,
-      pageCurrent.value,
-      filterLogType.value,
-      searchWord.value,
-    ).then((res) => {
-      logs.splice(0, logs.length)
-      logs.push(...res.data.logs)
-      logSumCount.value = res.data.sum
-    })
-  },
-  100,
-  false,
-)
+function loadLogs() {
+  SuperOverviewApi.getLogMsg(
+    pageSize.value,
+    pageCurrent.value,
+    filterLogType.value,
+    searchWord.value,
+  ).then((res) => {
+    logs.splice(0, logs.length)
+    logs.push(...res.data.logs)
+    logSumCount.value = res.data.sum
+  })
+}
 
-watchEffect(() => {
-  if (filterLogType.value) {
+/** 搜索输入防抖；换页、改每页条数、改类型仍立即请求 */
+const debouncedSearchRefresh = debounce(() => {
+  if (pageCurrent.value !== 1) {
     pageCurrent.value = 1
   }
-})
-
-watchEffect(() => {
-  if (searchWord.value !== undefined) {
-    refreshLogs()
+  else {
+    loadLogs()
   }
-})
+}, 380)
 
-watchEffect(() => {
-  if (filterLogType.value) {
-    refreshLogs()
-  }
-})
+watch(
+  [pageCurrent, pageSize, filterLogType],
+  (newVal, oldVal) => {
+    if (oldVal !== undefined && newVal[2] !== oldVal[2]) {
+      if (pageCurrent.value !== 1) {
+        pageCurrent.value = 1
+      }
+      else {
+        loadLogs()
+      }
+      return
+    }
+    loadLogs()
+  },
+  { immediate: true },
+)
 
-watchEffect(() => {
-  if (pageCurrent.value || pageSize.value) {
-    refreshLogs()
-  }
+watch(searchWord, () => {
+  debouncedSearchRefresh()
 })
 
 const showDetail = ref(false)
@@ -283,7 +286,7 @@ onMounted(() => {
           />
         </span>
         <span class="item">
-          <el-button size="default" :icon="Refresh" @click="refreshLogs">刷新</el-button>
+          <el-button size="default" :icon="Refresh" @click="loadLogs">刷新</el-button>
         </span>
         <span class="item">
           <el-button

@@ -1,7 +1,5 @@
-import { Buffer } from 'node:buffer'
 import type { FWRequest, FWResponse } from 'flash-wolves'
 import type { FilterQuery } from 'mongodb'
-import { ObjectId } from 'mongodb'
 import type {
   Log,
   LogBehaviorData,
@@ -11,9 +9,26 @@ import type {
   LogType,
   PvData,
 } from './model/log'
+import { Buffer } from 'node:buffer'
+import { ObjectId } from 'mongodb'
 import { insertCollection, mongoDbQuery } from '@/lib/dbConnect/mongodb'
 import { timeToObjId as getTimeObjectId, getUniqueKey } from '@/utils/stringUtil'
 import { getUserInfo } from '@/utils/userUtil'
+
+/** 启动时创建常用索引，加速按 type 分页与时间排序 */
+export function ensureLogIndexes() {
+  return mongoDbQuery<void>((db, resolve) => {
+    db.collection('log')
+      .createIndexes([
+        { key: { type: 1, _id: -1 }, name: 'log_type_id_desc' },
+      ])
+      .then(() => resolve())
+      .catch((err) => {
+        console.warn('[mongodb] ensureLogIndexes failed:', err?.message || err)
+        resolve()
+      })
+  })
+}
 
 function getLogData(type: LogType, data: LogData): Log {
   return {
