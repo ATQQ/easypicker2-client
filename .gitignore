@@ -7,3 +7,4 @@ cache
 *.tar.gz
 ep_backup
 data
+user-config.json
