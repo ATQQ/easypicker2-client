@@ -11,11 +11,13 @@ import {
   Response,
   RouterController,
 } from 'flash-wolves'
-import { findAction } from '@/db/actionDb'
-
 import { UserError } from '@/constants/errorMsg'
+
+import { findAction } from '@/db/actionDb'
+import { User } from '@/db/entity'
+import { ActionType } from '@/db/model/action'
 import { USER_POWER } from '@/db/model/user'
-import LocalUserDB from '@/utils/user-local-db'
+import { UserRepository } from '@/db/userDb'
 import {
   BehaviorService,
   FileService,
@@ -23,11 +25,9 @@ import {
   UserService,
 } from '@/service'
 import { wrapperCatchError } from '@/utils/context'
-import { User } from '@/db/entity'
-import { ActionType } from '@/db/model/action'
-import { calculateSize } from '@/utils/userUtil'
-import { UserRepository } from '@/db/userDb'
+import { isCodeLoginSupported } from '@/utils/siteConfig'
 import { formatSize } from '@/utils/stringUtil'
+import LocalUserDB from '@/utils/user-local-db'
 
 @RouterController('user')
 export default class UserController {
@@ -128,6 +128,12 @@ export default class UserController {
   @Post('login/code')
   async loginByCode(@ReqBody() body) {
     try {
+      if (!isCodeLoginSupported()) {
+        this.behaviorService.add('user', `验证码登录被关闭 手机号:${body?.phone?.slice(-4)}`, {
+          phone: body?.phone?.slice(-4),
+        })
+        return Response.failWithError(UserError.system.codeLoginDisabled)
+      }
       const { code, phone } = body
       const user = await this.userService.loginByCode(phone, code)
       const token = await this.tokenService.createTokenByUser(user)

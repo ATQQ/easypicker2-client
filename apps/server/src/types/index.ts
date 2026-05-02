@@ -6,6 +6,8 @@ export interface GlobalSiteConfig {
   downloadCompressExpired: number
   compressSizeLimit: number
   needBindPhone: boolean
+  enableCodeLogin: boolean
+  supportCodeLogin?: boolean
   limitSpace: boolean
   limitWallet: boolean
   qiniuOSSPrice: number

@@ -38,6 +38,7 @@ const defaultSiteConfig: SiteConfig = {
   downloadCompressExpired: 60,
   compressSizeLimit: 10,
   needBindPhone: false,
+  enableCodeLogin: false,
   limitSpace: false,
   limitWallet: false,
   qiniuOSSPrice: 0.099,
@@ -74,6 +75,7 @@ const configSections: ConfigSection[] = [
     description: '控制用户使用前的校验与资源限制策略。',
     fields: [
       { key: 'needBindPhone', label: '强制绑定手机号', description: '开启后用户需要先绑定手机号。', type: 'switch' },
+      { key: 'enableCodeLogin', label: '验证码登录', description: '开启后且腾讯云短信配置完整时，前台展示验证码登录入口。', type: 'switch' },
       { key: 'limitSpace', label: '限制存储空间', description: '开启后按用户空间额度限制上传。', type: 'switch' },
       { key: 'limitWallet', label: '限制钱包余额', description: '开启后按钱包余额限制资源消耗。', type: 'switch' },
     ],
@@ -134,6 +136,7 @@ function normalizeSiteConfig(): SiteConfig {
     downloadCompressExpired: Number(siteForm.downloadCompressExpired),
     compressSizeLimit: Number(siteForm.compressSizeLimit),
     needBindPhone: Boolean(siteForm.needBindPhone),
+    enableCodeLogin: Boolean(siteForm.enableCodeLogin),
     limitSpace: Boolean(siteForm.limitSpace),
     limitWallet: Boolean(siteForm.limitWallet),
     qiniuOSSPrice: Number(siteForm.qiniuOSSPrice),

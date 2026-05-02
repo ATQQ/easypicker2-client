@@ -2,20 +2,22 @@
 import loginPanel from '@components/loginPanel.vue'
 import { Lock, Phone, User } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { PublicApi, UserApi } from '@/apis'
-import { useSupportRegister } from '@/composables'
+import { useSiteConfig, useSupportRegister } from '@/composables'
 import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
 
 const supportRegister = useSupportRegister()
+const { value: siteConfig } = useSiteConfig()
 
 const account = ref('')
 const pwd = ref('')
 const remember = ref(false)
 const accountLogin = ref(true)
+const supportCodeLogin = computed(() => Boolean(siteConfig.value.supportCodeLogin))
 const $store = useStore()
 const $router = useRouter()
 function redirectDashBoard(system?: boolean) {
@@ -73,6 +75,10 @@ function refreshCodeText() {
   setTimeout(refreshCodeText, 1000)
 }
 function getCode() {
+  if (!supportCodeLogin.value) {
+    ElMessage.warning('暂未开启验证码登录')
+    return
+  }
   if (!rMobilePhone.test(account.value)) {
     ElMessage.warning('手机号格式不正确')
     return
@@ -97,6 +103,7 @@ function loginErrorMsg(err: any, msg: string) {
   const { code, data } = err
   const msgs: any = {
     1010: '账号已被封禁,有疑问请联系管理员',
+    1013: '暂未开启验证码登录',
     1009: `账号已被冻结,解冻时间${
       data?.openTime && formatDate(new Date(data.openTime))
     }`,
@@ -141,6 +148,11 @@ function login() {
       })
   }
   else {
+    if (!supportCodeLogin.value) {
+      accountLogin.value = true
+      ElMessage.warning('暂未开启验证码登录')
+      return
+    }
     // 手机号验证码登录
     UserApi.codeLogin(account.value, pwd.value)
       .then((res) => {
@@ -158,6 +170,13 @@ function login() {
       })
   }
 }
+
+watch(supportCodeLogin, (support) => {
+  if (!support && !accountLogin.value) {
+    accountLogin.value = true
+  }
+})
+
 onMounted(() => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -186,7 +205,7 @@ onMounted(() => {
             :prefix-icon="accountLogin ? User : Phone"
             clearable
           >
-            <template #append>
+            <template v-if="supportCodeLogin" #append>
               <template v-if="accountLogin">
                 <el-button @click="accountLogin = !accountLogin">
                   验证码登录
@@ -243,7 +262,7 @@ onMounted(() => {
           </router-link>
         </div>
         <div class="links" style="margin-top: 20px">
-          <el-link target="_blank" href="https://support.qq.com/product/444158">
+          <el-link target="_blank" href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85">
             问题反馈?
           </el-link>
         </div>

@@ -10,6 +10,7 @@ export function useSiteConfig() {
     formLength: 10, // 表单项数量
     compressSizeLimit: 10, // TODO: 压缩文件大小限制（GB）
     needBindPhone: false, // 是否需要绑定手机号
+    supportCodeLogin: false, // 是否支持验证码登录
     limitSpace: false, // 是否限制空间
     limitWallet: false, // 是否限制费用
     moneyStartDay: +new Date('2024/11/01'),
@@ -38,6 +39,7 @@ export function useSiteAllConfig() {
     downloadCompressExpired: 60, // 归档文件下载过期时间（min）
     compressSizeLimit: 10, // TODO: 压缩文件大小限制（GB）
     needBindPhone: false, // 是否需要绑定手机号
+    enableCodeLogin: false, // 是否开启验证码登录
     limitSpace: false, // 是否限制空间
     qiniuOSSPrice: 0.099, // 七牛云存储价格
     qiniuCDNPrice: 0.28, // 七牛云CDN价格

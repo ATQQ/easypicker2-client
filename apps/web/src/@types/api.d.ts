@@ -274,6 +274,8 @@ declare namespace OverviewApiTypes {
     downloadCompressExpired: number
     compressSizeLimit: number
     needBindPhone: boolean
+    enableCodeLogin: boolean
+    supportCodeLogin?: boolean
     limitSpace: boolean
     limitWallet: boolean
     qiniuOSSPrice: number
@@ -372,26 +374,30 @@ declare namespace WishApiTypes {
 }
 
 declare namespace ConfigServiceAPITypes {
+  type ServiceType = 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx'
   interface ServiceOverviewItem {
+    type: ServiceType
+    title: string
+    description: string
+    required: boolean
     status: boolean
+    errMsg?: string
   }
-  type getServiceOverview = ResponseData<{
-    qiniu: ServiceOverviewItem
-    tx: ServiceOverviewItem
-    redis: ServiceOverviewItem
-    mysql: ServiceOverviewItem
-    mongodb: ServiceOverviewItem
-  }>
+  type getServiceOverview = ResponseData<ServiceOverviewItem[]>
 
   interface ServiceConfigItem {
     key: string
-    value: string
-    type: string
+    value: string | number | boolean
+    type: ServiceType
     disabled?: boolean
     label?: string
+    isSecret?: boolean
   }
   interface ConfigData {
+    type: ServiceType
     title: string
+    description: string
+    required: boolean
     data: ServiceConfigItem[]
   }
   type getServiceConfig = ResponseData<ConfigData[]>

@@ -22,6 +22,7 @@ export const UserError = {
   },
   system: {
     ban: codeMsg(1011, 'The system prohibits new user registration'),
+    codeLoginDisabled: codeMsg(1013, 'Code login is disabled'),
   },
 }
 

@@ -8,7 +8,7 @@ function getServiceConfig(): ConfigServiceAPITypes.getServiceConfig {
   return ajax.get('/config/service/config')
 }
 
-function updateCfg(data: ConfigServiceAPITypes.ServiceConfigItem) {
+function updateCfg(data: ConfigServiceAPITypes.ServiceConfigItem | ConfigServiceAPITypes.ServiceConfigItem[]) {
   return ajax.put('/config/service/config', data)
 }
 

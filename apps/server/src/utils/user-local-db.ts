@@ -1,9 +1,9 @@
+import type { UserConfig, UserConfigType } from '@/db/model/config'
+import type { GlobalSiteConfig } from '@/types'
 import fs, { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import type { UserConfig, UserConfigType } from '@/db/model/config'
 import { LocalEnvMap } from '@/constants'
-import type { GlobalSiteConfig } from '@/types'
 
 const JSONDbFile = path.join(process.cwd(), 'user-config.json')
 
@@ -19,7 +19,7 @@ export default class LocalUserDB {
     try {
       this.data = JSON.parse(await fs.promises.readFile(JSONDbFile, 'utf-8'))
     }
-    catch (error) {
+    catch {
       this.data = []
       console.log('❌ user-config.json 配置文件解析失败, 已重置为默认配置')
       await fs.promises.writeFile(JSONDbFile, '[]', 'utf-8')
@@ -75,6 +75,22 @@ export default class LocalUserDB {
     )
     if (index > -1) {
       this.data[index] = { ...this.data[index], ...data }
+      return this.updateCfg()
+    }
+  }
+
+  static updateUserConfigs(data: Partial<UserConfig>[]) {
+    let hasChange = false
+    data.forEach((cfg) => {
+      const index = this.data.findIndex(item =>
+        item.type === cfg.type && item.key === cfg.key,
+      )
+      if (index > -1) {
+        this.data[index] = { ...this.data[index], ...cfg }
+        hasChange = true
+      }
+    })
+    if (hasChange) {
       return this.updateCfg()
     }
   }
