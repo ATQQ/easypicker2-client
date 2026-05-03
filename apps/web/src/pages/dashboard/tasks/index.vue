@@ -4,7 +4,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useStore } from 'vuex'
 import { TaskApi } from '@/apis'
-import { useIsMobile } from '@/composables'
+import FloatingContact from '@/components/FloatingContact/index.vue'
+import { useIsMobile, useSiteConfig } from '@/composables'
 import { copyRes } from '@/utils/stringUtil'
 import CategoryPanel from './components/CategoryPanel.vue'
 import CreateTask from './components/CreateTask.vue'
@@ -17,6 +18,7 @@ import TipInfoPanel from './components/infoPanel/tipInfo.vue'
 import TaskInfo from './components/TaskInfo.vue'
 
 const $store = useStore()
+const { value: siteConfig } = useSiteConfig()
 
 const isMobile = useIsMobile()
 // 分类相关
@@ -214,6 +216,11 @@ function openTaskPage() {
       title="收取链接"
       :link="shareTaskLink"
       :share-text-prefix="shareTaskName"
+    />
+    <FloatingContact
+      v-if="siteConfig.filePageFloatingContactEnabled && siteConfig.filePageContactLink"
+      :href="siteConfig.filePageContactLink"
+      :text="siteConfig.filePageContactLinkText || '联系客服'"
     />
     <!-- 附加属性编辑弹窗 -->
     <el-dialog

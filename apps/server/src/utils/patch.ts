@@ -1,17 +1,13 @@
+import type { Category } from '@/db/model/category'
+import type { UserConfigType } from '@/db/model/config'
+import type { File } from '@/db/model/file'
+import type { People } from '@/db/model/people'
+import type { Task } from '@/db/model/task'
+import type { TaskInfo } from '@/db/model/taskInfo'
+import type { User } from '@/db/model/user'
+import type { GlobalSiteConfig } from '@/types'
 import { appendFile } from 'node:fs/promises'
 import process from 'node:process'
-import { getUniqueKey } from './stringUtil'
-import { refreshQinNiuConfig } from './qiniuUtil'
-import { refreshTxConfig } from './tencent'
-import LocalUserDB from './user-local-db'
-import type { Category } from '@/db/model/category'
-import type { File } from '@/db/model/file'
-import type { TaskInfo } from '@/db/model/taskInfo'
-import type { Task } from '@/db/model/task'
-import type { People } from '@/db/model/people'
-import type { User } from '@/db/model/user'
-import { query, refreshPool } from '@/lib/dbConnect/mysql'
-import type { UserConfigType } from '@/db/model/config'
 import {
   mongodbConfig,
   mysqlConfig,
@@ -19,9 +15,13 @@ import {
   redisConfig,
   txConfig,
 } from '@/config'
-import { refreshMongoDb } from '@/lib/dbConnect/mongodb'
 import { initTypeORM } from '@/db'
-import type { GlobalSiteConfig } from '@/types'
+import { refreshMongoDb } from '@/lib/dbConnect/mongodb'
+import { query, refreshPool } from '@/lib/dbConnect/mysql'
+import { refreshQinNiuConfig } from './qiniuUtil'
+import { getUniqueKey } from './stringUtil'
+import { refreshTxConfig } from './tencent'
+import LocalUserDB from './user-local-db'
 
 type TableName = 'task_info' | 'category' | 'files' | 'task' | 'people' | 'user'
 interface DBTables {
@@ -72,8 +72,8 @@ async function addTableField<T extends TableName>(
   if (count === 0) {
     console.log(`添加字段 ${tableName}.${String(fieldName)}`)
     const sql = `ALTER TABLE ${tableName} ADD COLUMN ${String(
-          fieldName,
-        )} ${fieldType} DEFAULT ${defaultValue} ${lastUpdateTime ? 'ON UPDATE CURRENT_TIMESTAMP' : ''} COMMENT '${comment}'`
+      fieldName,
+    )} ${fieldType} DEFAULT ${defaultValue} ${lastUpdateTime ? 'ON UPDATE CURRENT_TIMESTAMP' : ''} COMMENT '${comment}'`
     console.log(sql)
     console.log(await query(sql))
   }
@@ -312,6 +312,20 @@ export async function initUserConfig() {
       qiniuCompressPrice: 0.05, // 七牛云压缩价格
       moneyStartDay: +new Date('2024-06-01'), // 开始计算日期
       appName: '轻取', // 应用名称
+      filePagePraiseText: '如果你觉得应用不错，',
+      filePagePraiseLinkText: '给他发电⚡',
+      filePagePraiseLink: 'http://docs.ep.sugarat.top/praise/index.html',
+      filePageContactText: '，其它问题',
+      filePageContactLinkText: '联系作者🔗',
+      filePageContactLink: 'https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85',
+      filePageFloatingContactEnabled: false,
+      filePageLimitText: '由于部分用户用量较大，小站无法承担这笔开销，限制每个账户为 2GB 可用空间，2￥的默认余额',
+      filePageSponsorText: '你可以通过',
+      filePageSponsorLinkText: ' 联系作者进行赞助⚡ ',
+      filePageSponsorLink: 'https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85',
+      filePageSponsorSuffix: '调整空间 和 可用余额',
+      filePageSelfHostLinkText: '也可以选择自己搭建💡',
+      filePageSelfHostLink: 'https://docs.ep.sugarat.top/',
     } as GlobalSiteConfig,
   })
   // 更新配置

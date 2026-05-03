@@ -192,7 +192,31 @@ export default class UserController {
       type: 'global',
       key,
     })
-    const filterKey: (keyof GlobalSiteConfig)[] = ['maxInputLength', 'openPraise', 'formLength', 'compressSizeLimit', 'needBindPhone', 'limitSpace', 'limitWallet', 'moneyStartDay', 'appName']
+    const filterKey: (keyof GlobalSiteConfig)[] = [
+      'maxInputLength',
+      'openPraise',
+      'formLength',
+      'compressSizeLimit',
+      'needBindPhone',
+      'limitSpace',
+      'limitWallet',
+      'moneyStartDay',
+      'appName',
+      'filePagePraiseText',
+      'filePagePraiseLinkText',
+      'filePagePraiseLink',
+      'filePageContactText',
+      'filePageContactLinkText',
+      'filePageContactLink',
+      'filePageFloatingContactEnabled',
+      'filePageLimitText',
+      'filePageSponsorText',
+      'filePageSponsorLinkText',
+      'filePageSponsorLink',
+      'filePageSponsorSuffix',
+      'filePageSelfHostLinkText',
+      'filePageSelfHostLink',
+    ]
     const result: Partial<GlobalSiteConfig> = {
       supportCodeLogin: isCodeLoginSupported(),
     }

@@ -1,36 +1,51 @@
 import type { Context } from 'flash-wolves'
-import { Inject, InjectCtx, Provide } from 'flash-wolves'
-import { ObjectID, ObjectId } from 'mongodb'
 import type { FindOptionsWhere } from 'typeorm'
-import { In } from 'typeorm'
-import dayjs from 'dayjs'
-import QiniuService from './qiniuService'
-import BehaviorService from './behaviorService'
-import TokenService from './tokenService'
-import TaskInfoService from './taskInfoService'
 import type { Files, User } from '@/db/entity'
-import { FileRepository } from '@/db/fileDb'
-import type { File } from '@/db/model/file'
-import { publicError } from '@/constants/errorMsg'
-import { batchFileStatus, createDownloadUrl, deleteObjByKey, judgeFileIsExist, makeZipWithKeys } from '@/utils/qiniuUtil'
-import { calculateSize, getQiniuFileUrlExpiredTime } from '@/utils/userUtil'
-import LocalUserDB from '@/utils/user-local-db'
-import { addDownloadAction, findAction, updateAction } from '@/db/actionDb'
 import type { DownloadActionData } from '@/db/model/action'
-import { ActionType, DownloadStatus } from '@/db/model/action'
-import { B2GB, formatPrice, formatSize, getUniqueKey, isSameInfo, normalizeFileName, percentageValue, shortLink } from '@/utils/stringUtil'
-import { TaskRepository } from '@/db/taskDb'
-import { UserRepository } from '@/db/userDb'
-import { BOOLEAN } from '@/db/model/public'
-import { findLog, timeToObjId } from '@/db/logDb'
+import type { File } from '@/db/model/file'
 import type { Log } from '@/db/model/log'
 import type { DownloadLogAnalyzeItem } from '@/types'
-import { diffMonth } from '@/utils/time-utils'
+import dayjs from 'dayjs'
+import { Inject, InjectCtx, Provide } from 'flash-wolves'
+import { ObjectID, ObjectId } from 'mongodb'
+import { In } from 'typeorm'
+import { qiniuConfig } from '@/config'
+import { publicError } from '@/constants/errorMsg'
+import { addDownloadAction, findAction, updateAction } from '@/db/actionDb'
+import { FileRepository } from '@/db/fileDb'
+import { findLog, timeToObjId } from '@/db/logDb'
+import { ActionType, DownloadStatus } from '@/db/model/action'
+import { BOOLEAN } from '@/db/model/public'
 import { USER_POWER } from '@/db/model/user'
 import { PeopleRepository } from '@/db/peopleDb'
+import { expiredRedisKey, getRedisVal, setRedisValue } from '@/db/redisDb'
+import { TaskRepository } from '@/db/taskDb'
+import { UserRepository } from '@/db/userDb'
+import { batchFileStatus, createDownloadUrl, deleteObjByKey, judgeFileIsExist, makeZipWithKeys } from '@/utils/qiniuUtil'
+import { B2GB, formatPrice, formatSize, getUniqueKey, isSameInfo, normalizeFileName, percentageValue, shortLink } from '@/utils/stringUtil'
+import { diffMonth } from '@/utils/time-utils'
+import LocalUserDB from '@/utils/user-local-db'
+import { calculateSize, getQiniuFileUrlExpiredTime } from '@/utils/userUtil'
+import BehaviorService from './behaviorService'
+import QiniuService from './qiniuService'
+import TaskInfoService from './taskInfoService'
+import TokenService from './tokenService'
+
+interface FilePageOptions {
+  pageIndex?: number
+  pageSize?: number
+  categoryKey?: string
+  taskKey?: string
+  keyword?: string
+}
+
+const DOWNLOAD_COUNT_REFRESH_INTERVAL_MS = 1000 * 60 * 10
+const DOWNLOAD_COUNT_CACHE_SECONDS = 60 * 60 * 24 * 7
 
 @Provide()
 export default class FileService {
+  private refreshingDownloadCountKeys = new Set<string>()
+
   @InjectCtx()
   private ctx: Context
 
@@ -68,6 +83,254 @@ export default class FileService {
     return `easypicker2/${file.task_key || file.taskKey}/${file.hash}/${
       file.name
     }`
+  }
+
+  private getDownloadCountCacheKey(userId: number, fileId: number) {
+    return `file:download-count:${userId}:${fileId}`
+  }
+
+  private async setDownloadCountCache(userId: number, fileId: number, count: number) {
+    await setRedisValue(
+      this.getDownloadCountCacheKey(userId, fileId),
+      JSON.stringify({
+        count,
+        updatedAt: Date.now(),
+      }),
+      DOWNLOAD_COUNT_CACHE_SECONDS,
+    )
+  }
+
+  private parseDownloadCountCache(value: string | null) {
+    if (!value) {
+      return {
+        count: 0,
+        needRefresh: true,
+      }
+    }
+
+    try {
+      const data = JSON.parse(value)
+      const updatedAt = Number(data.updatedAt || 0)
+      return {
+        count: Number(data.count || 0),
+        needRefresh: Date.now() - updatedAt > DOWNLOAD_COUNT_REFRESH_INTERVAL_MS,
+      }
+    }
+    catch {
+      const count = Number(value)
+      return {
+        count: Number.isFinite(count) ? count : 0,
+        needRefresh: true,
+      }
+    }
+  }
+
+  async expireDownloadCountCache(userId: number | string, idList: number[] = []) {
+    if (!userId || idList.length === 0) {
+      return
+    }
+    await Promise.all(
+      idList.map(id => expiredRedisKey(this.getDownloadCountCacheKey(Number(userId), id))),
+    )
+  }
+
+  private async refreshDownloadCountCache(userId: number, idList: number[]) {
+    const ids = [...new Set(idList)].filter(id => Number.isFinite(id))
+    const refreshKeys = ids.map(id => this.getDownloadCountCacheKey(userId, id))
+    const needRefreshIds = ids.filter((_, idx) => {
+      const key = refreshKeys[idx]
+      if (this.refreshingDownloadCountKeys.has(key)) {
+        return false
+      }
+      this.refreshingDownloadCountKeys.add(key)
+      return true
+    })
+
+    if (needRefreshIds.length === 0) {
+      return
+    }
+
+    try {
+      const counts = await this.downloadCountByUser(userId, needRefreshIds)
+      await Promise.all(
+        needRefreshIds.map((id, idx) => this.setDownloadCountCache(userId, id, counts[idx] || 0)),
+      )
+    }
+    catch (error) {
+      console.warn('刷新文件下载次数缓存失败', error)
+    }
+    finally {
+      needRefreshIds.forEach((id) => {
+        this.refreshingDownloadCountKeys.delete(this.getDownloadCountCacheKey(userId, id))
+      })
+    }
+  }
+
+  private async getCachedDownloadCount(userId: number, idList: number[]) {
+    if (idList.length === 0) {
+      return []
+    }
+
+    const cachedValues = await Promise.all(
+      idList.map(id => getRedisVal(this.getDownloadCountCacheKey(userId, id))),
+    )
+    const refreshIds: number[] = []
+    const counts = cachedValues.map((value, idx) => {
+      const cache = this.parseDownloadCountCache(value)
+      if (cache.needRefresh) {
+        refreshIds.push(idList[idx])
+      }
+      return cache.count
+    })
+
+    // 下载次数允许短暂不实时，分页接口不等待 Mongo 日志统计。
+    void this.refreshDownloadCountCache(userId, refreshIds)
+    return counts
+  }
+
+  private normalizeFileForClient(file: Files) {
+    return {
+      ...file,
+      category_key: file.categoryKey,
+      origin_name: file.originName,
+      task_name: file.taskName,
+      task_key: file.taskKey,
+      size: +file.size,
+    }
+  }
+
+  private async getTaskKeysByCategory(userId: number, categoryKey: string) {
+    const tasks = await this.taskRepository.findMany({
+      userId,
+      del: BOOLEAN.FALSE,
+      categoryKey,
+    })
+    return tasks.map(task => task.k)
+  }
+
+  private async getAllTaskKeys(userId: number) {
+    const tasks = await this.taskRepository.findMany({
+      userId,
+      del: BOOLEAN.FALSE,
+    })
+    return tasks.map(task => task.k)
+  }
+
+  private async resolveFileQueryOptions(options: FilePageOptions) {
+    const { id: userId } = this.ctx.req.userInfo
+    const taskKey = options.taskKey && options.taskKey !== 'all'
+      ? options.taskKey
+      : undefined
+
+    if (taskKey) {
+      return {
+        userId,
+        taskKey,
+        keyword: options.keyword?.trim(),
+      }
+    }
+
+    if (options.categoryKey === 'no-task') {
+      return {
+        userId,
+        excludeTaskKeys: await this.getAllTaskKeys(userId),
+        keyword: options.keyword?.trim(),
+      }
+    }
+
+    if (
+      options.categoryKey
+      && options.categoryKey !== 'all'
+      && options.categoryKey !== 'trash'
+    ) {
+      return {
+        userId,
+        taskKeys: await this.getTaskKeysByCategory(userId, options.categoryKey),
+        keyword: options.keyword?.trim(),
+      }
+    }
+
+    if (options.categoryKey === 'trash') {
+      return {
+        userId,
+        taskKeys: [],
+        keyword: options.keyword?.trim(),
+      }
+    }
+
+    return {
+      userId,
+      keyword: options.keyword?.trim(),
+    }
+  }
+
+  private async getFilePreviewMap(files: Files[]) {
+    if (files.length === 0) {
+      return new Map<number, { cover: string, preview: string }>()
+    }
+
+    const keys = files.map(file => this.getOssKey(file))
+    const expiredTime = getQiniuFileUrlExpiredTime(LocalUserDB.getSiteConfig()?.downloadOneExpired || 1)
+    const filesStatus = await batchFileStatus(keys)
+    const previewMap = new Map<number, { cover: string, preview: string }>()
+
+    filesStatus.forEach((status, idx) => {
+      const file = files[idx]
+      if (status.code === 200 && status.data?.mimeType?.includes('image')) {
+        previewMap.set(file.id, {
+          cover: createDownloadUrl(
+            `${keys[idx]}${qiniuConfig.imageCoverStyle}`,
+            expiredTime,
+          ),
+          preview: createDownloadUrl(
+            `${keys[idx]}${qiniuConfig.imagePreviewStyle}`,
+            expiredTime,
+          ),
+        })
+        return
+      }
+      previewMap.set(file.id, {
+        cover: '',
+        preview: 'https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDMxNTY4NA==649900315684',
+      })
+    })
+
+    return previewMap
+  }
+
+  async getUserFilesPage(options: FilePageOptions) {
+    const pageIndex = Math.max(1, Number(options.pageIndex || 1))
+    const pageSize = Math.min(100, Math.max(1, Number(options.pageSize || 6)))
+    const queryOptions = await this.resolveFileQueryOptions(options)
+    const { files, total, totalSize, filterSize } = await this.fileRepository.findPage({
+      ...queryOptions,
+      pageIndex,
+      pageSize,
+    })
+    const ids = files.map(file => file.id)
+    const [downloadCounts, previewMap] = await Promise.all([
+      this.getCachedDownloadCount(queryOptions.userId, ids),
+      this.getFilePreviewMap(files),
+    ])
+
+    return {
+      files: files.map((file, idx) => ({
+        ...this.normalizeFileForClient(file),
+        downloadCount: downloadCounts[idx] || 0,
+        ...(previewMap.get(file.id) || {}),
+      })),
+      pageIndex,
+      pageSize,
+      total,
+      pageCount: Math.ceil(total / pageSize),
+      totalSize,
+      filterSize,
+    }
+  }
+
+  async getUserFileIdsByQuery(options: FilePageOptions) {
+    const queryOptions = await this.resolveFileQueryOptions(options)
+    return this.fileRepository.findIds(queryOptions)
   }
 
   /**
@@ -311,10 +574,19 @@ export default class FileService {
   }
 
   async downloadCount(idList: number[]) {
+    const userId = this.ctx.req.userInfo.id
+    const counts = await this.downloadCountByUser(userId, idList)
+    await Promise.all(
+      idList.map((id, idx) => this.setDownloadCountCache(userId, id, counts[idx] || 0)),
+    )
+    return counts
+  }
+
+  async downloadCountByUser(userId: number, idList: number[]) {
     // 先获取 downloadAction
     // 筛选状态，不包含失败的
     const actions = await findAction({
-      'userId': this.ctx.req.userInfo.id,
+      'userId': userId,
       'data.status': {
         $in: [DownloadStatus.ARCHIVE, DownloadStatus.SUCCESS, DownloadStatus.EXPIRED],
       },
@@ -325,7 +597,7 @@ export default class FileService {
 
     // 再获取 action 对应的日志条数
     // 有日志就按照日志计算
-    // @ts-expect-error
+    // @ts-expect-error mongodb action id is available at runtime
     const actionsIds = actions.map(v => v._id.toHexString())
     const logs = await findLog({
       'type': 'behavior',
@@ -336,7 +608,7 @@ export default class FileService {
       const baseCount = actions
         .filter(v => v.data.ids?.includes(fileId))
         .reduce((pre, action) => {
-          // @ts-expect-error
+          // @ts-expect-error mongodb action id is available at runtime
           const logCount = logs.filter(v => v.data?.info?.data?.downloadActionId === action._id.toHexString()).length
           return pre + (logCount || 1)
         }, 0)
@@ -540,8 +812,8 @@ export default class FileService {
     file.delTime = new Date()
     await this.fileRepository.update(file)
     this.behaviorService.add('file', `删除文件提交记录成功 用户:${logAccount} 文件:${file.name} ${
-        isRepeat ? `还存在${sameRecord.length - 1}个重复文件` : '删除OSS资源'
-      }`, {
+      isRepeat ? `还存在${sameRecord.length - 1}个重复文件` : '删除OSS资源'
+    }`, {
       account: logAccount,
       name: file.name,
       taskKey: file.taskKey,
@@ -580,7 +852,7 @@ export default class FileService {
       originFileSize += (+v.size || 0)
       const ossKey = this.getOssKey(v)
       const { fsize = 0 }
-          = filesMap.get(ossKey) || filesMap.get(v.categoryKey) || {}
+        = filesMap.get(ossKey) || filesMap.get(v.categoryKey) || {}
 
       if (fsize) {
         ossCount += 1
@@ -610,7 +882,7 @@ export default class FileService {
     // 空间为 0 也不允许上传
     const limitUpload = this.limitUploadBySpace(limitSize, fileSize)
     const percentage
-        = percentageValue(fileSize, limitSize)
+      = percentageValue(fileSize, limitSize)
 
     const { oneFile, compressFile, templateFile } = this.analyzeDownloadLog(
       downloadLog,

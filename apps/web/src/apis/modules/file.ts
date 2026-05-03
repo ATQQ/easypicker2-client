@@ -12,6 +12,10 @@ function getFileList(): FileApiTypes.getFileList {
   return ajax.get('file/list')
 }
 
+function getFilePage(options: FileApiTypes.FilePageOptions): FileApiTypes.getFilePage {
+  return ajax.post('file/page', options)
+}
+
 function getTemplateUrl(
   template: string,
   key: string,
@@ -48,6 +52,12 @@ function batchDownload(
     ids,
     zipName,
   })
+}
+
+function batchDownloadByQuery(
+  options: FileApiTypes.BatchDownloadByQueryOptions,
+): FileApiTypes.batchDownload {
+  return ajax.post('file/batch/down/query', options)
 }
 
 function batchDel(ids: number[]): FileApiTypes.batchDel {
@@ -142,11 +152,13 @@ export default {
   getUploadToken,
   addFile,
   getFileList,
+  getFilePage,
   getTemplateUrl,
   withdrawFile,
   getOneFileUrl,
   deleteOneFile,
   batchDownload,
+  batchDownloadByQuery,
   batchDel,
   checkCompressStatus,
   getCompressFileUrl,

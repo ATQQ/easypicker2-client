@@ -17,6 +17,20 @@ export interface GlobalSiteConfig {
   qiniuCompressPrice: number
   moneyStartDay: number
   appName: string
+  filePagePraiseText: string
+  filePagePraiseLinkText: string
+  filePagePraiseLink: string
+  filePageContactText: string
+  filePageContactLinkText: string
+  filePageContactLink: string
+  filePageFloatingContactEnabled: boolean
+  filePageLimitText: string
+  filePageSponsorText: string
+  filePageSponsorLinkText: string
+  filePageSponsorLink: string
+  filePageSponsorSuffix: string
+  filePageSelfHostLinkText: string
+  filePageSelfHostLink: string
 }
 
 export interface DownloadLogAnalyzeItem {

@@ -10,10 +10,11 @@ import {
   Search,
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, onMounted, reactive, ref, watchEffect } from 'vue'
+import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { ActionServiceAPI, FileApi } from '@/apis'
+import FloatingContact from '@/components/FloatingContact/index.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
 import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
 import { ActionType, DownloadStatus, filenamePattern } from '@/constants'
@@ -31,13 +32,24 @@ import Tip from '../tasks/components/infoPanel/tip.vue'
 const { value: siteConfig } = useSiteConfig()
 const isOpenPraise = computed(() => siteConfig.value.openPraise)
 
-const { limitDownload, spaceUsageText, moneyUsageText, limitSpace, limitWallet, priceText } = useSpaceUsage()
+const {
+  usage,
+  size,
+  wallet,
+  cost,
+  percentageValue,
+  walletPercentageValue,
+  limitDownload,
+  limitSpace,
+  limitWallet,
+  priceText,
+} = useSpaceUsage()
 
 const $store = useStore()
 const $route = useRoute()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
-const showImg = ref(localStorage.getItem('ep-show-images') === 'true')
+const showImg = ref(localStorage.getItem('ep-show-images') !== 'false')
 const showPeople = ref(true)
 const showOriginName = ref(false)
 const showHistoryPanel = ref(false)
@@ -226,52 +238,75 @@ function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
 const isLoadingData = ref(false)
 // 提交的所有文件
 const files: FileApiTypes.File[] = reactive([])
+const searchWord = ref('')
+// 分页
+const pageSize = ref(6)
+// 当前页
+const pageCurrent = ref(1)
+const fileTotal = ref(0)
+const filePageCount = ref(0)
+const fileListTotalSize = ref(0)
+const filterFileTotalSize = ref(0)
+let loadFilesId = 0
 function loadFiles() {
+  const currentLoadId = ++loadFilesId
   isLoadingData.value = true
   files.splice(0, files.length)
-  FileApi.getFileList().then((res) => {
-    files.push(...res.data.files)
-    isLoadingData.value = false
+  FileApi.getFilePage({
+    pageIndex: pageCurrent.value,
+    pageSize: pageSize.value,
+    categoryKey: selectCategory.value,
+    taskKey: selectTask.value,
+    keyword: searchWord.value,
   })
+    .then((res) => {
+      if (currentLoadId !== loadFilesId) {
+        return
+      }
+      const { data } = res
+      files.push(...data.files)
+      fileTotal.value = data.total
+      filePageCount.value = data.pageCount
+      fileListTotalSize.value = data.totalSize
+      filterFileTotalSize.value = data.filterSize
+    })
+    .finally(() => {
+      if (currentLoadId === loadFilesId) {
+        isLoadingData.value = false
+      }
+    })
+}
+async function loadFilesForExport() {
+  const exportFiles: FileApiTypes.File[] = []
+  let pageIndex = 1
+  let pageCount = 1
+  do {
+    const { data } = await FileApi.getFilePage({
+      pageIndex,
+      pageSize: 100,
+      categoryKey: selectCategory.value,
+      taskKey: selectTask.value,
+      keyword: searchWord.value,
+    })
+    exportFiles.push(...data.files)
+    pageCount = data.pageCount
+    pageIndex += 1
+  } while (pageIndex <= pageCount)
+  return exportFiles
+}
+async function handleExportFilterFiles() {
+  const exportFiles = await loadFilesForExport()
+  handleExportExcel(
+    exportFiles,
+    `筛选数据导出_${formatDate(
+      new Date(),
+      'yyyy年MM月dd日hh时mm分ss秒',
+    )}.xlsx`,
+  )
 }
 const multipleTable: any = ref()
-const searchWord = ref('')
 
-// 用于展示的文件
-// 1. 过滤指定任务
-const filterFiles = computed(() =>
-  files
-    .filter((f) => {
-      if (selectCategory.value === 'no-task') {
-        return tasks.value.every(t => t.key !== f.task_key)
-      }
-      if (filterTasks.value.length === 0) {
-        return false
-      }
-
-      if (selectTask.value === 'all') {
-        return filterTasks.value.find(t => t.key === f.task_key)
-      }
-
-      return selectTask.value === f.task_key
-      // 2. 过滤关键词(精细优化)
-    })
-    .filter(t =>
-      searchWord.value
-        ? JSON.stringify([
-            formatDate(new Date(t.date)),
-            formatSize(t.size),
-            t.people,
-            t.name,
-            t.task_name,
-
-            t.info,
-          ])
-            .replace(/[:'"{},[\]]/g, '')
-            .includes(searchWord.value)
-        : true,
-    ),
-)
+const showFilterFiles = computed(() => files)
 
 /**
  * 清空所有选项
@@ -323,12 +358,12 @@ function handleDropdownClick(e: string) {
       ElMessageBox.confirm('删除后无法恢复，是否删除', '数据无价，请谨慎操作')
         .then(() => {
           FileApi.batchDel(ids).then(() => {
-            files.splice(
-              0,
-              files.length,
-              ...files.filter(v => !ids.includes(v.id)),
-            )
             ElMessage.success('删除成功')
+            if (files.length === ids.length && pageCurrent.value > 1) {
+              pageCurrent.value -= 1
+              return
+            }
+            loadFiles()
           })
         })
         .catch(() => {
@@ -389,7 +424,9 @@ function handleSaveNewName() {
     .then(() => {
       ElMessage.success('修改成功')
       const file = files.find(v => v.id === renameForm.id)
-      file.name = `${renameForm.newName}${renameForm.suffix}`
+      if (file) {
+        file.name = `${renameForm.newName}${renameForm.suffix}`
+      }
     })
     .catch(() => {
       ElMessage.error('修改失败')
@@ -415,7 +452,7 @@ function downloadOne(e: any) {
       loadActions()
       // 刷新次数
       setTimeout(() => {
-        refreshFilesDownloadCount()
+        loadFiles()
       }, 1000)
     })
     .catch(() => {
@@ -429,6 +466,12 @@ function handleDelete(e: any) {
       FileApi.deleteOneFile(e.id).then(() => {
         ElMessage.success('删除成功')
         files.splice(idx, 1)
+        fileTotal.value -= 1
+        if (files.length === 0 && pageCurrent.value > 1) {
+          pageCurrent.value -= 1
+          return
+        }
+        loadFiles()
       })
     })
     .catch(() => {
@@ -436,29 +479,19 @@ function handleDelete(e: any) {
     })
 }
 
-// 分页
-const pageSize = ref(6)
 function handleSizeChange(v: number) {
   pageSize.value = v
+  pageCurrent.value = 1
 }
-const pageCount = computed(() => {
-  const t = Math.ceil(filterFiles.value.length / pageSize.value)
-  return t
-})
-// 当前页
-const pageCurrent = ref(1)
-const showFilterFiles = computed(() => {
-  const start = (pageCurrent.value - 1) * pageSize.value
-  const end = pageCurrent.value * pageSize.value
-  return filterFiles.value.slice(start, end)
-})
 
 const filterFileSize = computed(() =>
-  formatSize(filterFiles.value.reduce((acc, cur) => acc + cur.size, 0)),
+  formatSize(filterFileTotalSize.value),
 )
 const fileListSize = computed(() =>
-  formatSize(files.reduce((acc, cur) => acc + cur.size, 0)),
+  formatSize(fileListTotalSize.value),
 )
+const storageProgressPercentage = computed(() => Math.min(100, percentageValue.value))
+const walletProgressPercentage = computed(() => Math.min(100, walletPercentageValue.value))
 function handlePageChange(idx: number) {
   pageCurrent.value = idx
 }
@@ -472,10 +505,7 @@ function handleRefresh() {
   loadFiles()
 }
 function handleDownloadTask() {
-  const ids: number[] = files
-    .filter(f => f.task_key === selectTask.value)
-    .map(v => v.id)
-  if (ids.length === 0) {
+  if (fileTotal.value === 0) {
     ElMessage.warning('该任务中没有数据')
     return
   }
@@ -484,7 +514,10 @@ function handleDownloadTask() {
     return
   }
   batchDownStart.value = true
-  FileApi.batchDownload(ids, selectTaskName.value)
+  FileApi.batchDownloadByQuery({
+    taskKey: selectTask.value,
+    zipName: selectTaskName.value,
+  })
     .then(() => {
       loadActions()
     })
@@ -499,88 +532,28 @@ function handleDownloadTask() {
   ElMessage.info('开始归档选中的文件,请赖心等待')
 }
 
-const previewData = reactive<
-  { cover: string, preview: string, name: string, date: string, id: number }[]
->([])
-
 const viewImageFilename = ref('')
 
 const previewImages = computed(() => {
-  // if (!sortProps.prop) {
-  return previewData.map(v => v.preview)
-  // }
-  // TODO：下面代码暂不生效，后续再支持表格排序场景
-  // const temp = [...previewData]
-  // temp.sort((a, b) => {
-  //   if (sortProps.order === 'descending') {
-  //     return a[sortProps.prop] - b[sortProps.prop]
-  //   }
-  //   return b[sortProps.prop] - a[sortProps.prop]
-  // })
-  // return temp.map((v) => v.preview)
+  return showFilterFiles.value.map(v => v.preview || '')
 })
 
 function handleSwitchImage(idx: number) {
   viewImageFilename.value = showFilterFiles.value[idx].name
 }
 
-let fetching = false
-function refreshFilesCover() {
-  const ids = showFilterFiles.value.map(v => v.id)
-  if (ids.length === 0 || fetching) {
+function reloadFirstPage() {
+  if (pageCurrent.value === 1) {
+    loadFiles()
     return
   }
-  fetching = true
-  FileApi.checkImageFilePreviewUrl(ids).then((r) => {
-    fetching = false
-    const { data } = r
-    if (data.length === 0 || data.length !== showFilterFiles.value.length) {
-      return
-    }
-    previewData.splice(0, previewData.length)
-    showFilterFiles.value.forEach((v, idx) => {
-      const { cover, preview } = data[idx]
-      v.cover = cover
-      previewData.push({ cover, preview, name: v.name, date: v.date, id: v.id })
-    })
-  })
+  pageCurrent.value = 1
 }
 
-function refreshFilesDownloadCount() {
-  const ids = showFilterFiles.value.map(v => v.id)
-  if (ids.length === 0 || fetching) {
-    return
-  }
-
-  FileApi.fileDownloadCount(ids).then((r) => {
-    const { data } = r
-    if (data.length === 0 || data.length !== showFilterFiles.value.length) {
-      return
-    }
-
-    showFilterFiles.value.forEach((v, idx) => {
-      v.downloadCount = data[idx]
-    })
-  })
-}
-watchEffect(() => {
-  if (searchWord.value || pageCurrent.value || pageSize.value) {
-    refreshFilesDownloadCount()
-    return
-  }
-  refreshFilesDownloadCount()
-})
-
-watchEffect(() => {
+watch([selectCategory, selectTask, searchWord], reloadFirstPage)
+watch([pageCurrent, pageSize], loadFiles)
+watch(showImg, () => {
   window.localStorage.setItem('ep-show-images', `${showImg.value}`)
-  if (!showImg.value) {
-    return
-  }
-  if (searchWord.value || pageCurrent.value || pageSize.value) {
-    refreshFilesCover()
-    return
-  }
-  refreshFilesCover()
 })
 
 onMounted(() => {
@@ -598,6 +571,31 @@ function handleShowDetail() {
 
 <template>
   <div class="files">
+    <div class="top-notice">
+      <div>
+        <strong>{{ siteConfig.filePagePraiseText }}<a
+          :href="siteConfig.filePagePraiseLink" target="_blank"
+          rel="noopener noreferrer"
+        >{{ siteConfig.filePagePraiseLinkText }}</a></strong>
+        <strong v-if="isOpenPraise">{{ siteConfig.filePageContactText }}<a
+          :href="siteConfig.filePageContactLink" target="_blank"
+          rel="noopener noreferrer"
+        >{{ siteConfig.filePageContactLinkText }}</a></strong>
+      </div>
+      <div v-if="isOpenPraise" class="top-notice-detail">
+        <span>{{ siteConfig.filePageLimitText }}</span>
+        <span>{{ siteConfig.filePageSponsorText }}<a
+          :href="siteConfig.filePageSponsorLink" target="_blank"
+          rel="noopener noreferrer"
+        >{{ siteConfig.filePageSponsorLinkText }}</a>{{ siteConfig.filePageSponsorSuffix }}</span>
+        <span>
+          <a
+            :href="siteConfig.filePageSelfHostLink" target="_blank"
+            rel="noopener noreferrer"
+          >{{ siteConfig.filePageSelfHostLinkText }}</a>
+        </span>
+      </div>
+    </div>
     <!-- 筛选框 -->
     <div class="panel header">
       <div class="item">
@@ -626,8 +624,11 @@ function handleShowDetail() {
           下载任务中的文件
         </el-button>
       </div>
-      <div class="item">
+      <div class="item search-item">
         <el-input v-model="searchWord" size="default" clearable placeholder="请输入要检索的内容" :prefix-icon="Search" />
+        <div class="search-tip">
+          可搜索：文件名、任务名、提交人姓名、原文件名、提交信息
+        </div>
       </div>
     </div>
     <div class="panel">
@@ -680,16 +681,8 @@ function handleShowDetail() {
           刷新
         </el-button>
         <el-button
-          title="导出表格中所有的数据" type="success" size="default" :icon="DataAnalysis" :disabled="showFilterFiles.length === 0" @click="() => {
-            handleExportExcel(
-              filterFiles,
-              `筛选数据导出_${formatDate(
-                new Date(),
-                'yyyy年MM月dd日hh时mm分ss秒',
-              )}.xlsx`,
-            )
-          }
-          "
+          title="导出当前筛选条件下的所有数据" type="success" size="default" :icon="DataAnalysis"
+          :disabled="fileTotal === 0" @click="handleExportFilterFiles"
         >
           导出记录
         </el-button>
@@ -820,56 +813,37 @@ function handleShowDetail() {
     </div>
     <!-- 主体内容 -->
     <div class="panel">
-      <Tip>全部文件大小：{{ fileListSize }}，当前任务大小：{{ filterFileSize }}</Tip>
-      <Tip v-if="siteConfig.limitSpace">
-        <span :class="{ warnColor: limitSpace }">{{ spaceUsageText }}</span>
-      </Tip>
-      <Tip v-if="siteConfig.limitWallet">
-        统计时间：{{ formatDate(siteConfig.moneyStartDay, 'yyyy-MM-dd') }} - 至今
-      </Tip>
-      <Tip v-if="siteConfig.limitWallet">
-        <span :class="{ warnColor: limitWallet }">{{ moneyUsageText }}</span>
-        <strong class="money-detail" @click="handleShowDetail">
-          <span>查看详细</span>
-        </strong>
-      </Tip>
+      <div class="stats-dashboard">
+        <div class="stat-card">
+          <span class="stat-label">全部文件</span>
+          <strong>{{ fileListSize }}</strong>
+          <small>当前账号提交文件总大小</small>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">当前筛选</span>
+          <strong>{{ filterFileSize }}</strong>
+          <small>当前筛选条件下文件大小</small>
+        </div>
+        <div class="stat-card" :class="{ warning: limitSpace }">
+          <span class="stat-label">存储空间</span>
+          <strong>{{ formatSize(usage) }} / {{ formatSize(size) }}</strong>
+          <el-progress :percentage="storageProgressPercentage" :status="limitSpace ? 'exception' : undefined" />
+          <small>{{ percentageValue.toFixed(2) }}% 已使用</small>
+        </div>
+        <div v-if="siteConfig.limitWallet" class="stat-card" :class="{ warning: limitWallet }">
+          <span class="stat-label">钱包消耗</span>
+          <strong>{{ cost }} / {{ wallet }}￥</strong>
+          <el-progress :percentage="walletProgressPercentage" :status="limitWallet ? 'exception' : undefined" />
+          <small>统计时间：{{ formatDate(siteConfig.moneyStartDay, 'yyyy-MM-dd') }} - 至今</small>
+          <button class="stat-link" type="button" @click="handleShowDetail">
+            查看费用明细
+          </button>
+        </div>
+      </div>
       <Tip v-if="limitDownload">
         <h2 style="color:#f56c6c">
           空间超限将无法上传/下载文件，如需要使用，请联系管理员扩容，或自行删除无关文件
         </h2>
-      </Tip>
-      <Tip>
-        <strong>如果你觉得应用不错，<a
-          style="color: #409eff" href="http://docs.ep.sugarat.top/praise/index.html" target="_blank"
-          rel="noopener noreferrer"
-        >给他发电⚡</a></strong>
-        <strong v-if="isOpenPraise">，其它问题<a
-          style="color: #409eff"
-          href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
-          rel="noopener noreferrer"
-        >联系作者🔗</a></strong>
-        <!-- <Praise>
-          <el-button style="margin:0 0 2px;" size="small" type="primary" text>Go！Go！❓</el-button>
-        </Praise> -->
-      </Tip>
-      <Tip v-if="isOpenPraise">
-        <h3 style="color: #f56c6c">
-          由于部分用户用量较大，小站无法承担这笔开销，限制每个账户为 2GB 可用空间，2￥的默认余额
-        </h3>
-        <h3>
-          <span style="color: #f56c6c">你可以通过<a
-            style="color: #409eff"
-            href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank"
-            rel="noopener noreferrer"
-          > 联系作者进行赞助⚡ </a>调整空间 和 可用余额</span>，
-          <strong>
-            <a
-              style="color: #409eff" href="https://docs.ep.sugarat.top/" target="_blank"
-              rel="noopener noreferrer"
-            >也可以选择自己搭建💡
-            </a>
-          </strong>
-        </h3>
       </Tip>
       <el-table
         ref="multipleTable" v-loading="isLoadingData" element-loading-text="Loading..." tooltip-effect="dark"
@@ -961,8 +935,8 @@ function handleShowDetail() {
     <!-- 分页 -->
     <div class="panel flex fc">
       <el-pagination
-        :current-page="pageCurrent" background :page-count="pageCount" :page-sizes="[6, 10, 50, 100]"
-        :page-size="pageSize" :total="filterFiles.length" layout="total, sizes, prev, pager, next, jumper" @current-change="handlePageChange"
+        :current-page="pageCurrent" background :page-count="filePageCount" :page-sizes="[6, 10, 50, 100]"
+        :page-size="pageSize" :total="fileTotal" layout="total, sizes, prev, pager, next, jumper" @current-change="handlePageChange"
         @size-change="handleSizeChange"
       />
     </div>
@@ -971,6 +945,11 @@ function handleShowDetail() {
       <InfosForm :infos="infos" :disabled="true" />
     </el-dialog>
     <LinkDialog v-model:value="showLinkModel" title="下载链接" :link="downloadUrl" />
+    <FloatingContact
+      v-if="siteConfig.filePageFloatingContactEnabled && siteConfig.filePageContactLink"
+      :href="siteConfig.filePageContactLink"
+      :text="siteConfig.filePageContactLinkText || '联系客服'"
+    />
     <el-dialog v-model="showRenameDialog" :fullscreen="isMobile" title="修改文件名">
       <div>
         <el-form label-width="100px" :model="renameForm">
@@ -999,13 +978,38 @@ function handleShowDetail() {
 </template>
 
 <style scoped lang="scss">
-.warnColor {
-  color: #f56c6c;
-}
 .files {
-  max-width: 1024px;
+  width: min(1440px, calc(100vw - 48px));
+  max-width: 1440px;
   margin: 0 auto;
   padding-bottom: 2em;
+}
+
+.top-notice {
+  padding: 14px 18px;
+  border: 1px solid rgb(64 158 255 / 18%);
+  border-radius: 14px;
+  margin: 10px auto;
+  background:
+    radial-gradient(circle at 96% 12%, rgb(64 158 255 / 16%), transparent 24%),
+    linear-gradient(135deg, #fff 0%, #f7faff 100%);
+  box-shadow: 0 8px 22px rgb(31 41 55 / 6%);
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.7;
+
+  a {
+    color: #409eff;
+  }
+}
+
+.top-notice-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 4px;
+  color: #f56c6c;
+  font-weight: 700;
 }
 
 @media screen and (max-width: 700px) {
@@ -1070,6 +1074,78 @@ function handleShowDetail() {
   font-size: 14px;
 }
 
+.search-item {
+  min-width: 260px;
+}
+
+.search-tip {
+  margin-top: 4px;
+  color: #909399;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.stats-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  padding: 16px;
+  border: 1px solid #edf0f5;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 90% 16%, rgb(64 158 255 / 14%), transparent 28%),
+    linear-gradient(135deg, #fff 0%, #f7faff 100%);
+  box-shadow: 0 8px 22px rgb(31 41 55 / 6%);
+  box-sizing: border-box;
+
+  &.warning {
+    border-color: rgb(245 108 108 / 38%);
+    background:
+      radial-gradient(circle at 90% 16%, rgb(245 108 108 / 14%), transparent 28%),
+      linear-gradient(135deg, #fff 0%, #fff8f8 100%);
+  }
+
+  strong {
+    margin: 8px 0 6px;
+    color: #1f2937;
+    font-size: 22px;
+    line-height: 1.25;
+  }
+
+  small {
+    color: #8a94a6;
+    line-height: 1.5;
+  }
+
+  :deep(.el-progress) {
+    margin: 4px 0 2px;
+  }
+}
+
+.stat-label {
+  color: #409eff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stat-link {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  margin-top: 8px;
+  background: transparent;
+  color: #409eff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
 .imageLoading {
   display: flex;
   align-items: center;
@@ -1127,9 +1203,5 @@ function handleShowDetail() {
 
     text-align: center;
   }
-}
-.money-detail {
-  color: #409eff;
-  cursor: pointer;
 }
 </style>

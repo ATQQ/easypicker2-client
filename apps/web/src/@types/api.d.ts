@@ -32,6 +32,19 @@ declare namespace FileApiTypes {
     preview?: string
     downloadCount?: number
   }
+  interface FilePageOptions {
+    pageIndex: number
+    pageSize: number
+    categoryKey?: string
+    taskKey?: string
+    keyword?: string
+  }
+  interface BatchDownloadByQueryOptions {
+    taskKey?: string
+    categoryKey?: string
+    keyword?: string
+    zipName?: string
+  }
   interface WithdrawFileOptions {
     taskKey: string
     taskName: string
@@ -43,6 +56,15 @@ declare namespace FileApiTypes {
   type getUploadToken = ResponseData<UploadToken>
   type addFile = ResponseData<any>
   type getFileList = ResponseData<{ files: File[] }>
+  type getFilePage = ResponseData<{
+    files: File[]
+    pageIndex: number
+    pageSize: number
+    total: number
+    pageCount: number
+    totalSize: number
+    filterSize: number
+  }>
   type getTemplateUrl = ResponseData<{ link: string }>
   type getOneFileUrl = ResponseData<{ link: string, mimeType: string }>
   type deleteOneFile = ResponseData
@@ -285,6 +307,20 @@ declare namespace OverviewApiTypes {
     qiniuCompressPrice: number
     moneyStartDay: number
     appName: string
+    filePagePraiseText: string
+    filePagePraiseLinkText: string
+    filePagePraiseLink: string
+    filePageContactText: string
+    filePageContactLinkText: string
+    filePageContactLink: string
+    filePageFloatingContactEnabled: boolean
+    filePageLimitText: string
+    filePageSponsorText: string
+    filePageSponsorLinkText: string
+    filePageSponsorLink: string
+    filePageSponsorSuffix: string
+    filePageSelfHostLinkText: string
+    filePageSelfHostLink: string
   }
   type getGlobalConfig = ResponseData<GlobalSiteConfig>
 }

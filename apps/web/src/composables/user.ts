@@ -18,8 +18,12 @@ export function useSpaceUsage() {
   })
   const usage = computed(() => usageData.usage)
   const size = computed(() => usageData.size)
-  const percentage = computed(() => `${(usageData.usage / usageData.size * 100).toFixed(2)}%`)
-  const walletPercentage = computed(() => `${(+usageData.cost / +usageData.wallet * 100).toFixed(2)}%`)
+  const wallet = computed(() => usageData.wallet)
+  const cost = computed(() => usageData.cost)
+  const percentageValue = computed(() => usageData.size ? +(usageData.usage / usageData.size * 100).toFixed(2) : 0)
+  const walletPercentageValue = computed(() => +usageData.wallet ? +(+usageData.cost / +usageData.wallet * 100).toFixed(2) : 0)
+  const percentage = computed(() => `${percentageValue.value.toFixed(2)}%`)
+  const walletPercentage = computed(() => `${walletPercentageValue.value.toFixed(2)}%`)
   const limitDownload = computed(() => usageData.limitUpload)
   const limitSpace = computed(() => usageData.limitSpace)
   const limitWallet = computed(() => usageData.limitWallet)
@@ -41,7 +45,12 @@ export function useSpaceUsage() {
   return {
     usage,
     size,
+    wallet,
+    cost,
+    percentageValue,
+    walletPercentageValue,
     percentage,
+    walletPercentage,
     limitDownload,
     limitSpace,
     limitWallet,

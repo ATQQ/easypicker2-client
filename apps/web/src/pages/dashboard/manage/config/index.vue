@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { SuperOverviewApi } from '@/apis'
-import { useSiteAllConfig } from '@/composables'
+import { defaultSiteConfig as baseDefaultSiteConfig, useSiteAllConfig } from '@/composables'
 
 interface SiteConfig extends OverviewApiTypes.GlobalSiteConfig {}
 interface RouteItem {
@@ -17,8 +17,9 @@ interface ConfigField {
   key: keyof SiteConfig
   label: string
   description: string
-  type: 'text' | 'number' | 'switch' | 'date'
+  type: 'text' | 'textarea' | 'url' | 'number' | 'switch' | 'date'
   suffix?: string
+  maxlength?: number
   min?: number
   max?: number
   step?: number
@@ -30,25 +31,7 @@ interface ConfigSection {
   fields: ConfigField[]
 }
 
-const defaultSiteConfig: SiteConfig = {
-  maxInputLength: 20,
-  openPraise: false,
-  formLength: 10,
-  downloadOneExpired: 1,
-  downloadCompressExpired: 60,
-  compressSizeLimit: 10,
-  needBindPhone: false,
-  enableCodeLogin: false,
-  limitSpace: false,
-  limitWallet: false,
-  qiniuOSSPrice: 0.099,
-  qiniuCDNPrice: 0.28,
-  qiniuBackhaulTrafficPrice: 0.15,
-  qiniuBackhaulTrafficPercentage: 0.8,
-  qiniuCompressPrice: 0.05,
-  moneyStartDay: +new Date('2024-06-01'),
-  appName: '轻取',
-}
+const defaultSiteConfig: SiteConfig = { ...baseDefaultSiteConfig }
 
 const configSections: ConfigSection[] = [
   {
@@ -92,6 +75,26 @@ const configSections: ConfigSection[] = [
       { key: 'qiniuCompressPrice', label: '压缩处理单价', description: '压缩服务的成本单价。', type: 'number', min: 0, step: 0.001, precision: 3, suffix: '元/GB' },
     ],
   },
+  {
+    title: '文件页提示',
+    description: '配置文件列表页的赞赏提示、联系入口和资源限制说明。',
+    fields: [
+      { key: 'filePagePraiseText', label: '赞赏前置文案', description: '展示在赞赏链接前的说明。', type: 'textarea', maxlength: 120 },
+      { key: 'filePagePraiseLinkText', label: '赞赏链接文案', description: '赞赏入口的链接文字。', type: 'textarea', maxlength: 80 },
+      { key: 'filePagePraiseLink', label: '赞赏链接', description: '点击赞赏入口后打开的地址。', type: 'url', maxlength: 300 },
+      { key: 'filePageContactText', label: '联系前置文案', description: '展示在联系入口前的说明。', type: 'textarea', maxlength: 120 },
+      { key: 'filePageContactLinkText', label: '联系链接文案', description: '联系入口的链接文字。', type: 'textarea', maxlength: 80 },
+      { key: 'filePageContactLink', label: '联系链接', description: '点击联系入口后打开的地址。', type: 'url', maxlength: 300 },
+      { key: 'filePageFloatingContactEnabled', label: '右下角联系入口', description: '开启后在文件页右下角固定展示联系作者快捷入口。', type: 'switch' },
+      { key: 'filePageLimitText', label: '限制说明', description: '赞赏提示开启时展示的资源限制说明。', type: 'textarea', maxlength: 300 },
+      { key: 'filePageSponsorText', label: '赞助说明前缀', description: '展示在赞助联系链接前的文案。', type: 'textarea', maxlength: 120 },
+      { key: 'filePageSponsorLinkText', label: '赞助链接文案', description: '赞助联系入口的链接文字。', type: 'textarea', maxlength: 100 },
+      { key: 'filePageSponsorLink', label: '赞助链接', description: '点击赞助联系入口后打开的地址。', type: 'url', maxlength: 300 },
+      { key: 'filePageSponsorSuffix', label: '赞助说明后缀', description: '展示在赞助联系链接后的文案。', type: 'textarea', maxlength: 120 },
+      { key: 'filePageSelfHostLinkText', label: '自建链接文案', description: '自建文档入口的链接文字。', type: 'textarea', maxlength: 100 },
+      { key: 'filePageSelfHostLink', label: '自建链接', description: '点击自建文档入口后打开的地址。', type: 'url', maxlength: 300 },
+    ],
+  },
 ]
 
 const $router = useRouter()
@@ -106,6 +109,11 @@ const saving = ref(false)
 const activeConfigTab = ref(configSections[0].title)
 const siteForm = reactive<SiteConfig>({ ...defaultSiteConfig })
 const { value: jsonData, updateValue: updateJsonData } = useSiteAllConfig()
+const configFieldMap = new Map(
+  configSections
+    .flatMap(section => section.fields)
+    .map(field => [field.key, field]),
+)
 
 const rules: FormRules = {
   appName: [{ required: true, message: '请输入应用名称', trigger: 'blur' }],
@@ -145,6 +153,20 @@ function normalizeSiteConfig(): SiteConfig {
     qiniuBackhaulTrafficPercentage: Number(siteForm.qiniuBackhaulTrafficPercentage),
     qiniuCompressPrice: Number(siteForm.qiniuCompressPrice),
     moneyStartDay: Number(siteForm.moneyStartDay),
+    filePagePraiseText: siteForm.filePagePraiseText.trim(),
+    filePagePraiseLinkText: siteForm.filePagePraiseLinkText.trim(),
+    filePagePraiseLink: siteForm.filePagePraiseLink.trim(),
+    filePageContactText: siteForm.filePageContactText.trim(),
+    filePageContactLinkText: siteForm.filePageContactLinkText.trim(),
+    filePageContactLink: siteForm.filePageContactLink.trim(),
+    filePageFloatingContactEnabled: Boolean(siteForm.filePageFloatingContactEnabled),
+    filePageLimitText: siteForm.filePageLimitText.trim(),
+    filePageSponsorText: siteForm.filePageSponsorText.trim(),
+    filePageSponsorLinkText: siteForm.filePageSponsorLinkText.trim(),
+    filePageSponsorLink: siteForm.filePageSponsorLink.trim(),
+    filePageSponsorSuffix: siteForm.filePageSponsorSuffix.trim(),
+    filePageSelfHostLinkText: siteForm.filePageSelfHostLinkText.trim(),
+    filePageSelfHostLink: siteForm.filePageSelfHostLink.trim(),
   }
 }
 
@@ -168,17 +190,107 @@ function handleResetConfig() {
   ElMessage.info('已恢复为当前线上配置')
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function formatConfirmValue(key: keyof SiteConfig, value: SiteConfig[keyof SiteConfig]) {
+  const field = configFieldMap.get(key)
+  if (field?.type === 'switch') {
+    return value ? '开启' : '关闭'
+  }
+  if (field?.type === 'date') {
+    return Number.isNaN(Number(value))
+      ? '-'
+      : new Date(Number(value)).toLocaleDateString()
+  }
+  const text = String(value ?? '')
+  return text.length > 120 ? `${text.slice(0, 120)}...` : text
+}
+
+function getConfigChanges(nextConfig: SiteConfig) {
+  const currentConfig: SiteConfig = {
+    ...defaultSiteConfig,
+    ...jsonData.value,
+  }
+  return Object.keys(defaultSiteConfig)
+    .map((key) => {
+      const typedKey = key as keyof SiteConfig
+      const oldValue = currentConfig[typedKey]
+      const newValue = nextConfig[typedKey]
+      if (oldValue === newValue) {
+        return null
+      }
+      return {
+        key: typedKey,
+        label: configFieldMap.get(typedKey)?.label || typedKey,
+        oldValue: formatConfirmValue(typedKey, oldValue),
+        newValue: formatConfirmValue(typedKey, newValue),
+      }
+    })
+    .filter(Boolean)
+}
+
+function buildChangeConfirmContent(changes: NonNullable<ReturnType<typeof getConfigChanges>[number]>[]) {
+  const list = changes
+    .map((change) => {
+      return `<li><strong>${escapeHtml(String(change.label))}</strong>：<span>${escapeHtml(change.oldValue)}</span> → <span>${escapeHtml(change.newValue)}</span></li>`
+    })
+    .join('')
+
+  return `<div class="config-change-confirm">
+    <p>本次将修改以下 ${changes.length} 项配置，请确认后再提交：</p>
+    <ul>${list}</ul>
+  </div>`
+}
+
 async function handleSaveConfig() {
   try {
     await siteFormRef.value?.validate()
+  }
+  catch {
+    ElMessage.error('保存失败，请检查配置项后重试')
+    return
+  }
+
+  const nextConfig = normalizeSiteConfig()
+  const changes = getConfigChanges(nextConfig)
+  if (changes.length === 0) {
+    ElMessage.info('暂无配置变更')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      buildChangeConfirmContent(changes),
+      '确认保存配置',
+      {
+        confirmButtonText: '确认保存',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: true,
+      },
+    )
+  }
+  catch {
+    ElMessage.info('已取消保存')
+    return
+  }
+
+  try {
     saving.value = true
-    jsonData.value = normalizeSiteConfig()
+    jsonData.value = nextConfig
     await updateJsonData()
     syncForm(jsonData.value)
     ElMessage.success('全局配置已保存')
   }
   catch {
-    ElMessage.error('保存失败，请检查配置项后重试')
+    ElMessage.error('保存失败，请稍后重试')
   }
   finally {
     saving.value = false
@@ -334,9 +446,20 @@ onMounted(() => {
                     @update:model-value="updateFieldValue(field.key, Number($event))"
                   />
                   <el-input
+                    v-else-if="field.type === 'textarea'"
+                    :model-value="String(getFieldValue(field.key))"
+                    type="textarea"
+                    :rows="3"
+                    :maxlength="field.maxlength || 300"
+                    show-word-limit
+                    placeholder="请输入"
+                    @update:model-value="updateFieldValue(field.key, $event)"
+                  />
+                  <el-input
                     v-else
                     :model-value="String(getFieldValue(field.key))"
-                    maxlength="30"
+                    :type="field.type === 'url' ? 'url' : 'text'"
+                    :maxlength="field.maxlength || 30"
                     show-word-limit
                     placeholder="请输入"
                     @update:model-value="updateFieldValue(field.key, $event)"

@@ -2,6 +2,9 @@ import type {
   Context,
   FWRequest,
 } from 'flash-wolves'
+import type { Files } from '@/db/entity'
+import type { DownloadActionData } from '@/db/model/action'
+import type { User } from '@/db/model/user'
 import {
   Delete,
   Get,
@@ -16,8 +19,15 @@ import {
   RouterController,
 } from 'flash-wolves'
 import { ObjectID } from 'mongodb'
-import { addBehavior, addErrorLog } from '@/db/logDb'
+import { qiniuConfig } from '@/config'
+import { fileError, publicError } from '@/constants/errorMsg'
+import { findAction } from '@/db/actionDb'
 import { selectFiles, updateFileInfo } from '@/db/fileDb'
+import { addBehavior, addErrorLog } from '@/db/logDb'
+import { ActionType } from '@/db/model/action'
+import { ReqUserInfo } from '@/decorator'
+import { BehaviorService, FileService, TaskService } from '@/service'
+import { wrapperCatchError } from '@/utils/context'
 import {
   batchFileStatus,
   checkFopTaskStatus,
@@ -26,17 +36,8 @@ import {
   judgeFileIsExist,
   mvOssFile,
 } from '@/utils/qiniuUtil'
-import { qiniuConfig } from '@/config'
-import { fileError, publicError } from '@/constants/errorMsg'
-import type { User } from '@/db/model/user'
-import { ReqUserInfo } from '@/decorator'
-import { BehaviorService, FileService, TaskService } from '@/service'
-import { wrapperCatchError } from '@/utils/context'
-import { findAction } from '@/db/actionDb'
-import { ActionType, type DownloadActionData } from '@/db/model/action'
-import { getQiniuFileUrlExpiredTime } from '@/utils/userUtil'
 import LocalUserDB from '@/utils/user-local-db'
-import type { Files } from '@/db/entity'
+import { getQiniuFileUrlExpiredTime } from '@/utils/userUtil'
 // TODO: 优化上传逻辑
 
 const power = {
@@ -118,6 +119,26 @@ export default class FileController {
     @ReqBody('ids') idList: number[],
   ) {
     return this.fileService.downloadCount(idList)
+  }
+
+  @Post('/page')
+  async getUserFilesPage(
+    @ReqBody() body,
+    @ReqUserInfo() user: User,
+    req: FWRequest,
+  ) {
+    const result = await this.fileService.getUserFilesPage(body)
+    addBehavior(req, {
+      module: 'file',
+      msg: `分页获取文件列表 用户:${user.account} 成功`,
+      data: {
+        account: user.account,
+        pageIndex: result.pageIndex,
+        pageSize: result.pageSize,
+        total: result.total,
+      },
+    })
+    return result
   }
 
   @Put('/name/rewrite')
@@ -218,6 +239,7 @@ export default class FileController {
       mimeType,
       downloadActionId: key,
     })
+    void this.fileService.expireDownloadCountCache(download.userId, download.data.ids)
 
     this.ctx.res.statusCode = 302
     this.ctx.res.setHeader('Location', download.data.originUrl)
@@ -228,6 +250,18 @@ export default class FileController {
   async batchDownload(@ReqBody() body) {
     const { ids, zipName } = body
     try {
+      return await this.fileService.batchDownload(ids, zipName)
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
+  }
+
+  @Post('/batch/down/query')
+  async batchDownloadByQuery(@ReqBody() body) {
+    const { zipName, ...query } = body
+    try {
+      const ids = await this.fileService.getUserFileIdsByQuery(query)
       return await this.fileService.batchDownload(ids, zipName)
     }
     catch (error) {

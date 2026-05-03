@@ -1,6 +1,7 @@
 import type { OkPacket } from 'mysql'
 import type { File } from './model/file'
 import { Provide } from 'flash-wolves'
+import { Brackets } from 'typeorm'
 import { query } from '@/lib/dbConnect/mysql'
 import {
   insertTableByModel,
@@ -143,4 +144,136 @@ export class FileRepository extends BaseRepository<Files> {
   protected entityName = Files.name
 
   // 这里存放独有方法
+  async findPage(options: {
+    userId: number
+    pageIndex: number
+    pageSize: number
+    taskKey?: string
+    taskKeys?: string[]
+    excludeTaskKeys?: string[]
+    keyword?: string
+  }) {
+    const {
+      userId,
+      pageIndex,
+      pageSize,
+      taskKey,
+      taskKeys,
+      excludeTaskKeys,
+      keyword,
+    } = options
+    const qb = this.createFileQueryBuilder(userId)
+
+    this.applyFileFilters(qb, {
+      taskKey,
+      taskKeys,
+      excludeTaskKeys,
+      keyword,
+    })
+
+    const [files, total] = await qb
+      .clone()
+      .orderBy('file.id', 'DESC')
+      .skip((pageIndex - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+
+    const [{ totalSize }, { filterSize }] = await Promise.all([
+      this.getFileSizeSum(this.createFileQueryBuilder(userId)),
+      this.getFileSizeSum(qb),
+    ])
+
+    return {
+      files,
+      total,
+      totalSize,
+      filterSize,
+    }
+  }
+
+  async findIds(options: {
+    userId: number
+    taskKey?: string
+    taskKeys?: string[]
+    excludeTaskKeys?: string[]
+    keyword?: string
+  }) {
+    const {
+      userId,
+      taskKey,
+      taskKeys,
+      excludeTaskKeys,
+      keyword,
+    } = options
+    const qb = this.createFileQueryBuilder(userId)
+      .select('file.id', 'id')
+
+    this.applyFileFilters(qb, {
+      taskKey,
+      taskKeys,
+      excludeTaskKeys,
+      keyword,
+    })
+
+    const rows = await qb.getRawMany<{ id: number }>()
+    return rows.map(row => Number(row.id))
+  }
+
+  private createFileQueryBuilder(userId: number) {
+    return this.repository
+      .createQueryBuilder('file')
+      .where('file.userId = :userId', { userId })
+      .andWhere('file.del = 0')
+  }
+
+  private applyFileFilters(
+    qb: ReturnType<typeof this.createFileQueryBuilder>,
+    options: {
+      taskKey?: string
+      taskKeys?: string[]
+      excludeTaskKeys?: string[]
+      keyword?: string
+    },
+  ) {
+    const { taskKey, taskKeys, excludeTaskKeys, keyword } = options
+
+    if (taskKey) {
+      qb.andWhere('file.taskKey = :taskKey', { taskKey })
+    }
+    else if (taskKeys) {
+      if (taskKeys.length === 0) {
+        qb.andWhere('1 = 0')
+      }
+      else {
+        qb.andWhere('file.taskKey IN (:...taskKeys)', { taskKeys })
+      }
+    }
+    else if (excludeTaskKeys?.length) {
+      qb.andWhere('file.taskKey NOT IN (:...excludeTaskKeys)', { excludeTaskKeys })
+    }
+
+    if (keyword) {
+      const likeKeyword = `%${keyword}%`
+      qb.andWhere(new Brackets((builder) => {
+        builder
+          .where('file.name LIKE :keyword', { keyword: likeKeyword })
+          .orWhere('file.taskName LIKE :keyword', { keyword: likeKeyword })
+          .orWhere('file.people LIKE :keyword', { keyword: likeKeyword })
+          .orWhere('file.info LIKE :keyword', { keyword: likeKeyword })
+          .orWhere('file.originName LIKE :keyword', { keyword: likeKeyword })
+      }))
+    }
+  }
+
+  private async getFileSizeSum(qb: ReturnType<typeof this.createFileQueryBuilder>) {
+    const row = await qb
+      .clone()
+      .select('COALESCE(SUM(file.size), 0)', 'size')
+      .getRawOne<{ size: string | number }>()
+
+    return {
+      totalSize: Number(row?.size || 0),
+      filterSize: Number(row?.size || 0),
+    }
+  }
 }
