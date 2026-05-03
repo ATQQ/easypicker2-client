@@ -13,6 +13,7 @@ const Dashboard = () => import('@/pages/dashboard/index.vue')
 const Files = () => import('@/pages/dashboard/files/index.vue')
 const Config = () => import('@/pages/dashboard/config/index.vue')
 const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
+const TaskConfig = () => import('@/pages/dashboard/tasks/config.vue')
 const Manage = () => import('@/pages/dashboard/manage/index.vue')
 const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
 const Metrics = () => import('@/pages/dashboard/manage/metrics/index.vue')
@@ -145,6 +146,14 @@ const routes: RouteRecordRaw[] = [
         component: Tasks,
         meta: {
           title: '任务列表',
+        },
+      },
+      {
+        name: 'task-config',
+        path: 'tasks/:key/config',
+        component: TaskConfig,
+        meta: {
+          title: '任务配置',
         },
       },
       {

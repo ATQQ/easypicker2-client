@@ -291,102 +291,105 @@ function handleSureBind() {
 </script>
 
 <template>
-  <div class="tc info-panel">
-    <Tip
-      :imgs="[
-        'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzEwOTEzOQ==650183109139',
-        'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjY3MTUyMw==651496671523',
-      ]"
-    >
-      只有名单里的成员，才可提交文件
-    </Tip>
-    <el-button
-      v-if="!people"
-      size="default"
-      round
-      type="success"
-      @click="updateLimitPeople(true)"
-    >
-      开启
-    </el-button>
-    <el-button
-      v-if="people"
-      size="default"
-      round
-      type="danger"
-      @click="updateLimitPeople(false)"
-    >
-      关闭
-    </el-button>
-    <el-button
-      v-if="people"
-      round
-      size="default"
-      type="primary"
-      @click="checkPeople"
-    >
-      查看提交情况
-    </el-button>
-    <div v-if="people" class="upload-people">
-      <el-radio-group v-model="activeTab" size="small">
-        <el-radio-button label="文件导入" />
-        <el-radio-button label="任务导入" />
-        <el-radio-button label="手动添加" />
-      </el-radio-group>
-      <div class="import-people-wrapper">
-        <div v-show="activeTab === '文件导入'">
-          <el-upload
-            ref="peopleUpload"
-            v-model:file-list="peopleFileList"
-            accept="text/plain"
-            action=""
-            class="upload-demo"
-            :on-change="handleChangeFile"
-            :on-exceed="handleExceedFile"
-            :on-remove="clearFiles"
-            :auto-upload="false"
-            :limit="1"
-          >
-            <template #trigger>
-              <el-button size="small" type="primary">
-                选择文件
-              </el-button>
-            </template>
-            <el-button
-              style="margin-left: 10px"
-              size="small"
-              type="success"
-              :disabled="!peopleFileList.length"
-              @click="submitUploadPeople"
-            >
-              确定上传
-            </el-button>
-            <template #tip>
-              <div class="el-upload__tip">
-                <Tip
-                  :imgs="[
-                    'https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mjk2NjUxMA==650182966510',
-                  ]"
-                >
-                  只能上传 .txt 文本文件，每行一个名字
-                </Tip>
-                <Tip>如名字有特殊字符，建议去除</Tip>
-                <Tip>上传文件导入的方式，为追加导入，不会覆盖已存在数据</Tip>
-              </div>
-            </template>
-          </el-upload>
+  <div class="config-panel info-panel">
+    <section class="panel-tip">
+      <div>
+        <h4>限制名单</h4>
+        <p>开启后，只有名单中的成员才可以提交文件，可通过文件、其它任务或手动方式维护名单。</p>
+      </div>
+      <Tip
+        :imgs="[
+          'https://img.cdn.sugarat.top/mdImg/MTY1MDE4MzEwOTEzOQ==650183109139',
+          'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjY3MTUyMw==651496671523',
+        ]"
+      >
+        查看示例
+      </Tip>
+    </section>
+
+    <section class="setting-card">
+      <div class="setting-header">
+        <div>
+          <h4>名单校验</h4>
+          <p>{{ people ? '当前已开启名单限制。' : '当前未开启名单限制，所有用户都可以提交。' }}</p>
         </div>
-        <div v-show="activeTab === '任务导入'">
-          <!-- 从其它任务导入 -->
-          <el-button size="small" type="success" @click="openImportPanel">
-            选择任务
+        <div class="header-actions">
+          <el-switch
+            :model-value="Boolean(people)"
+            active-text="开启"
+            inactive-text="关闭"
+            @change="v => updateLimitPeople(Boolean(v))"
+          />
+          <el-button v-if="people" type="primary" plain @click="checkPeople">
+            查看提交情况
           </el-button>
-          <div class="p10">
-            <Tip>支持从已有的任务直接导入名单</Tip>
+        </div>
+      </div>
+    </section>
+
+    <template v-if="people">
+      <section class="setting-card">
+        <div class="setting-header">
+          <div>
+            <h4>名单导入</h4>
+            <p>推荐大量名单使用文件导入，少量人员可直接手动添加。</p>
           </div>
         </div>
-        <div v-show="activeTab === '手动添加'">
-          <div style="max-width: 300px; margin: 0 auto">
+        <el-radio-group v-model="activeTab" class="import-tabs">
+          <el-radio-button label="文件导入" />
+          <el-radio-button label="任务导入" />
+          <el-radio-button label="手动添加" />
+        </el-radio-group>
+
+        <div class="import-people-wrapper">
+          <div v-show="activeTab === '文件导入'" class="import-card">
+            <el-upload
+              ref="peopleUpload"
+              v-model:file-list="peopleFileList"
+              accept="text/plain"
+              action=""
+              class="upload-demo"
+              :on-change="handleChangeFile"
+              :on-exceed="handleExceedFile"
+              :on-remove="clearFiles"
+              :auto-upload="false"
+              :limit="1"
+            >
+              <template #trigger>
+                <el-button type="primary" plain>
+                  选择文件
+                </el-button>
+              </template>
+              <el-button
+                class="upload-action"
+                type="success"
+                :disabled="!peopleFileList.length"
+                @click="submitUploadPeople"
+              >
+                确定上传
+              </el-button>
+              <template #tip>
+                <div class="el-upload__tip">
+                  <Tip
+                    :imgs="[
+                      'https://img.cdn.sugarat.top/mdImg/MTY1MDE4Mjk2NjUxMA==650182966510',
+                    ]"
+                  >
+                    只能上传 .txt 文本文件，每行一个名字
+                  </Tip>
+                  <Tip>如名字有特殊字符，建议去除</Tip>
+                  <Tip>上传文件导入的方式，为追加导入，不会覆盖已存在数据</Tip>
+                </div>
+              </template>
+            </el-upload>
+          </div>
+          <div v-show="activeTab === '任务导入'" class="import-card">
+            <p>从已有任务中导入限制名单，可选择覆盖或追加。</p>
+            <el-button type="success" @click="openImportPanel">
+              选择任务
+            </el-button>
+          </div>
+          <div v-show="activeTab === '手动添加'" class="import-card">
             <el-input
               v-model="userInputName"
               :disabled="importStatus"
@@ -394,20 +397,24 @@ function handleSureBind() {
             >
               <template #append>
                 <el-button @click="handAddName">
-                  确定
+                  添加
                 </el-button>
               </template>
             </el-input>
-          </div>
-          <div class="p10">
-            <Tip>会自动判重，不会重复添加</Tip>
-            <Tip>大量名单优先推荐使用文件导入</Tip>
+            <p>会自动判重，不会重复添加。大量名单优先推荐使用文件导入。</p>
           </div>
         </div>
-      </div>
-      <div style="max-width: 320px; margin: 0 auto">
-        <el-form label-width="120px">
-          <el-form-item label="绑定表单项" style="margin-bottom: 6px">
+      </section>
+
+      <section class="setting-card">
+        <div class="setting-header">
+          <div>
+            <h4>绑定表单项</h4>
+            <p>与必填信息中的字段同名时，可避免用户重复填写。</p>
+          </div>
+        </div>
+        <el-form class="bind-form" label-width="100px">
+          <el-form-item label="字段名称">
             <el-input v-model="bindField" size="small" clearable>
               <template #append>
                 <el-button @click="handleSureBind">
@@ -416,12 +423,10 @@ function handleSureBind() {
               </template>
             </el-input>
           </el-form-item>
-          <Tip style="">
-            和表单项同名字段，可以避免重复填写!!
-          </Tip>
         </el-form>
-      </div>
-    </div>
+      </section>
+    </template>
+
     <el-dialog v-model="showPeopleList" :fullscreen="isMobile" title="提交情况">
       <!-- 上部分的筛选菜单 -->
       <div class="nav">
@@ -589,14 +594,82 @@ function handleSureBind() {
   </div>
 </template>
 
-<style scoped>
-.upload-people {
-  padding: 10px;
+<style scoped lang="scss">
+.config-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.panel-tip,
+.setting-card {
+  padding: 18px;
+  background-color: #fff;
+  border: 1px solid #edf2f7;
+  border-radius: 14px;
+}
+
+.panel-tip,
+.setting-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #1f2d3d;
+  }
+
+  p {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: #909399;
+    line-height: 1.6;
+  }
+}
+
+.panel-tip {
+  background-color: #f8fbff;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.import-tabs {
+  margin-top: 16px;
 }
 
 .import-people-wrapper {
-  padding: 10px 0;
+  margin-top: 16px;
 }
+
+.import-card {
+  padding: 16px;
+  background-color: #fafcff;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+
+  p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #909399;
+    line-height: 1.6;
+  }
+}
+
+.upload-action {
+  margin-left: 10px;
+}
+
+.bind-form {
+  max-width: 420px;
+  margin-top: 16px;
+}
+
 .submit-ok {
   color: #67c23a;
 }
@@ -622,6 +695,26 @@ function handleSureBind() {
 }
 
 .info-panel :deep(.el-upload-list__item-name) {
-  justify-content: center;
+  justify-content: flex-start;
+}
+
+@media screen and (max-width: 700px) {
+  .panel-tip,
+  .setting-header,
+  .header-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .import-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .upload-action {
+    display: block;
+    width: 100%;
+    margin: 10px 0 0;
+  }
 }
 </style>

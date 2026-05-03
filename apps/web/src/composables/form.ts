@@ -6,6 +6,7 @@ import { formatDate } from '@/utils/stringUtil'
 export const defaultSiteConfig = {
   maxInputLength: 20, // 最大输入长度
   openPraise: false, // 是否开启赞赏相关提示文案
+  feedbackEntryEnabled: true, // 是否开启问题反馈入口
   formLength: 10, // 表单项数量
   downloadOneExpired: 1, // 单个文件链接下载过期时间（min）
   downloadCompressExpired: 60, // 归档文件下载过期时间（min）
@@ -28,7 +29,7 @@ export const defaultSiteConfig = {
   filePageContactText: '，其它问题',
   filePageContactLinkText: '联系作者🔗',
   filePageContactLink: 'https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85',
-  filePageFloatingContactEnabled: false,
+  filePageFloatingContactEnabled: false, // 是否开启右下角联系入口
   filePageLimitText: '由于部分用户用量较大，小站无法承担这笔开销，限制每个账户为 2GB 可用空间，2￥的默认余额',
   filePageSponsorText: '你可以通过',
   filePageSponsorLinkText: ' 联系作者进行赞助⚡ ',

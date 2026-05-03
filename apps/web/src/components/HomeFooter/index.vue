@@ -6,6 +6,8 @@ const props = defineProps<{
   type?: 'home' | 'dashboard' | 'task'
 }>()
 
+const contactAuthorLink = 'https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85'
+
 const navList = computed(() => {
   const navMap = {
     home: [
@@ -19,11 +21,11 @@ const navList = computed(() => {
       // },
       {
         title: '问题反馈',
-        link: 'https://support.qq.com/product/444158',
+        link: contactAuthorLink,
       },
       {
         title: '联系作者',
-        link: 'https://docs.ep.sugarat.top/author.html',
+        link: contactAuthorLink,
       },
       {
         title: '请喝奶茶🧋',
@@ -33,13 +35,13 @@ const navList = computed(() => {
     dashboard: [
       {
         title: '页面&功能问题反馈，点这里😊',
-        link: 'https://support.qq.com/product/444158',
+        link: contactAuthorLink,
       },
     ],
     task: [
       {
         title: '页面&功能问题反馈，点这里😊',
-        link: 'https://support.qq.com/product/444158',
+        link: contactAuthorLink,
       },
     ],
   }

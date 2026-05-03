@@ -8,3 +8,5 @@ cache
 ep_backup
 data
 user-config.json
+cli-plugin-ep
+.pnpm-store

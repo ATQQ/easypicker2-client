@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { ElConfigProvider } from 'element-plus'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import FeedbackEntry from './components/FeedbackEntry/index.vue'
 import { useSiteConfig } from './composables'
 import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/message-box/style/css'
@@ -23,6 +24,7 @@ const { value: siteConfig } = useSiteConfig()
       </template>
     </el-alert>
     <router-view style="min-height: 100vh" />
+    <FeedbackEntry v-if="siteConfig.feedbackEntryEnabled !== false" />
   </ElConfigProvider>
 </template>
 

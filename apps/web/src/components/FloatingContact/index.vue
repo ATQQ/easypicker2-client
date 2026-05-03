@@ -28,35 +28,30 @@ defineProps<{
 <style scoped lang="scss">
 .floating-contact {
   position: fixed;
-  right: 28px;
-  bottom: 28px;
-  z-index: 99;
+  right: 18px;
+  bottom: 34px;
+  z-index: 900;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-width: 54px;
-  height: 54px;
-  padding: 0 16px;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 30% 20%, rgb(255 255 255 / 42%), transparent 30%),
-    linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-  box-shadow: 0 14px 34px rgb(37 99 235 / 34%);
-  color: #fff;
+  gap: 6px;
+  padding: 9px 12px;
+  color: var(--el-color-primary);
   font-size: 14px;
-  font-weight: 700;
   line-height: 1;
   text-decoration: none;
-  transition:
-    box-shadow 0.2s,
-    transform 0.2s,
-    filter 0.2s;
+  background: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-color-primary-light-7);
+  border-radius: 999px;
+  box-shadow: var(--el-box-shadow-light);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
 
   &:hover {
     color: #fff;
-    filter: brightness(1.04);
-    box-shadow: 0 18px 42px rgb(37 99 235 / 42%);
-    transform: translateY(-3px);
+    background: var(--el-color-primary);
+    border-color: var(--el-color-primary);
+    box-shadow: var(--el-box-shadow);
+    transform: translateY(-1px);
   }
 }
 
@@ -64,14 +59,10 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: rgb(255 255 255 / 18%);
 
   svg {
-    width: 19px;
-    height: 19px;
+    width: 16px;
+    height: 16px;
     fill: currentcolor;
   }
 }
@@ -85,13 +76,18 @@ defineProps<{
 
 @media screen and (max-width: 700px) {
   .floating-contact {
-    right: 16px;
-    bottom: 16px;
-    width: 52px;
-    min-width: 52px;
-    height: 52px;
+    right: 12px;
+    bottom: 22px;
+    width: 42px;
+    height: 42px;
     padding: 0;
     justify-content: center;
+    border-radius: 50%;
+  }
+
+  .icon svg {
+    width: 18px;
+    height: 18px;
   }
 
   .label {

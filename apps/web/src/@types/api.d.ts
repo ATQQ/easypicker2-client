@@ -291,6 +291,7 @@ declare namespace OverviewApiTypes {
   interface GlobalSiteConfig {
     maxInputLength: number
     openPraise: boolean
+    feedbackEntryEnabled: boolean
     formLength: number
     downloadOneExpired: number
     downloadCompressExpired: number

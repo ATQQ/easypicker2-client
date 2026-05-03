@@ -72,31 +72,127 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="tc ddl">
-    <Tip
-      :imgs="[
-        'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTI4NjU5Nw==649149286597',
-        'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTMxMDEyOQ==649149310129',
-        'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTM3MzgxOA==649149373818',
-      ]"
-    >
-      设置截止日期，截止后将不能再提交文件。
-    </Tip>
-    <div class="tc flex fc fac">
-      <el-date-picker
-        v-model="newDate"
-        :editable="false"
-        type="datetime"
-        placeholder="点击设置新截止日期"
-        :default-time="new Date(ddl)"
-        @change="updateDDL"
-      />
-      <el-button v-if="newDate" @click="closeDDL">
-        取消
-      </el-button>
+  <div class="config-panel ddl-panel">
+    <div class="panel-tip">
+      <div>
+        <h4>提交截止时间</h4>
+        <p>设置后，超过截止时间用户将不能继续提交文件。</p>
+      </div>
+      <Tip
+        :imgs="[
+          'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTI4NjU5Nw==649149286597',
+          'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTMxMDEyOQ==649149310129',
+          'https://img.cdn.sugarat.top/mdImg/MTY0OTE0OTM3MzgxOA==649149373818',
+        ]"
+      >
+        查看示例
+      </Tip>
     </div>
-    <div v-if="newDate" style="margin-top: 10px">
-      <Tip>{{ isOver ? '已经截止' : `剩余时间: ${waitTimeStr}` }} </Tip>
+
+    <div class="setting-card">
+      <div class="setting-main">
+        <div>
+          <h5>截止日期</h5>
+          <p>选择具体日期和时间后会自动保存。</p>
+        </div>
+        <el-date-picker
+          v-model="newDate"
+          :editable="false"
+          type="datetime"
+          placeholder="点击设置新截止日期"
+          :default-time="new Date(ddl)"
+          @change="updateDDL"
+        />
+      </div>
+      <div class="setting-footer">
+        <el-tag v-if="newDate" :type="isOver ? 'danger' : 'success'" effect="light">
+          {{ isOver ? '已经截止' : waitTimeStr }}
+        </el-tag>
+        <span v-else class="muted">暂未设置截止时间</span>
+        <el-button v-if="newDate" type="danger" plain @click="closeDDL">
+          取消截止时间
+        </el-button>
+      </div>
     </div>
   </div>
 </template>
+
+<style scoped lang="scss">
+.config-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.panel-tip,
+.setting-card {
+  padding: 18px;
+  background-color: #fff;
+  border: 1px solid #edf2f7;
+  border-radius: 14px;
+}
+
+.panel-tip {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background: #f8fbff;
+
+  h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #1f2d3d;
+  }
+
+  p {
+    margin: 8px 0 0;
+    color: #909399;
+    line-height: 1.6;
+  }
+}
+
+.setting-main,
+.setting-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.setting-main {
+  h5 {
+    margin: 0;
+    font-size: 15px;
+    color: #303133;
+  }
+
+  p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: #909399;
+  }
+}
+
+.setting-footer {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f7;
+}
+
+.muted {
+  color: #909399;
+}
+
+@media screen and (max-width: 700px) {
+  .panel-tip,
+  .setting-main,
+  .setting-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ddl-panel :deep(.el-date-editor) {
+    width: 100%;
+  }
+}
+</style>

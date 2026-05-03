@@ -2,6 +2,7 @@
 import LinkDialog from '@components/linkDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { TaskApi } from '@/apis'
 import FloatingContact from '@/components/FloatingContact/index.vue'
@@ -18,6 +19,7 @@ import TipInfoPanel from './components/infoPanel/tipInfo.vue'
 import TaskInfo from './components/TaskInfo.vue'
 
 const $store = useStore()
+const $router = useRouter()
 const { value: siteConfig } = useSiteConfig()
 
 const isMobile = useIsMobile()
@@ -100,7 +102,23 @@ const activeTask: TaskApiTypes.TaskItem = reactive({
   name: '',
   recentLog: [],
 })
+function shouldOpenTaskConfigPage() {
+  return true
+}
 function editMore(item: any) {
+  if (shouldOpenTaskConfigPage()) {
+    $router.push({
+      name: 'task-config',
+      params: {
+        key: item.key,
+      },
+      query: {
+        name: item.name,
+      },
+    })
+    return
+  }
+
   Object.assign(activeTask, item)
   TaskApi.getTaskMoreInfo(item.key).then((res) => {
     // 先初始化,再赋值

@@ -197,7 +197,7 @@ function handleRegister() {
           </router-link>
         </div>
         <div class="links" style="margin-top: 20px">
-          <el-link target="_blank" href="https://support.qq.com/product/444158">
+          <el-link target="_blank" href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85">
             问题反馈?
           </el-link>
         </div>

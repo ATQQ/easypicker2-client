@@ -144,52 +144,77 @@ function handleExceedFile() {
 </script>
 
 <template>
-  <div class="tc ddl">
-    <Tip
-      :imgs="[
-        'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241',
-      ]"
-    >
-      设置注意事项，供用户提交时查看
-    </Tip>
-    <Tip>注意控制字数和换行，避免展示异常，设置完记得预览一下，再投放</Tip>
-    <div class="tc flex fc fac">
+  <div class="config-panel">
+    <section class="panel-tip">
+      <div>
+        <h4>提交页批注</h4>
+        <p>用于在提交页展示说明、注意事项和图片提示，保存后建议打开预览确认展示效果。</p>
+      </div>
+      <Tip
+        :imgs="[
+          'https://img.cdn.sugarat.top/mdImg/MTY1MTQ5NjI2OTI0MQ==651496269241',
+        ]"
+      >
+        查看示例
+      </Tip>
+    </section>
+
+    <section class="setting-card">
+      <div class="setting-header">
+        <div>
+          <h4>文字说明</h4>
+          <p>建议控制换行和字数，避免在移动端展示过长。</p>
+        </div>
+        <el-tag v-if="needSave" type="warning" effect="light">
+          待保存
+        </el-tag>
+      </div>
       <el-input
         v-model="textValue"
-        :rows="5"
+        class="tip-textarea"
+        :rows="7"
         clearable
         :max="500"
         show-word-limit
         type="textarea"
         placeholder="请输入要展示的批注信息"
       />
-    </div>
-    <div class="p10">
-      <el-button size="default" type="success" @click="updateTip">
-        保存
-      </el-button>
-      <el-button size="default" type="danger" @click="textValue = ''">
-        清空
-      </el-button>
-    </div>
-    <Tip v-if="needSave">
-      有变动记得保存
-    </Tip>
-    <Tip> 可以设置图片啦↓ 最多3张 </Tip>
-    <el-upload
-      v-model:file-list="imageList"
-      accept="image/*"
-      :limit="MaxImgCount"
-      action=""
-      list-type="picture-card"
-      :on-change="handleChangeFile"
-      :on-exceed="handleExceedFile"
-      :on-preview="handlePictureCardPreview"
-      :on-remove="handleRemove"
-      :auto-upload="false"
-    >
-      <el-icon><Plus /></el-icon>
-    </el-upload>
+      <div class="actions">
+        <el-button type="success" @click="updateTip">
+          保存批注
+        </el-button>
+        <el-button type="danger" plain @click="textValue = ''">
+          清空
+        </el-button>
+      </div>
+    </section>
+
+    <section class="setting-card">
+      <div class="setting-header">
+        <div>
+          <h4>图片说明</h4>
+          <p>最多上传 3 张图片，适合补充截图、流程图或填写示例。</p>
+        </div>
+        <el-tag type="info" effect="plain">
+          {{ imageList.length }}/{{ MaxImgCount }}
+        </el-tag>
+      </div>
+      <el-upload
+        v-model:file-list="imageList"
+        class="image-upload"
+        accept="image/*"
+        :limit="MaxImgCount"
+        action=""
+        list-type="picture-card"
+        :on-change="handleChangeFile"
+        :on-exceed="handleExceedFile"
+        :on-preview="handlePictureCardPreview"
+        :on-remove="handleRemove"
+        :auto-upload="false"
+      >
+        <el-icon><Plus /></el-icon>
+      </el-upload>
+    </section>
     <ElImageViewer
       v-if="imageViewerVisible"
       hide-on-click-modal
@@ -200,3 +225,64 @@ function handleExceedFile() {
     />
   </div>
 </template>
+
+<style scoped lang="scss">
+.config-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.panel-tip,
+.setting-card {
+  padding: 18px;
+  background-color: #fff;
+  border: 1px solid #edf2f7;
+  border-radius: 14px;
+}
+
+.panel-tip,
+.setting-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #1f2d3d;
+  }
+
+  p {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: #909399;
+    line-height: 1.6;
+  }
+}
+
+.panel-tip {
+  background-color: #f8fbff;
+}
+
+.tip-textarea,
+.image-upload {
+  margin-top: 16px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+@media screen and (max-width: 700px) {
+  .panel-tip,
+  .setting-header,
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+</style>

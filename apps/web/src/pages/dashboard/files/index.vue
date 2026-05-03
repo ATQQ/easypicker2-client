@@ -31,6 +31,11 @@ import Tip from '../tasks/components/infoPanel/tip.vue'
 
 const { value: siteConfig } = useSiteConfig()
 const isOpenPraise = computed(() => siteConfig.value.openPraise)
+const showStorageLimit = computed(() => siteConfig.value.limitSpace)
+const showWalletLimit = computed(() => siteConfig.value.limitWallet)
+const showResourceLimitNotice = computed(
+  () => isOpenPraise.value && (showStorageLimit.value || showWalletLimit.value),
+)
 
 const {
   usage,
@@ -571,18 +576,18 @@ function handleShowDetail() {
 
 <template>
   <div class="files">
-    <div class="top-notice">
-      <div>
+    <div v-if="isOpenPraise" class="top-notice">
+      <div class="top-notice-main">
         <strong>{{ siteConfig.filePagePraiseText }}<a
           :href="siteConfig.filePagePraiseLink" target="_blank"
           rel="noopener noreferrer"
         >{{ siteConfig.filePagePraiseLinkText }}</a></strong>
-        <strong v-if="isOpenPraise">{{ siteConfig.filePageContactText }}<a
+        <strong>{{ siteConfig.filePageContactText }}<a
           :href="siteConfig.filePageContactLink" target="_blank"
           rel="noopener noreferrer"
         >{{ siteConfig.filePageContactLinkText }}</a></strong>
       </div>
-      <div v-if="isOpenPraise" class="top-notice-detail">
+      <div v-if="showResourceLimitNotice" class="top-notice-detail">
         <span>{{ siteConfig.filePageLimitText }}</span>
         <span>{{ siteConfig.filePageSponsorText }}<a
           :href="siteConfig.filePageSponsorLink" target="_blank"
@@ -824,13 +829,13 @@ function handleShowDetail() {
           <strong>{{ filterFileSize }}</strong>
           <small>当前筛选条件下文件大小</small>
         </div>
-        <div class="stat-card" :class="{ warning: limitSpace }">
+        <div v-if="showStorageLimit" class="stat-card" :class="{ warning: limitSpace }">
           <span class="stat-label">存储空间</span>
           <strong>{{ formatSize(usage) }} / {{ formatSize(size) }}</strong>
           <el-progress :percentage="storageProgressPercentage" :status="limitSpace ? 'exception' : undefined" />
           <small>{{ percentageValue.toFixed(2) }}% 已使用</small>
         </div>
-        <div v-if="siteConfig.limitWallet" class="stat-card" :class="{ warning: limitWallet }">
+        <div v-if="showWalletLimit" class="stat-card" :class="{ warning: limitWallet }">
           <span class="stat-label">钱包消耗</span>
           <strong>{{ cost }} / {{ wallet }}￥</strong>
           <el-progress :percentage="walletProgressPercentage" :status="limitWallet ? 'exception' : undefined" />
