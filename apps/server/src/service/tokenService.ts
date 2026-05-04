@@ -1,11 +1,11 @@
 import process from 'node:process'
 import { Provide } from 'flash-wolves'
-import { User } from '@/db/entity'
-import { encryption } from '@/utils/stringUtil'
-import { expiredRedisKey, getRedisVal, setRedisValue } from '@/db/redisDb'
 import { AppDataSource } from '@/db'
+import { User } from '@/db/entity'
 import { USER_STATUS } from '@/db/model/user'
+import { expiredRedisKey, getRedisVal, setRedisValue } from '@/db/redisDb'
 import { throttle } from '@/utils'
+import { encryption } from '@/utils/stringUtil'
 
 @Provide()
 export default class TokenService {
@@ -48,7 +48,7 @@ export default class TokenService {
       }
       return []
     }
-    catch (e) {
+    catch {
       return []
     }
   }
@@ -58,10 +58,18 @@ export default class TokenService {
       return null
     }
     const v = await getRedisVal(this.realToken(token))
-    if (v) {
-      return JSON.parse(v)
+    if (!v)
+      return null
+    try {
+      const user = JSON.parse(v) as User
+      /** DB/JSON 可能出现 string，与 USER_POWER number 比对会失败导致「未登录」 */
+      if (user?.power != null)
+        user.power = Number(user.power) as typeof user.power
+      return user
     }
-    return null
+    catch {
+      return null
+    }
   }
 
   // TODO: 合理的时候刷新token
@@ -93,10 +101,16 @@ export default class TokenService {
   }
 
   checkOnlineUser = throttle(async (cacheUser: User, token: string) => {
+    const uid = cacheUser?.id
+    if (uid === undefined || uid === null)
+      return
+    const numericId = typeof uid === 'string' ? Number(uid) : uid
+    if (Number.isNaN(numericId as number))
+      return
     // 查询库中的用户信息
     const userInfo = await AppDataSource.manager.findOne(User, {
       where: {
-        id: cacheUser.id,
+        id: numericId as number,
       },
     })
     // 清理脏数据
