@@ -522,6 +522,42 @@ declare namespace ConfigServiceAPITypes {
     error?: string
   }
   type checkMysqlDatabase = ResponseData<MysqlCheckDatabaseResult>
+
+  interface ConfigAdminUserRow {
+    id: number
+    account: string
+    phoneMasked: string
+    power: number
+    powerLabel: string
+    status: number
+    joinTime: string | null
+    loginTime: string | null
+  }
+  type listConfigAdminUsers = ResponseData<{ list: ConfigAdminUserRow[] }>
+
+  interface CreateConfigAdminUserBody {
+    account: string
+    pwd: string
+    bindPhone?: boolean
+    phone?: string
+    code?: string
+  }
+  interface CreateConfigAdminUserResult {
+    ok: boolean
+    error?: string
+    id?: number
+  }
+  type createConfigAdminUser = ResponseData<CreateConfigAdminUserResult>
+
+  interface ResetConfigAdminUserPasswordBody {
+    id: number
+    pwd: string
+  }
+  interface ResetConfigAdminUserPasswordResult {
+    ok: boolean
+    error?: string
+  }
+  type resetConfigAdminUserPassword = ResponseData<ResetConfigAdminUserPasswordResult>
 }
 
 declare namespace ActionApiTypes {

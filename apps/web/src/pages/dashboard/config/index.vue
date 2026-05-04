@@ -2,7 +2,9 @@
 import { Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { ConfigServiceAPI } from '@/apis'
+import { ConfigServiceAPI, PublicApi, UserApi } from '@/apis'
+import { useSiteConfig } from '@/composables'
+import { rAccount, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 
 type ConfigData = ConfigServiceAPITypes.ConfigData
@@ -12,8 +14,11 @@ type MysqlSchemaOverview = ConfigServiceAPITypes.MysqlSchemaOverview
 type MysqlLiveIntrospection = ConfigServiceAPITypes.MysqlLiveIntrospection
 type MysqlLiveTable = ConfigServiceAPITypes.MysqlLiveTable
 
-/** 与业务配置 Tab 并列，仅在有 MySQL 配置项时展示 */
+/** 与 MySQL 相关的子 Tab（连接配置仍在 name=mysql 的主 Tab）；结构与脚本已与「在线库表」合并 */
 const MYSQL_INTROSPECT_TAB = 'mysql-introspect'
+const CONFIG_ADMIN_USERS_TAB = 'config-admin-users'
+
+const { value: siteConfig } = useSiteConfig()
 
 const mysqlSchema = ref<MysqlSchemaOverview | null>(null)
 const schemaLoading = ref(false)
@@ -46,7 +51,7 @@ const overviewStats = computed(() => {
   }
 })
 const showErrorList = computed(() => serviceOverview.value.filter(item => item.errMsg))
-const showMysqlIntrospectTab = computed(() => serverConfig.value.some(item => item.type === 'mysql'))
+const showMysqlToolTabs = computed(() => serverConfig.value.some(s => s.type === 'mysql'))
 const mysqlLive = ref<MysqlLiveIntrospection | null>(null)
 const mysqlLiveLoading = ref(false)
 const mysqlLiveOpenNames = ref<string[]>([])
@@ -54,9 +59,13 @@ const mysqlLiveOpenNames = ref<string[]>([])
 const currentConfig = computed(() => serverConfig.value.find(item => item.type === activeConfigTab.value))
 
 function isActiveConfigTabValid(name: string) {
+  if (name === CONFIG_ADMIN_USERS_TAB)
+    return true
   if (serverConfig.value.some(item => item.type === name))
     return true
-  return name === MYSQL_INTROSPECT_TAB && showMysqlIntrospectTab.value
+  if (showMysqlToolTabs.value && name === MYSQL_INTROSPECT_TAB)
+    return true
+  return false
 }
 
 function getServiceTagType(service: ServiceOverviewItem) {
@@ -109,8 +118,6 @@ async function loadMysqlLiveIntrospect() {
   try {
     const { data } = await ConfigServiceAPI.getMysqlLiveIntrospect()
     mysqlLive.value = data ?? null
-    if (data?.tables?.length && !mysqlLiveOpenNames.value.length)
-      mysqlLiveOpenNames.value = [data.tables[0].name]
   }
   catch {
     mysqlLive.value = null
@@ -151,7 +158,7 @@ async function copyMysqlTableDdl(tbl: MysqlLiveTable) {
     return
   }
   try {
-    await navigator.clipboard.writeText(tbl.createSql)
+    await navigator.clipboard.writeText(text)
     ElMessage.success(`已复制 ${tbl.name} 的建表 SQL`)
   }
   catch {
@@ -164,6 +171,7 @@ async function applyMysqlSchema() {
   try {
     await ConfigServiceAPI.applyMysqlSchema()
     await loadMysqlSchema()
+    await loadMysqlLiveIntrospect()
     await refreshStatus(false)
     ElMessage.success('已按 mysql-schema.json 对齐缺列及列类型')
   }
@@ -207,6 +215,199 @@ function onMysqlExportDialogClosed() {
 function closeMysqlExportDialog() {
   mysqlExportDialogVisible.value = false
   onMysqlExportDialogClosed()
+}
+
+const adminUsersLoading = ref(false)
+const adminUsersList = ref<ConfigServiceAPITypes.ConfigAdminUserRow[]>([])
+const loginIsSuper = ref(false)
+const loginIsSystem = ref(false)
+const canOperateConfigAdmins = computed(() => loginIsSuper.value || loginIsSystem.value)
+
+const adminCreateForm = reactive({
+  account: '',
+  pwd1: '',
+  pwd2: '',
+  bindPhone: false,
+  phone: '',
+  code: '',
+})
+const adminCreateSubmitting = ref(false)
+const adminResetVisible = ref(false)
+const adminResetRow = ref<ConfigServiceAPITypes.ConfigAdminUserRow | null>(null)
+const adminResetPwd1 = ref('')
+const adminResetPwd2 = ref('')
+const adminResetSubmitting = ref(false)
+const adminCodeText = ref('获取验证码')
+const adminCodeTime = ref(0)
+
+function refreshAdminCodeText() {
+  if (adminCodeTime.value === 0) {
+    adminCodeText.value = '获取验证码'
+    return
+  }
+  adminCodeText.value = `${adminCodeTime.value}s`
+  adminCodeTime.value -= 1
+  setTimeout(refreshAdminCodeText, 1000)
+}
+
+function getAdminCreateCode() {
+  if (!rMobilePhone.test(adminCreateForm.phone)) {
+    ElMessage.warning('手机号格式不正确')
+    return
+  }
+  PublicApi.getCode(adminCreateForm.phone).then(() => {
+    adminCodeTime.value = 120
+    refreshAdminCodeText()
+    ElMessage.success('验证码已发送')
+  })
+}
+
+function adminStatusLabel(status: number) {
+  if (status === 0)
+    return '正常'
+  if (status === 1)
+    return '冻结'
+  if (status === 2)
+    return '封禁'
+  return String(status)
+}
+
+async function loadLoginPower() {
+  try {
+    const { data } = await UserApi.checkPower()
+    loginIsSuper.value = Boolean(data?.power)
+    loginIsSystem.value = Boolean(data?.system)
+  }
+  catch {
+    loginIsSuper.value = false
+    loginIsSystem.value = false
+  }
+}
+
+async function loadAdminUsers() {
+  adminUsersLoading.value = true
+  try {
+    const { data } = await ConfigServiceAPI.listConfigAdminUsers()
+    adminUsersList.value = data?.list ?? []
+  }
+  catch {
+    adminUsersList.value = []
+  }
+  finally {
+    adminUsersLoading.value = false
+  }
+}
+
+watch(() => siteConfig.value?.needBindPhone, (need) => {
+  if (need)
+    adminCreateForm.bindPhone = true
+}, { immediate: true })
+
+function checkAdminCreateForm(): boolean {
+  if (!canOperateConfigAdmins.value) {
+    ElMessage.warning('当前账号无权创建超级管理员')
+    return false
+  }
+  if (!rAccount.test(adminCreateForm.account)) {
+    ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
+    return false
+  }
+  if (!rPassword.test(adminCreateForm.pwd1)) {
+    ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
+    return false
+  }
+  if (adminCreateForm.pwd1 !== adminCreateForm.pwd2) {
+    ElMessage.warning('两次输入的密码不一致')
+    return false
+  }
+  if (adminCreateForm.bindPhone) {
+    if (!rMobilePhone.test(adminCreateForm.phone)) {
+      ElMessage.warning('手机号格式不正确')
+      return false
+    }
+    if (!rVerCode.test(adminCreateForm.code)) {
+      ElMessage.warning('验证码不正确(4位 数字)')
+      return false
+    }
+  }
+  return true
+}
+
+async function submitCreateAdminUser() {
+  if (!checkAdminCreateForm())
+    return
+  adminCreateSubmitting.value = true
+  try {
+    const { data } = await ConfigServiceAPI.createConfigAdminUser({
+      account: adminCreateForm.account,
+      pwd: adminCreateForm.pwd1,
+      bindPhone: adminCreateForm.bindPhone,
+      phone: adminCreateForm.phone,
+      code: adminCreateForm.code,
+    })
+    if (!data?.ok) {
+      ElMessage.error(data?.error || '创建失败')
+      return
+    }
+    ElMessage.success('管理员账号已创建')
+    adminCreateForm.account = ''
+    adminCreateForm.pwd1 = ''
+    adminCreateForm.pwd2 = ''
+    adminCreateForm.phone = ''
+    adminCreateForm.code = ''
+    await loadAdminUsers()
+  }
+  catch {
+    ElMessage.error('请求失败')
+  }
+  finally {
+    adminCreateSubmitting.value = false
+  }
+}
+
+function openAdminResetDialog(row: ConfigServiceAPITypes.ConfigAdminUserRow) {
+  adminResetRow.value = row
+  adminResetPwd1.value = ''
+  adminResetPwd2.value = ''
+  adminResetVisible.value = true
+}
+
+function closeAdminResetDialog() {
+  adminResetVisible.value = false
+  adminResetRow.value = null
+}
+
+async function submitAdminResetPassword() {
+  if (!adminResetRow.value) {
+    return
+  }
+  if (!rPassword.test(adminResetPwd1.value)) {
+    ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
+    return
+  }
+  if (adminResetPwd1.value !== adminResetPwd2.value) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
+  adminResetSubmitting.value = true
+  try {
+    const { data } = await ConfigServiceAPI.resetConfigAdminUserPassword({
+      id: adminResetRow.value.id,
+      pwd: adminResetPwd1.value,
+    })
+    if (!data?.ok) {
+      ElMessage.error(data?.error || '重置失败')
+      return
+    }
+    ElMessage.success('密码已重置')
+    closeAdminResetDialog()
+  }
+  catch {
+    ElMessage.error('请求失败')
+  }
+  finally {
+    adminResetSubmitting.value = false
+  }
 }
 
 watch(mysqlExportDialogVisible, (open) => {
@@ -255,7 +456,7 @@ async function getServiceConfig() {
     const { data } = await ConfigServiceAPI.getServiceConfig()
     serverConfig.value = data || []
     if (!activeConfigTab.value || !isActiveConfigTabValid(activeConfigTab.value)) {
-      activeConfigTab.value = serverConfig.value[0]?.type || ''
+      activeConfigTab.value = serverConfig.value[0]?.type || CONFIG_ADMIN_USERS_TAB
     }
   }
   catch {
@@ -347,8 +548,10 @@ async function updateCfgGroup(group?: ConfigData) {
     ElMessage.success(`${group.title} 配置已保存`)
     await getServiceConfig()
     await refreshStatus(false)
-    if (group.type === 'mysql')
+    if (group.type === 'mysql') {
       await loadMysqlSchema()
+      await loadMysqlLiveIntrospect()
+    }
   }
   catch {
     ElMessage.error(`${group.title} 配置保存失败`)
@@ -361,14 +564,20 @@ async function updateCfgGroup(group?: ConfigData) {
 onMounted(() => {
   refreshStatus(false)
   getServiceConfig()
-  loadMysqlSchema()
 })
 
+async function refreshMysqlToolsTab() {
+  await loadMysqlSchema()
+  await loadMysqlLiveIntrospect()
+}
+
 watch(activeConfigTab, (t) => {
-  if (t === 'mysql')
-    loadMysqlSchema()
   if (t === MYSQL_INTROSPECT_TAB)
-    loadMysqlLiveIntrospect()
+    refreshMysqlToolsTab()
+  if (t === CONFIG_ADMIN_USERS_TAB) {
+    loadLoginPower()
+    loadAdminUsers()
+  }
 })
 </script>
 
@@ -465,84 +674,6 @@ watch(activeConfigTab, (t) => {
         </div>
       </div>
 
-      <div v-loading="schemaLoading" class="mysql-schema-hints">
-        <template v-if="mysqlSchema">
-          <div v-if="!mysqlSchema.error" style="margin-bottom: 12px">
-            <el-button size="small" :loading="mysqlExportLoading" @click="openMysqlExportDialog">
-              预览建表 SQL（全屏）
-            </el-button>
-            <span style="margin-left: 12px; color: var(--el-text-color-secondary); font-size: 13px;">
-              弹窗内可浏览、框选复制片段，或使用「复制全部」。
-            </span>
-          </div>
-          <el-alert
-            v-if="mysqlSchema.error"
-            :closable="false"
-            show-icon
-            type="error"
-            title="MySQL schema 检测失败"
-            style="margin-bottom: 12px"
-          >
-            <p>{{ mysqlSchema.error }}</p>
-          </el-alert>
-          <el-alert
-            v-else-if="mysqlSchema.pending"
-            type="warning"
-            :closable="false"
-            show-icon
-            style="margin-bottom: 12px"
-          >
-            <div class="schema-drift-body">
-              <p>当前数据库与发布包 docs/schema/mysql-schema.json 期望结构不一致。</p>
-              <p v-if="(mysqlSchema.missingTables ?? []).length" style="margin: 8px 0 0 0;">
-                <strong>缺表：</strong>
-              </p>
-              <ul v-if="(mysqlSchema.missingTables ?? []).length">
-                <li v-for="t in (mysqlSchema.missingTables ?? [])" :key="t">
-                  {{ t }}
-                </li>
-              </ul>
-              <p v-if="(mysqlSchema.missingColumns ?? []).length" style="margin: 8px 0 0 0;">
-                <strong>缺列：</strong>
-              </p>
-              <ul v-if="(mysqlSchema.missingColumns ?? []).length">
-                <li v-for="c in mysqlSchema.missingColumns" :key="`${c.table}.${c.column}`">
-                  {{ c.table }}.{{ c.column }}
-                </li>
-              </ul>
-              <p v-if="(mysqlSchema.typeMismatches ?? []).length" style="margin: 8px 0 0 0;">
-                <strong>列类型不符（normalized）：</strong>
-              </p>
-              <ul v-if="(mysqlSchema.typeMismatches ?? []).length">
-                <li v-for="m in mysqlSchema.typeMismatches" :key="`${m.table}.${m.column}`">
-                  {{ m.table }}.{{ m.column }}
-                  ：库 {{ m.actualComparable }} /
-                  期望 {{ m.expectedComparable }}
-                </li>
-              </ul>
-              <el-button type="primary" :loading="schemaLoading" style="margin-top: 8px" @click="applyMysqlSchema">
-                一键对齐表结构
-              </el-button>
-            </div>
-          </el-alert>
-          <el-alert
-            v-else-if="!mysqlSchema.autoSyncSchemaOnStartup"
-            type="info"
-            :closable="false"
-            show-icon
-            title="未开启启动时自动同步"
-            style="margin-bottom: 12px"
-          >
-            <p style="margin: 0 0 8px 0;">
-              当前关闭「启动时自动补齐表结构」；建议在版本升级后轮询此处并手动执行对齐。
-            </p>
-            <el-button size="small" type="primary" :loading="schemaLoading" @click="applyMysqlSchema">
-              检查并补齐表结构
-            </el-button>
-          </el-alert>
-        </template>
-      </div>
-
       <el-empty v-if="!configLoading && !serverConfig.length" description="暂无可编辑的服务配置" />
       <div v-else v-loading="configLoading">
         <el-tabs v-model="activeConfigTab" class="config-tabs">
@@ -609,116 +740,322 @@ watch(activeConfigTab, (t) => {
           </el-tab-pane>
 
           <el-tab-pane
-            v-if="showMysqlIntrospectTab"
-            label="MySQL 在线库表"
+            v-if="showMysqlToolTabs"
+            label="MySQL · 在线库表"
             :name="MYSQL_INTROSPECT_TAB"
           >
             <div class="tab-head">
               <div>
-                <h3>MySQL 在线库表</h3>
+                <h3>MySQL 在线库表与结构脚本</h3>
                 <p>
-                  读取当前连接库的真实结构；行数与数据量来自 information_schema（InnoDB 行数为估算）。
-                  可与上方「schema 对齐」提示及 <code>mysql-schema.json</code> 对照，确认字段与索引是否已生效。
+                  上半部分与发布包内 <code>mysql-schema.json</code> 对照，可预览整库建表 SQL、检测漂移并一键对齐；下半部分读取当前连接库的真实结构（可与上方对照）。
                 </p>
               </div>
-              <el-button :loading="mysqlLiveLoading" :icon="Refresh" @click="loadMysqlLiveIntrospect">
+              <el-button :loading="schemaLoading || mysqlLiveLoading" :icon="Refresh" @click="refreshMysqlToolsTab">
                 刷新
               </el-button>
             </div>
 
-            <div v-loading="mysqlLiveLoading" class="mysql-live-panel">
-              <el-alert
-                v-if="mysqlLive?.error"
-                type="error"
-                :closable="false"
-                show-icon
-                title="无法读取库表信息"
-              >
-                <p>{{ mysqlLive.error }}</p>
-              </el-alert>
-              <template v-else-if="mysqlLive">
-                <p class="mysql-live-summary">
-                  <span>MySQL {{ mysqlLive.mysqlVersion }}</span>
-                  <span>库 <strong>{{ mysqlLive.database }}</strong></span>
-                  <span>共 {{ mysqlLive.tables.length }} 张表</span>
+            <div class="mysql-merged-section mysql-tool-block mysql-tool-block--solo">
+              <div class="mysql-merged-section__head">
+                <h4 class="mysql-merged-section__title">
+                  结构与脚本
+                </h4>
+                <p class="mysql-merged-section__desc">
+                  基于 canonical 定义检测缺表、缺列与类型漂移；弹窗可预览完整建库 SQL。
                 </p>
-                <el-empty v-if="!mysqlLive.tables.length" description="当前库中暂无业务表" />
-                <el-collapse v-else v-model="mysqlLiveOpenNames" class="mysql-live-collapse">
-                  <el-collapse-item v-for="tbl in mysqlLive.tables" :key="tbl.name" :name="tbl.name">
-                    <template #title>
-                      <span class="mysql-live-collapse-title">
-                        <strong>{{ tbl.name }}</strong>
-                        <span class="mysql-live-collapse-meta">
-                          {{ tbl.engine || '—' }}
-                          <span v-if="tbl.rowEstimate != null"> · 约 {{ tbl.rowEstimate.toLocaleString() }} 行</span>
-                          <span v-if="tbl.dataLength != null"> · 数据 {{ formatBytes(tbl.dataLength) }}</span>
-                          <span v-if="tbl.indexLength != null"> · 索引 {{ formatBytes(tbl.indexLength) }}</span>
-                        </span>
-                      </span>
-                    </template>
-
-                    <div class="mysql-live-block">
-                      <h4>字段</h4>
-                      <el-table :data="tbl.columns" size="small" border stripe class="mysql-live-table">
-                        <el-table-column prop="name" label="列名" min-width="120" />
-                        <el-table-column prop="columnType" label="类型" min-width="140" />
-                        <el-table-column label="可空" width="72" align="center">
-                          <template #default="{ row }">
-                            {{ row.nullable ? 'YES' : 'NO' }}
-                          </template>
-                        </el-table-column>
-                        <el-table-column prop="key" label="键" width="84" />
-                        <el-table-column label="默认值" min-width="100" show-overflow-tooltip>
-                          <template #default="{ row }">
-                            {{ row.default ?? 'NULL' }}
-                          </template>
-                        </el-table-column>
-                        <el-table-column prop="extra" label="额外" width="120" />
-                        <el-table-column prop="comment" label="注释" min-width="120" show-overflow-tooltip />
-                      </el-table>
-                    </div>
-
-                    <div class="mysql-live-block">
-                      <h4>索引</h4>
-                      <el-table v-if="tbl.indexes.length" :data="tbl.indexes" size="small" border stripe class="mysql-live-table">
-                        <el-table-column prop="name" label="索引名" min-width="120" />
-                        <el-table-column label="唯一" width="72" align="center">
-                          <template #default="{ row }">
-                            {{ row.unique ? '是' : '否' }}
-                          </template>
-                        </el-table-column>
-                        <el-table-column prop="indexType" label="类型" width="100" />
-                        <el-table-column label="列（序）" min-width="200">
-                          <template #default="{ row }">
-                            {{ indexColumnsLabel(row) }}
-                          </template>
-                        </el-table-column>
-                      </el-table>
-                      <p v-else class="mysql-live-muted">
-                        无二级索引（或仅剩主键于信息模式中已展示于「键」列）
+              </div>
+              <div v-loading="schemaLoading" class="mysql-schema-hints mysql-schema-hints--in-tab">
+                <template v-if="mysqlSchema">
+                  <div v-if="!mysqlSchema.error" class="mysql-export-actions">
+                    <el-button size="small" :loading="mysqlExportLoading" @click="openMysqlExportDialog">
+                      预览建表 SQL（全屏）
+                    </el-button>
+                    <span class="mysql-export-actions__hint">
+                      弹窗内可浏览、框选复制片段，或使用「复制全部」。
+                    </span>
+                  </div>
+                  <el-alert
+                    v-if="mysqlSchema.error"
+                    :closable="false"
+                    show-icon
+                    type="error"
+                    title="MySQL schema 检测失败"
+                    class="mysql-schema-alert"
+                  >
+                    <p>{{ mysqlSchema.error }}</p>
+                  </el-alert>
+                  <el-alert
+                    v-else-if="mysqlSchema.pending"
+                    type="warning"
+                    :closable="false"
+                    show-icon
+                    class="mysql-schema-alert"
+                  >
+                    <div class="schema-drift-body">
+                      <p>当前数据库与发布包 docs/schema/mysql-schema.json 期望结构不一致。</p>
+                      <p v-if="(mysqlSchema.missingTables ?? []).length" style="margin: 8px 0 0 0;">
+                        <strong>缺表：</strong>
                       </p>
+                      <ul v-if="(mysqlSchema.missingTables ?? []).length">
+                        <li v-for="t in (mysqlSchema.missingTables ?? [])" :key="t">
+                          {{ t }}
+                        </li>
+                      </ul>
+                      <p v-if="(mysqlSchema.missingColumns ?? []).length" style="margin: 8px 0 0 0;">
+                        <strong>缺列：</strong>
+                      </p>
+                      <ul v-if="(mysqlSchema.missingColumns ?? []).length">
+                        <li v-for="c in mysqlSchema.missingColumns" :key="`${c.table}.${c.column}`">
+                          {{ c.table }}.{{ c.column }}
+                        </li>
+                      </ul>
+                      <p v-if="(mysqlSchema.typeMismatches ?? []).length" style="margin: 8px 0 0 0;">
+                        <strong>列类型不符（normalized）：</strong>
+                      </p>
+                      <ul v-if="(mysqlSchema.typeMismatches ?? []).length">
+                        <li v-for="m in mysqlSchema.typeMismatches" :key="`${m.table}.${m.column}`">
+                          {{ m.table }}.{{ m.column }}
+                          ：库 {{ m.actualComparable }} /
+                          期望 {{ m.expectedComparable }}
+                        </li>
+                      </ul>
+                      <el-button type="primary" :loading="schemaLoading" style="margin-top: 8px" @click="applyMysqlSchema">
+                        一键对齐表结构
+                      </el-button>
                     </div>
-
-                    <div class="mysql-live-block">
-                      <div class="mysql-live-ddl-head">
-                        <h4>SHOW CREATE TABLE</h4>
-                        <el-button size="small" @click="copyMysqlTableDdl(tbl)">
-                          复制建表 SQL
-                        </el-button>
-                      </div>
-                      <el-input
-                        :model-value="tbl.createSql"
-                        type="textarea"
-                        readonly
-                        :rows="10"
-                        class="mysql-live-ddl"
-                        spellcheck="false"
-                      />
-                    </div>
-                  </el-collapse-item>
-                </el-collapse>
-              </template>
+                  </el-alert>
+                  <el-alert
+                    v-else-if="!mysqlSchema.autoSyncSchemaOnStartup"
+                    type="info"
+                    :closable="false"
+                    show-icon
+                    title="未开启启动时自动同步"
+                    class="mysql-schema-alert"
+                  >
+                    <p style="margin: 0 0 8px 0;">
+                      当前关闭「启动时自动补齐表结构」；建议在版本升级后轮询此处并手动执行对齐。
+                    </p>
+                    <el-button size="small" type="primary" :loading="schemaLoading" @click="applyMysqlSchema">
+                      检查并补齐表结构
+                    </el-button>
+                  </el-alert>
+                </template>
+              </div>
             </div>
+
+            <div class="mysql-tool-block mysql-tool-block--solo mysql-merged-section mysql-merged-section--live">
+              <div class="mysql-merged-section__head">
+                <h4 class="mysql-merged-section__title">
+                  在线库表
+                </h4>
+                <p class="mysql-merged-section__desc">
+                  读取 information_schema（InnoDB 行数为估算）；每张表含字段、索引与 SHOW CREATE TABLE。
+                </p>
+              </div>
+              <div v-loading="mysqlLiveLoading" class="mysql-live-panel">
+                <el-alert
+                  v-if="mysqlLive?.error"
+                  type="error"
+                  :closable="false"
+                  show-icon
+                  title="无法读取库表信息"
+                >
+                  <p>{{ mysqlLive.error }}</p>
+                </el-alert>
+                <template v-else-if="mysqlLive">
+                  <p class="mysql-live-summary">
+                    <span>MySQL {{ mysqlLive.mysqlVersion }}</span>
+                    <span>库 <strong>{{ mysqlLive.database }}</strong></span>
+                    <span>共 {{ mysqlLive.tables.length }} 张表</span>
+                  </p>
+                  <el-empty v-if="!mysqlLive.tables.length" description="当前库中暂无业务表" />
+                  <el-collapse v-else v-model="mysqlLiveOpenNames" class="mysql-live-collapse">
+                    <el-collapse-item v-for="tbl in mysqlLive.tables" :key="tbl.name" :name="tbl.name">
+                      <template #title>
+                        <span class="mysql-live-collapse-title">
+                          <strong>{{ tbl.name }}</strong>
+                          <span class="mysql-live-collapse-meta">
+                            {{ tbl.engine || '—' }}
+                            <span v-if="tbl.rowEstimate != null"> · 约 {{ tbl.rowEstimate.toLocaleString() }} 行</span>
+                            <span v-if="tbl.dataLength != null"> · 数据 {{ formatBytes(tbl.dataLength) }}</span>
+                            <span v-if="tbl.indexLength != null"> · 索引 {{ formatBytes(tbl.indexLength) }}</span>
+                          </span>
+                        </span>
+                      </template>
+
+                      <div class="mysql-live-block">
+                        <h4>字段</h4>
+                        <el-table :data="tbl.columns" size="small" border stripe class="mysql-live-table">
+                          <el-table-column prop="name" label="列名" min-width="120" />
+                          <el-table-column prop="columnType" label="类型" min-width="140" />
+                          <el-table-column label="可空" width="72" align="center">
+                            <template #default="{ row }">
+                              {{ row.nullable ? 'YES' : 'NO' }}
+                            </template>
+                          </el-table-column>
+                          <el-table-column prop="key" label="键" width="84" />
+                          <el-table-column label="默认值" min-width="100" show-overflow-tooltip>
+                            <template #default="{ row }">
+                              {{ row.default ?? 'NULL' }}
+                            </template>
+                          </el-table-column>
+                          <el-table-column prop="extra" label="额外" width="120" />
+                          <el-table-column prop="comment" label="注释" min-width="120" show-overflow-tooltip />
+                        </el-table>
+                      </div>
+
+                      <div class="mysql-live-block">
+                        <h4>索引</h4>
+                        <el-table v-if="tbl.indexes.length" :data="tbl.indexes" size="small" border stripe class="mysql-live-table">
+                          <el-table-column prop="name" label="索引名" min-width="120" />
+                          <el-table-column label="唯一" width="72" align="center">
+                            <template #default="{ row }">
+                              {{ row.unique ? '是' : '否' }}
+                            </template>
+                          </el-table-column>
+                          <el-table-column prop="indexType" label="类型" width="100" />
+                          <el-table-column label="列（序）" min-width="200">
+                            <template #default="{ row }">
+                              {{ indexColumnsLabel(row) }}
+                            </template>
+                          </el-table-column>
+                        </el-table>
+                        <p v-else class="mysql-live-muted">
+                          无二级索引（或仅剩主键于信息模式中已展示于「键」列）
+                        </p>
+                      </div>
+
+                      <div class="mysql-live-block">
+                        <div class="mysql-live-ddl-head">
+                          <h4>SHOW CREATE TABLE</h4>
+                          <el-button size="small" @click="copyMysqlTableDdl(tbl)">
+                            复制建表 SQL
+                          </el-button>
+                        </div>
+                        <el-input
+                          :model-value="tbl.createSql"
+                          type="textarea"
+                          readonly
+                          :rows="10"
+                          class="mysql-live-ddl"
+                          spellcheck="false"
+                        />
+                      </div>
+                    </el-collapse-item>
+                  </el-collapse>
+                </template>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="系统管理员" :name="CONFIG_ADMIN_USERS_TAB">
+            <div class="tab-head">
+              <div>
+                <h3>系统管理员账号</h3>
+                <p>
+                  来自业务库 <code>user</code> 表，列出超级管理员与系统管理员。<strong>系统管理员与超级管理员</strong>均可在此新增超级管理员、重置管理员密码；新增规则与「注册」一致（不受站点「关闭注册」影响）。
+                </p>
+              </div>
+              <el-button :loading="adminUsersLoading" :icon="Refresh" @click="loadAdminUsers">
+                刷新列表
+              </el-button>
+            </div>
+            <div v-loading="adminUsersLoading" class="admin-users-panel">
+              <el-table :data="adminUsersList" size="small" border stripe class="admin-users-table">
+                <el-table-column prop="account" label="账号" min-width="120" />
+                <el-table-column prop="powerLabel" label="权限" width="120" />
+                <el-table-column prop="phoneMasked" label="手机号" min-width="120" />
+                <el-table-column label="状态" width="88">
+                  <template #default="{ row }">
+                    {{ adminStatusLabel(row.status) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="注册时间" min-width="160" show-overflow-tooltip>
+                  <template #default="{ row }">
+                    {{ row.joinTime || '—' }}
+                  </template>
+                </el-table-column>
+                <el-table-column v-if="canOperateConfigAdmins" label="操作" width="100" fixed="right">
+                  <template #default="{ row }">
+                    <el-button type="primary" link size="small" @click="openAdminResetDialog(row)">
+                      重置密码
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+
+              <div v-if="canOperateConfigAdmins" class="mysql-tool-block mysql-tool-block--solo admin-create-block">
+                <h3 class="mysql-tool-block__title">
+                  新增超级管理员
+                </h3>
+                <p class="mysql-tool-block__desc">
+                  创建后账号权限为「超级管理员」。若站点开启须绑定手机，则需按注册流程校验手机号。
+                </p>
+                <el-form label-position="top" class="admin-create-form">
+                  <div class="admin-create-grid">
+                    <el-form-item label="登录账号">
+                      <el-input v-model="adminCreateForm.account" maxlength="11" placeholder="4-11 位数字或字母" clearable />
+                    </el-form-item>
+                    <el-form-item label="密码">
+                      <el-input v-model="adminCreateForm.pwd1" type="password" show-password clearable />
+                    </el-form-item>
+                    <el-form-item label="确认密码">
+                      <el-input v-model="adminCreateForm.pwd2" type="password" show-password clearable />
+                    </el-form-item>
+                    <el-form-item label="绑定手机">
+                      <el-checkbox v-model="adminCreateForm.bindPhone" :disabled="siteConfig?.needBindPhone">
+                        绑定手机号（与注册一致）
+                      </el-checkbox>
+                    </el-form-item>
+                    <template v-if="adminCreateForm.bindPhone">
+                      <el-form-item label="手机号">
+                        <el-input v-model="adminCreateForm.phone" maxlength="11" clearable />
+                      </el-form-item>
+                      <el-form-item label="验证码">
+                        <div class="code-row">
+                          <el-input v-model="adminCreateForm.code" maxlength="4" clearable />
+                          <el-button :disabled="adminCodeTime > 0" @click="getAdminCreateCode">
+                            {{ adminCodeText }}
+                          </el-button>
+                        </div>
+                      </el-form-item>
+                    </template>
+                  </div>
+                  <el-button type="primary" :loading="adminCreateSubmitting" @click="submitCreateAdminUser">
+                    创建超级管理员
+                  </el-button>
+                </el-form>
+              </div>
+            </div>
+
+            <el-dialog
+              v-model="adminResetVisible"
+              title="重置管理员密码"
+              width="420px"
+              destroy-on-close
+              @closed="closeAdminResetDialog"
+            >
+              <p v-if="adminResetRow" class="admin-reset-hint">
+                账号 <strong>{{ adminResetRow.account }}</strong>（{{ adminResetRow.powerLabel }}）
+              </p>
+              <el-form label-position="top" class="admin-reset-form">
+                <el-form-item label="新密码">
+                  <el-input v-model="adminResetPwd1" type="password" show-password clearable autocomplete="new-password" />
+                </el-form-item>
+                <el-form-item label="确认新密码">
+                  <el-input v-model="adminResetPwd2" type="password" show-password clearable autocomplete="new-password" />
+                </el-form-item>
+              </el-form>
+              <template #footer>
+                <el-button @click="closeAdminResetDialog">
+                  取消
+                </el-button>
+                <el-button type="primary" :loading="adminResetSubmitting" @click="submitAdminResetPassword">
+                  确定重置
+                </el-button>
+              </template>
+            </el-dialog>
           </el-tab-pane>
         </el-tabs>
 
@@ -1074,6 +1411,148 @@ watch(activeConfigTab, (t) => {
 
 .mysql-live-panel {
   min-height: 120px;
+}
+
+.mysql-tool-block {
+  margin-top: 28px;
+  padding: 20px 18px;
+  border: 1px solid #edf0f5;
+  border-radius: 14px;
+  background: #fbfdff;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.mysql-tool-block__head {
+  margin-bottom: 14px;
+
+  &--row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 20px;
+  }
+}
+
+.mysql-tool-block__title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.mysql-tool-block__desc {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mysql-schema-hints--in-tab {
+  margin-top: 4px;
+}
+
+.mysql-export-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.mysql-export-actions__hint {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.mysql-schema-alert {
+  margin-bottom: 12px;
+}
+
+.mysql-tool-block--solo {
+  margin-top: 16px;
+}
+
+.mysql-merged-section {
+  margin-top: 0;
+}
+
+.mysql-merged-section--live {
+  margin-top: 20px;
+}
+
+.mysql-merged-section__head {
+  margin-bottom: 12px;
+}
+
+.mysql-merged-section__title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.mysql-merged-section__desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #606266;
+}
+
+.admin-users-panel {
+  margin-top: 8px;
+}
+
+.admin-users-table {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.admin-create-block {
+  margin-top: 8px;
+}
+
+.admin-create-form {
+  max-width: 720px;
+}
+
+.admin-create-grid {
+  display: grid;
+  gap: 4px 20px;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+  margin-bottom: 12px;
+}
+
+.code-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+
+  .el-input {
+    flex: 1;
+  }
+}
+
+.field-hint-muted {
+  margin: 6px 0 0;
+  color: #8a94a6;
+  font-size: 12px;
+}
+
+.admin-reset-hint {
+  margin: 0 0 12px;
+  color: #606266;
+  font-size: 14px;
+}
+
+@media screen and (max-width: 700px) {
+  .admin-create-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .mysql-live-summary {

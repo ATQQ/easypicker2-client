@@ -26,6 +26,22 @@ function checkMysqlDatabase(
   return ajax.post('/config/service/mysql/check-database', body)
 }
 
+function listConfigAdminUsers(): ConfigServiceAPITypes.listConfigAdminUsers {
+  return ajax.get('/config/service/admin-users')
+}
+
+function createConfigAdminUser(
+  body: ConfigServiceAPITypes.CreateConfigAdminUserBody,
+): ConfigServiceAPITypes.createConfigAdminUser {
+  return ajax.post('/config/service/admin-users', body)
+}
+
+function resetConfigAdminUserPassword(
+  body: ConfigServiceAPITypes.ResetConfigAdminUserPasswordBody,
+): ConfigServiceAPITypes.resetConfigAdminUserPassword {
+  return ajax.post('/config/service/admin-users/reset-password', body)
+}
+
 function getServiceConfig(): ConfigServiceAPITypes.getServiceConfig {
   return ajax.get('/config/service/config')
 }
@@ -41,6 +57,9 @@ export default {
   applyMysqlSchema,
   getMysqlLiveIntrospect,
   checkMysqlDatabase,
+  listConfigAdminUsers,
+  createConfigAdminUser,
+  resetConfigAdminUserPassword,
   getServiceConfig,
   updateCfg,
 }

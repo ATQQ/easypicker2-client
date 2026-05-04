@@ -1,13 +1,17 @@
+import type { Context } from 'flash-wolves'
 import type { UserConfig } from '@/db/model/config'
 import type { GlobalSiteConfig } from '@/types'
-import { Get, Post, Put, ReqBody, ReqQuery, RouterController } from 'flash-wolves'
+import { Get, Inject, InjectCtx, Post, Put, ReqBody, ReqQuery, RouterController } from 'flash-wolves'
+import { In } from 'typeorm'
 import { kvStoreConfig } from '@/config'
 import { UserConfigLabels } from '@/constants'
 import { initTypeORM } from '@/db'
 import { USER_POWER } from '@/db/model/user'
+import { UserRepository } from '@/db/userDb'
 import { getMongoDBStatus, refreshMongoDb } from '@/lib/dbConnect/mongodb'
 import { getMysqlStatus, refreshPool } from '@/lib/dbConnect/mysql'
 import { getRedisStatus } from '@/lib/dbConnect/redis'
+import { UserService } from '@/service'
 import { ensureMysqlBootstrap } from '@/utils/mysql-bootstrap'
 import { checkMysqlDatabaseExists } from '@/utils/mysql-check-database'
 import {
@@ -21,7 +25,9 @@ import {
 } from '@/utils/mysql-schema-canonical'
 import { patchTable } from '@/utils/patch'
 import { getQiniuStatus, refreshQinNiuConfig } from '@/utils/qiniuUtil'
+import { rPassword } from '@/utils/regExp'
 import { isCodeLoginSupported } from '@/utils/siteConfig'
+import { encryption } from '@/utils/stringUtil'
 import { getTxServiceStatus, refreshTxConfig } from '@/utils/tencent'
 import LocalUserDB from '@/utils/user-local-db'
 
@@ -81,6 +87,15 @@ const serviceDefinitions: ServiceDefinition[] = [
 
 @RouterController('config', { userPower: USER_POWER.SYSTEM, needLogin: true })
 export default class UserController {
+  @Inject(UserService)
+  private userService!: UserService
+
+  @Inject(UserRepository)
+  private userRepository!: UserRepository
+
+  @InjectCtx()
+  private Ctx!: Context
+
   getActiveServices() {
     return serviceDefinitions.filter((service) => {
       const hasConfig = LocalUserDB.findUserConfig({
@@ -172,6 +187,105 @@ export default class UserController {
   @Get('service/mysql/introspect')
   async getMysqlLiveIntrospect() {
     return getMysqlLiveIntrospection()
+  }
+
+  /** user 表中具备 SUPER / SYSTEM 的账号（与开放注册同一数据源） */
+  @Get('service/admin-users')
+  async listAdminUsers() {
+    const users = await this.userRepository.findMany(
+      { power: In([USER_POWER.SUPER, USER_POWER.SYSTEM]) },
+      { order: { id: 'DESC' } },
+    )
+    const powerLabel = (p: number) => {
+      if (p === USER_POWER.SUPER)
+        return '超级管理员'
+      if (p === USER_POWER.SYSTEM)
+        return '系统管理员'
+      return String(p)
+    }
+    const maskPhone = (p: string | null | undefined) => {
+      if (!p)
+        return ''
+      if (p.length <= 7)
+        return '****'
+      return `${p.slice(0, 3)}****${p.slice(-4)}`
+    }
+    return {
+      list: users.map(u => ({
+        id: u.id,
+        account: u.account,
+        phoneMasked: maskPhone(u.phone),
+        power: u.power,
+        powerLabel: powerLabel(u.power),
+        status: u.status,
+        joinTime: u.joinTime ? new Date(u.joinTime).toISOString() : null,
+        loginTime: u.loginTime ? new Date(u.loginTime).toISOString() : null,
+      })),
+    }
+  }
+
+  /**
+   * 新增超级管理员：流程与开放注册 user/register 一致（不受「关闭注册」开关限制），写入后授予 SUPER；
+   * 系统管理员与超级管理员可操作。
+   */
+  @Post('service/admin-users')
+  async createAdminUser(@ReqBody() body: Record<string, unknown>) {
+    const login = this.Ctx.req.userInfo as { power?: number } | undefined
+    const loginPower = typeof login?.power === 'string' ? Number(login.power) : login?.power
+
+    if (loginPower !== USER_POWER.SYSTEM && loginPower !== USER_POWER.SUPER) {
+      return { ok: false, error: '无权创建（需系统管理员或超级管理员）' }
+    }
+
+    try {
+      const user = await this.userService.register({
+        account: body.account,
+        pwd: body.pwd,
+        bindPhone: body.bindPhone === true || `${body.bindPhone}` === 'true',
+        phone: body.phone,
+        code: body.code,
+      })
+      user.power = USER_POWER.SUPER
+      await this.userRepository.update(user)
+      return { ok: true, id: user.id }
+    }
+    catch (err: unknown) {
+      const e = err as { msg?: string, message?: string }
+      return { ok: false, error: e?.msg || e?.message || '创建失败' }
+    }
+  }
+
+  /**
+   * 重置列表内管理员（SUPER / SYSTEM）登录密码；系统管理员与超级管理员可操作。
+   */
+  @Post('service/admin-users/reset-password')
+  async resetAdminUserPassword(@ReqBody() body: Record<string, unknown>) {
+    const login = this.Ctx.req.userInfo as { power?: number } | undefined
+    const loginPower = typeof login?.power === 'string' ? Number(login.power) : login?.power
+
+    if (loginPower !== USER_POWER.SYSTEM && loginPower !== USER_POWER.SUPER) {
+      return { ok: false, error: '无权重置（需系统管理员或超级管理员）' }
+    }
+
+    const rawId = body.id
+    const id = typeof rawId === 'string' ? Number(rawId) : typeof rawId === 'number' ? rawId : Number.NaN
+    const pwd = typeof body.pwd === 'string' ? body.pwd : ''
+
+    if (!Number.isFinite(id) || id <= 0 || !rPassword.test(pwd)) {
+      return { ok: false, error: '参数不合法' }
+    }
+
+    const target = await this.userRepository.findOne({ id })
+    if (!target) {
+      return { ok: false, error: '用户不存在' }
+    }
+    if (target.power !== USER_POWER.SUPER && target.power !== USER_POWER.SYSTEM) {
+      return { ok: false, error: '该账号不在管理员范围内' }
+    }
+
+    target.password = encryption(pwd)
+    await this.userRepository.update(target)
+    return { ok: true }
   }
 
   /** 返回由 docs/schema/mysql-schema.json 拼装的可复制 DDL（建新库时使用） */
