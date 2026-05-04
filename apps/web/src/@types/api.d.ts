@@ -438,6 +438,90 @@ declare namespace ConfigServiceAPITypes {
     data: ServiceConfigItem[]
   }
   type getServiceConfig = ResponseData<ConfigData[]>
+
+  interface MysqlSchemaOverview {
+    autoCreateDatabase: boolean
+    autoSyncSchemaOnStartup: boolean
+    pending: boolean
+    missingTables: string[]
+    missingColumns: Array<{ table: string, column: string }>
+    typeMismatches: Array<{
+      table: string
+      column: string
+      expectedComparable: string
+      actualComparable: string
+    }>
+    error?: string
+  }
+
+  interface MysqlSchemaApplyResult extends MysqlSchemaOverview {
+    ok: boolean
+  }
+
+  interface MysqlSchemaExportPayload {
+    sql: string
+    description?: string
+    error?: string
+  }
+
+  type getMysqlSchema = ResponseData<MysqlSchemaOverview>
+  type getMysqlSchemaExportSql = ResponseData<MysqlSchemaExportPayload>
+  type applyMysqlSchema = ResponseData<MysqlSchemaApplyResult>
+
+  interface MysqlLiveIndexColumn {
+    seq: number
+    column: string
+    subPart: number | null
+  }
+  interface MysqlLiveIndex {
+    name: string
+    unique: boolean
+    indexType: string
+    columns: MysqlLiveIndexColumn[]
+  }
+  interface MysqlLiveColumn {
+    ordinal: number
+    name: string
+    columnType: string
+    nullable: boolean
+    key: string
+    default: string | null
+    extra: string
+    comment: string
+  }
+  interface MysqlLiveTable {
+    name: string
+    engine: string | null
+    collation: string | null
+    comment: string
+    rowEstimate: number | null
+    dataLength: number | null
+    indexLength: number | null
+    createSql: string
+    columns: MysqlLiveColumn[]
+    indexes: MysqlLiveIndex[]
+  }
+  interface MysqlLiveIntrospection {
+    database: string
+    mysqlVersion: string
+    tables: MysqlLiveTable[]
+    error?: string
+  }
+  type getMysqlLiveIntrospect = ResponseData<MysqlLiveIntrospection>
+
+  interface MysqlCheckDatabaseBody {
+    host?: string
+    port?: number | string
+    user?: string
+    password?: string
+    database?: string
+  }
+  interface MysqlCheckDatabaseResult {
+    canConnect: boolean
+    databaseExists: boolean
+    error?: string
+  }
+  type checkMysqlDatabase = ResponseData<MysqlCheckDatabaseResult>
 }
 
 declare namespace ActionApiTypes {

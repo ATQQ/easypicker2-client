@@ -259,7 +259,9 @@ export class FileRepository extends BaseRepository<Files> {
           .where('file.name LIKE :keyword', { keyword: likeKeyword })
           .orWhere('file.taskName LIKE :keyword', { keyword: likeKeyword })
           .orWhere('file.people LIKE :keyword', { keyword: likeKeyword })
-          .orWhere('file.info LIKE :keyword', { keyword: likeKeyword })
+          .orWhere('CAST(file.info AS CHAR(16383)) LIKE :keyword', {
+            keyword: likeKeyword,
+          })
           .orWhere('file.originName LIKE :keyword', { keyword: likeKeyword })
       }))
     }

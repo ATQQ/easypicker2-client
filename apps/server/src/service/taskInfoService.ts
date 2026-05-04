@@ -1,13 +1,13 @@
 import type { Context } from 'flash-wolves'
+import type { TaskInfo } from '@/db/entity'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { In } from 'typeorm'
-import { TaskInfoRepository } from '@/db/taskInfoDb'
+import { publicError } from '@/constants/errorMsg'
+import { BOOLEAN } from '@/db/model/public'
 import { TaskRepository } from '@/db/taskDb'
+import { TaskInfoRepository } from '@/db/taskInfoDb'
 import { BehaviorService, QiniuService } from '@/service'
 import { getUniqueKey } from '@/utils/stringUtil'
-import type { TaskInfo } from '@/db/entity'
-import { BOOLEAN } from '@/db/model/public'
-import { publicError } from '@/constants/errorMsg'
 
 @Provide()
 export default class TaskInfoService {
@@ -132,6 +132,16 @@ export default class TaskInfoService {
     let { share } = payload
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
 
+    let coercedInfo = info
+    if (coercedInfo !== undefined && typeof coercedInfo === 'string') {
+      try {
+        coercedInfo = JSON.parse(coercedInfo)
+      }
+      catch {
+        // 保持原字符串（旧客户端 / 异常数据）
+      }
+    }
+
     if (share !== undefined) {
       share = getUniqueKey()
     }
@@ -143,7 +153,7 @@ export default class TaskInfoService {
       template,
       rewrite,
       format,
-      info,
+      info: coercedInfo,
       ddl,
       shareKey: share,
       limitPeople: people,
@@ -195,7 +205,7 @@ export default class TaskInfoService {
       template: '',
       rewrite: BOOLEAN.FALSE,
       format: '',
-      info: JSON.stringify(['姓名']),
+      info: ['姓名'],
       shareKey: getUniqueKey(),
       ddl: null,
     }

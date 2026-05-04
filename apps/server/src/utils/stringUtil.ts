@@ -98,7 +98,26 @@ export function formatPrice(...prices: number[]) {
 }
 
 type InfoItemType = 'input' | 'radio' | 'text' | 'select'
-interface InfoItem {
+type InfoInput = string | InfoItem[] | unknown | null | undefined
+
+function normalizeInfoItems(v: InfoInput): InfoItem[] {
+  if (v === null || v === undefined)
+    return []
+  if (Array.isArray(v))
+    return v as InfoItem[]
+  if (typeof v === 'string') {
+    try {
+      const parsed = JSON.parse(v)
+      return Array.isArray(parsed) ? parsed : []
+    }
+    catch {
+      return []
+    }
+  }
+  return []
+}
+
+export interface InfoItem {
   type?: InfoItemType
   // 描述信息
   text?: string
@@ -107,10 +126,10 @@ interface InfoItem {
   children?: InfoItem[]
 }
 
-export function isSameInfo(userInfo: string, dbInfo: string) {
+export function isSameInfo(userInfo: InfoInput, dbInfo: InfoInput) {
   try {
-    const userItems: InfoItem[] = JSON.parse(userInfo)
-    const dbItems: InfoItem[] = JSON.parse(dbInfo)
+    const userItems = normalizeInfoItems(userInfo)
+    const dbItems = normalizeInfoItems(dbInfo)
     if (userItems.length === 0) {
       return false
     }

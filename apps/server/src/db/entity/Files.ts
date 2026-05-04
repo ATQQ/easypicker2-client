@@ -24,8 +24,8 @@ export class Files {
   @Column('varchar', { length: 1024, name: 'name', comment: '文件名' })
   name: string
 
-  @Column('varchar', { length: 10240, nullable: true, comment: '文件信息' })
-  info: string | null
+  @Column({ type: 'json', nullable: true, comment: '提交填写的信息（表单项 JSON）' })
+  info: unknown
 
   @Column('varchar', { length: 512, comment: '文件hash' })
   hash: string

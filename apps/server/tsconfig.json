@@ -1,20 +1,12 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "esnext",
     "lib": ["ESNext"],
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "baseUrl": ".",
     "module": "commonjs",
     "moduleResolution": "node",
-    "downlevelIteration": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "allowJs": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "baseUrl": ".",
-    "outDir": "./dist/",
-    "typeRoots": [
-      "./node_modules/@types/"
-    ],
     "paths": {
       "@/*": [
         "src/*"
@@ -22,10 +14,18 @@
       "@middleware/*": [
         "src/lib/middleware/*"
       ]
-    }
+    },
+    "typeRoots": [
+      "./node_modules/@types/"
+    ],
+    "allowJs": true,
+    "downlevelIteration": true,
+    "outDir": "./dist/",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
   },
   "include": [
-    "src/**/*.ts",
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules"

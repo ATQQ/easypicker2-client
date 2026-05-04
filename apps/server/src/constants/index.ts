@@ -25,6 +25,8 @@ export const UserConfigLabels = {
     database: '数据库名',
     user: '用户名',
     password: '密码',
+    autoCreateDatabase: '无库时自动建库并按模板导入全部表结构',
+    autoSyncSchemaOnStartup: '启动时按 docs/schema/mysql-schema.json 对齐缺列及列类型',
   },
   qiniu: {
     accessKey: 'AccessKey',

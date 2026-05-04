@@ -1,10 +1,4 @@
-import type { Category } from '@/db/model/category'
 import type { UserConfigType } from '@/db/model/config'
-import type { File } from '@/db/model/file'
-import type { People } from '@/db/model/people'
-import type { Task } from '@/db/model/task'
-import type { TaskInfo } from '@/db/model/taskInfo'
-import type { User } from '@/db/model/user'
 import type { GlobalSiteConfig } from '@/types'
 import { appendFile } from 'node:fs/promises'
 import process from 'node:process'
@@ -17,197 +11,50 @@ import {
 } from '@/config'
 import { initTypeORM } from '@/db'
 import { refreshMongoDb } from '@/lib/dbConnect/mongodb'
-import { query, refreshPool } from '@/lib/dbConnect/mysql'
+import { refreshPool } from '@/lib/dbConnect/mysql'
+import { isMysqlAutoSyncSchemaOnStartup } from '@/utils/mysql-features'
+import {
+  applyMysqlCanonicalSchemaAdds,
+  applyMysqlCanonicalSchemaModifies,
+} from '@/utils/mysql-schema-canonical'
 import { refreshQinNiuConfig } from './qiniuUtil'
 import { getUniqueKey } from './stringUtil'
+
 import { refreshTxConfig } from './tencent'
 import LocalUserDB from './user-local-db'
 
-type TableName = 'task_info' | 'category' | 'files' | 'task' | 'people' | 'user'
-interface DBTables {
-  task_info: TaskInfo
-  category: Category
-  files: File
-  task: Task
-  people: People
-  user: User
-}
-
-interface TableField<T extends TableName> {
-  /**
-   * 字段名
-   */
-  fieldName: keyof DBTables[T]
-  /**
-   * 字段类型
-   */
-  fieldType: string
-  /**
-   * 默认值
-   */
-  defaultValue: string | number
-  /**
-   * 字段释义
-   */
-  comment: string
-  /**
-   * 自动更新最后更新时间
-   */
-  lastUpdateTime?: boolean
-}
-async function addTableField<T extends TableName>(
-  tableName: T,
-  field: TableField<T>,
-) {
-  const cfg = LocalUserDB.getUserConfigByType('mysql')
-  const dbName = cfg.database
-
-  const { fieldName, defaultValue, comment, fieldType, lastUpdateTime = false } = field
-
-  const checkFieldCountSql
-    = 'SELECT count(*) as count FROM information_schema.COLUMNS WHERE table_name = ? AND column_name = ? AND table_schema = ?'
-  const { count } = (
-    await query(checkFieldCountSql, tableName, `${String(fieldName)}`, dbName)
-  )[0]
-  if (count === 0) {
-    console.log(`添加字段 ${tableName}.${String(fieldName)}`)
-    const sql = `ALTER TABLE ${tableName} ADD COLUMN ${String(
-      fieldName,
-    )} ${fieldType} DEFAULT ${defaultValue} ${lastUpdateTime ? 'ON UPDATE CURRENT_TIMESTAMP' : ''} COMMENT '${comment}'`
-    console.log(sql)
-    console.log(await query(sql))
-  }
-}
-
-async function modifyTableField<T extends TableName>(
-  tableName: T,
-  field: Partial<TableField<T>>,
-) {
-  const cfg = LocalUserDB.getUserConfigByType('mysql')
-  const dbName = cfg.database
-  const { fieldName, fieldType } = field
-  const checkFieldCountSql
-    = 'SELECT count(*) as count FROM information_schema.COLUMNS WHERE table_name = ? AND column_name = ? AND table_schema = ?'
-  const { count } = (
-    await query(checkFieldCountSql, tableName, `${String(fieldName)}`, dbName)
-  )[0]
-  if (count === 0) {
-    console.log('表', tableName, '不存在字段', fieldName, fieldType)
+export async function runMysqlPatchesOnStartup(): Promise<void> {
+  if (!isMysqlAutoSyncSchemaOnStartup()) {
+    console.log('[mysql:migrate] 启动时跳过（autoSyncSchemaOnStartup=false），可在管理面板检查并一键对齐表结构')
     return
   }
-
-  const getColumnTypeSql
-    = 'SELECT * FROM information_schema.COLUMNS WHERE table_name = ? AND column_name = ? AND table_schema = ?'
-  const { COLUMN_TYPE: originType } = (
-    await query(getColumnTypeSql, tableName, `${String(fieldName)}`, dbName)
-  )[0]
-
-  if (originType !== fieldType) {
-    // TODO：特殊处理（待观测优化）
-    if (fieldType === 'bigint' && originType.includes(fieldType)) {
-      return
-    }
-    console.log(`修改字段 ${tableName}.${String(fieldName)}`)
-    console.log(
-      `ALTER TABLE ${tableName} MODIFY ${String(fieldName)} ${fieldType}`,
-    )
-    console.log(
-      await query(
-        `ALTER TABLE ${tableName} MODIFY ${String(fieldName)} ${fieldType}`,
-      ),
-    )
-  }
+  await patchTable({ applyAdds: true, applyMods: true })
 }
 
-export async function patchTable() {
-  const TenK = Math.round(1024 * 10)
-  await addTableField('task_info', {
-    fieldName: 'tip',
-    fieldType: 'text',
-    comment: '批注信息',
-    defaultValue: '',
-  })
+/**
+ * docs/schema/mysql-schema.json ：缺列 ADD、列类型漂移 MODIFY。
+ */
+export async function patchTable(options?: {
+  applyAdds?: boolean
+  applyMods?: boolean
+}): Promise<{ added: string[], modified: string[] }> {
+  const applyAdds = options?.applyAdds !== false
+  const applyMods = options?.applyMods !== false
 
-  await addTableField('files', {
-    fieldName: 'origin_name',
-    fieldType: 'varchar(1024)',
-    comment: '原文件名',
-    defaultValue: '',
-  })
+  const added = applyAdds ? await applyMysqlCanonicalSchemaAdds() : []
+  const modified = applyMods ? await applyMysqlCanonicalSchemaModifies() : []
 
-  await addTableField('task', {
-    fieldName: 'del',
-    fieldType: 'tinyint',
-    comment: '是否删除',
-    defaultValue: 0,
-  })
+  if (!added.length && !modified.length) {
+    console.log('[mysql:migrate] mysql-schema.json 与当前库一致（无 ADD COLUMN / MODIFY COLUMN）')
+  }
+  else {
+    if (added.length)
+      console.log(`[mysql:migrate] 已变更：ADD COLUMN → ${added.join(', ')}`)
+    if (modified.length)
+      console.log(`[mysql:migrate] 已变更：MODIFY COLUMN → ${modified.join(', ')}`)
+  }
 
-  await addTableField('files', {
-    fieldName: 'del',
-    fieldType: 'tinyint',
-    comment: '是否删除',
-    defaultValue: 0,
-  })
-
-  await modifyTableField('task_info', {
-    fieldName: 'info',
-    fieldType: `varchar(${TenK})`,
-  })
-
-  await modifyTableField('files', {
-    fieldName: 'info',
-    fieldType: `varchar(${TenK})`,
-  })
-
-  await modifyTableField('task_info', {
-    fieldName: 'tip',
-    fieldType: 'text',
-  })
-
-  await modifyTableField('files', {
-    fieldName: 'size',
-    fieldType: 'bigint',
-  })
-
-  await addTableField('task_info', {
-    fieldName: 'bind_field',
-    fieldType: 'varchar(255)',
-    defaultValue: '\'姓名\'',
-    comment: '绑定表单字段',
-  })
-
-  await addTableField('user', {
-    fieldName: 'size',
-    fieldType: 'int',
-    defaultValue: 2,
-    comment: '可支配空间上限',
-  })
-  await addTableField('user', {
-    fieldName: 'wallet',
-    fieldType: 'decimal(10,2)',
-    defaultValue: 2,
-    comment: '钱包余额',
-  })
-
-  await addTableField('files', {
-    fieldName: 'oss_del_time',
-    fieldType: 'timestamp',
-    defaultValue: null,
-    comment: 'OSS资源删除时间',
-  })
-  await addTableField('files', {
-    fieldName: 'del_time',
-    fieldType: 'timestamp',
-    defaultValue: null,
-    comment: '删除时间',
-  })
-  await addTableField('files', {
-    fieldName: 'last_update_time',
-    fieldType: 'timestamp',
-    defaultValue: 'CURRENT_TIMESTAMP',
-    comment: '最后更新时间',
-    lastUpdateTime: true,
-  })
+  return { added, modified }
 }
 
 function getRandomUser() {
@@ -289,7 +136,11 @@ export async function initUserConfig() {
       }
     })
   }
-  storeDbInfo('mysql', mysqlConfig)
+  storeDbInfo('mysql', {
+    ...mysqlConfig,
+    autoCreateDatabase: false,
+    autoSyncSchemaOnStartup: true,
+  })
   storeDbInfo('mongo', mongodbConfig)
   storeDbInfo('redis', redisConfig)
   storeDbInfo('qiniu', qiniuConfig)

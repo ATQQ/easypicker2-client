@@ -1,6 +1,6 @@
 import type { UserConfig } from '@/db/model/config'
 import type { GlobalSiteConfig } from '@/types'
-import { Get, Put, ReqBody, ReqQuery, RouterController } from 'flash-wolves'
+import { Get, Post, Put, ReqBody, ReqQuery, RouterController } from 'flash-wolves'
 import { kvStoreConfig } from '@/config'
 import { UserConfigLabels } from '@/constants'
 import { initTypeORM } from '@/db'
@@ -8,6 +8,17 @@ import { USER_POWER } from '@/db/model/user'
 import { getMongoDBStatus, refreshMongoDb } from '@/lib/dbConnect/mongodb'
 import { getMysqlStatus, refreshPool } from '@/lib/dbConnect/mysql'
 import { getRedisStatus } from '@/lib/dbConnect/redis'
+import { ensureMysqlBootstrap } from '@/utils/mysql-bootstrap'
+import { checkMysqlDatabaseExists } from '@/utils/mysql-check-database'
+import {
+  isMysqlAutoCreateDatabase,
+  isMysqlAutoSyncSchemaOnStartup,
+} from '@/utils/mysql-features'
+import { getMysqlLiveIntrospection } from '@/utils/mysql-live-introspect'
+import {
+  getMysqlCanonicalSchemaDrift,
+  getMysqlCanonicalSchemaExportSqlSafe,
+} from '@/utils/mysql-schema-canonical'
 import { patchTable } from '@/utils/patch'
 import { getQiniuStatus, refreshQinNiuConfig } from '@/utils/qiniuUtil'
 import { isCodeLoginSupported } from '@/utils/siteConfig'
@@ -116,6 +127,87 @@ export default class UserController {
     })
   }
 
+  @Get('service/mysql/schema')
+  async getMysqlSchemaOverview() {
+    try {
+      const drift = await getMysqlCanonicalSchemaDrift()
+      return {
+        autoCreateDatabase: isMysqlAutoCreateDatabase(),
+        autoSyncSchemaOnStartup: isMysqlAutoSyncSchemaOnStartup(),
+        ...drift,
+      }
+    }
+    catch (err: unknown) {
+      return {
+        autoCreateDatabase: isMysqlAutoCreateDatabase(),
+        autoSyncSchemaOnStartup: isMysqlAutoSyncSchemaOnStartup(),
+        pending: false,
+        missingTables: [],
+        missingColumns: [] as Array<{ table: string, column: string }>,
+        typeMismatches: [] as Array<{
+          table: string
+          column: string
+          expectedComparable: string
+          actualComparable: string
+        }>,
+        error:
+          err instanceof Error ? err.message : '无法检查 schema，请确认 MySQL 已连接',
+      }
+    }
+  }
+
+  /** 检测能否连接实例及 database 是否已在服务端创建（不修改数据） */
+  @Post('service/mysql/check-database')
+  async checkMysqlDatabase(@ReqBody() body: Record<string, unknown>) {
+    return checkMysqlDatabaseExists({
+      host: body.host as string | undefined,
+      port: body.port as number | string | undefined,
+      user: body.user as string | undefined,
+      password: body.password as string | undefined,
+      database: body.database as string | undefined,
+    })
+  }
+
+  /** 当前连接库的实时表结构（字段 / 索引 / 估算行数 / SHOW CREATE TABLE） */
+  @Get('service/mysql/introspect')
+  async getMysqlLiveIntrospect() {
+    return getMysqlLiveIntrospection()
+  }
+
+  /** 返回由 docs/schema/mysql-schema.json 拼装的可复制 DDL（建新库时使用） */
+  @Get('service/mysql/schema/export-sql')
+  async getMysqlSchemaExportSql() {
+    try {
+      return await getMysqlCanonicalSchemaExportSqlSafe()
+    }
+    catch (err: unknown) {
+      return {
+        sql: '',
+        description: undefined,
+        error:
+          err instanceof Error
+            ? err.message
+            : '读取 mysql-schema.json 失败或服务端组装 SQL 出错',
+      }
+    }
+  }
+
+  /** 强制执行建库脚本（若启用）并应用 canonical JSON ADD + MODIFY */
+  @Post('service/mysql/schema/apply')
+  async applyMysqlSchemaManually() {
+    await ensureMysqlBootstrap()
+    await refreshPool()
+    await initTypeORM()
+    await patchTable({ applyAdds: true, applyMods: true })
+    const drift = await getMysqlCanonicalSchemaDrift()
+    return {
+      ok: true,
+      autoCreateDatabase: isMysqlAutoCreateDatabase(),
+      autoSyncSchemaOnStartup: isMysqlAutoSyncSchemaOnStartup(),
+      ...drift,
+    }
+  }
+
   @Get('service/config')
   async getUserConfig() {
     return this.getActiveServices().map((service) => {
@@ -137,13 +229,13 @@ export default class UserController {
   async updateUserConfig(@ReqBody() data: Partial<UserConfig> | Partial<UserConfig>[]) {
     const wrapperValue = (key: string, v: any) => {
       const num = ['port']
-      const bool = ['auth']
+      const bool = ['auth', 'autoCreateDatabase', 'autoSyncSchemaOnStartup']
       const boolString = ['imageCoverStyle', 'imagePreviewStyle']
       if (num.includes(key)) {
         return +v
       }
       if (bool.includes(key)) {
-        return String(true) === v
+        return v === true || v === 'true' || v === 1 || `${v}` === '1'
       }
       if (boolString.includes(key)) {
         return String(false) === v ? '' : v
@@ -165,6 +257,15 @@ export default class UserController {
     const changedTypes = new Set(configs.map(item => item.type))
 
     if (changedTypes.has('mysql')) {
+      try {
+        await ensureMysqlBootstrap()
+      }
+      catch (err: unknown) {
+        console.warn(
+          '[config] ensureMysqlBootstrap',
+          err instanceof Error ? err.message : err,
+        )
+      }
       await refreshPool()
       try {
         await initTypeORM()

@@ -1,4 +1,4 @@
-import { BOOLEAN } from './public'
+import type { BOOLEAN } from './public'
 
 export interface TaskInfo {
   id?: number
@@ -9,7 +9,7 @@ export interface TaskInfo {
   template?: string
   rewrite?: BOOLEAN
   format?: string
-  info?: string
+  info?: unknown
   ddl?: Date
   share_key?: string
   shareKey?: string

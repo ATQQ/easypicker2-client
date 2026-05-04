@@ -16,10 +16,11 @@ import {
 // routes
 import routes from './routes'
 
+import { ensureMysqlBootstrap } from './utils/mysql-bootstrap'
 import {
   initUserConfig,
-  patchTable,
   readyServerDepService,
+  runMysqlPatchesOnStartup,
 } from './utils/patch'
 import LocalUserDB from './utils/user-local-db'
 import 'reflect-metadata'
@@ -69,6 +70,15 @@ app.listen(serverConfig.port, serverConfig.hostname, async () => {
   await LocalUserDB.initUserConfig()
   await initUserConfig()
   try {
+    await ensureMysqlBootstrap()
+  }
+  catch (err: unknown) {
+    console.warn(
+      '❌ MySQL bootstrap（建库/导入表结构）',
+      err instanceof Error ? err.message : err,
+    )
+  }
+  try {
     await readyServerDepService()
   }
   catch (err) {
@@ -81,10 +91,12 @@ app.listen(serverConfig.port, serverConfig.hostname, async () => {
     console.warn('❌ ensureLogIndexes', err?.message)
   }
   try {
-    await patchTable()
-    console.log('😄😄 mysql patch success')
+    await runMysqlPatchesOnStartup()
+    console.log('😄😄 mysql patch pipeline ok')
   }
   catch {
-    console.log('😭😭 mysql 还未正常配置，请检查数据库是否配置正确或版本不匹配')
+    console.log(
+      '😭😭 mysql schema 对齐失败或未配置数据库，请到管理面板检查 MySQL',
+    )
   }
 })

@@ -9,7 +9,7 @@ export interface File {
   user_id?: number
   userId?: number
   name?: string
-  info?: string
+  info?: unknown
   hash?: string
   date?: Date
   size?: number

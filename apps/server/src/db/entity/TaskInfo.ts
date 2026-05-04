@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity('task_info')
 export class TaskInfo {
@@ -11,7 +11,7 @@ export class TaskInfo {
   @Column('varchar', {
     length: 256,
     name: 'task_key',
-    comment: '关联任务的key'
+    comment: '关联任务的key',
   })
   taskKey: string
 
@@ -24,12 +24,8 @@ export class TaskInfo {
   @Column('varchar', { length: 1024, nullable: true, comment: '文件名格式' })
   format: string | null
 
-  @Column('varchar', {
-    length: 10240,
-    nullable: true,
-    comment: '提交必填的内容(表单)'
-  })
-  info: string | null
+  @Column({ type: 'json', nullable: true, comment: '提交必填的内容(表单结构 JSON)' })
+  info: unknown
 
   @Column('timestamp', { nullable: true, comment: '截止日期' })
   ddl: Date | null
@@ -37,14 +33,15 @@ export class TaskInfo {
   @Column('varchar', {
     name: 'share_key',
     length: 128,
-    comment: '用于分享的链接'
+    comment:
+      '任务对外分享用的短链 key（与 task.k 不同；公开分享页、接口鉴权等会用到）',
   })
   shareKey: string
 
   @Column('tinyint', {
     name: 'limit_people',
     comment: '是否限制提交人员',
-    default: 0
+    default: 0,
   })
   limitPeople: number
 
@@ -52,7 +49,7 @@ export class TaskInfo {
     name: 'bind_field',
     length: 255,
     comment: '绑定表单项',
-    default: '姓名'
+    default: '姓名',
   })
   bindField: string
 
