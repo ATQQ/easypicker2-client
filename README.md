@@ -25,6 +25,7 @@
 
 - [`apps/web`](./apps/web)：前端应用，基于 Vue3、TypeScript、Vite
 - [`apps/server`](./apps/server)：服务端应用，基于 Node.js、TypeScript
+- [`packages/easypicker2-cli`](./packages/easypicker2-cli/)：EasyPicker2 独立部署 CLI
 
 应用开源，支持[私有化部署](https://docs.ep.sugarat.top/)
 

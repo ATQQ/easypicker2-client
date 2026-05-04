@@ -74,6 +74,7 @@ ep2 deploy server --pm2-name ep-prod
 - 首次部署：执行安装依赖、`pm2 start`、`pm2 save`
 - 更新代码：执行安装依赖、`pm2 restart`
 - 查看状态：执行 `pm2 list` 或 `pm2 logs`
+- **监听端口**：由环境变量 `SERVER_PORT` 决定。**推荐**在 PM2 / 宝塔面板为该进程写入 `SERVER_PORT`；也可用 Linux 前缀 `SERVER_PORT=4000 pm2 start npm --name xxx -- run start`。`deploy server` 结束后终端会再次出现简要说明。
 - 可选补充：按需执行 `pm2 startup`、`pm2 save`、`pm2 resurrect`
 
 ## 常用参数

@@ -29,6 +29,26 @@ function printPm2ExtraTips() {
   log.command('pm2 resurrect')
 }
 
+/** 服务端监听端口取自环境变量 SERVER_PORT（源码 serverConfig.port） */
+export function printServerPortEnvTip(pm2Name?: string) {
+  const namePart = pm2Name ? `--name ${pm2Name}` : '--name <进程名>'
+  log.title('监听端口 SERVER_PORT（默认多为 3000）')
+  console.log('- 端口由进程环境变量 SERVER_PORT 决定，与 nginx / 反向代理的目标端口必须一致')
+  console.log('- 推荐使用以下方式其一（任选）')
+  console.log('')
+  console.log('  1) PM2 ecosystem 或面板「环境变量」：为该进程写入 SERVER_PORT=<端口>（推荐，与生产 NODE_ENV 等一并配置）')
+  console.log('')
+  console.log('  2) Linux / macOS：在 pm2 start 命令前增加环境变量前缀：')
+  log.command(`SERVER_PORT=4000 pm2 start npm ${namePart} -- run start`)
+  console.log('')
+  console.log('  3) 编辑 .env：仅当启动脚本会先合并 .env 到进程环境时才生效；仅用 node/pnpm run start 时请优先用上述方式注入 SERVER_PORT')
+  console.log('')
+  console.log('  修改端口后请同步调整 nginx「反向代理」的目标 URL，并重启 PM2 进程')
+}
+
+/** 服务端部署后与 PM2 相关的完整说明（端口、日志、开机自启等） */
+export const SERVER_DEPLOY_PM2_DOCS_URL = 'https://docs.ep.sugarat.top/deploy/cli'
+
 export function printServerDeployPm2Commands(options: {
   name: string
   cwd: string
@@ -36,7 +56,6 @@ export function printServerDeployPm2Commands(options: {
   const serverDir = path.resolve(options.cwd)
 
   log.title('首次部署：启动服务')
-  console.log('如果这个服务还没有被 PM2 启动过，复制执行这一组命令：')
   printCommandTips([
     {
       description: '进入服务端目录',
@@ -57,7 +76,6 @@ export function printServerDeployPm2Commands(options: {
   ])
 
   log.title('更新代码：重启已有服务')
-  console.log('如果之前已经启动过服务，本次只是更新代码，复制执行这一组命令：')
   printCommandTips([
     {
       description: '进入服务端目录',
@@ -73,20 +91,7 @@ export function printServerDeployPm2Commands(options: {
     },
   ])
 
-  log.title('查看运行状态')
-  console.log('启动或重启后，可按需执行：')
-  printCommandTips([
-    {
-      description: '查看 PM2 服务列表',
-      command: 'pm2 list',
-    },
-    {
-      description: '查看服务标准输出日志',
-      command: `pm2 logs ${options.name} --out`,
-    },
-  ])
-
-  printPm2ExtraTips()
+  log.info(`监听端口 SERVER_PORT、pm2 logs / startup 等详见：${SERVER_DEPLOY_PM2_DOCS_URL}`)
 }
 
 export function printPm2Commands(options: {
@@ -153,5 +158,8 @@ export function printPm2Commands(options: {
   const action = options.action || 'start'
   log.title(`PM2 ${action} 指令`)
   printCommandTips(commands[action])
+  if (action === 'start') {
+    printServerPortEnvTip(options.name)
+  }
   printPm2ExtraTips()
 }

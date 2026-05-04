@@ -29,6 +29,11 @@ EasyPicker2 CLI
   --overwrite-env              服务端部署时覆盖已有 .env
   --keep-tarball               保留下载和解压临时目录
 
+说明:
+  deploy server 完成后仅打印「首次部署」与「更新代码」两段命令；
+  SERVER_PORT、ep2 pm2 子命令、日志与开机自启等详见 https://docs.ep.sugarat.top/deploy/cli
+  执行 ep2 pm2 start 时会附带 SERVER_PORT 与 PM2 补充说明。
+
 示例:
   ep2 deploy web
   ep2 deploy web -i

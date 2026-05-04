@@ -78,7 +78,7 @@ export async function deploy(positionals: string[], options: CliOptions) {
 
     const deployedDir = await copyServerFiles(packageDir, serverDir, overwriteEnv)
     log.success(`服务端资源已部署到：${deployedDir}`)
-    log.warn('CLI 不会直接安装依赖或操作 PM2。下面按场景区分命令，请选择对应部分复制执行。')
+    log.warn('CLI 不会安装依赖或直接操作 PM2，请按需复制命令；进阶说明见文档站。')
     printServerDeployPm2Commands({
       name: pm2Name,
       cwd: deployedDir,

@@ -150,6 +150,18 @@ export default defineConfig({
         text: '私有化部署',
         items: [
           {
+            text: 'CLI 命令说明',
+            link: '/deploy/cli',
+          },
+          {
+            text: '宝塔面板部署（推荐）',
+            link: '/deploy/baota',
+          },
+          {
+            text: '通用 Linux 部署',
+            link: '/deploy/general',
+          },
+          {
             text: '本地启动&源码修改',
             link: '/deploy/local',
           },
@@ -158,7 +170,7 @@ export default defineConfig({
             link: '/deploy/docker',
           },
           {
-            text: '线上部署',
+            text: '线上部署（v3 · 归档）',
             link: '/deploy/online-v3',
           },
           {
@@ -205,29 +217,46 @@ export default defineConfig({
           text: '私有化部署',
           items: [
             {
-              text: 'Getting Started',
+              text: '1. Getting Started',
               link: '/deploy/',
             },
             {
-              text: '本地启动&源码修改',
+              text: '2. 通用部署指南',
+              link: '/deploy/general',
+            },
+            {
+              text: '3. 宝塔面板部署',
+              link: '/deploy/baota',
+            },
+            {
+              text: '4. CLI 命令说明',
+              link: '/deploy/cli',
+            },
+            {
+              text: '5. 本地启动&源码修改',
               link: '/deploy/local',
             },
-            {
-              text: '使用docker',
-              link: '/deploy/docker',
-            },
-            {
-              text: '线上部署 - v3（推荐）',
-              link: '/deploy/online-v3',
-            },
-            {
-              text: '线上部署 - v2',
-              link: '/deploy/online-new',
-            },
-            {
-              text: '线上部署 - v1',
-              link: '/deploy/online',
-            },
+            // {
+            //   text: '使用docker',
+            //   link: '/deploy/docker',
+            // },
+            // {
+            //   text: '线上部署 - v3（废弃）',
+            //   link: '/deploy/online-v3',
+            // },
+            // {
+            //   text: '线上部署 - v2（废弃）',
+            //   link: '/deploy/online-new',
+            // },
+            // {
+            //   text: '线上部署 - v1（废弃）',
+            //   link: '/deploy/online',
+            // },
+          ],
+        },
+        {
+          text: '其它',
+          items: [
             {
               text: '接入七牛云OSS服务',
               link: '/deploy/qiniu',

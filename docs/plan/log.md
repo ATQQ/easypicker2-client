@@ -5,7 +5,21 @@
 - 线上测试地址 1：<https://ep.dev.sugarat.top/>
 - 线上测试地址 2：<https://ep.test.sugarat.top/>
 
-:::tip 线上重新部署
+:::tip 线上重新部署（推荐 `ep2`）
+
+```sh
+# 见《CLI 说明》《宝塔/通用部署》：先安装 @sugarat/easypicker2-cli
+cd /你的站点目录
+ep2 deploy web
+ep2 deploy server --pm2-name 你的进程名
+# 再按终端提示执行 pnpm install --prod、pm2 restart 等
+```
+
+完整说明：[CLI 命令说明](../deploy/cli.md) · [宝塔部署](../deploy/baota.md) · [通用部署](../deploy/general.md)
+
+:::
+
+:::details 旧版：`q ep deploy` 流程
 
 ```sh
 q ep deploy
@@ -19,7 +33,9 @@ q ep deploy
 └
 ```
 
-:::details 交互式部署结果
+:::
+
+:::details `q ep deploy` 交互式结果示例
 
 ```sh
 ┌   部署 EasyPicker 项目
@@ -43,7 +59,7 @@ q ep deploy
 
 :::
 
-:::details 没安装请先安装工具
+:::details 使用 `q ep` 前先安装 Sugarat CLI（旧版）
 
 ```sh
 # 安装工具
@@ -56,7 +72,7 @@ q add ep
 q update
 ```
 
-详细用法参考，[最新部署文档 V3](../deploy/online-v3.md)
+图文流程见 [线上部署 v3（归档）](../deploy/online-v3.md)
 :::
 
 :::details 开发中的 - beta版本

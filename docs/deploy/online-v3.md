@@ -2,7 +2,13 @@
 outline: [2,3]
 ---
 
-# 线上部署(v3)
+# 线上部署(v3 · 归档)
+
+::: tip 推荐使用独立 CLI：`ep2`
+当前 **推荐** 的私有化部署方式为 [`@sugarat/easypicker2-cli`](https://www.npmjs.com/package/@sugarat/easypicker2-cli)：请优先阅读 **[CLI 说明](./cli.md)**、 **[宝塔面板部署](./baota.md)**、 **[通用 Linux 部署](./general.md)**。
+本文保留基于 **`q ep`（`@sugarat/cli` + `cli-plugin-ep`）** 的图文步骤与截图，便于与老环境对齐；新开站点建议直接按新版文档执行。
+
+:::
 
 :::danger ！！！推荐使用`Linux`系服务器！！！
 下面的所有操作，均在 `Linux` 上进行，如果机器是装的`windows server` 部分操作可能需要远程桌面进行
@@ -719,21 +725,21 @@ location / {
 
 :::danger 从哪获取这些变量？
 
-#### MySQL 相关
+### MySQL 相关
 
 MySQL 的账号密码在数据库面板获取，即前面创建的数据库账号密码
 
-#### MongoDB
+### MongoDB
 
 这里只需要填入数据库名，格式 `小写+连字符`
 
 例如 `ep-prod`, `ep-test`, `ep-log`
 
-#### 七牛云相关配置
+### 七牛云相关配置
 
 参考[七牛云OSS服务创建](./qiniu.md)文章，获取七牛云相关的几个环境变量
 
-#### 腾讯云相关配置（可选）
+### 腾讯云相关配置（可选）
 
 不接入短信登录可以不配
 :::
