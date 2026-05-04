@@ -186,6 +186,20 @@ pnpm serve
 
 浏览器访问终端给予的地址即可 [http://localhost:4173/](http://localhost:4173/)
 
+#### 方式3（测试）- live-server：`dist` + `/api` 代理到本地后端
+
+适用于模拟线上静态托管：先构建出 `dist`，再用 [live-server](https://www.npmjs.com/package/live-server) 启动页面，并把 `/api` 转到本地接口（便于 CSR 深链刷新）。下文示例后端为 `http://127.0.0.1:3001`，请按你的 `SERVER_PORT` 修改代理地址。
+
+在仓库根目录装好依赖后，进入前端应用目录执行：
+
+```shell
+cd apps/web
+pnpm build:test
+npx live-server dist --host=0.0.0.0 --port=8080 --proxy=/api:http://127.0.0.1:3001 --entry-file=index.html
+```
+
+浏览器访问 `http://localhost:8080`。未全局安装时可直接使用上述 `npx`，无需单独 `npm i -g live-server`。
+
 ### 本地启动 - 使用本地的后端服务
 
 需要参照 4，5，6 同时启动本地的后端服务

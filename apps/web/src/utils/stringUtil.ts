@@ -192,8 +192,12 @@ export function isSupportPreview(type: string) {
   return supportTypes.includes(type)
 }
 
-export function parseInfo(info: string): InfoItem[] {
-  return JSON.parse(info).map((v: string | InfoItem) => {
+/** 将后端 JSON 字段解析后的数组或历史字符串格式统一为 InfoItem[] */
+function normalizeParsedInfoItems(raw: unknown): InfoItem[] {
+  if (!Array.isArray(raw)) {
+    return []
+  }
+  return raw.map((v: string | InfoItem) => {
     // 兼容旧表单数据
     if (typeof v === 'string') {
       return { type: 'input', text: v, value: '' }
@@ -205,6 +209,23 @@ export function parseInfo(info: string): InfoItem[] {
     v.value = v.value || ''
     return v
   })
+}
+
+/** info 可能是 JSON 字符串（旧接口/表单），也可能是服务端 JSON 列反序列化后的数组 */
+export function parseInfo(info: string | InfoItem[] | null | undefined): InfoItem[] {
+  if (info == null || info === '') {
+    return []
+  }
+  if (Array.isArray(info)) {
+    return normalizeParsedInfoItems(info)
+  }
+  try {
+    const parsed = JSON.parse(info) as unknown
+    return normalizeParsedInfoItems(parsed)
+  }
+  catch {
+    return []
+  }
 }
 
 /**

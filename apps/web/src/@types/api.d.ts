@@ -132,7 +132,8 @@ declare namespace TaskApiTypes {
   interface TaskInfo {
     ddl?: string | null
     format?: string
-    info?: string
+    /** 库里 JSON 列：接口响应里常为已解析数组；表单侧仍为 JSON 字符串 */
+    info?: string | InfoItem[]
     people?: number
     rewrite?: number
     share?: string
@@ -152,7 +153,7 @@ declare namespace TaskApiTypes {
   type getTaskMoreInfo = ResponseData<TaskInfo>
   type updateTaskMoreInfo = ResponseData
   type getUsefulTemplate = ResponseData<
-    { taskKey: string, name: string, info: string }[]
+    { taskKey: string, name: string, info: string | InfoItem[] }[]
   >
 }
 

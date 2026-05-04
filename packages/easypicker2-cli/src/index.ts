@@ -1,13 +1,23 @@
 #!/usr/bin/env node
 
 import type { Pm2Action } from './commands/pm2'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { getStringOption, parseArgs } from './args'
 import { deploy } from './commands/deploy'
 import { printPm2Commands } from './commands/pm2'
 import { log } from './log'
 
-const version = '0.1.0'
+function readCliVersion(): string {
+  const pkgPath = path.join(__dirname, '..', 'package.json')
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version?: string }
+  if (typeof pkg.version !== 'string' || !pkg.version) {
+    throw new Error(`无法读取 CLI 版本：${pkgPath}`)
+  }
+  return pkg.version
+}
+
+const version = readCliVersion()
 
 function printHelp() {
   console.log(`
