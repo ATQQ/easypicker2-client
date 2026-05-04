@@ -1,4 +1,3 @@
-import process from 'node:process'
 import type {
   FindManyOptions,
   FindOneOptions,
@@ -6,12 +5,13 @@ import type {
   FindOptionsWhere,
   Repository,
 } from 'typeorm'
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
+import process from 'node:process'
 import {
   DataSource,
 } from 'typeorm'
-import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
-import { entities } from './entity'
 import LocalUserDB from '@/utils/user-local-db'
+import { entities } from './entity'
 // eslint-disable-next-line import/no-mutable-exports
 export let AppDataSource: DataSource
 
@@ -27,6 +27,8 @@ export async function initTypeORM() {
     entities,
     synchronize: false,
     logging: process.env.NODE_ENV === 'development',
+    /** 与 utf8mb4 列一致，避免驱动层按 utf8 送 4 字节字符失败 */
+    charset: 'utf8mb4',
   })
 
   await AppDataSource.initialize()

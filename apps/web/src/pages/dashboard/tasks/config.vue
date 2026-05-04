@@ -198,6 +198,7 @@ watch(taskKey, loadTaskConfig, { immediate: true })
             :value="taskInfo.people"
             :k="activeTask.key"
             :field="taskInfo.bindField"
+            :info="taskInfo.info"
           />
           <TemplatePanel
             v-show="activeInfo === 'template'"

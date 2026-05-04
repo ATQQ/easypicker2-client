@@ -84,7 +84,7 @@
         { "name": "ddl", "ddl": "`ddl` timestamp NULL DEFAULT NULL COMMENT '截止日期'" },
         { "name": "share_key", "ddl": "`share_key` varchar(128) NOT NULL COMMENT '任务对外分享短链 key（与 task.k 不同；公开分享页等使用）'" },
         { "name": "limit_people", "ddl": "`limit_people` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否限制提交人员'" },
-        { "name": "tip", "ddl": "`tip` text COMMENT '批注信息'" },
+        { "name": "tip", "ddl": "`tip` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '批注信息（含 emoji）'" },
         { "name": "bind_field", "ddl": "`bind_field` varchar(255) DEFAULT '姓名' COMMENT '绑定表单字段'" }
       ]
     },

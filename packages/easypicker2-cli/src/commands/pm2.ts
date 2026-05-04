@@ -55,6 +55,13 @@ export function printServerDeployPm2Commands(options: {
 }) {
   const serverDir = path.resolve(options.cwd)
 
+  log.info(
+    `以下命令中的 PM2 进程名为「${options.name}」（由 deploy server 的 --pm2-name 指定；默认 ep-server 仅为示例），请按需改成与你环境一致的名称。`,
+  )
+  log.info(
+    '若服务已由 PM2 托管，可先执行 pm2 ls 确认列表中的进程名，再对已有进程使用下方「重启」命令。',
+  )
+
   log.title('首次部署：启动服务')
   printCommandTips([
     {

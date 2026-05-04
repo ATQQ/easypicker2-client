@@ -57,6 +57,14 @@ function stripTrailingNullability(rest: string): string {
   return s
 }
 
+/** COLUMN_TYPE 不含字符集；比对类型时需去掉 DDL 里的 CHARACTER SET/COLLATE，否则会与库里「纯 text/varchar」永远不一致而反复 MODIFY */
+function stripMysqlCharsetCollationFromFragment(fragment: string): string {
+  let s = fragment
+  s = s.replace(/\s+CHARACTER\s+SET\s+\w+/gi, '').trim()
+  s = s.replace(/\s+COLLATE\s+\w+/gi, '').trim()
+  return s
+}
+
 function extractExpectedMysqlColumnTypeComparable(ddl: string): string {
   let body = ddlSansComment(ddl).replace(/^`[^`]+`\s+/u, '').trim()
 
@@ -75,6 +83,7 @@ function extractExpectedMysqlColumnTypeComparable(ddl: string): string {
   }
 
   body = stripTrailingNullability(body)
+  body = stripMysqlCharsetCollationFromFragment(body)
 
   return normalizeMysqlColumnTypeComparable(body)
 }
@@ -110,6 +119,41 @@ async function fetchActualInformationSchemaColumnType(
   )
   const t = rows[0]?.COLUMN_TYPE
   return t ?? undefined
+}
+
+/** 列 DDL 中显式写的 CHARACTER SET / COLLATE（用于 utf8 → utf8mb4 等漂移；COLUMN_TYPE 对 text 常为「text」无法区分字符集） */
+function extractCharsetCollationFromColumnDdl(ddl: string): {
+  charset?: string
+  collation?: string
+} {
+  const body = ddlSansComment(ddl)
+  const charsetMatch = /\bCHARACTER\s+SET\s+(\w+)/i.exec(body)
+  const collationMatch = /\bCOLLATE\s+(\w+)/i.exec(body)
+  return {
+    charset: charsetMatch?.[1]?.toLowerCase(),
+    collation: collationMatch?.[1]?.toLowerCase(),
+  }
+}
+
+async function fetchActualCharsetCollation(
+  tableName: string,
+  columnName: string,
+): Promise<{ charset: string | null, collation: string | null }> {
+  const db = getDbSchemaName()
+  const rows = await query<
+    Array<{ CHARACTER_SET_NAME: string | null, COLLATION_NAME: string | null }>
+  >(
+    `SELECT CHARACTER_SET_NAME, COLLATION_NAME FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+    db,
+    tableName,
+    columnName,
+  )
+  const r = rows[0]
+  return {
+    charset: r?.CHARACTER_SET_NAME ? r.CHARACTER_SET_NAME.toLowerCase() : null,
+    collation: r?.COLLATION_NAME ? r.COLLATION_NAME.toLowerCase() : null,
+  }
 }
 
 async function mysqlColumnMissing(tableName: string, columnName: string): Promise<boolean> {
@@ -188,7 +232,19 @@ export async function getMysqlCanonicalSchemaDrift(): Promise<MysqlCanonicalSche
         continue
       const actualNorm = normalizeMysqlColumnTypeComparable(actualRaw)
       const expectedNorm = extractExpectedMysqlColumnTypeComparable(col.ddl)
-      if (actualNorm !== expectedNorm) {
+      const typeDrift = actualNorm !== expectedNorm
+
+      const ccExp = extractCharsetCollationFromColumnDdl(col.ddl)
+      let charsetDrift = false
+      if (ccExp.charset || ccExp.collation) {
+        const ccAct = await fetchActualCharsetCollation(table.name, col.name)
+        if (ccExp.charset && ccAct.charset !== ccExp.charset)
+          charsetDrift = true
+        if (ccExp.collation && ccAct.collation !== ccExp.collation)
+          charsetDrift = true
+      }
+
+      if (typeDrift || charsetDrift) {
         typeMismatches.push({
           table: table.name,
           column: col.name,

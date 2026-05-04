@@ -53,6 +53,12 @@ export class TaskInfo {
   })
   bindField: string
 
-  @Column('text', { nullable: true })
+  @Column({
+    type: 'text',
+    nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+    comment: '批注信息（含 emoji，须 utf8mb4）',
+  })
   tip: string
 }

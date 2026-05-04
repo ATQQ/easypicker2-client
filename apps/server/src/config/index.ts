@@ -10,6 +10,8 @@ export const mysqlConfig = {
   database: process.env.MYSQL_DB_NAME,
   user: process.env.MYSQL_DB_USER,
   password: process.env.MYSQL_DB_PWD,
+  /** 与 utf8mb4 列一致，避免直连 SQL / 迁移写入 4 字节字符失败 */
+  charset: 'utf8mb4',
 }
 
 export const mongodbConfig = {

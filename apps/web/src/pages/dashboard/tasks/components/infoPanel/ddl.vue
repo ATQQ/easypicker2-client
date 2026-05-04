@@ -16,15 +16,22 @@ const props = defineProps({
   },
 })
 
-const newDate = ref()
+function parseDdlDate(ddl: string): Date | null {
+  if (!ddl || typeof ddl !== 'string')
+    return null
+  const d = new Date(ddl)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+/** Element Plus datetime 的 default-time 不能传 Invalid Date，否则面板会整页 NaN */
+const FALLBACK_DEFAULT_TIME = new Date(2000, 0, 1, 23, 59, 59)
+
+const newDate = ref<Date | null>()
 watchEffect(() => {
-  if (props.ddl) {
-    newDate.value = new Date(props.ddl)
-  }
-  else {
-    newDate.value = null
-  }
+  newDate.value = parseDdlDate(props.ddl)
 })
+
+const pickerDefaultTime = computed(() => parseDdlDate(props.ddl) ?? FALLBACK_DEFAULT_TIME)
 // 更新DDL
 function updateDDL() {
   if (newDate.value) {
@@ -100,7 +107,7 @@ onMounted(() => {
           :editable="false"
           type="datetime"
           placeholder="点击设置新截止日期"
-          :default-time="new Date(ddl)"
+          :default-time="pickerDefaultTime"
           @change="updateDDL"
         />
       </div>

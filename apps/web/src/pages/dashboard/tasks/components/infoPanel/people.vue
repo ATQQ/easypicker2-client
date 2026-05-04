@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import type { UploadUserFile } from 'element-plus'
+import type { PropType } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import { PeopleApi, TaskApi } from '@/apis'
 import { useIsMobile } from '@/composables'
 import { tableToExcel, uploadFile } from '@/utils/networkUtil'
-import { formatDate } from '@/utils/stringUtil'
+import { formatDate, parseInfo } from '@/utils/stringUtil'
 import { updateTaskInfo } from '../../public'
 import Tip from './tip.vue'
 
@@ -25,6 +26,11 @@ const props = defineProps({
   field: {
     type: String,
     default: '姓名',
+  },
+  /** 当前任务「必填信息」表单结构，用于绑定字段下拉选项 */
+  info: {
+    type: [String, Array] as PropType<string | InfoItem[]>,
+    default: '',
   },
 })
 
@@ -274,16 +280,30 @@ watch(
     immediate: true,
   },
 )
+
+/** 从当前表单配置解析标题列表，供绑定字段下拉；无字段时保留默认「姓名」 */
+const bindFieldTitleOptions = computed(() => {
+  const titles = new Set<string>()
+  const list = parseInfo(props.info as string | InfoItem[] | null | undefined)
+  for (const item of list) {
+    const t = item.text?.trim()
+    if (t)
+      titles.add(t)
+  }
+  if (!titles.size)
+    titles.add('姓名')
+  return [...titles]
+})
 function handleSureBind() {
-  // 空值校验
-  if (!bindField.value.trim().length) {
+  const name = bindField.value != null ? String(bindField.value).trim() : ''
+  if (!name.length) {
     ElMessage.warning('绑定的表单项不能为空')
     return
   }
 
   // 提交保存
   TaskApi.updateTaskMoreInfo(props.k, {
-    bindField: bindField.value,
+    bindField: name,
   }).then(() => {
     ElMessage.success('保存成功')
   })
@@ -410,18 +430,33 @@ function handleSureBind() {
         <div class="setting-header">
           <div>
             <h4>绑定表单项</h4>
-            <p>与必填信息中的字段同名时，可避免用户重复填写。</p>
+            <p>与必填信息中的字段同名时，可避免用户重复填写；选项来自当前表单标题，也可手动输入其它名称。</p>
           </div>
         </div>
         <el-form class="bind-form" label-width="100px">
           <el-form-item label="字段名称">
-            <el-input v-model="bindField" size="small" clearable>
-              <template #append>
-                <el-button @click="handleSureBind">
-                  确定
-                </el-button>
-              </template>
-            </el-input>
+            <div class="bind-field-row">
+              <el-select
+                v-model="bindField"
+                class="bind-field-select"
+                filterable
+                allow-create
+                default-first-option
+                clearable
+                size="small"
+                placeholder="选择表单标题或输入其它字段名"
+              >
+                <el-option
+                  v-for="title in bindFieldTitleOptions"
+                  :key="title"
+                  :label="title"
+                  :value="title"
+                />
+              </el-select>
+              <el-button size="small" @click="handleSureBind">
+                确定
+              </el-button>
+            </div>
           </el-form-item>
         </el-form>
       </section>
@@ -668,6 +703,18 @@ function handleSureBind() {
 .bind-form {
   max-width: 420px;
   margin-top: 16px;
+}
+
+.bind-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.bind-field-select {
+  flex: 1;
+  min-width: 0;
 }
 
 .submit-ok {

@@ -18,7 +18,7 @@ const props = defineProps({
     default: 0,
   },
   info: {
-    typs: String,
+    type: String,
     default: '[]',
   },
   k: {
@@ -213,6 +213,22 @@ watchEffect(() => {
 
 <template>
   <div class="config-panel">
+    <el-alert
+      v-if="needSave"
+      class="save-alert-banner"
+      type="error"
+      effect="dark"
+      show-icon
+      :closable="false"
+    >
+      <template #title>
+        <strong class="save-alert-banner-title">表单信息有变动，请尽快保存</strong>
+      </template>
+      <div class="save-alert-banner-body">
+        请点击页面下方绿色「保存表单」按钮；未保存时刷新或离开页面后修改将丢失。
+      </div>
+    </el-alert>
+
     <el-alert
       title="配置用户提交文件时需要填写的表单字段。开启自动重命名后，字段顺序会影响最终文件名。"
       type="info"
@@ -421,19 +437,11 @@ watchEffect(() => {
           <el-button type="warning" plain @click="openImportPanel">
             从其它任务导入
           </el-button>
-          <el-button type="success" @click="saveInfo">
+          <el-button type="success" size="large" @click="saveInfo">
             保存表单
           </el-button>
         </div>
       </div>
-      <el-alert
-        v-if="needSave"
-        class="save-alert"
-        title="表单信息有变动，请记得保存"
-        type="warning"
-        show-icon
-        :closable="false"
-      />
     </section>
 
     <div class="info-panel">
@@ -740,12 +748,26 @@ watchEffect(() => {
   border-top: 1px solid #edf2f7;
 }
 
-.add-actions .el-select {
-  width: 150px;
+.save-alert-banner {
+  margin-bottom: 16px;
+  font-size: 15px;
+  border: 2px solid var(--el-color-error);
+  box-shadow: 0 4px 14px rgba(245, 108, 108, 0.35);
 }
 
-.save-alert {
-  margin: 14px 20px 18px;
+.save-alert-banner-title {
+  font-size: 17px;
+  letter-spacing: 0.02em;
+}
+
+.save-alert-banner-body {
+  margin-top: 8px;
+  line-height: 1.65;
+  opacity: 0.96;
+}
+
+.add-actions .el-select {
+  width: 150px;
 }
 
 @media screen and (max-width: 700px) {
@@ -800,7 +822,7 @@ watchEffect(() => {
 
   .builder-alert,
   .builder-toolbar,
-  .save-alert {
+  .save-alert-banner {
     margin-right: 12px;
     margin-left: 12px;
   }

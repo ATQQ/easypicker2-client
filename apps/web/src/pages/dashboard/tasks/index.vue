@@ -271,6 +271,7 @@ function openTaskPage() {
               :value="taskInfo.people"
               :k="activeTask.key"
               :field="taskInfo.bindField"
+              :info="taskInfo.info"
             />
           </el-tab-pane>
           <el-tab-pane label="必填信息" name="info">
