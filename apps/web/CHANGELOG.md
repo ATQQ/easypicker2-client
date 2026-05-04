@@ -1,5 +1,11 @@
 # @sugarat/easypicker2-client
 
+## 2.8.2
+
+### Patch Changes
+
+- fix: 批注不支持emoji，截止日期展示异常，绑定表单项优化，表单编辑优化
+
 ## 2.8.1
 
 ### Patch Changes
