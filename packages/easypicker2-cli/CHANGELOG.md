@@ -1,5 +1,11 @@
 # @sugarat/easypicker2-cli
 
+## 0.1.2
+
+### Patch Changes
+
+- fix: version cli
+
 ## 0.1.1
 
 ### Patch Changes
