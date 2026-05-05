@@ -26,7 +26,7 @@
 ### 私有化部署 CLI
 
 - npm：[`@sugarat/easypicker2-cli`](https://www.npmjs.com/package/@sugarat/easypicker2-cli)
-- [文档：CLI / 宝塔 / 通用部署](https://docs.ep.sugarat.top/deploy/cli.html)
+- [文档：CLI / 宝塔 / 通用部署](https://docs.ep.sugarat.top/deploy/)
 
 ### Easypicker1.0(已下线)
 

@@ -6,7 +6,7 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vitepress'
 import { La51Plugin } from 'vitepress-plugin-51la'
-import Pkg from '../../package.json'
+import Pkg from '../../apps/web/package.json'
 
 const blogTheme = getThemeConfig({
   search: false,
@@ -126,6 +126,7 @@ export default defineConfig({
   },
   lastUpdated: true,
   themeConfig: {
+    outline: [2, 3],
     // search: {
     //   provider: 'algolia',
     //   options: {
@@ -150,29 +151,29 @@ export default defineConfig({
         text: '私有化部署',
         items: [
           {
-            text: 'CLI 命令说明',
-            link: '/deploy/cli',
+            text: '通用部署',
+            link: '/deploy/general',
           },
           {
             text: '宝塔面板部署（推荐）',
             link: '/deploy/baota',
           },
           {
-            text: '通用 Linux 部署',
-            link: '/deploy/general',
+            text: 'CLI 命令说明',
+            link: '/deploy/cli',
           },
           {
             text: '本地启动&源码修改',
             link: '/deploy/local',
           },
-          {
-            text: '使用docker',
-            link: '/deploy/docker',
-          },
-          {
-            text: '线上部署（v3 · 归档）',
-            link: '/deploy/online-v3',
-          },
+          // {
+          //   text: '使用docker',
+          //   link: '/deploy/docker',
+          // },
+          // {
+          //   text: '线上部署（v3 · 归档）',
+          //   link: '/deploy/online-v3',
+          // },
           {
             text: '七牛云OSS配置',
             link: '/deploy/qiniu',
@@ -181,16 +182,22 @@ export default defineConfig({
             text: '常见问题❓',
             link: '/deploy/faq',
           },
-          {
-            text: '相关设计',
-            link: '/deploy/design/index',
-          },
+          // {
+          //   text: '相关设计',
+          //   link: '/deploy/design/index',
+          // },
         ],
         activeMatch: '/deploy/',
       },
       {
-        text: '功能介绍',
-        link: '/introduction/feature/index',
+        text: '应用介绍',
+        items: [
+          { text: '应用介绍', link: '/introduction/feature/app' },
+          { text: '用户功能', link: '/introduction/feature/user' },
+          { text: '管理员功能', link: '/introduction/feature/admin' },
+          { text: '系统管理', link: '/introduction/feature/system' },
+        ],
+        activeMatch: '/introduction/feature/',
       },
       {
         text: `v${Pkg.version}`,
@@ -267,27 +274,27 @@ export default defineConfig({
             },
           ],
         },
-        {
-          text: '相关设计',
-          items: [
-            {
-              text: '自动部署脚本',
-              link: '/deploy/design/shell',
-            },
-            {
-              text: '概述',
-              link: '/deploy/design/index',
-            },
-            {
-              text: '数据库设计',
-              link: '/deploy/design/db',
-            },
-            {
-              text: '接口设计',
-              link: '/deploy/design/api',
-            },
-          ],
-        },
+        // {
+        //   text: '相关设计',
+        //   items: [
+        //     {
+        //       text: '自动部署脚本',
+        //       link: '/deploy/design/shell',
+        //     },
+        //     // {
+        //     //   text: '概述',
+        //     //   link: '/deploy/design/index',
+        //     // },
+        //     {
+        //       text: '数据库设计',
+        //       link: '/deploy/design/db',
+        //     },
+        //     {
+        //       text: '接口设计',
+        //       link: '/deploy/design/api',
+        //     },
+        //   ],
+        // },
       ],
       plan: [
         {
@@ -310,29 +317,34 @@ export default defineConfig({
       ],
       introduction: [
         {
-          text: '关于',
+          text: '应用介绍',
+          link: '/introduction/feature/app.md',
           items: [
             {
-              text: '应用介绍',
-              link: '/introduction/about/index',
-            },
-            {
-              text: '相关源码',
-              link: '/introduction/about/code',
-            },
-          ],
-        },
-        {
-          text: '功能介绍',
-          items: [
-            {
-              text: '概述',
+              text: '功能介绍',
               link: '/introduction/feature/index',
+            },
+            {
+              text: '用户功能',
+              link: '/introduction/feature/user',
             },
             {
               text: '管理员功能',
 
               link: '/introduction/feature/admin',
+            },
+            {
+              text: '系统管理',
+              link: '/introduction/feature/system',
+            },
+          ],
+        },
+        {
+          text: '其它',
+          items: [
+            {
+              text: '相关源码',
+              link: '/introduction/about/code',
             },
           ],
         },

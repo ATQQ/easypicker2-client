@@ -1,14 +1,15 @@
 # 更新日志
 
-> 问题反馈交流新“地盘” => [EasyPicker](https://support.qq.com/product/444158)
-
-- 线上测试地址 1：<https://ep.dev.sugarat.top/>
-- 线上测试地址 2：<https://ep.test.sugarat.top/>
+- 线上测试地址 1：<https://ep.test.sugarat.top/>
+- 线上测试地址 2：<https://ep.dev.sugarat.top/>
 
 :::tip 线上重新部署（推荐 `ep2`）
 
 ```sh
 # 见《CLI 说明》《宝塔/通用部署》：先安装 @sugarat/easypicker2-cli
+
+npm i -g @sugarat/easypicker2-cli
+
 cd /你的站点目录
 ep2 deploy web
 ep2 deploy server --pm2-name 你的进程名
@@ -18,6 +19,8 @@ ep2 deploy server --pm2-name 你的进程名
 完整说明：[CLI 命令说明](../deploy/cli.md) · [宝塔部署](../deploy/baota.md) · [通用部署](../deploy/general.md)
 
 :::
+
+<!-- :::
 
 :::details 旧版：`q ep deploy` 流程
 
@@ -73,9 +76,9 @@ q update
 ```
 
 图文流程见 [线上部署 v3（归档）](../deploy/online-v3.md)
-:::
+::: -->
 
-:::details 开发中的 - beta版本
+<!-- :::details 开发中的 - beta版本
 
 ## v2.7.0-beta.x <Badge text="beta" type="warning"/>
 
@@ -110,9 +113,23 @@ q update
 - [ ] 部署流程更加简单
 - [ ] 不依赖 OSS 版本
 
-:::
+::: -->
 
-## v2.7.3 (2024/11/12) <Badge text="最新版" type="tip"/>
+## v2.8.3 (2026/05/05) <Badge text="最新版" type="tip"/>
+
+**AI 助力，开启全面的重构进程**
+
+### Feature
+
+- 交互更加友好的任务表单配置
+- 更详细的服务系统监控
+- 全面优化
+- 更灵活的系统配置
+- 仓库重构成 Monorepo
+- CLI 重构
+- 部署流程更加精简
+
+## v2.7.3 (2024/11/12)
 
 ### Bugfix
 

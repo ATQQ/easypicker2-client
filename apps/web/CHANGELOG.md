@@ -1,10 +1,16 @@
 # @sugarat/easypicker2-client
 
+## 2.8.3
+
+### Patch Changes
+
+- fix: 七牛云配置报错，未配置数据库时登录报错，自动导表优化
+
 ## 2.8.2
 
 ### Patch Changes
 
-- fix: 批注不支持emoji，截止日期展示异常，绑定表单项优化，表单编辑优化
+- fix: 批注不支持 emoji，截止日期展示异常，绑定表单项优化，表单编辑优化
 
 ## 2.8.1
 

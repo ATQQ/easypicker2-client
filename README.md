@@ -60,7 +60,7 @@
 ## 反馈
 
 - [问卷反馈](https://www.wenjuan.com/s/UZBZJvA040/)
-- [提需求](https://ep.sugarat.top/wish)
+- [提需求](https://docs.ep.sugarat.top/plan/wish.html)
 
 ## 相关文档
 

@@ -691,7 +691,7 @@ watch(activeConfigTab, (t) => {
           <Tip>
             各类服务按 Tab 展开编辑，同一类服务修改完成后统一保存。
             <a
-              href="https://docs.ep.sugarat.top/deploy/online-new.html#_5-%E6%9C%80%E5%90%8E%E6%9B%B4%E6%96%B0%E9%85%8D%E7%BD%AE"
+              href="https://docs.ep.sugarat.top/introduction/feature/system.html"
             >
               <el-button type="primary" link>配置手册?</el-button></a>
           </Tip>

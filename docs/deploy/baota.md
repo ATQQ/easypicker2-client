@@ -150,5 +150,5 @@ ep2 deploy server --pm2-name ep-prod
 ## 相关链接
 
 - [CLI 命令说明](./cli.md)
-- [通用 Linux 部署](./general.md)
+- [通用部署](./general.md)
 - [常见问题](./faq.md)

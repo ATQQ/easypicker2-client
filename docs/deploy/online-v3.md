@@ -5,7 +5,7 @@ outline: [2,3]
 # 线上部署(v3 · 归档)
 
 ::: tip 推荐使用独立 CLI：`ep2`
-当前 **推荐** 的私有化部署方式为 [`@sugarat/easypicker2-cli`](https://www.npmjs.com/package/@sugarat/easypicker2-cli)：请优先阅读 **[CLI 说明](./cli.md)**、 **[宝塔面板部署](./baota.md)**、 **[通用 Linux 部署](./general.md)**。
+当前 **推荐** 的私有化部署方式为 [`@sugarat/easypicker2-cli`](https://www.npmjs.com/package/@sugarat/easypicker2-cli)：请优先阅读 **[CLI 说明](./cli.md)**、 **[宝塔面板部署](./baota.md)**、 **[通用部署](./general.md)**。
 本文保留基于 **`q ep`（`@sugarat/cli` + `cli-plugin-ep`）** 的图文步骤与截图，便于与老环境对齐；新开站点建议直接按新版文档执行。
 
 :::

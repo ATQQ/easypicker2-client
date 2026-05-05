@@ -139,5 +139,5 @@ ep2 deploy web --registry https://registry.npmjs.org
 ## 与私有化部署文档的关系
 
 - [宝塔面板部署](./baota.md)：在宝塔里完成建站、数据库、Nginx、`ep2` 与 PM2 的衔接。
-- [通用 Linux 部署](./general.md)：不依赖宝塔的同等流程简述。
+- [通用部署](./general.md)：不依赖宝塔的同等流程简述。
 - 历史基于 `q ep` / Shell 脚本的方式仍可参考 [线上部署(v3)](./online-v3.md) 中与当前环境不一致的步骤仅作存档。
