@@ -77,7 +77,7 @@
         { "name": "id", "ddl": "`id` int(11) NOT NULL" },
         { "name": "user_id", "ddl": "`user_id` int(11) NOT NULL COMMENT '关联user_id'" },
         { "name": "task_key", "ddl": "`task_key` varchar(256) NOT NULL COMMENT '关联任务的key'" },
-        { "name": "template", "ddl": "`template` varchar(512) DEFAULT NULL COMMENT '模板文件名称'" },
+        { "name": "template", "ddl": "`template` varchar(1024) DEFAULT NULL COMMENT '模板文件名称'" },
         { "name": "rewrite", "ddl": "`rewrite` tinyint(4) NOT NULL DEFAULT '0' COMMENT '自动重命名'" },
         { "name": "format", "ddl": "`format` varchar(1024) DEFAULT NULL COMMENT '文件名格式'" },
         { "name": "info", "ddl": "`info` json DEFAULT NULL COMMENT '提交必填的内容(表单结构 JSON)'" },

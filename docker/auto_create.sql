@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS `task_info` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL COMMENT '关联user_id',
   `task_key` varchar(256) NOT NULL COMMENT '关联任务的key',
-  `template` varchar(512) DEFAULT NULL COMMENT '模板文件名称',
+  `template` varchar(1024) DEFAULT NULL COMMENT '模板文件名称',
   `rewrite` tinyint(4) NOT NULL DEFAULT '0' COMMENT '自动重命名',
   `format` varchar(1024) DEFAULT NULL COMMENT '文件名格式',
   `info` json DEFAULT NULL COMMENT '提交必填的内容(表单结构 JSON)',

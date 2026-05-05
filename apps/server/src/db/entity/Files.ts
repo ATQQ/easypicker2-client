@@ -1,4 +1,34 @@
+import type { ValueTransformer } from 'typeorm'
+import { Buffer } from 'node:buffer'
 import { Column, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+
+/**
+ * 使用 longtext + 自定义解析，避免 mysql 驱动对 json 类型在 hydrate 阶段 JSON.parse，
+ * 单条脏数据即导致整表查询（如管理端用户列表）失败。
+ * 线上若曾用 varchar/text 存过非严格 JSON，或历史迁移损坏，仍应执行 SQL 排查清理。
+ */
+const filesInfoColumnTransformer: ValueTransformer = {
+  to(value: unknown): string | null {
+    if (value === undefined || value === null)
+      return null
+    if (typeof value === 'string')
+      return value
+    return JSON.stringify(value)
+  },
+  from(value: unknown): unknown {
+    if (value === undefined || value === null || value === '')
+      return null
+    if (typeof value === 'object' && value !== null && !Buffer.isBuffer(value))
+      return value
+    const s = Buffer.isBuffer(value) ? value.toString('utf8') : String(value)
+    try {
+      return JSON.parse(s)
+    }
+    catch {
+      return null
+    }
+  },
+}
 
 @Entity('files')
 export class Files {
@@ -24,7 +54,12 @@ export class Files {
   @Column('varchar', { length: 1024, name: 'name', comment: '文件名' })
   name: string
 
-  @Column({ type: 'json', nullable: true, comment: '提交填写的信息（表单项 JSON）' })
+  @Column({
+    type: 'longtext',
+    nullable: true,
+    transformer: filesInfoColumnTransformer,
+    comment: '提交填写的信息（表单项 JSON）',
+  })
   info: unknown
 
   @Column('varchar', { length: 512, comment: '文件hash' })

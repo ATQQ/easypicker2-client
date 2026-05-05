@@ -57,11 +57,32 @@ export function getRedisValueJSON<T>(
   defaultValue: T,
   originCallback?: any,
 ): Promise<T> {
-  return getRedisVal(k, originCallback).then((v) => {
-    if (v) {
-      return JSON.parse(v)
+  return getRedisVal(k, originCallback).then(async (v) => {
+    if (!v) {
+      return (defaultValue ?? null) as T
     }
-    return defaultValue || null
+    try {
+      return JSON.parse(v) as T
+    }
+    catch (err) {
+      console.warn(
+        `[kv] JSON 解析失败，将丢弃缓存并尽力重建: ${k}`,
+        err instanceof Error ? err.message : err,
+      )
+      await expiredRedisKey(k)
+      if (typeof originCallback === 'function') {
+        try {
+          const fresh = await originCallback()
+          const str = JSON.stringify(fresh)
+          await setRedisValue(k, str, DEFAULT_CACHE_SECONDS)
+          return fresh as T
+        }
+        catch (e) {
+          console.warn(`[kv] 缓存重建失败: ${k}`, e instanceof Error ? e.message : e)
+        }
+      }
+      return (defaultValue ?? null) as T
+    }
   })
 }
 
