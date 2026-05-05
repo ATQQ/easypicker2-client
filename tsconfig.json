@@ -1,16 +1,13 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "jsx": "preserve",
     "lib": ["esnext", "dom"],
-    "baseUrl": "./",
+    "baseUrl": ".",
     "module": "esnext",
     "moduleResolution": "node",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@components/": ["src/components/*"]
+      "@/*": ["apps/web/src/*"],
+      "@components/*": ["apps/web/src/components/*"]
     },
     "resolveJsonModule": true,
     "types": ["vite/client", "node", "element-plus/global"],
@@ -19,6 +16,6 @@
     "sourceMap": true,
     "esModuleInterop": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "docs/**/*.ts", "docs/**/*.d.ts", "docs/vite.config.mts"],
-  "exclude": ["vite.config.mts"]
+  "include": ["docs/**/*.ts", "docs/**/*.d.ts", "docs/**/*.vue", "docs/vite.config.ts", "docs/.vitepress/config.mts"],
+  "exclude": ["node_modules", "apps/*/dist", "docs/.vitepress/dist"]
 }

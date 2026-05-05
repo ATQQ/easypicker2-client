@@ -17,7 +17,7 @@ hero:
       link: /deploy/
     - theme: docs
       text: 应用介绍
-      link: /introduction/about/index
+      link: /introduction/feature/app
     - theme: alt
       text: 提交示例
       link: https://ep2.sugarat.top/task/627bd3b18a567f1b47bcdace
@@ -26,7 +26,7 @@ hero:
       link: /plan/log
 
 features:
-  - icon: ⚡️ 
+  - icon: ⚡️
     title: 快速上手
     details: 基于Web技术实现，随时随地即可收取，操作简单
   - icon: 🖖

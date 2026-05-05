@@ -1,3 +1,22 @@
+<script setup lang="ts">
+import { reactive } from 'vue'
+
+const praiseImg = reactive([
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQ0MjMzNA==651547442334',
+    title: '微信',
+  },
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY0Nzc1NTYyOTE5Mw==647755629193',
+    title: '微信赞赏',
+  },
+  {
+    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQyOTg0OA==651547429848',
+    title: '支付宝',
+  },
+])
+</script>
+
 <template>
   <span class="praise">
     <table>
@@ -24,25 +43,7 @@
     </table>
   </span>
 </template>
-<script setup lang="ts">
-import { ElImage } from 'element-plus'
-import { reactive } from 'vue'
 
-const praiseImg = reactive([
-  {
-    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQ0MjMzNA==651547442334',
-    title: '微信'
-  },
-  {
-    url: 'https://img.cdn.sugarat.top/mdImg/MTY0Nzc1NTYyOTE5Mw==647755629193',
-    title: '微信赞赏'
-  },
-  {
-    url: 'https://img.cdn.sugarat.top/mdImg/MTY1MTU0NzQyOTg0OA==651547429848',
-    title: '支付宝'
-  }
-])
-</script>
 <style scoped>
 .praise {
   cursor: pointer;

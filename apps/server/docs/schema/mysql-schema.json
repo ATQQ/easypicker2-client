@@ -1,0 +1,127 @@
+{
+  "version": 2,
+  "description": "EasyPicker MySQL 完整期望结构；漂移检测与导出的 DDL 以此为唯一数据源（需与 docs/sql/auto_create.sql 保持语义一致）。",
+  "exportHeader": [
+    "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";",
+    "SET time_zone = \"+00:00\";",
+    "",
+    "/*!40101 SET NAMES utf8mb4 */;",
+    "",
+    "-- ----------------------------------------------------------------------",
+    "-- EasyPicker canonical schema（可整段复制到新库执行）",
+    "-- ----------------------------------------------------------------------",
+    ""
+  ],
+  "tables": [
+    {
+      "name": "category",
+      "createOptions": "ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='任务分类'",
+      "columns": [
+        { "name": "id", "ddl": "`id` int(11) NOT NULL COMMENT '主键自增'" },
+        { "name": "name", "ddl": "`name` varchar(256) NOT NULL COMMENT '分类名称'" },
+        { "name": "user_id", "ddl": "`user_id` int(11) NOT NULL COMMENT '所属用户'" },
+        { "name": "k", "ddl": "`k` varchar(128) NOT NULL COMMENT '分类唯一标识'" }
+      ]
+    },
+    {
+      "name": "files",
+      "createOptions": "ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户提交的问题'",
+      "columns": [
+        { "name": "id", "ddl": "`id` int(11) NOT NULL" },
+        { "name": "task_key", "ddl": "`task_key` varchar(256) NOT NULL COMMENT '所属任务'" },
+        { "name": "task_name", "ddl": "`task_name` varchar(256) NOT NULL COMMENT '提交时的任务名称'" },
+        { "name": "category_key", "ddl": "`category_key` varchar(256) NOT NULL COMMENT '所属分类'" },
+        { "name": "user_id", "ddl": "`user_id` int(11) NOT NULL COMMENT '所属用户'" },
+        { "name": "name", "ddl": "`name` varchar(1024) NOT NULL COMMENT '文件名'" },
+        { "name": "info", "ddl": "`info` json DEFAULT NULL COMMENT '提交填写的信息（表单项 JSON）'" },
+        { "name": "hash", "ddl": "`hash` varchar(512) NOT NULL COMMENT '文件hash'" },
+        { "name": "date", "ddl": "`date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传日期'" },
+        { "name": "size", "ddl": "`size` bigint NOT NULL COMMENT '文件大小'" },
+        { "name": "people", "ddl": "`people` varchar(256) DEFAULT NULL COMMENT '人员姓名'" },
+        { "name": "origin_name", "ddl": "`origin_name` varchar(1024) NOT NULL DEFAULT '' COMMENT '原文件名'" },
+        { "name": "del", "ddl": "`del` tinyint(4) DEFAULT '0' COMMENT '是否删除'" },
+        { "name": "oss_del_time", "ddl": "`oss_del_time` TIMESTAMP NULL DEFAULT NULL COMMENT 'oss资源删除时间'" },
+        { "name": "del_time", "ddl": "`del_time` TIMESTAMP NULL DEFAULT NULL COMMENT '删除时间'" },
+        { "name": "last_update_time", "ddl": "`last_update_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间'" }
+      ]
+    },
+    {
+      "name": "people",
+      "createOptions": "ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='任务关联人员表'",
+      "columns": [
+        { "name": "id", "ddl": "`id` int(11) NOT NULL COMMENT '主键'" },
+        { "name": "task_key", "ddl": "`task_key` varchar(128) NOT NULL COMMENT '关联任务id'" },
+        { "name": "user_id", "ddl": "`user_id` int(11) NOT NULL COMMENT '所属用户id'" },
+        { "name": "name", "ddl": "`name` varchar(128) DEFAULT NULL COMMENT '人员姓名'" },
+        { "name": "status", "ddl": "`status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否提交'" },
+        { "name": "submit_date", "ddl": "`submit_date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最后提交时间'" },
+        { "name": "submit_count", "ddl": "`submit_count` int(11) NOT NULL DEFAULT '0'" }
+      ]
+    },
+    {
+      "name": "task",
+      "createOptions": "ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='任务表'",
+      "columns": [
+        { "name": "id", "ddl": "`id` int(11) NOT NULL COMMENT '主键'" },
+        { "name": "user_id", "ddl": "`user_id` int(11) NOT NULL COMMENT '所属用户id'" },
+        { "name": "category_key", "ddl": "`category_key` varchar(128) NOT NULL COMMENT '关联分类key'" },
+        { "name": "name", "ddl": "`name` varchar(256) NOT NULL COMMENT '任务名称'" },
+        { "name": "k", "ddl": "`k` varchar(128) NOT NULL COMMENT '任务唯一标识'" },
+        { "name": "del", "ddl": "`del` tinyint(4) DEFAULT '0' COMMENT '是否删除'" }
+      ]
+    },
+    {
+      "name": "task_info",
+      "createOptions": "ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='任务附加属性'",
+      "columns": [
+        { "name": "id", "ddl": "`id` int(11) NOT NULL" },
+        { "name": "user_id", "ddl": "`user_id` int(11) NOT NULL COMMENT '关联user_id'" },
+        { "name": "task_key", "ddl": "`task_key` varchar(256) NOT NULL COMMENT '关联任务的key'" },
+        { "name": "template", "ddl": "`template` varchar(1024) DEFAULT NULL COMMENT '模板文件名称'" },
+        { "name": "rewrite", "ddl": "`rewrite` tinyint(4) NOT NULL DEFAULT '0' COMMENT '自动重命名'" },
+        { "name": "format", "ddl": "`format` varchar(1024) DEFAULT NULL COMMENT '文件名格式'" },
+        { "name": "info", "ddl": "`info` json DEFAULT NULL COMMENT '提交必填的内容(表单结构 JSON)'" },
+        { "name": "ddl", "ddl": "`ddl` timestamp NULL DEFAULT NULL COMMENT '截止日期'" },
+        { "name": "share_key", "ddl": "`share_key` varchar(128) NOT NULL COMMENT '任务对外分享短链 key（与 task.k 不同；公开分享页等使用）'" },
+        { "name": "limit_people", "ddl": "`limit_people` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否限制提交人员'" },
+        { "name": "tip", "ddl": "`tip` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '批注信息（含 emoji）'" },
+        { "name": "bind_field", "ddl": "`bind_field` varchar(255) DEFAULT '姓名' COMMENT '绑定表单字段'" }
+      ]
+    },
+    {
+      "name": "user",
+      "createOptions": "ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表'",
+      "columns": [
+        { "name": "id", "ddl": "`id` int(11) NOT NULL COMMENT '唯一标识'" },
+        { "name": "account", "ddl": "`account` varchar(64) DEFAULT NULL COMMENT '用于登录的账号'" },
+        { "name": "phone", "ddl": "`phone` varchar(22) DEFAULT NULL COMMENT '手机号'" },
+        { "name": "password", "ddl": "`password` varchar(256) NOT NULL COMMENT '密码'" },
+        { "name": "power", "ddl": "`power` tinyint(4) NOT NULL DEFAULT '6' COMMENT '账户权限'" },
+        { "name": "status", "ddl": "`status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '账户权限'" },
+        { "name": "join_time", "ddl": "`join_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间'" },
+        { "name": "login_time", "ddl": "`login_time` timestamp NULL DEFAULT NULL COMMENT '最后登录时间'" },
+        { "name": "login_count", "ddl": "`login_count` int(11) NOT NULL DEFAULT '1' COMMENT '登陆次数'" },
+        { "name": "open_time", "ddl": "`open_time` timestamp NULL DEFAULT NULL COMMENT '解封时间'" },
+        { "name": "size", "ddl": "`size` INT(11) NOT NULL DEFAULT '2' COMMENT '可支配空间上限GB'" },
+        { "name": "wallet", "ddl": "`wallet` DECIMAL(10,2) NOT NULL DEFAULT '2.00' COMMENT '钱包余额'" }
+      ]
+    }
+  ],
+  "postStatements": [
+    "ALTER TABLE `category` ADD PRIMARY KEY (`id`);",
+    "ALTER TABLE `files` ADD PRIMARY KEY (`id`);",
+    "ALTER TABLE `people` ADD PRIMARY KEY (`id`);",
+    "ALTER TABLE `task` ADD PRIMARY KEY (`id`);",
+    "ALTER TABLE `task_info` ADD PRIMARY KEY (`id`);",
+    "ALTER TABLE `user` ADD PRIMARY KEY (`id`);",
+    "ALTER TABLE `user` ADD UNIQUE KEY `user_account_uindex` (`account`);",
+    "ALTER TABLE `user` ADD UNIQUE KEY `user_phone_uindex` (`phone`);",
+    "",
+    "ALTER TABLE `category` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键自增';",
+    "ALTER TABLE `files` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;",
+    "ALTER TABLE `people` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键';",
+    "ALTER TABLE `task` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键';",
+    "ALTER TABLE `task_info` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;",
+    "ALTER TABLE `user` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '唯一标识';"
+  ]
+}

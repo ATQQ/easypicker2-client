@@ -6,12 +6,12 @@ if [ ! -d "./server" ]; then
   mkdir ./server
 fi
 
-# 拷贝服务端资源(不在当前项目里，以后优化)
+# 拷贝前端资源
 rm -rf ./client/dist
-cp -rf ../dist ./client/dist
+cp -rf ../apps/web/dist ./client/dist
 
-# 拷贝服务端资源(不在当前项目里，以后优化)
+# 拷贝服务端资源
 rm -rf ./server/dist
-cp -rf ./../../easypicker2-server/dist ./server
-cp -rf ./../../easypicker2-server/package.json ./server
-cp -rf ./../../easypicker2-server/pnpm-lock.yaml ./server
+cp -rf ../apps/server/dist ./server
+cp -rf ../apps/server/package.json ./server
+cp -rf ../pnpm-lock.yaml ./server

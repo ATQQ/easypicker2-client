@@ -1,8 +1,15 @@
+<script setup>
+import Avatar from './Avatar.vue'
+import Picture from './Picture.vue'
+</script>
+
 <template>
   <div class="home">
     <ul class="card-grid">
       <li>
-        <h2 class="h2">微信赞赏</h2>
+        <h2 class="h2">
+          微信赞赏
+        </h2>
         <Picture
           style="width: 200px"
           src="https://img.cdn.sugarat.top/mdImg/MTY0Nzc2MDE3MzM1NA==647760173354"
@@ -10,26 +17,24 @@
 
         <div class="description">
           如果你觉得项目不错
-          <br />
+          <br>
           <span>
             可以
-            <a href="/praise/index" style="color: #3f9eff"
-              >请作者喝 <strong>🍵</strong></a
-            >
+            <a href="/praise/index" style="color: #3f9eff">请作者喝 <strong>🍵</strong></a>
           </span>
         </div>
       </li>
       <li>
-        <h2 class="h2">Developer</h2>
+        <h2 class="h2">
+          Developer
+        </h2>
         <div class="user-list">
           <Avatar />
         </div>
       </li>
       <li>
         <h2 class="h2">
-          <a href="https://support.qq.com/product/444158" target="_blank"
-            >反馈交流</a
-          >群
+          <a href="https://docs.ep.sugarat.top/author.html#%E8%81%94%E7%B3%BB%E4%BD%9C%E8%80%85" target="_blank">反馈交流</a>群
         </h2>
 
         <Picture
@@ -40,10 +45,6 @@
     </ul>
   </div>
 </template>
-<script setup>
-import Avatar from './Avatar.vue'
-import Picture from './Picture.vue'
-</script>
 
 <style scoped lang="scss">
 .home {

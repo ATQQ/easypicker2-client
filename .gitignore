@@ -6,3 +6,8 @@ dist-ssr
 cache
 *.tar.gz
 ep_backup
+data
+user-config.json
+cli-plugin-ep
+.pnpm-store
+buckup

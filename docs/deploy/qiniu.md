@@ -11,7 +11,7 @@
 
 ## 1. 账号注册
 
-访问[七牛云-注册页面](https://portal.qiniu.com/signup?redirect_url=https:~2F~2Fwww.qiniu.com~2Fproducts~2Fkodo) 注册一个账号
+访问[七牛云-注册页面](https://s.qiniu.com/fAZNbq) 注册一个账号
 
 ## 2. 创建存储空间
 
@@ -27,20 +27,16 @@
 
 其中**访问控制**一定记得选私有，避免文件不通过鉴权就被下载
 
-:::tip
+优先选择国内的区域。
 
-- 存储空间名即为，后端服务中`.env`中`QINIU_BUCKET_NAME`的值
-- 存储区域对应后端服务`.env`中`QINIU_BUCKET_ZONE`的值
-  :::
-
-`QINIU_BUCKET_ZONE`可选值如下
-| 存储区域 | 值 |
+| 存储区域 | 值            |
 | -------- | ------------- |
-| 华东 | huadong |
-| 华北 | huabei |
-| 华南 | huanan |
-| 北美 | beimei |
-| 东南亚 | SoutheastAsia |
+| 华东     | huadong       |
+| 华东2    | huadong2      |
+| 华北     | huabei        |
+| 华南     | huanan        |
+| 北美     | beimei        |
+| 东南亚   | SoutheastAsia |
 
 创建成功提示，测试域名有**30天**有效期
 
@@ -82,25 +78,19 @@
 
 ![](https://img.cdn.sugarat.top/mdImg/MTY0NzU3MDM1MTUxOA==647570351518)
 
-:::tip
-
-- `AK` 对应`.env`中的 `QINIU_ACCESS_KEY`
-- `SC` 对应`.env`中的 `QINIU_SECRET_KEY`
-  :::
-
 ## 5. 通过面板快速更新配置
 
 到此七牛云相关的 **5** 个必要需要的环境变量我们都拿到了
 
-- QINIU_BUCKET_ZONE: 存储区域
-- QINIU_BUCKET_NAME: 存储空间名
-- QINIU_BUCKET_DOMAIN: 绑定的域名
-- QINIU_ACCESS_KEY: 访问密钥
-- QINIU_SECRET_KEY: 安全密钥
+- 存储区域
+- 存储空间名
+- 绑定的域名
+- 访问密钥
+- 安全密钥
 
 将其更新到管理面板中七牛云配置的位置即可
 
-![](https://img.cdn.sugarat.top/mdImg/MTY1OTkzNjMzMTE2Mg==659936331162)
+![](https://cdn.upyun.sugarat.top/mdImg/sugar/d1442905106ebf676153c126670ef085)
 
 :::danger 注意：域名的值需要加上协议
 
@@ -111,9 +101,13 @@
 
 :::
 
-:::details 如果应用版本 < v2.1.9，需要手动更新
+填写好后保存即可看到可用的提示信息。
+
+![](https://cdn.upyun.sugarat.top/mdImg/sugar/9200f46a53410a6488264563f82ac306)
+
+<!-- :::details 如果应用版本 < v2.1.9，需要手动更新
 手动将上述配置内容填写到，后端服务中`.env`中对应位置，然后重启服务即可
-:::
+::: -->
 
 ## 6. 添加必要响应头信息
 
@@ -159,13 +153,9 @@ Content-Disposition attachment
   - 不同存储空间之间的样式不互通
   - 填入格式是分隔符+样式名
 
-完成配置后重启服务即可
-:::details 如果应用版本 < v2.1.9，需要手动在配置文件中更新
+![](https://cdn.upyun.sugarat.top/mdImg/sugar/b8b3ac0210b25dfdc47e5d4adc612acb)
 
-将创建好的样式名和分隔符，填入到服务端的环境变量中
-
-![](https://img.cdn.sugarat.top/mdImg/MTY0OTkwMTgwOTI3NQ==649901809275)
-:::
+配置好的示例
 
 ## 8. 绑定自定义域名（可选）
 
