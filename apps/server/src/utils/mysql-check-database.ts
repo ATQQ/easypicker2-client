@@ -1,5 +1,5 @@
 /**
- * 使用给定（或与本地已保存合并）的连接参数检测：能否连上实例、目标 schema 是否已存在。
+ * 使用给定（或与本地已保存合并）的连接参数检测：能否连上实例、目标 schema 是否存在、是否存在核心业务表 user。
  */
 import mysql from 'mysql'
 
@@ -16,6 +16,8 @@ export type MysqlCheckDatabaseInput = Partial<{
 export interface MysqlCheckDatabaseResult {
   canConnect: boolean
   databaseExists: boolean
+  /** 数据库已存在且存在核心业务表 user（与 bootstrap 导入判断一致） */
+  hasCoreTables: boolean
   error?: string
 }
 
@@ -41,6 +43,7 @@ export async function checkMysqlDatabaseExists(
     return {
       canConnect: false,
       databaseExists: false,
+      hasCoreTables: false,
       error: '请先填写数据库名',
     }
   }
@@ -64,6 +67,7 @@ export async function checkMysqlDatabaseExists(
     return {
       canConnect: false,
       databaseExists: false,
+      hasCoreTables: false,
       error: e instanceof Error ? e.message : '无法连接 MySQL',
     }
   }
@@ -77,12 +81,24 @@ export async function checkMysqlDatabaseExists(
       )
     })
     const databaseExists = Number(rows[0]?.c || 0) > 0
-    return { canConnect: true, databaseExists }
+    if (!databaseExists) {
+      return { canConnect: true, databaseExists: false, hasCoreTables: false }
+    }
+    const tableRows = await new Promise<Array<{ c: number }>>((resolve, reject) => {
+      bare.query(
+        'SELECT COUNT(*) as c FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?',
+        [database, 'user'],
+        (err, res) => (err ? reject(err) : resolve(res as any)),
+      )
+    })
+    const hasCoreTables = Number(tableRows[0]?.c || 0) > 0
+    return { canConnect: true, databaseExists: true, hasCoreTables }
   }
   catch (e: unknown) {
     return {
       canConnect: true,
       databaseExists: false,
+      hasCoreTables: false,
       error: e instanceof Error ? e.message : '查询 information_schema 失败',
     }
   }

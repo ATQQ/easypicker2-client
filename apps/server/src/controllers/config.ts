@@ -171,7 +171,7 @@ export default class UserController {
     }
   }
 
-  /** 检测能否连接实例及 database 是否已在服务端创建（不修改数据） */
+  /** 检测能否连接实例、database 是否已创建、是否存在 user 表（不修改数据） */
   @Post('service/mysql/check-database')
   async checkMysqlDatabase(@ReqBody() body: Record<string, unknown>) {
     return checkMysqlDatabaseExists({

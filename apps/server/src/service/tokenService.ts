@@ -107,6 +107,8 @@ export default class TokenService {
     const numericId = typeof uid === 'string' ? Number(uid) : uid
     if (Number.isNaN(numericId as number))
       return
+    if (!AppDataSource?.isInitialized)
+      return
     // 查询库中的用户信息
     const userInfo = await AppDataSource.manager.findOne(User, {
       where: {

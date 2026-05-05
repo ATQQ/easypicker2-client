@@ -1,17 +1,17 @@
-/* eslint-disable unused-imports/no-unused-vars */
 /* eslint-disable eqeqeq */
 /* eslint-disable node/handle-callback-err */
 import type { FWRequest } from 'flash-wolves'
 import qiniu from 'qiniu'
+import { qiniuConfig } from '@/config'
+import { addBehavior, addErrorLog } from '@/db/logDb'
 import { getKeyInfo } from './stringUtil'
 import LocalUserDB from './user-local-db'
-import { addBehavior, addErrorLog } from '@/db/logDb'
-import { qiniuConfig } from '@/config'
 // [node-sdk文档地址](https://developer.qiniu.com/kodo/1289/nodejs#server-upload)
 let privateBucketDomain = qiniuConfig.bucketDomain
 
 const bucketZoneMap = {
   huadong: qiniu.zone.Zone_z0,
+  huadong2: qiniu.zone.Zone_cn_east_2,
   huabei: qiniu.zone.Zone_z1,
   huanan: qiniu.zone.Zone_z2,
   beimei: qiniu.zone.Zone_na0,
@@ -137,9 +137,12 @@ export function judgeFileIsExist(key: string): Promise<boolean> {
   })
 }
 
-function mergeRequest<T extends Function>(callback: T, delay = 1000) {
-  const pMap = new Map<string, Promise<any>>()
-  const cb: any = (...args) => {
+function mergeRequest<T extends (...args: unknown[]) => Promise<unknown>>(
+  callback: T,
+  delay = 1000,
+): T {
+  const pMap = new Map<string, Promise<unknown>>()
+  const cb = (...args: Parameters<T>) => {
     const key = JSON.stringify(args)
     let p = pMap.get(key)
     if (!p) {
@@ -407,59 +410,76 @@ export function batchFileStatus(keys: string[]): Promise<FileStat[]> {
   })
 }
 
+/** listPrefix / put 回调里 err 可能是 Error、字符串或可序列化对象 */
+function qiniuSdkErrMessage(err: unknown, body?: { error?: string } | null): string | undefined {
+  const fromBody = body && typeof body === 'object' && body.error != null ? String(body.error) : undefined
+  if (fromBody)
+    return fromBody
+  if (err == null)
+    return undefined
+  if (typeof err === 'string')
+    return err
+  if (err instanceof Error)
+    return err.message || String(err)
+  return String(err)
+}
+
 export function getQiniuStatus() {
-  return new Promise<ServiceStatus>((res) => {
+  return new Promise<ServiceStatus>((resolve) => {
     if (!qiniuConfig.bucketDomain.startsWith('http')) {
-      res({
+      resolve({
         type: 'qiniu',
         status: false,
-        errMsg: '域名配置错误，必须包含协议 http:/// 或 https://',
+        errMsg: '域名配置错误，必须包含协议 http:// 或 https://',
       })
       return
     }
     const config = new qiniu.conf.Config({ zone: bucketZone })
-
-    const checkRegion = new Promise((res, rej) => {
-      const formUploader = new qiniu.form_up.FormUploader(config)
-      const putExtra = new qiniu.form_up.PutExtra()
-      const key = `${Date.now()}-${~~(Math.random() * 1000)}.txt`
-      formUploader.put(getUploadToken(), key, 'status test', putExtra, (respErr, respBody, respInfo) => {
-        const err = respErr || respBody?.error
-        if (err) {
-          rej(err)
-          return
-        }
-        deleteObjByKey(key)
-        res(key)
-      })
-    })
-
     const bucketManager = new qiniu.rs.BucketManager(mac, config)
     bucketManager.listPrefix(bucket, {
       prefix: 'easypicker2/',
       limit: 1,
-    }, (err, respBody) => {
-      const errMsg = err?.message || respBody?.error
+    }, (listErr, respBody) => {
+      const errMsg = qiniuSdkErrMessage(listErr, respBody)
       if (errMsg) {
-        res({
+        resolve({
           type: 'qiniu',
           status: false,
           errMsg,
         })
         return
       }
+
+      // 必须在 listPrefix 通过后再启动 put 探测，并立刻挂上 then/catch。
+      // 否则 put 先于 catch 注册完成会触发 UnhandledPromiseRejection（如密钥错误返回 bad token）。
+      const checkRegion = new Promise<void>((res, rej) => {
+        const formUploader = new qiniu.form_up.FormUploader(config)
+        const putExtra = new qiniu.form_up.PutExtra()
+        const key = `${Date.now()}-${~~(Math.random() * 1000)}.txt`
+        formUploader.put(getUploadToken(), key, 'status test', putExtra, (respErr, putBody, _respInfo) => {
+          const putErr = respErr || putBody?.error
+          if (putErr) {
+            rej(putErr)
+            return
+          }
+          deleteObjByKey(key)
+          res()
+        })
+      })
+
       checkRegion
         .then(() => {
-          res({
+          resolve({
             type: 'qiniu',
             status: true,
           })
         })
-        .catch((err) => {
-          res({
+        .catch((e) => {
+          const raw = qiniuSdkErrMessage(e) || '上传探测失败'
+          resolve({
             type: 'qiniu',
             status: false,
-            errMsg: `${err}，存储区域配置不正确，请参看文档重新选择`,
+            errMsg: `${raw}。请核对 AccessKey、SecretKey、存储区域（bucketZone）、存储空间名及绑定域名是否与七牛控制台一致。`,
           })
         })
     })

@@ -81,7 +81,9 @@ function formatMysqlDate(date: Date) {
 
 @Provide()
 export class UserRepository extends BaseRepository<UserEntity> {
-  protected repository = AppDataSource.getRepository(UserEntity)
-
   protected entityName = UserEntity.name
+
+  protected createRepository() {
+    return AppDataSource.getRepository(UserEntity)
+  }
 }

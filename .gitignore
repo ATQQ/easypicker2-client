@@ -10,3 +10,4 @@ data
 user-config.json
 cli-plugin-ep
 .pnpm-store
+buckup

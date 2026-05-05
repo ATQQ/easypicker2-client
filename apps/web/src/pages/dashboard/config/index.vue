@@ -481,6 +481,45 @@ function configMysqlDataToCheckBody(
   return body
 }
 
+const MYSQL_AUTO_CREATE_LABEL = '无库或缺表时自动建库并按模板导入全部表结构'
+
+/** 保存前：无库 / 空库时需开启 autoCreateDatabase，否则 bootstrap 不会导入模板 SQL */
+async function ensureMysqlAutoCreateForBootstrap(
+  group: ConfigData,
+  box: { title: string, message: string },
+): Promise<boolean> {
+  const autoItem = group.data.find(i => i.key === 'autoCreateDatabase')
+  if (autoItem?.value)
+    return true
+  try {
+    await ElMessageBox.confirm(
+      box.message,
+      box.title,
+      {
+        type: 'warning',
+        confirmButtonText: '开启并保存',
+        cancelButtonText: '取消',
+      },
+    )
+  }
+  catch {
+    return false
+  }
+  if (autoItem) {
+    autoItem.value = true
+  }
+  else {
+    group.data.push({
+      type: 'mysql',
+      key: 'autoCreateDatabase',
+      value: true,
+      label: MYSQL_AUTO_CREATE_LABEL,
+      isSecret: false,
+    })
+  }
+  return true
+}
+
 async function updateCfgGroup(group?: ConfigData) {
   if (!group || savingMap[group.type])
     return
@@ -503,42 +542,27 @@ async function updateCfgGroup(group?: ConfigData) {
       ElMessage.error(check.error || '无法连接 MySQL，请检查地址与账号')
       return
     }
+    const dbName = group.data.find(i => i.key === 'database')?.value
+    const name = dbName != null ? String(dbName).trim() : ''
     if (!check.databaseExists) {
-      const autoItem = group.data.find(i => i.key === 'autoCreateDatabase')
-      const autoOn = Boolean(autoItem?.value)
-      if (!autoOn) {
-        const dbName = group.data.find(i => i.key === 'database')?.value
-        const name = dbName != null ? String(dbName).trim() : ''
-        const msg = name
-          ? `服务器上不存在名为「${name}」的数据库。是否开启「无库时自动建库并按模板导入全部表结构」并保存？`
-          : `服务器上不存在该数据库。是否开启「无库时自动建库并按模板导入全部表结构」并保存？`
-        try {
-          await ElMessageBox.confirm(
-            msg,
-            '数据库不存在',
-            {
-              type: 'warning',
-              confirmButtonText: '开启并保存',
-              cancelButtonText: '取消',
-            },
-          )
-        }
-        catch {
-          return
-        }
-        if (autoItem) {
-          autoItem.value = true
-        }
-        else {
-          group.data.push({
-            type: 'mysql',
-            key: 'autoCreateDatabase',
-            value: true,
-            label: '无库时自动建库并按模板导入全部表结构',
-            isSecret: false,
-          })
-        }
-      }
+      const ok = await ensureMysqlAutoCreateForBootstrap(group, {
+        title: '数据库不存在',
+        message: name
+          ? `服务器上不存在名为「${name}」的数据库。是否开启「${MYSQL_AUTO_CREATE_LABEL}」并保存？`
+          : `服务器上不存在该数据库。是否开启「${MYSQL_AUTO_CREATE_LABEL}」并保存？`,
+      })
+      if (!ok)
+        return
+    }
+    else if (!check.hasCoreTables) {
+      const ok = await ensureMysqlAutoCreateForBootstrap(group, {
+        title: '缺少表结构',
+        message: name
+          ? `数据库「${name}」已存在，但未检测到与模板一致的核心表结构（如 user）。是否开启「${MYSQL_AUTO_CREATE_LABEL}」并保存？导入后请确认数据与备份。`
+          : `目标数据库已存在，但未检测到与模板一致的核心表结构。是否开启「${MYSQL_AUTO_CREATE_LABEL}」并保存？导入后请确认数据与备份。`,
+      })
+      if (!ok)
+        return
     }
   }
 

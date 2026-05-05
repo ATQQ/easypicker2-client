@@ -3,6 +3,7 @@ import type {
   FindOneOptions,
   FindOptionsOrder,
   FindOptionsWhere,
+  ObjectLiteral,
   Repository,
 } from 'typeorm'
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
@@ -34,13 +35,32 @@ export async function initTypeORM() {
   await AppDataSource.initialize()
 }
 
+/** MySQL / TypeORM 未就绪时不要调用 getRepository，否则会在启动阶段或未配置库时抛出 EntityMetadataNotFoundError */
+export function assertMysqlDataSourceReady(): void {
+  if (!AppDataSource?.isInitialized) {
+    throw new Error(
+      'MySQL 尚未连接成功：请先在服务配置中填写数据库并保存，或检查启动日志中的数据库错误后重启服务。',
+    )
+  }
+}
+
 /**
  * 实现一个公共的Repository类用于子类继承，已达封装方法复用的目的
  */
-export class BaseRepository<T> {
-  protected repository: Repository<T>
+export abstract class BaseRepository<T extends ObjectLiteral> {
+  private __repository: Repository<T> | null = null
+
+  protected abstract createRepository(): Repository<T>
 
   protected entityName: string
+
+  protected get repository(): Repository<T> {
+    assertMysqlDataSourceReady()
+    if (!this.__repository) {
+      this.__repository = this.createRepository()
+    }
+    return this.__repository
+  }
 
   findOne(where: FindOneOptions<T>['where']) {
     return this.repository.findOne({

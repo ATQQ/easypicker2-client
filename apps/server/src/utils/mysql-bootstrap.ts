@@ -1,5 +1,5 @@
 /**
- * MySQL：按配置 CREATE DATABASE IF NOT EXISTS，并在空库下执行 bundled auto_create.sql
+ * MySQL：按配置 CREATE DATABASE IF NOT EXISTS，并在「业务库无核心表 user」时执行 bundled auto_create.sql
  */
 import fs from 'node:fs'
 import mysql from 'mysql'

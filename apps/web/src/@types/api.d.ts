@@ -520,6 +520,7 @@ declare namespace ConfigServiceAPITypes {
   interface MysqlCheckDatabaseResult {
     canConnect: boolean
     databaseExists: boolean
+    hasCoreTables: boolean
     error?: string
   }
   type checkMysqlDatabase = ResponseData<MysqlCheckDatabaseResult>

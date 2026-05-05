@@ -1,23 +1,23 @@
-import { OkPacket } from 'mysql'
+import type { OkPacket } from 'mysql'
+import type { People } from './model/people'
 import { Provide } from 'flash-wolves'
 import { query } from '@/lib/dbConnect/mysql'
 import {
   deleteTableByModel,
   insertTableByModelMany,
   selectTableByModel,
-  updateTableByModel
+  updateTableByModel,
 } from '@/utils/sqlUtil'
-import { People } from './model/people'
+import { AppDataSource, BaseRepository } from '.'
 import { People as PeopleEntity } from './entity'
-import { BaseRepository, AppDataSource } from '.'
 
 export function selectPeople(
   options: V2Array<People>,
-  columns: string[] = ['name']
+  columns: string[] = ['name'],
 ) {
   const { sql, params } = selectTableByModel('people', {
     data: options,
-    columns
+    columns,
   })
 
   return query<People[]>(sql, ...params)
@@ -43,7 +43,9 @@ export function updatePeople(people: People, q: People) {
 
 @Provide()
 export class PeopleRepository extends BaseRepository<PeopleEntity> {
-  protected repository = AppDataSource.getRepository(PeopleEntity)
+  protected createRepository() {
+    return AppDataSource.getRepository(PeopleEntity)
+  }
 
   protected entityName = PeopleEntity.name
 }

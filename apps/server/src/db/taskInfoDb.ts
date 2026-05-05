@@ -1,24 +1,24 @@
-import { OkPacket } from 'mysql'
+import type { OkPacket } from 'mysql'
+import type { TaskInfo } from './model/taskInfo'
 import { Provide } from 'flash-wolves'
 import { query } from '@/lib/dbConnect/mysql'
 import {
   insertTableByModel,
   selectTableByModel,
-  updateTableByModel
+  updateTableByModel,
 } from '@/utils/sqlUtil'
 import { getUniqueKey } from '@/utils/stringUtil'
-import { BOOLEAN } from './model/public'
-import { TaskInfo } from './model/taskInfo'
-import { TaskInfo as TaskInfoEntity } from './entity'
 import { AppDataSource, BaseRepository } from '.'
+import { TaskInfo as TaskInfoEntity } from './entity'
+import { BOOLEAN } from './model/public'
 
 export function selectTaskInfo(
   options: V2Array<TaskInfo>,
-  columns: string[] = []
+  columns: string[] = [],
 ) {
   const { sql, params } = selectTableByModel('task_info', {
     data: options,
-    columns
+    columns,
   })
   return query<TaskInfo[]>(sql, ...params)
 }
@@ -32,7 +32,7 @@ export function insertTaskInfo(taskInfo: TaskInfo) {
     info: JSON.stringify(['姓名']),
     shareKey: getUniqueKey(),
     ddl: null,
-    ...taskInfo
+    ...taskInfo,
   }
   const { sql, params } = insertTableByModel('task_info', data)
   return query<OkPacket>(sql, ...params)
@@ -45,7 +45,9 @@ export function updateTaskInfo(taskInfo: TaskInfo, q: TaskInfo) {
 
 @Provide()
 export class TaskInfoRepository extends BaseRepository<TaskInfoEntity> {
-  protected repository = AppDataSource.getRepository(TaskInfoEntity)
+  protected createRepository() {
+    return AppDataSource.getRepository(TaskInfoEntity)
+  }
 
   protected entityName = TaskInfoEntity.name
 

@@ -1,17 +1,17 @@
-import { OkPacket } from 'mysql'
+import type { OkPacket } from 'mysql'
+import type { Task } from './model/task'
 import { Provide } from 'flash-wolves'
 import { query } from '@/lib/dbConnect/mysql'
 import {
   deleteTableByModel,
   insertTableByModel,
   selectTableByModel,
-  updateTableByModel
+  updateTableByModel,
 } from '@/utils/sqlUtil'
 import { getUniqueKey } from '@/utils/stringUtil'
-import { Task } from './model/task'
-import { insertTaskInfo } from './taskInfoDb'
 import { AppDataSource, BaseRepository } from '.'
 import { Task as TaskEntity } from './entity'
+import { insertTaskInfo } from './taskInfoDb'
 
 export function insertTask(task: Task) {
   const data = { k: getUniqueKey(), ...task }
@@ -19,7 +19,7 @@ export function insertTask(task: Task) {
   // 新增附加属性
   insertTaskInfo({
     taskKey: data.k,
-    userId: data.userId
+    userId: data.userId,
   })
   return query<OkPacket>(sql, ...params)
 }
@@ -27,7 +27,7 @@ export function insertTask(task: Task) {
 export function selectTasks(options: V2Array<Task>, columns: string[] = []) {
   const { sql, params } = selectTableByModel('task', {
     data: options,
-    columns
+    columns,
   })
   return query<Task[]>(sql, ...params)
 }
@@ -44,7 +44,9 @@ export function updateTask(task: Task, q: Task) {
 
 @Provide()
 export class TaskRepository extends BaseRepository<TaskEntity> {
-  protected repository = AppDataSource.getRepository(TaskEntity)
+  protected createRepository() {
+    return AppDataSource.getRepository(TaskEntity)
+  }
 
   protected entityName = TaskEntity.name
 }

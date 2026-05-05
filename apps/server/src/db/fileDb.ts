@@ -139,7 +139,9 @@ export function deleteFiles(files: File[]) {
 
 @Provide()
 export class FileRepository extends BaseRepository<Files> {
-  protected repository = AppDataSource.getRepository(Files)
+  protected createRepository() {
+    return AppDataSource.getRepository(Files)
+  }
 
   protected entityName = Files.name
 
