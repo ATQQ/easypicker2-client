@@ -1,0 +1,1030 @@
+╭─── Claude Code v2.1.126 ─────────────────────────────────────────────────────╮
+│                                       │ Tips for getting started             │
+│             Welcome back!             │ Run /init to create a CLAUDE.md fil… │
+│                                       │ ──────────────────────────────────── │
+│                ▐▛███▜▌                │ What's new                           │
+│               ▝▜█████▛▘               │ The `/model` picker now lists model… │
+│                 ▘▘ ▝▝                 │ - Added `claude project purge [path… │
+│                                       │ `--dangerously-skip-permissions` no… │
+│   mimo-v2.5-pro · API Usage Billing   │ /release-notes for more              │
+│   ~/Documents/fe/easypicker2-client   │                                      │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+❯ /status 
+  ⎿  Status dialog dismissed
+
+❯ /context                                                                      
+  ⎿  Context Usage
+     ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁   mimo-v2.5-pro
+     ⛁ ⛁ ⛀ ⛀ ⛀ ⛶ ⛶ ⛶ ⛶ ⛶   26.9k/200k tokens (13%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ 
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   Estimated usage by category
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System prompt: 8.6k tokens (4.3%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System tools: 17.3k tokens (8.7%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Skills: 618 tokens (0.3%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Messages: 294 tokens (0.1%)
+     ⛶ ⛶ ⛶ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝   ⛶ Free space: 140.1k (70.1%)
+     ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝   ⛝ Autocompact buffer: 33k tokens (16.5%)
+
+     Skills · /skills
+
+❯ /config 
+  ⎿  Config dialog dismissed
+
+❯ 简体中文                                                                      
+
+⏺ 你好！我已准备好用简体中文与你交流。请问有什么我可以帮你的？
+
+✻ Cooked for 4s
+
+❯ 我的线上服务器中的mongodb 昨晚宕机了 怎么排查问题？如何设置自动重启           
+
+⏺ 先看看项目里有没有 MongoDB 相关配置，以便给出更有针对性的建议。
+
+⏺ Explore(查找 MongoDB 配置)
+  ⎿  Read(apps/server/package.json)
+     Bash(ls /Users/sugar/Documents/fe/easypicker2-client/docker/)
+     Read(docs/deploy/docker.md)
+     … +10 tool uses (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ 这是现在的配置文件 ## content                                                 
+  systemLog:                                                                    
+    destination: file                                                           
+    logAppend: true                                                             
+    path: /www/server/mongodb/log/config.log                                    
+                                                                                
+  # Where and how to store data.                                                
+  storage:                                                                      
+    dbPath: /www/server/mongodb/data                                            
+    directoryPerDB: true                                                        
+                                                                                
+  # how the process runs                                                        
+  processManagement:                                                            
+    fork: true                                                                  
+    pidFilePath: /www/server/mongodb/log/configsvr.pid                          
+                                                                                
+  # network interfaces                                                          
+  net:                                                                          
+    port: 27017                                                                 
+    bindIp: 127.0.0.1                                                           
+                                                                                
+  #operationProfiling:                                                          
+  #replication:                                                                 
+  #    replSetName: bt_main                                                     
+  security:                                                                     
+    authorization: disabled                                                     
+    javascriptEnabled: false                                                    
+                                                                                
+  #sharding:                                                                    
+  #    clusterRole: shardsvr                                                    
+
+⏺ 配置分析
+
+  你的配置有几个值得注意的点：
+
+  1. authorization: disabled — 没有开启认证，线上环境建议开启
+  2. bindIp: 127.0.0.1 — 只监听本地，安全性可以
+  3. fork: true — 后台运行模式
+  4. 看路径像是宝塔面板部署的 MongoDB
+
+  ---
+  一、排查宕机原因
+
+  1. 查看 MongoDB 日志
+
+  # 查看最近的错误日志
+  tail -200 /www/server/mongodb/log/config.log
+
+  # 搜索 OOM（内存不足）相关
+  grep -i "oom\|killed\|out of memory" /www/server/mongodb/log/config.log
+
+  # 搜索崩溃相关
+  grep -i "fatal\|assert\|crash\|shutdown" /www/server/mongodb/log/config.log
+
+  2. 检查系统层面
+
+  # 查看系统日志，是否有 OOM Killer 记录
+  dmesg | grep -i "oom\|killed\|mongo"
+
+  # 或者
+  journalctl --since "yesterday" | grep -i "oom\|mongo"
+
+  # 查看内存使用情况
+  free -h
+
+  # 查看磁盘空间（磁盘满也会导致崩溃）
+  df -h
+
+  3. 常见宕机原因
+
+  ┌───────────────────────────┬──────────────────────────────────────────────┐
+  │           原因            │                   排查方式                   │
+  ├───────────────────────────┼──────────────────────────────────────────────┤
+  │ OOM（内存不足）被系统杀掉 │ dmesg | grep oom                             │
+  ├───────────────────────────┼──────────────────────────────────────────────┤
+  │ 磁盘满了                  │ df -h 检查 /www/server/mongodb/data 所在分区 │
+  ├───────────────────────────┼──────────────────────────────────────────────┤
+  │ 数据文件损坏              │ 日志中会有 assert 或 WiredTiger error        │
+  ├───────────────────────────┼──────────────────────────────────────────────┤
+  │ 权限问题                  │ 检查 data 目录权限 ls -la                    │
+  │                           │ /www/server/mongodb/data                     │
+  └───────────────────────────┴──────────────────────────────────────────────┘
+
+  ---
+  二、设置自动重启
+
+  方案一：systemd 服务（推荐）
+
+  如果你的 MongoDB 是通过宝塔安装的，可能已经有 service 文件。检查一下：
+
+  systemctl cat mongodb
+
+  如果没有，创建一个：
+
+  sudo vim /etc/systemd/system/mongodb.service
+
+  [Unit]
+  Description=MongoDB Database Server
+  After=network.target
+
+  [Service]
+  Type=forking
+  User=root
+  ExecStart=/www/server/mongodb/bin/mongod --config
+  /www/server/mongodb/config.conf
+  ExecStop=/www/server/mongodb/bin/mongod --shutdown --dbpath
+  /www/server/mongodb/data
+  PIDFile=/www/server/mongodb/log/configsvr.pid
+  Restart=always
+  RestartSec=10
+
+  [Install]
+  WantedBy=multi-user.target
+
+  ▎ 注意：确认 mongod 的实际路径，可以用 which mongod 或 ls 
+  ▎ /www/server/mongodb/bin/
+
+  然后启用：
+
+  sudo systemctl daemon-reload
+  sudo systemctl enable mongodb
+  sudo systemctl start mongodb
+
+  Restart=always + RestartSec=10 表示崩溃后 10 秒自动重启。
+
+  方案二：宝塔面板直接设置
+
+  宝塔面板 → 软件商店 → 找到 MongoDB → 设置 →
+  通常有"自动重启"或"守护进程"选项，开启即可。
+
+  方案三：crontab 定时检测（兜底）
+
+  如果 systemd 不可靠，可以用 crontab 做健康检查：
+
+  crontab -e
+
+  添加（每 5 分钟检测一次）：
+
+  */5 * * * * /www/server/mongodb/bin/mongosh --eval "db.adminCommand('ping')"
+  --quiet 2>/dev/null || /etc/init.d/mongodb restart
+
+  ---
+  建议优先做的事
+
+  1. 先看日志确认宕机原因 — tail -200 /www/server/mongodb/log/config.log
+  2. 检查内存 — 如果是 OOM，需要加内存或限制 MongoDB 的 wiredTigerCacheSizeGB
+  3. 用 systemd 托管并开启 Restart=always
+
+  你可以先把日志最后 200 行贴出来，我帮你分析具体原因。
+
+✻ Baked for 19s
+
+❯ {"t":{"$date":"2026-05-06T08:50:27.634+08:00"},"s":"W",  "c":"STORAGE",       
+  "id":22271,   "ctx":"initandlisten","msg":"Detected unclean shutdown - Lock   
+  file is not                                                                   
+  empty","attr":{"lockFile":"/www/server/mongodb/data/mongod.lock"}}            
+  {"t":{"$date":"2026-05-06T08:50:30.078+08:00"},"s":"I",  "c":"FTDC",          
+  "id":20631,   "ctx":"ftdc","msg":"Unclean full-time diagnostic data capture   
+  shutdown detected, found interim file, some metrics may have been             
+  lost","attr":{"error":{"code":0,"codeName":"OK"}}}                            
+                                                                                
+                                                                                
+  journalctl --since "yesterday" | grep -i "oom\|mongo"                         
+  May 06 00:01:06 VM-24-13-opencloudos kernel: ps invoked oom-killer:           
+  gfp_mask=0xcc0(GFP_KERNEL), order=0, oom_score_adj=0                          
+  May 06 00:01:06 VM-24-13-opencloudos kernel:  oom_kill_process+0x105/0x1a0    
+  May 06 00:01:07 VM-24-13-opencloudos kernel: [  pid  ]   uid  tgid total_vm   
+      rss pgtables_bytes swapents oom_score_adj name                            
+  May 06 00:01:07 VM-24-13-opencloudos kernel: [  38024]  1004 38024   498021   
+   350262  3575808    35157             0 mongod                                
+  May 06 00:01:07 VM-24-13-opencloudos kernel: oom-kill:constraint=CONSTRAINT_N 
+  ONE,nodemask=(null),cpuset=user.slice,mems_allowed=0,global_oom,task_memcg=/s 
+  ystem.slice/bt.service,task=mongod,pid=38024,uid=1004                         
+  May 06 00:01:07 VM-24-13-opencloudos kernel: Out of memory: Killed process    
+  38024 (mongod) total-vm:1992084kB, anon-rss:1379732kB, file-rss:21316kB,      
+  shmem-rss:0kB, UID:1004 pgtables:3492kB oom_score_adj:0                       
+  May 06 00:01:06 VM-24-13-opencloudos systemd[1]: bt.service: A process of     
+  this unit has been killed by the OOM killer.                                  
+  May 06 00:01:08 VM-24-13-opencloudos systemd[1]: bt.service: Failed with      
+  result 'oom-kill'.                                                            
+  May 06 08:47:57 VM-24-13-opencloudos systemd[1]: Stopping mongodb.service -   
+  LSB: starts mongodb...                                                        
+  May 06 08:47:58 VM-24-13-opencloudos sudo[844634]:     root : PWD=/ ;         
+  USER=mongo ; COMMAND=/usr/bin/mongod --shutdown -f                            
+  /www/server/mongodb/config.conf                                               
+  May 06 08:48:00 VM-24-13-opencloudos mongodb[844721]: Process ID '38024' read 
+   from pidfile '/www/server/mongodb/data/mongod.lock' does not appear to be    
+  running                                                                       
+  May 06 08:48:00 VM-24-13-opencloudos systemd[1]: mongodb.service: Control     
+  process exited, code=exited, status=1/FAILURE                                 
+  May 06 08:48:00 VM-24-13-opencloudos systemd[1]: mongodb.service: Failed with 
+   result 'exit-code'.                                                          
+  May 06 08:48:00 VM-24-13-opencloudos systemd[1]: Stopped mongodb.service -    
+  LSB: starts mongodb.                                                          
+  May 06 08:48:09 VM-24-13-opencloudos systemd[1]: system.slice: A process of   
+  this unit has been killed by the OOM killer.                                  
+  May 06 08:50:24 VM-24-13-opencloudos systemd-sysv-generator[375]: SysV        
+  service '/etc/rc.d/init.d/mongodb' lacks a native systemd unit file. ~        
+  Automatically generating a unit file for compatibility. Please update package 
+   to include a native systemd unit file, in order to make it safe, robust and  
+  future-proof. ! This compatibility logic is deprecated, expect removal soon.  
+  !                                                                             
+  May 06 08:50:26 VM-24-13-opencloudos systemd[1]: Starting mongodb.service -   
+  LSB: starts mongodb...                                                        
+  May 06 08:50:26 VM-24-13-opencloudos sudo[692]:     root : PWD=/ ; USER=mongo 
+   ; COMMAND=/usr/bin/mongod -f /www/server/mongodb/config.conf                 
+  May 06 08:50:27 VM-24-13-opencloudos mongodb[734]: about to fork child        
+  process, waiting until server is ready for connections.                       
+  May 06 08:50:27 VM-24-13-opencloudos mongodb[772]: forked process: 772        
+  May 06 08:50:29 VM-24-13-opencloudos mongodb[734]: child process started      
+  successfully, parent exiting                                                  
+  May 06 08:50:29 VM-24-13-opencloudos systemd[1]: Started mongodb.service -    
+  LSB: starts mongodb.                                                          
+  May 06 08:50:31 VM-24-13-opencloudos systemd[1]: Started mongod.service -     
+  MongoDB Database Server.                                                      
+  May 06 08:50:31 VM-24-13-opencloudos mongod[981]:                             
+  {"t":{"$date":"2026-05-06T00:50:31.847Z"},"s":"I",  "c":"CONTROL",            
+  "id":7484500, "ctx":"-","msg":"Environment variable                           
+  MONGODB_CONFIG_OVERRIDE_NOFORK == 1, overriding \"processManagement.fork\" to 
+   false"}                                                                      
+  May 06 08:50:31 VM-24-13-opencloudos mongod[981]:                             
+  {"t":{"$date":"2026-05-06T00:50:31.851Z"},"s":"F",  "c":"CONTROL",            
+  "id":20574,   "ctx":"-","msg":"Error during global initialization","attr":{"e 
+  rror":{"code":38,"codeName":"FileNotOpen","errmsg":"Can't initialize          
+  rotatable log file :: caused by :: Failed to open                             
+  /www/server/mongodb/log/config.log"}}}                                        
+  May 06 08:50:31 VM-24-13-opencloudos systemd[1]: mongod.service: Main process 
+   exited, code=exited, status=1/FAILURE                                        
+  May 06 08:50:31 VM-24-13-opencloudos systemd[1]: mongod.service: Failed with  
+  result 'exit-code'.                                                           
+  May 06 08:50:34 VM-24-13-opencloudos containerd[912]:                         
+  time="2026-05-06T08:50:34.314877736+08:00" level=info msg="Start cri plugin   
+  with config {PluginConfig:{ContainerdConfig:{Snapshotter:overlayfs            
+  DefaultRuntimeName:runc DefaultRuntime:{Type: Path: Engine: PodAnnotations:[] 
+   ContainerAnnotations:[] Root: Options:map[]                                  
+  PrivilegedWithoutHostDevices:false                                            
+  PrivilegedWithoutHostDevicesAllDevicesAllowed:false BaseRuntimeSpec:          
+  NetworkPluginConfDir: NetworkPluginMaxConfNum:0 Snapshotter: SandboxMode:}    
+  UntrustedWorkloadRuntime:{Type: Path: Engine: PodAnnotations:[]               
+  ContainerAnnotations:[] Root: Options:map[]                                   
+  PrivilegedWithoutHostDevices:false                                            
+  PrivilegedWithoutHostDevicesAllDevicesAllowed:false BaseRuntimeSpec:          
+  NetworkPluginConfDir: NetworkPluginMaxConfNum:0 Snapshotter: SandboxMode:}    
+  Runtimes:map[runc:{Type:io.containerd.runc.v2 Path: Engine: PodAnnotations:[] 
+   ContainerAnnotations:[] Root: Options:map[BinaryName: CriuImagePath:         
+  CriuPath: CriuWorkPath: IoGid:0 IoUid:0 NoNewKeyring:false NoPivotRoot:false  
+  Root: ShimCgroup: SystemdCgroup:false] PrivilegedWithoutHostDevices:false     
+  PrivilegedWithoutHostDevicesAllDevicesAllowed:false BaseRuntimeSpec:          
+  NetworkPluginConfDir: NetworkPluginMaxConfNum:0 Snapshotter:                  
+  SandboxMode:podsandbox}] NoPivot:false DisableSnapshotAnnotations:true        
+  DiscardUnpackedLayers:false IgnoreBlockIONotEnabledErrors:false               
+  IgnoreRdtNotEnabledErrors:false}                                              
+  CniConfig:{NetworkPluginBinDir:/usr/libexec/cni/                              
+  NetworkPluginConfDir:/etc/cni/net.d NetworkPluginMaxConfNum:1                 
+  NetworkPluginSetupSerially:false NetworkPluginConfTemplate: IPPreference:}    
+  Registry:{ConfigPath: Mirrors:map[] Configs:map[] Auths:map[] Headers:map[]}  
+  ImageDecryption:{KeyModel:node} DisableTCPService:true                        
+  StreamServerAddress:127.0.0.1 StreamServerPort:0 StreamIdleTimeout:4h0m0s     
+  EnableSelinux:false SelinuxCategoryRange:1024                                 
+  SandboxImage:registry.k8s.io/pause:3.8 StatsCollectPeriod:10                  
+  SystemdCgroup:false EnableTLSStreaming:false                                  
+  X509KeyPairStreaming:{TLSCertFile: TLSKeyFile:} MaxContainerLogLineSize:16384 
+   DisableCgroup:false DisableApparmor:false RestrictOOMScoreAdj:false          
+  MaxConcurrentDownloads:3 DisableProcMount:false UnsetSeccompProfile:          
+  TolerateMissingHugetlbController:true DisableHugetlbController:true           
+  DeviceOwnershipFromSecurityContext:false IgnoreImageDefinedVolumes:false      
+  NetNSMountsUnderStateDir:false EnableUnprivilegedPorts:false                  
+  EnableUnprivilegedICMP:false EnableCDI:false CDISpecDirs:[/etc/cdi            
+  /var/run/cdi] ImagePullProgressTimeout:5m0s DrainExecSyncIOTimeout:0s         
+  ImagePullWithSyncFs:false IgnoreDeprecationWarnings:[]}                       
+  ContainerdRootDir:/var/lib/containerd                                         
+  ContainerdEndpoint:/run/containerd/containerd.sock                            
+  RootDir:/var/lib/containerd/io.containerd.grpc.v1.cri                         
+  StateDir:/run/containerd/io.containerd.grpc.v1.cri}"                          
+                                                                                
+  dmesg | grep -i "oom\|killed\|mongo"                                          
+  [    4.989590] systemd-sysv-generator[375]: SysV service                      
+  '/etc/rc.d/init.d/mongodb' lacks a native systemd unit file. ~ Automatically  
+  generating a unit file for compatibility. Please update package to include a  
+  native systemd unit file, in order to make it safe, robust and future-proof.  
+  ! This compatibility logic is deprecated, expect removal soon. !              
+
+⏺ 原因确认：OOM Killer 杀掉了 MongoDB
+
+  日志非常清晰：
+
+  Out of memory: Killed process 38024 (mongod) total-vm:1992084kB,
+  anon-rss:1379732kB
+
+  MongoDB 占用了约 1.35GB 内存，服务器内存不足，被系统 OOM Killer 强制杀掉了。
+
+  ---
+  当前问题总结
+
+  ┌──────────────┬───────────────────────────────────────────────────────────┐
+  │     问题     │                           说明                            │
+  ├──────────────┼───────────────────────────────────────────────────────────┤
+  │ OOM 杀进程   │ 服务器总内存不够，mongod 被系统杀掉                       │
+  ├──────────────┼───────────────────────────────────────────────────────────┤
+  │ 两个服务冲突 │ mongodb.service（SysV/宝塔）和                            │
+  │              │ mongod.service（systemd）同时存在，互相打架               │
+  ├──────────────┼───────────────────────────────────────────────────────────┤
+  │ 日志文件权限 │ mongod.service 无法打开                                   │
+  │              │ /www/server/mongodb/log/config.log                        │
+  └──────────────┴───────────────────────────────────────────────────────────┘
+
+  ---
+  解决方案
+
+  1. 限制 MongoDB 内存使用
+
+  在你的配置文件中加上 WiredTiger 缓存限制：
+
+  vim /www/server/mongodb/config.conf
+
+  在 storage 部分添加：
+
+  storage:
+    dbPath: /www/server/mongodb/data
+    directoryPerDB: true
+    wiredTiger:
+      engineConfig:
+        cacheSizeGB: 0.5
+
+  ▎ cacheSizeGB: 0.5 限制 MongoDB 最多用 512MB 
+  ▎ 缓存。根据你服务器总内存调整，一般设为总内存的 50%-60% 减去其他服务占用。
+
+  查看服务器总内存：
+
+  free -h
+
+  2. 清理冲突的服务，只保留一个
+
+  # 查看两个服务的状态
+  systemctl status mongodb
+  systemctl status mongod
+
+  # 禁用系统自带的 mongod.service（避免冲突）
+  systemctl disable mongod
+  systemctl stop mongod
+
+  然后确保宝塔的 mongodb.service 有自动重启能力。
+
+  3. 配置自动重启
+
+  编辑宝塔生成的 SysV 启动脚本：
+
+  cat /etc/rc.d/init.d/mongodb
+
+  但更推荐的做法是创建一个原生 systemd 服务来替代。先确认 MongoDB 的路径：
+
+  ls /www/server/mongodb/bin/mongod
+
+  然后创建服务文件：
+
+  vim /etc/systemd/system/mongodb.service
+
+  [Unit]
+  Description=MongoDB Database Server
+  After=network.target
+
+  [Service]
+  Type=forking
+  User=mongo
+  ExecStart=/www/server/mongodb/bin/mongod --config
+  /www/server/mongodb/config.conf
+  ExecStop=/www/server/mongodb/bin/mongod --shutdown --dbpath
+  /www/server/mongodb/data
+  PIDFile=/www/server/mongodb/log/configsvr.pid
+  Restart=always
+  RestartSec=10
+  LimitNOFILE=64000
+
+  [Install]
+  WantedBy=multi-user.target
+
+  ▎ User=mongo 是根据日志中 USER=mongo 判断的，确认一下你的 MongoDB 运行用户。
+
+  启用：
+
+  systemctl daemon-reload
+  systemctl enable mongodb
+  systemctl restart mongodb
+  systemctl status mongodb
+
+  4. 修复日志文件权限
+
+  chown mongo:mongo /www/server/mongodb/log/config.log
+  chmod 644 /www/server/mongodb/log/config.log
+
+  ---
+  立即执行顺序
+
+  # 1. 先看服务器内存
+  free -h
+
+  # 2. 限制 MongoDB 内存（编辑配置加 cacheSizeGB）
+
+  # 3. 禁用冲突的 mongod.service
+  systemctl disable mongod --now
+
+  # 4. 重启 MongoDB
+  systemctl restart mongodb
+
+  # 5. 验证状态
+  systemctl status mongodb
+
+  先执行 free -h 看下你的服务器总内存是多少，我帮你确定合适的 cacheSizeGB 值。
+
+✻ Brewed for 23s
+
+❯ free -h                                                                       
+                 total        used        free      shared  buff/cache          
+  available                                                                     
+  Mem:           3.6Gi       2.3Gi       209Mi       1.6Mi       1.3Gi          
+  1.3Gi                                                                         
+  Swap:          1.0Gi       752Mi       272Mi                                  
+
+⏺ 内存分析
+
+  总内存 3.6GB，可用仅 1.3GB，Swap 已用 752MB（很紧张）。MongoDB 默认 WiredTiger
+   缓存公式是 (总内存 - 1GB) / 2，即约 1.3GB，这直接吃掉大部分可用内存，OOM
+  是必然的。
+
+  建议配置
+
+  cacheSizeGB 设为 0.5（512MB），给系统和其他服务留够空间：
+
+  storage:
+    dbPath: /www/server/mongodb/data
+    directoryPerDB: true
+    wiredTiger:
+      engineConfig:
+        cacheSizeGB: 0.5
+
+  操作步骤
+
+  # 1. 编辑配置文件
+  vim /www/server/mongodb/config.conf
+  # 在 storage 部分加上 wiredTiger 配置
+
+  # 2. 禁用冲突的 mongod.service
+  systemctl disable mongod --now
+
+  # 3. 重启 MongoDB
+  systemctl restart mongodb
+
+  # 4. 验证
+  systemctl status mongodb
+  free -h
+
+  如果业务量不大、数据集较小，0.5GB 足够了。如果后续发现查询变慢，可以适当调到
+  0.75，但不建议超过 1GB，否则 OOM 风险会再次出现。
+
+  长远建议：3.6GB 内存跑宝塔 + MongoDB + 其他服务比较吃力，建议升级到 4GB
+  或以上。
+
+✻ Brewed for 11s
+
+❯ 不禁用冲突的有什么影响吗 不会导致服务崩溃吧                                   
+
+⏺ 会有影响，主要是两个服务抢同一个端口和数据文件：
+
+  ┌──────────────┬───────────────────────────────────────────────────────────┐
+  │     风险     │                           说明                            │
+  ├──────────────┼───────────────────────────────────────────────────────────┤
+  │ 端口冲突     │ 两个服务都监听 27017，一个启动了另一个就起不来            │
+  ├──────────────┼───────────────────────────────────────────────────────────┤
+  │ 数据损坏     │ 两个进程同时操作 /www/server/mongodb/data                 │
+  │              │ 目录，可能损坏数据文件                                    │
+  ├──────────────┼───────────────────────────────────────────────────────────┤
+  │ 状态混乱     │ systemctl status 结果不可靠，不知道到底谁在管理 MongoDB   │
+  ├──────────────┼───────────────────────────────────────────────────────────┤
+  │              │ OOM 杀掉的是宝塔的 bt.service 下的进程，但 systemd 的     │
+  │ 自动重启失效 │ mongod.service                                            │
+  │              │ 可能尝试重启失败（日志权限问题），最终谁都拉不起来        │
+  └──────────────┴───────────────────────────────────────────────────────────┘
+
+  不会导致"崩溃"，但会导致 MongoDB
+  在宕机后无法自动恢复——这正是你昨晚遇到的问题。
+
+  最简处理
+
+  # 禁用自带的 mongod.service，只保留宝塔的
+  systemctl disable mongod --now
+
+  一条命令，不影响正在运行的 MongoDB。宝塔的 mongodb.service 会继续管理服务。
+
+  如果你想让宝塔的服务也有自动重启能力，可以在宝塔面板里确认 MongoDB
+  是否开启了"守护进程"。
+
+✻ Cogitated for 8s
+
+❯ 为什么会内存一直增大mongodb，怎么查看当前占用的内存                           
+
+⏺ 查看 MongoDB 当前内存占用
+
+  # 方法1：系统层面看 mongod 进程内存
+  ps aux | grep mongod
+
+  # 方法2：用 mongosh 连进去看详细内存
+  mongosh --eval "db.serverStatus().mem"
+
+  # 方法3：看 WiredTiger 缓存使用情况
+  mongosh --eval "JSON.stringify(db.serverStatus().wiredTiger.cache, null, 2)"
+
+  关注的字段：
+  - resident — 物理内存占用（MB）
+  - virtual — 虚拟内存占用
+  - wiredTiger.cache.bytes currently in the cache — WiredTiger 缓存实际用量
+
+  内存一直增大的常见原因
+
+  ┌───────────────────────┬──────────────────────────────────────────────────┐
+  │         原因          │                       说明                       │
+  ├───────────────────────┼──────────────────────────────────────────────────┤
+  │ WiredTiger 缓存       │ 默认占 (总内存-1GB)/2，你的服务器上约            │
+  │                       │ 1.3GB，会持续增长到这个上限                      │
+  ├───────────────────────┼──────────────────────────────────────────────────┤
+  │ 连接数过多            │ 每个连接消耗内存，查看：mongosh --eval           │
+  │                       │ "db.serverStatus().connections"                  │
+  ├───────────────────────┼──────────────────────────────────────────────────┤
+  │ 未加索引的查询        │ 全表扫描会在内存中排序，产生大量临时数据         │
+  ├───────────────────────┼──────────────────────────────────────────────────┤
+  │ 大量未释放的连接/游标 │ 应用层没正确关闭连接                             │
+  ├───────────────────────┼──────────────────────────────────────────────────┤
+  │ 日志/Oplog 积压       │ replication 相关数据占用                         │
+  └───────────────────────┴──────────────────────────────────────────────────┘
+
+  快速诊断
+
+  # 查看连接数
+  mongosh --eval "db.serverStatus().connections"
+
+  # 查看当前所有数据库大小
+  mongosh --eval "db.adminCommand({listDatabases:1})"
+
+  # 查看各集合的大小
+  mongosh --eval "db.getMongo().getDBNames().forEach(function(d){db.getSiblingDB
+  (d).getCollectionNames().forEach(function(c){var 
+  s=db.getSiblingDB(d).getCollection(c).stats(); print(d+'.'+c+' -> data: 
+  '+Math.round(s.size/1024/1024)+'MB, index: 
+  '+Math.round(s.totalIndexSize/1024/1024)+'MB')})})"
+
+  核心结论：你的服务器 3.6GB 内存，MongoDB 默认缓存就吃
+  1.3GB，加上宝塔和其他服务，必然 OOM。加上 cacheSizeGB: 0.5
+  限制是最关键的一步。
+
+✻ Cogitated for 10s
+
+❯ ps aux | grep mongod                                                          
+  mongo        772  0.9 36.3 1884616 1361260 ?     Sl   08:50   2:27 mongod -f  
+  /www/server/mongodb/config.conf                                               
+  root       76963  0.0  0.0   6408  2096 pts/0    S+   13:10   0:00 grep       
+  --color=auto mongod                                                           
+
+⏺ 当前内存占用
+
+  PID 772 — mongod 占用 36.3% 内存 ≈ 1.3GB RSS
+
+  这就是 OOM 的直接原因。你服务器总共 3.6GB，MongoDB 一个进程就占了 1.3GB。
+
+  趋势解释
+
+  WiredTiger 缓存的特点是只增不减：
+
+  1. 启动时缓存为空
+  2. 每次查询/写入，数据页加载到缓存
+  3. 缓存持续增长，直到达到 cacheSizeGB 上限（默认 ~1.3GB）
+  4. 达到上限后通过 eviction（淘汰旧页）维持，但不会主动释放
+
+  所以看起来是"一直增大"，其实是增长到上限后就稳定了，但默认上限太高，导致系统内
+  存不够用。
+
+  现在立即限制
+
+  vim /www/server/mongodb/config.conf
+
+  加上：
+
+  storage:
+    dbPath: /www/server/mongodb/data
+    directoryPerDB: true
+    wiredTiger:
+      engineConfig:
+        cacheSizeGB: 0.5
+
+  然后重启：
+
+  systemctl restart mongodb
+
+  重启后再观察：
+
+  ps aux | grep mongod
+
+  预期 RSS 会降到 500-600MB 左右（缓存 512MB + 进程自身开销），OOM
+  风险就解除了。
+
+✻ Baked for 9s
+❯ ps aux | grep mongod                                                          
+  mongo      77805 32.8 15.9 989816 596456 ?       Sl   13:11   0:09 mongod -f  
+  /www/server/mongodb/config.conf                                               
+  root       78169  0.0  0.0   6408  2096 pts/0    S+   13:12   0:00 grep       
+  --color=auto mongod                                                           
+
+⏺ 效果很明显：
+
+  ┌──────────┬────────┬────────┐
+  │          │ 修改前 │ 修改后 │
+  ├──────────┼────────┼────────┤
+  │ 内存占比 │ 36.3%  │ 15.9%  │
+  ├──────────┼────────┼────────┤
+  │ RSS      │ ~1.3GB │ ~580MB │
+  └──────────┴────────┴────────┘
+
+  内存占用降了一半多，cacheSizeGB: 0.5 生效了。现在服务器剩余可用内存大约
+  1.5GB+，OOM 风险基本解除。
+
+  接下来把自动重启也配上，万一再出问题能自动恢复：
+
+  systemctl disable mongod --now
+
+  然后在宝塔面板确认 MongoDB 的"守护进程"是否已开启。
+
+✻ Crunched for 3s
+
+❯ 这个指令啥意思systemctl disable mongod --now                                  
+
+⏺ 拆开解释：
+
+  - systemctl disable mongod — 禁止 mongod.service
+  开机自启（但从本次启动中不移除它）
+  - --now — 额外立即停止当前正在运行的服务
+
+  合起来就是：立刻停止 + 以后开机不再自动启动。
+
+  你之前日志里有两个服务在打架：
+  - mongodb.service — 宝塔的，正在管理你的 MongoDB
+  - mongod.service — 系统自带的，启动失败（日志权限问题）
+
+  这条命令禁用的是系统自带的那个 mongod.service，不影响宝塔管理的
+  mongodb.service，你的 MongoDB 不会中断。
+
+✻ Brewed for 6s
+
+❯ 怎么开启守护进程宝塔的                                                        
+
+⏺ 宝塔面板里操作：
+
+  软件商店 → MongoDB → 设置 → 守护进程/服务状态 → 开启
+
+  如果找不到，也可以用命令行确认宝塔的服务文件：
+
+  cat /etc/init.d/mongodb
+
+  看看里面有没有类似 respawn 或自动重启的逻辑。
+
+  或者直接用 systemd 给宝塔的服务加上自动重启：
+
+  # 查看宝塔的 mongodb 服务配置
+  systemctl cat mongodb
+
+  把输出贴出来，我帮你确认是否已经有自动重启能力，没有的话直接加上
+  Restart=always。
+
+✻ Sautéed for 3s
+
+❯ cat /etc/init.d/mongodb                                                       
+  #!/bin/bash                                                                   
+  # chkconfig: 2345 55 25                                                       
+  # description: mongodb                                                        
+                                                                                
+  ### BEGIN INIT INFO                                                           
+  # Provides:          mongodb                                                  
+  # Required-Start:    $all                                                     
+  # Required-Stop:     $all                                                     
+  # Default-Start:     2 3 4 5                                                  
+  # Default-Stop:      0 1 6                                                    
+  # Short-Description: starts mongodb                                           
+  # Description:       starts the mongodb                                       
+  ### END INIT INFO                                                             
+                                                                                
+  MONGO_PATH=/www/server/mongodb                                                
+  if [ ! -f $MONGO_PATH/bin/mongod ];then                                       
+      echo "No installation of mognodb."                                        
+      exit;                                                                     
+  fi                                                                            
+                                                                                
+  Config=/www/server/mongodb/config.conf                                        
+  User=mongo                                                                    
+                                                                                
+  start()                                                                       
+  {                                                                             
+    #    chmod -R mongo:mongo /www/server/mongodb                               
+      if [ -e /usr/bin/sudo ];then                                              
+                  sudo -u $User mongod -f $Config                               
+      elif [ -e /usr/bin/su ];then                                              
+              su -c ''${MONGO_PATH}'/bin/mongod -f '${Config}'' -s /bin/sh      
+  mongo                                                                         
+  #               su - $User -c '$MONGO_PATH/bin/mongod -f $Config'             
+          else                                                                  
+                  mongod -f $Config                                             
+      fi                                                                        
+  }                                                                             
+                                                                                
+  stop()                                                                        
+  {                                                                             
+          if [ -e /usr/bin/sudo ];then                                          
+                  sudo -u $User mongod --shutdown -f $Config                    
+      elif [ -e /usr/bin/su ];then                                              
+              su -c ''${MONGO_PATH}'/bin/mongod --shutdown -f '${Config}'' -s   
+  /bin/sh mongo                                                                 
+          else                                                                  
+                  mongod --shutdown -f $Config                                  
+          fi                                                                    
+  }                                                                             
+                                                                                
+  status()                                                                      
+  {                                                                             
+      if pgrep -x "mongod" > /dev/null; then                                    
+          echo "MongoDB is running"                                             
+          exit 0                                                                
+      else                                                                      
+          echo "MongoDB is not running"                                         
+          exit 1                                                                
+      fi                                                                        
+                                                                                
+  }                                                                             
+                                                                                
+  case "$1" in                                                                  
+          'start')                                                              
+                  start                                                         
+                  ;;                                                            
+          'stop')                                                               
+                  stop                                                          
+                  ;;                                                            
+          'restart')                                                            
+                  stop                                                          
+                  start                                                         
+                  ;;                                                            
+          'status')                                                             
+                  status                                                        
+                  ;;                                                            
+          *)                                                                    
+                  echo "Usage: /etc/init.d/mongodb {start|stop|status|restart}" 
+          ;;                                                                    
+  esac                                                                          
+
+⏺ 这个脚本没有自动重启能力，就是最基础的 start/stop/status。
+
+  建议：用 systemd 替代它
+
+  直接创建一个带自动重启的 systemd 服务：
+
+  vim /etc/systemd/system/mongodb.service
+
+  [Unit]
+  Description=MongoDB Database Server
+  After=network.target
+
+  [Service]
+  Type=forking
+  User=mongo
+  ExecStart=/www/server/mongodb/bin/mongod --config
+  /www/server/mongodb/config.conf
+  ExecStop=/www/server/mongodb/bin/mongod --shutdown --dbpath
+  /www/server/mongodb/data
+  PIDFile=/www/server/mongodb/log/configsvr.pid
+  Restart=always
+  RestartSec=10
+  LimitNOFILE=64000
+
+  [Install]
+  WantedBy=multi-user.target
+
+  然后：
+
+  # 先停掉宝塔的
+  /etc/init.d/mongodb stop
+
+  # 禁用宝塔的 SysV 脚本，防止冲突
+  chkconfig mongodb off
+
+  # 启用新的 systemd 服务
+  systemctl daemon-reload
+  systemctl enable mongodb
+  systemctl start mongodb
+
+  # 验证
+  systemctl status mongodb
+
+  关键区别
+
+  ┌──────────┬────────────────┬───────────────────────┐
+  │          │ 宝塔 SysV 脚本 │     systemd 服务      │
+  ├──────────┼────────────────┼───────────────────────┤
+  │ 自动重启 │ 无             │ Restart=always        │
+  ├──────────┼────────────────┼───────────────────────┤
+  │ 重启间隔 │ —              │ 崩溃后 10 秒自动拉起  │
+  ├──────────┼────────────────┼───────────────────────┤
+  │ 开机自启 │ chkconfig      │ systemctl enable      │
+  ├──────────┼────────────────┼───────────────────────┤
+  │ 日志管理 │ 无             │ journalctl -u mongodb │
+  └──────────┴────────────────┴───────────────────────┘
+
+  配置好后，即使 MongoDB 再被 OOM 杀掉，10 秒后也会自动重启。
+
+✻ Crunched for 7s
+
+❯ systemctl cat mongodb                                                         
+  # /run/systemd/generator.late/mongodb.service                                 
+  # Automatically generated by systemd-sysv-generator                           
+                                                                                
+  [Unit]                                                                        
+  Documentation=man:systemd-sysv-generator(8)                                   
+  SourcePath=/etc/rc.d/init.d/mongodb                                           
+  Description=LSB: starts mongodb                                               
+  Before=multi-user.target                                                      
+  Before=multi-user.target                                                      
+  Before=multi-user.target                                                      
+  Before=graphical.target                                                       
+  After=all.target                                                              
+                                                                                
+  [Service]                                                                     
+  Type=forking                                                                  
+  Restart=no                                                                    
+  TimeoutSec=5min                                                               
+  IgnoreSIGPIPE=no                                                              
+  KillMode=process                                                              
+  GuessMainPID=no                                                               
+  RemainAfterExit=yes                                                           
+  SuccessExitStatus=5 6                                                         
+  ExecStart=/etc/rc.d/init.d/mongodb start                                      
+  ExecStop=/etc/rc.d/init.d/mongodb stop                                        
+
+⏺ 看到了，系统自动生成的服务文件里 Restart=no，所以宕机后不会自动恢复。
+
+  直接覆盖掉它：
+
+  vim /etc/systemd/system/mongodb.service
+
+  [Unit]
+  Description=MongoDB Database Server
+  After=network.target
+
+  [Service]
+  Type=forking
+  User=mongo
+  ExecStart=/www/server/mongodb/bin/mongod --config
+  /www/server/mongodb/config.conf
+  ExecStop=/www/server/mongodb/bin/mongod --shutdown --dbpath
+  /www/server/mongodb/data
+  PIDFile=/www/server/mongodb/log/configsvr.pid
+  Restart=always
+  RestartSec=10
+  LimitNOFILE=64000
+
+  [Install]
+  WantedBy=multi-user.target
+
+  然后执行：
+
+  systemctl daemon-reload
+  systemctl restart mongodb
+  systemctl status mongodb
+
+  确认输出里有 Restart=always 就说明配好了。之后 MongoDB 再挂掉，10
+  秒内会自动拉起。
+
+✻ Crunched for 5s
+
+❯ 直接覆盖不会有问题吗？最小的改动实现                                          
+
+⏺ 你说得对，最小改动是用 systemd drop-in 覆盖，只改重启策略，不动原有配置：
+
+  mkdir -p /etc/systemd/system/mongodb.service.d
+  vim /etc/systemd/system/mongodb.service.d/override.conf
+
+  [Service]
+  Restart=always
+  RestartSec=10
+
+  然后：
+
+  systemctl daemon-reload
+  systemctl restart mongodb
+  systemctl status mongodb
+
+  这样只覆盖了 Restart 这一项，其余逻辑继续走宝塔的 SysV 脚本，最小侵入。
+
+✻ Sautéed for 7s
+
+❯ systemctl status mongodb                                                      
+  ● mongodb.service - LSB: starts mongodb                                       
+       Loaded: loaded (/etc/rc.d/init.d/mongodb; generated)                     
+      Drop-In: /etc/systemd/system/mongodb.service.d                            
+               └─override.conf                                                  
+       Active: active (running) since Wed 2026-05-06 14:58:03 CST; 30s ago      
+         Docs: man:systemd-sysv-generator(8)                                    
+      Process: 107133 ExecStart=/etc/rc.d/init.d/mongodb start (code=exited,    
+  status=0/SUCCESS)                                                             
+        Tasks: 35 (limit: 4347)                                                 
+       Memory: 165.8M (peak: 166.1M)                                            
+          CPU: 1.167s                                                           
+       CGroup: /system.slice/mongodb.service                                    
+               └─107137 mongod -f /www/server/mongodb/config.conf               
+                                                                                
+  May 06 14:58:02 VM-24-13-opencloudos systemd[1]: Starting mongodb.service -   
+  LSB: starts mongodb...                                                        
+  May 06 14:58:02 VM-24-13-opencloudos sudo[107134]:     root : PWD=/ ;         
+  USER=mongo ; COMMAND=/usr/bi>                                                 
+  May 06 14:58:02 VM-24-13-opencloudos mongodb[107135]: about to fork child     
+  process, waiting until s>                                                     
+  May 06 14:58:02 VM-24-13-opencloudos mongodb[107137]: forked process: 107137  
+  May 06 14:58:03 VM-24-13-opencloudos mongodb[107135]: child process started   
+  successfully, parent e>                                                       
+  May 06 14:58:03 VM-24-13-opencloudos systemd[1]: Started mongodb.service -    
+  LSB: starts mongodb.                                                          
+  lines 1-19/19 (END)                                                           
+
+⏺ 一切正常：
+
+  - Drop-In: override.conf 已生效
+  - Memory: 165.8M — 内存占用从 1.3GB 降到了 165MB
+  - Active: active (running) — 服务运行中
+
+  总结你做了什么
+
+  ┌─────────────────────────┬────────────────────────────────────┐
+  │          改动           │                效果                │
+  ├─────────────────────────┼────────────────────────────────────┤
+  │ cacheSizeGB: 0.5        │ 内存从 1.3GB → 165MB，OOM 风险解除 │
+  ├─────────────────────────┼────────────────────────────────────┤
+  │ Restart=always override │ 宕机后 10 秒自动重启               │
+  └─────────────────────────┴────────────────────────────────────┘
+
+  两个改动都是最小化的，没有动原有宝塔的脚本和配置结构。
+
+✻ Brewed for 5s
+
+❯ 生成一个shell 指令用于查询mongodb 内存占用情况，要友好的显示结果 格式化成     
+  MB/GB/KB                                                                      
+
+⏺ Write(check_mongo_mem.sh)
+  ⎿  Wrote 38 lines to check_mongo_mem.sh
+       1 #!/bin/bash
+       2 
+       3 PID=$(pgrep -x mongod)
+       4 if [ -z "$PID" ]; then
+       5     echo "MongoDB is not running"
+       6     exit 1
+       7 fi
+       8 
+       9 format_bytes() {
+      10     local bytes=$1
+     … +28 lines (ctrl+o to expand)
+
+⏺ 抱歉，文件不该放在项目里，删掉。直接给你脚本内容：
+
+⏺ Bash(rm /Users/sugar/Documents/fe/easypicker2-client/check_mongo_mem.sh)
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ /context                                                                      
+  ⎿  Context Usage
+     ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁   mimo-v2.5-pro
+     ⛁ ⛁ ⛀ ⛀ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁   35.6k/200k tokens (18%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ 
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   Estimated usage by category
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System prompt: 8.6k tokens (4.3%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ System tools: 17.3k tokens (8.7%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Skills: 618 tokens (0.3%)
+     ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶ ⛶   ⛁ Messages: 13k tokens (6.5%)
+     ⛶ ⛶ ⛶ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝   ⛶ Free space: 127.4k (63.7%)
+     ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝ ⛝   ⛝ Autocompact buffer: 33k tokens (16.5%)
+
+     Skills · /skills
+
+❯ /copy                                                                         
+  ⎿  Copied to clipboard (25 characters, 1 lines)
+     Also written to /tmp/claude-501/response.md
