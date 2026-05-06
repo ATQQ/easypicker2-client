@@ -1,7 +1,8 @@
 import { Inject, InjectCtx, Context, Provide } from 'flash-wolves'
 import { CategoryRepository } from '@/db/categoryDb'
 import BehaviorService from './behaviorService'
-import { CategoryError } from '@/constants/errorMsg'
+import { CategoryError, publicError } from '@/constants/errorMsg'
+import { BOOLEAN } from '@/db/model/public'
 import { Category } from '@/db/entity'
 import { getUniqueKey } from '@/utils/stringUtil'
 import { TaskRepository } from '@/db/taskDb'
@@ -63,11 +64,27 @@ export default class CategoryService {
     const categories = await this.categoryRepository.findMany({
       userId
     })
-    categories.forEach((v) => {
-      delete v.userId
+    const mapped = categories.map((v) => {
+      const { userId: _u, submitNavTaskKeys, ...rest } = v
+      let submitNavKeys: string[] = []
+      if (submitNavTaskKeys) {
+        try {
+          const parsed = JSON.parse(submitNavTaskKeys) as unknown
+          if (Array.isArray(parsed))
+            submitNavKeys = parsed.map(String)
+        }
+        catch {
+          /* ignore */
+        }
+      }
+      return {
+        ...rest,
+        submitNavTaskKeys,
+        submitNavKeys,
+      }
     })
     return {
-      categories
+      categories: mapped
     }
   }
 
@@ -100,5 +117,34 @@ export default class CategoryService {
         }
       )
     }
+  }
+
+  async updateSubmitNav(categoryKey: string, taskKeys: string[]) {
+    const { id: userId, account: logAccount } = this.ctx.req.userInfo
+    const cat = await this.categoryRepository.findOne({
+      userId,
+      k: categoryKey,
+    })
+    if (!cat) {
+      this.behaviorService.add('category', `更新提交导航 分类不存在 ${categoryKey}`)
+      throw publicError.request.errorParams
+    }
+    const keys = Array.isArray(taskKeys) ? taskKeys.map(String) : []
+    const tasks = await this.taskRepository.findMany({
+      userId,
+      categoryKey,
+      del: BOOLEAN.FALSE,
+    })
+    const allowed = new Set(tasks.map(t => t.k))
+    for (const k of keys) {
+      if (!allowed.has(k))
+        throw publicError.request.errorParams
+    }
+    cat.submitNavTaskKeys = JSON.stringify(keys)
+    await this.categoryRepository.update(cat)
+    this.behaviorService.add(
+      'category',
+      `更新提交导航 用户:${logAccount} 分类:${categoryKey} keys:${keys.length}`,
+    )
   }
 }

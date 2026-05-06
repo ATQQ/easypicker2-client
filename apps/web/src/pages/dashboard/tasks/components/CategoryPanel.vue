@@ -1,8 +1,9 @@
 <script lang="ts">
 import { DeleteFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, defineComponent, ref } from 'vue'
+import { computed, defineComponent, ref, toRef, watch } from 'vue'
 import { useStore } from 'vuex'
+import { CategoryApi } from '@/apis'
 
 export default defineComponent({
   name: 'CategoryPanel',
@@ -17,10 +18,41 @@ export default defineComponent({
   },
   emits: ['update:category'],
   setup(props, context) {
+    const category = toRef(props, 'category')
     const $store = useStore()
     // 分类相关
     const categorys = computed(() => $store.state.category.categoryList)
     const tasks = computed(() => $store.state.task.taskList)
+    const submitNavKeys = ref<string[]>([])
+
+    watch(
+      () => [category.value, categorys.value] as const,
+      () => {
+        const k = category.value
+        if (k === 'default' || k === 'trash') {
+          submitNavKeys.value = []
+          return
+        }
+        const c = categorys.value.find((x: { k: string }) => x.k === k)
+        const keys = c?.submitNavKeys
+        submitNavKeys.value = Array.isArray(keys) ? [...keys] : []
+      },
+      { immediate: true, deep: true },
+    )
+
+    const tasksInCategory = computed(() =>
+      tasks.value.filter((t: { category: string }) => t.category === category.value),
+    )
+
+    const saveSubmitNav = () => {
+      const k = category.value
+      if (k === 'default' || k === 'trash')
+        return
+      CategoryApi.updateSubmitNav(k, submitNavKeys.value).then(() => {
+        ElMessage.success('已保存提交页导航')
+        return $store.dispatch('category/getCategory')
+      })
+    }
     const taskCount = (c: string) => {
       const count = tasks.value.filter((t: any) => t.category === c).length
       return count === 0 ? '' : ` (${count})`
@@ -70,6 +102,7 @@ export default defineComponent({
     }
 
     return {
+      category,
       categorys,
       isShowCreateCategory,
       categoryName,
@@ -77,6 +110,9 @@ export default defineComponent({
       handleDeleteCategory,
       handleClickCategory,
       taskCount,
+      submitNavKeys,
+      tasksInCategory,
+      saveSubmitNav,
     }
   },
 })
@@ -140,6 +176,36 @@ export default defineComponent({
           </el-tag>
         </div>
       </div>
+      <div
+        v-if="category !== 'default' && category !== 'trash'"
+        class="submit-nav-box"
+      >
+        <div class="sn-title">
+          提交页快捷切换
+        </div>
+        <p class="sn-desc">
+          公开任务页展示同分类下可选任务，便于投稿人在多个收集项间切换
+        </p>
+        <el-select
+          v-model="submitNavKeys"
+          multiple
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="选择任务（多选）"
+          class="sn-select"
+        >
+          <el-option
+            v-for="t in tasksInCategory"
+            :key="t.key"
+            :label="t.name"
+            :value="t.key"
+          />
+        </el-select>
+        <el-button type="primary" size="small" class="sn-save" @click="saveSubmitNav">
+          保存
+        </el-button>
+      </div>
     </div>
   </div>
 </template>
@@ -190,6 +256,28 @@ export default defineComponent({
 .tag-wrap {
   width: 100%;
   height: 150px;
+}
+.submit-nav-box {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #dcdfe6;
+}
+.sn-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.sn-desc {
+  font-size: 12px;
+  color: #909399;
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+.sn-select {
+  width: 100%;
+}
+.sn-save {
+  margin-top: 8px;
 }
 .tag-list {
   height: 150px;

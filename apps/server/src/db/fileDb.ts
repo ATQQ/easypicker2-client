@@ -70,6 +70,32 @@ export function selectFilesLimitCount(options: File, count: number) {
   return query<File[]>(sql, ...params)
 }
 
+/** 每个 task_key 各取最近 perTaskLimit 条（del=0），一次查询；需 MySQL 8+ 窗口函数 */
+export function selectRecentFilesPerTaskKeys(
+  taskKeys: string[],
+  perTaskLimit: number,
+) {
+  if (taskKeys.length === 0 || perTaskLimit <= 0) {
+    return Promise.resolve([] as { task_key: string, name: string, date: Date }[])
+  }
+  const placeholders = taskKeys.map(() => '?').join(',')
+  const sql = `
+SELECT task_key, name, date FROM (
+  SELECT task_key, name, date,
+    ROW_NUMBER() OVER (PARTITION BY task_key ORDER BY id DESC) AS rn
+  FROM files
+  WHERE del = 0 AND task_key IN (${placeholders})
+) ranked
+WHERE rn <= ?
+ORDER BY task_key, rn
+  `.trim()
+  return query<{ task_key: string, name: string, date: Date }[]>(
+    sql,
+    ...taskKeys,
+    perTaskLimit,
+  )
+}
+
 export function updateFileInfo(_query: File, file: File) {
   const { sql, params } = updateTableByModel('files', file, _query)
   return query<OkPacket>(sql, ...params)
@@ -279,5 +305,9 @@ export class FileRepository extends BaseRepository<Files> {
       totalSize: Number(row?.size || 0),
       filterSize: Number(row?.size || 0),
     }
+  }
+
+  findRecentFilesByTaskKeys(taskKeys: string[], perTaskLimit: number) {
+    return selectRecentFilesPerTaskKeys(taskKeys, perTaskLimit)
   }
 }

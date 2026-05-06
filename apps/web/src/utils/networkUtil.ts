@@ -131,6 +131,58 @@ export function tableToExcel(
   XLSX.writeFile(wb, filename)
 }
 
+export function localTaskFileUpload(
+  file: File,
+  meta: { taskKey: string, hash: string, name: string },
+  options?: UploadFileOptions,
+) {
+  const rawBase = import.meta.env.VITE_APP_AXIOS_BASE_URL || '/api/'
+  const base = rawBase.replace(/\/?$/, '')
+  const url = `${base}/file/upload`
+  const xhr = new XMLHttpRequest()
+  const form = new FormData()
+  form.append('file', file)
+  form.append('taskKey', meta.taskKey)
+  form.append('hash', meta.hash)
+  form.append('name', meta.name)
+  xhr.open('POST', url, true)
+  const token = localStorage.getItem('token')
+  if (token)
+    xhr.setRequestHeader('token', token)
+
+  const { success, error, process } = options || {}
+  const subscription = {
+    unsubscribe: () => {
+      xhr.abort()
+    },
+  }
+
+  xhr.upload.onprogress = (e) => {
+    if (process && e.lengthComputable && e.total > 0) {
+      const percent = ((e.loaded / e.total) * 100).toFixed(2)
+      process(percent, e, subscription)
+    }
+  }
+
+  xhr.onload = () => {
+    try {
+      const res = JSON.parse(xhr.responseText || '{}')
+      if (res.code === 0) {
+        success?.(res.data, subscription)
+      }
+      else {
+        error?.(new Error(res.msg || 'upload failed'), subscription)
+      }
+    }
+    catch (e) {
+      error?.(e, subscription)
+    }
+  }
+  xhr.onerror = () => error?.(new Error('network'), subscription)
+  xhr.send(form)
+  return xhr
+}
+
 /**
  * 七牛云上传
  */

@@ -23,6 +23,13 @@ export const UserError = {
   system: {
     ban: codeMsg(1011, 'The system prohibits new user registration'),
     codeLoginDisabled: codeMsg(1013, 'Code login is disabled'),
+    emailCodeLoginDisabled: codeMsg(1014, 'Email code login is disabled'),
+  },
+  email: {
+    fault: codeMsg(1015, 'Email is not right'),
+    exist: codeMsg(1016, 'Email already exist'),
+    noExist: codeMsg(1017, 'Email not exist'),
+    notVerified: codeMsg(1018, 'Email not verified'),
   },
 }
 

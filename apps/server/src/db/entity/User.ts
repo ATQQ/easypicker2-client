@@ -49,4 +49,21 @@ export class User {
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   wallet: string
+
+  @Column('varchar', { length: 128, nullable: true, comment: '邮箱' })
+  email: string | null
+
+  @Column('tinyint', {
+    default: 0,
+    name: 'email_verified',
+    comment: '邮箱已验证',
+  })
+  emailVerified: number
+
+  @Column('tinyint', {
+    default: 0,
+    name: 'notify_on_submit',
+    comment: '新提交时邮件通知',
+  })
+  notifyOnSubmit: number
 }

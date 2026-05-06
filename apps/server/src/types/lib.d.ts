@@ -11,7 +11,7 @@ declare namespace Qiniu {
   }
 }
 interface ServiceStatus {
-  type: 'mysql' | 'qiniu' | 'redis' | 'mongodb' | 'tx'
+  type: 'mysql' | 'qiniu' | 'redis' | 'mongodb' | 'tx' | 'smtp'
   status: boolean
   errMsg?: string
 }

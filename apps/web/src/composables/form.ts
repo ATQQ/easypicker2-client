@@ -13,7 +13,11 @@ export const defaultSiteConfig = {
   compressSizeLimit: 10, // TODO: 压缩文件大小限制（GB）
   needBindPhone: false, // 是否需要绑定手机号
   enableCodeLogin: false, // 是否开启验证码登录
+  enableEmailCodeLogin: false, // 是否开启邮箱验证码登录（需 SMTP）
   supportCodeLogin: false, // 是否支持验证码登录
+  supportEmailCodeLogin: false, // 是否支持邮箱验证码登录
+  storageMode: 'qiniu' as 'qiniu' | 'local', // 存储模式（与全局配置一致）
+  maxUploadSizeMB: 500, // 本机存储时单文件上限（MB）
   limitSpace: false, // 是否限制空间
   limitWallet: false, // 是否限制费用
   qiniuOSSPrice: 0.099, // 七牛云存储价格

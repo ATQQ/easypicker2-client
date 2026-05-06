@@ -1,9 +1,15 @@
+import type { IncomingMessage } from 'http'
 import { Middleware } from 'flash-wolves'
 import formidable from 'formidable'
-import { existsSync, mkdirSync } from 'fs'
+import fs from 'node:fs'
+import path from 'node:path'
+import { existsSync, mkdirSync } from 'node:fs'
 import { uploadFileDir } from '@/constants'
 import { getClientIp } from '@/db/logDb'
+import { selectTasks } from '@/db/taskDb'
 import { getUserInfo } from '@/utils/userUtil'
+import { getMaxUploadBytes, getStorageMode } from '@/utils/storageMode'
+import { localObjectAbsPath, localObjectRelPath } from '@/utils/localFilePath'
 
 // 允许跨域访问的源
 const allowOrigins = [
@@ -33,6 +39,67 @@ const interceptor: Middleware = async (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', '*')
     res.setHeader('Access-Control-Allow-Credentials', 'true')
     res.end()
+    return
+  }
+
+  const pathOnly = (req.url || '').split('?')[0]
+  if (
+    method === 'POST'
+    && pathOnly === '/api/file/upload'
+    && getStorageMode() === 'local'
+  ) {
+    const maxB = getMaxUploadBytes()
+    const form = formidable({
+      maxFileSize: maxB,
+      multiples: false,
+    })
+    const pick = (fields: formidable.Fields, key: string) => {
+      const v = fields[key]
+      if (Array.isArray(v))
+        return v[0]
+      return v
+    }
+    const endJson = (code: number, msg: string, data?: unknown) => {
+      res.writeHead(code >= 400 ? code : 200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(data !== undefined ? { code, msg, data } : { code, msg }))
+    }
+    try {
+      const { fields, files } = await new Promise<{
+        fields: formidable.Fields
+        files: formidable.Files
+      }>((resolve, reject) => {
+        form.parse(req as IncomingMessage, (err, fields, files) => {
+          if (err)
+            reject(err)
+          else
+            resolve({ fields, files })
+        })
+      })
+      const taskKey = String(pick(fields, 'taskKey') || '')
+      const hash = String(pick(fields, 'hash') || '')
+      const name = String(pick(fields, 'name') || '')
+      const f = files.file || files.files
+      const fileItem = Array.isArray(f) ? f[0] : f
+      if (!taskKey || !hash || !name || !fileItem) {
+        endJson(400, 'missing taskKey, hash, name or file')
+        return
+      }
+      const tasks = await selectTasks({ k: taskKey, del: 0 })
+      if (!tasks.length) {
+        endJson(400, 'task not exist')
+        return
+      }
+      const rel = localObjectRelPath(taskKey, hash, name)
+      const abs = localObjectAbsPath(rel)
+      mkdirSync(path.dirname(abs), { recursive: true })
+      fs.renameSync(fileItem.filepath, abs)
+      const st = fs.statSync(abs)
+      endJson(0, 'ok', { fsize: st.size })
+    }
+    catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      endJson(500, msg || 'upload failed')
+    }
     return
   }
 

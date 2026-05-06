@@ -13,7 +13,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { ActionServiceAPI, FileApi } from '@/apis'
+import { ActionServiceAPI, FileApi, PublicApi, UserApi } from '@/apis'
 import FloatingContact from '@/components/FloatingContact/index.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
 import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
@@ -27,6 +27,7 @@ import {
   normalizeFileName,
   parseInfo,
 } from '@/utils/stringUtil'
+import { rEmail, rVerCode } from '@/utils/regExp'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 
 const { value: siteConfig } = useSiteConfig()
@@ -36,6 +37,72 @@ const showWalletLimit = computed(() => siteConfig.value.limitWallet)
 const showResourceLimitNotice = computed(
   () => isOpenPraise.value && (showStorageLimit.value || showWalletLimit.value),
 )
+const supportEmailFeature = computed(() => siteConfig.value.supportEmailCodeLogin)
+
+const profile = reactive({
+  email: '',
+  emailVerified: false,
+  notifyOnSubmit: false,
+})
+const bindEmailAddr = ref('')
+const bindEmailVer = ref('')
+const bindCodeTime = ref(0)
+function refreshBindCodeText() {
+  if (bindCodeTime.value <= 0) {
+    bindCodeTime.value = 0
+    return
+  }
+  bindCodeTime.value -= 1
+  setTimeout(refreshBindCodeText, 1000)
+}
+const bindCodeBtnText = computed(() =>
+  bindCodeTime.value > 0 ? `${bindCodeTime.value}s` : '获取验证码',
+)
+
+function loadUserProfile() {
+  UserApi.getProfile()
+    .then((res) => {
+      Object.assign(profile, res.data)
+    })
+    .catch(() => {})
+}
+
+function saveNotify(val: boolean) {
+  if (!profile.emailVerified) {
+    ElMessage.warning('请先绑定邮箱')
+    return
+  }
+  UserApi.setProfileNotify(val).then(() => {
+    profile.notifyOnSubmit = val
+    ElMessage.success('已更新')
+  })
+}
+
+function sendBindEmailCode() {
+  if (!rEmail.test(bindEmailAddr.value.trim())) {
+    ElMessage.warning('邮箱格式不正确')
+    return
+  }
+  PublicApi.getEmailCode(bindEmailAddr.value.trim())
+    .then(() => {
+      ElMessage.success('验证码已发送')
+      bindCodeTime.value = 120
+      refreshBindCodeText()
+    })
+    .catch(() => {})
+}
+
+function confirmBindEmail() {
+  if (!rEmail.test(bindEmailAddr.value.trim()) || !rVerCode.test(bindEmailVer.value)) {
+    ElMessage.warning('请填写邮箱与4位验证码')
+    return
+  }
+  UserApi.bindProfileEmail(bindEmailAddr.value.trim(), bindEmailVer.value).then(() => {
+    ElMessage.success('绑定成功')
+    bindEmailVer.value = ''
+    loadUserProfile()
+  })
+}
 
 const {
   usage,
@@ -564,6 +631,7 @@ watch(showImg, () => {
 onMounted(() => {
   loadFiles()
   loadActions()
+  loadUserProfile()
   $store.dispatch('category/getCategory')
   $store.dispatch('task/getTask')
 })
@@ -599,6 +667,43 @@ function handleShowDetail() {
             rel="noopener noreferrer"
           >{{ siteConfig.filePageSelfHostLinkText }}</a>
         </span>
+      </div>
+    </div>
+    <div v-if="supportEmailFeature" class="panel profile-notify">
+      <div class="profile-notify-head">
+        <strong>邮箱与提交通知</strong>
+        <span class="sub">有新提交时向你的邮箱发送提醒（需已验证邮箱）</span>
+      </div>
+      <div v-if="profile.emailVerified" class="profile-bound">
+        <span>已绑定 {{ profile.email }}</span>
+        <span class="notify-toggle">
+          邮件通知
+          <el-switch
+            :model-value="profile.notifyOnSubmit"
+            @update:model-value="saveNotify"
+          />
+        </span>
+      </div>
+      <div v-else class="profile-bind">
+        <el-input
+          v-model="bindEmailAddr"
+          placeholder="邮箱"
+          class="bind-email-inp"
+          clearable
+        />
+        <el-input
+          v-model="bindEmailVer"
+          placeholder="验证码"
+          maxlength="4"
+          class="bind-code-inp"
+          clearable
+        />
+        <el-button :disabled="bindCodeTime > 0" @click="sendBindEmailCode">
+          {{ bindCodeBtnText }}
+        </el-button>
+        <el-button type="primary" @click="confirmBindEmail">
+          验证并绑定
+        </el-button>
       </div>
     </div>
     <!-- 筛选框 -->
@@ -1088,6 +1193,54 @@ function handleShowDetail() {
   color: #909399;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.profile-notify {
+  margin: 10px auto;
+  padding: 14px 18px;
+}
+
+.profile-notify-head {
+  margin-bottom: 10px;
+
+  .sub {
+    display: block;
+    margin-top: 4px;
+    color: #909399;
+    font-size: 12px;
+    font-weight: normal;
+  }
+}
+
+.profile-bound {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.notify-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-bind {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bind-email-inp {
+  width: 200px;
+  max-width: 100%;
+}
+
+.bind-code-inp {
+  width: 110px;
 }
 
 .stats-dashboard {

@@ -25,7 +25,7 @@ import {
   UserService,
 } from '@/service'
 import { wrapperCatchError } from '@/utils/context'
-import { isCodeLoginSupported } from '@/utils/siteConfig'
+import { isCodeLoginSupported, isEmailCodeLoginSupported } from '@/utils/siteConfig'
 import { formatSize } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
@@ -146,6 +146,22 @@ export default class UserController {
     }
   }
 
+  @Post('login/email-code')
+  async loginByEmailCode(@ReqBody() body: { email?: string, code?: string }) {
+    try {
+      if (!isEmailCodeLoginSupported()) {
+        return Response.failWithError(UserError.system.emailCodeLoginDisabled)
+      }
+      const { code, email } = body
+      const user = await this.userService.loginByEmailCode(email || '', code || '')
+      const token = await this.tokenService.createTokenByUser(user)
+      return { token }
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
+  }
+
   @Put('password')
   async updatePassword(@ReqBody() body) {
     try {
@@ -207,6 +223,53 @@ export default class UserController {
         storage: price.ossPrice,
         download: (+price.backhaulTrafficPrice + +price.cdnPrice + +price.compressPrice).toFixed(2),
       },
+    }
+  }
+
+  @Get('profile', { needLogin: true })
+  async getProfile() {
+    const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
+    if (!u) {
+      return { email: '', emailVerified: false, notifyOnSubmit: false }
+    }
+    return {
+      email: u.email || '',
+      emailVerified: Number(u.emailVerified) === 1,
+      notifyOnSubmit: Number(u.notifyOnSubmit) === 1,
+    }
+  }
+
+  @Put('profile/notify', { needLogin: true })
+  async setNotify(@ReqBody('notifyOnSubmit') notifyOnSubmit: boolean) {
+    const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
+    if (!u)
+      return Response.failWithError(UserError.account.notExist)
+    u.notifyOnSubmit = notifyOnSubmit ? 1 : 0
+    await this.userRepository.update(u)
+    return { ok: true }
+  }
+
+  @Put('profile/email', { needLogin: true })
+  async bindProfileEmail(@ReqBody() body: { email?: string, code?: string }) {
+    try {
+      const addr = body.email?.trim().toLowerCase() || ''
+      if (!addr)
+        throw UserError.email.fault
+      const v = await this.tokenService.getVerifyCode('email', addr)
+      if (body.code !== v)
+        throw UserError.code.fault
+      const exist = await this.userRepository.findOne({ email: addr })
+      if (exist && exist.id !== this.Ctx.req.userInfo.id)
+        throw UserError.email.exist
+      const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
+      u.email = addr
+      u.emailVerified = 1
+      await this.userRepository.update(u)
+      this.tokenService.expiredVerifyCode('email', addr)
+      return { ok: true }
+    }
+    catch (error) {
+      return wrapperCatchError(error)
     }
   }
 }

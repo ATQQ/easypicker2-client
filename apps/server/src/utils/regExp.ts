@@ -10,6 +10,9 @@ export const rPassword = /^\w{6,16}$/
 // 验证码
 export const rVerCode = /^\d{4}/
 
+// 邮箱（宽松）
+export const rEmail = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/
+
 // 身份证
 export const rIdCard =
   /^[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$/

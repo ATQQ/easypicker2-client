@@ -51,18 +51,16 @@ export default class TaskService {
         name,
         category,
         key,
-        recentLog: [],
+        recentLog: [] as { filename: string, date: Date }[],
       }
     })
     const recentSubmitLogCount = 4
+    const recentMap = await this.fileService.selectRecentLogsByTaskKeys(
+      tasks.map(t => t.key),
+      recentSubmitLogCount,
+    )
     for (const t of tasks) {
-      const files = await this.fileService.selectFilesLimitCount(
-        {
-          taskKey: t.key,
-        },
-        recentSubmitLogCount,
-      )
-
+      const files = recentMap.get(t.key) ?? []
       t.recentLog = files.map(v => ({ filename: v.name, date: v.date }))
     }
 

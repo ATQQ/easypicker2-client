@@ -3,6 +3,8 @@ type ResponseData<T = any> = Promise<BaseResponse<T>>
 declare namespace FileApiTypes {
   interface UploadToken {
     token: string
+    storageMode?: 'qiniu' | 'local'
+    maxUploadBytes?: number
   }
   interface FileOptions {
     size: number
@@ -87,6 +89,9 @@ declare namespace UserApiTypes {
     bindPhone: boolean
     phone?: string
     code?: string
+    bindWithEmail?: boolean
+    email?: string
+    emailCode?: string
   }
   type register = ResponseData<{ token?: string }>
   type login = ResponseData<{
@@ -95,7 +100,16 @@ declare namespace UserApiTypes {
     system: boolean
   }>
   type codeLogin = ResponseData<{ token?: string, openTime?: string }>
+  type loginByEmailCode = ResponseData<{ token?: string, openTime?: string }>
   type resetPwd = ResponseData<{ token?: string, openTime?: string }>
+  interface UserProfile {
+    email: string
+    emailVerified: boolean
+    notifyOnSubmit: boolean
+  }
+  type getProfile = ResponseData<UserProfile>
+  type setProfileNotify = ResponseData<{ ok: boolean }>
+  type bindProfileEmail = ResponseData<{ ok: boolean }>
   type checkPower = ResponseData<{
     power: boolean
     name: string
@@ -143,6 +157,8 @@ declare namespace TaskApiTypes {
     tip?: string
     size?: number
     bindField?: string
+    /** 同分类下可在提交页切换的关联任务 */
+    submitNavTasks?: { key: string, name: string }[]
   }
 
   type getList = ResponseData<{ tasks: TaskItem[] }>
@@ -159,6 +175,7 @@ declare namespace TaskApiTypes {
 
 declare namespace PublicApiTypes {
   type getCode = ResponseData
+  type getEmailCode = ResponseData
   type reportPv = ResponseData
   type checkPhone = ResponseData
 }
@@ -187,10 +204,12 @@ declare namespace CateGoryApiTypes {
     id: number
     name: string
     k: string
+    submitNavKeys?: string[]
   }
   type getList = ResponseData<{ categories: CategoryItem[] }>
   type createNew = ResponseData
   type deleteOne = ResponseData
+  type updateSubmitNav = ResponseData
 }
 
 declare namespace OverviewApiTypes {
@@ -299,7 +318,11 @@ declare namespace OverviewApiTypes {
     compressSizeLimit: number
     needBindPhone: boolean
     enableCodeLogin: boolean
+    enableEmailCodeLogin: boolean
     supportCodeLogin?: boolean
+    supportEmailCodeLogin?: boolean
+    storageMode: 'qiniu' | 'local'
+    maxUploadSizeMB: number
     limitSpace: boolean
     limitWallet: boolean
     qiniuOSSPrice: number

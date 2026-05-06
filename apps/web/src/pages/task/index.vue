@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { FormInstance, UploadInstance, UploadUserFile } from 'element-plus'
+import type { UploadUserFile } from 'element-plus'
 import HomeFooter from '@components/HomeFooter/index.vue'
 import LinkDialog from '@components/linkDialog.vue'
 import { UploadFilled } from '@element-plus/icons-vue'
@@ -10,7 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { FileApi, PeopleApi, PublicApi, TaskApi } from '@/apis'
 import InfosForm from '@/components/InfosForm/index.vue'
 import { useIsMobile } from '@/composables'
-import { downLoadByUrl, qiniuUpload } from '@/utils/networkUtil'
+import { downLoadByUrl, localTaskFileUpload, qiniuUpload } from '@/utils/networkUtil'
 import {
   formatDate,
   formatSize,
@@ -43,15 +43,15 @@ function handleNav(idx: number) {
 }
 
 // 任务基本信息展示
-const taskInfo = reactive<TaskApiTypes.TaskInfo>({
+const taskInfo = reactive({
   name: '',
   category: '',
-})
-const taskMoreInfo = reactive<Partial<TaskApiTypes.TaskInfo>>({
+} as TaskApiTypes.TaskInfo)
+const taskMoreInfo = reactive({
   bindField: '',
-})
-const formatData = computed(() => parseFileFormat(taskMoreInfo.format))
-const k = ref('')
+} as Partial<TaskApiTypes.TaskInfo>)
+type SubmitNavTaskRow = { key: string, name: string }
+const submitNavTasks = ref([] as SubmitNavTaskRow[])
 
 // 用于展示截止日期
 const waitTime = ref(0)
@@ -89,15 +89,14 @@ const ddlStr = computed(() => {
 })
 
 // 必填信息
-const infos = reactive<InfoItem[]>([])
+const infos = reactive([] as InfoItem[])
 
 // 文件上传部分
 
 // 文件上传
-const fileList = ref<(UploadUserFile & { md5: string, subscription: any })[]>(
-  [],
-)
-const fileUpload = ref<UploadInstance>()
+type FileUploadRow = UploadUserFile & { md5: string, subscription: any }
+const fileList = ref([] as FileUploadRow[])
+const fileUpload = ref()
 const disableForm = computed(
   () => fileList.value.filter(item => item.status === 'uploading').length > 0,
 )
@@ -159,7 +158,7 @@ function validatePeopleName(rule: any, value: any, callback: any) {
   })
 }
 
-const validModalRef = ref<FormInstance>()
+const validModalRef = ref()
 const validModalRules = reactive({
   peopleName: [{ validator: validatePeopleName, trigger: 'blur' }],
 })
@@ -175,7 +174,7 @@ function confirmPeopleName() {
   return validModalRef.value.validate((isValid: boolean) => isValid)
 }
 
-function startUpload() {
+async function startUpload() {
   const uploadFiles = fileList.value
   for (const file of uploadFiles) {
     if (!file.md5) {
@@ -186,54 +185,120 @@ function startUpload() {
         ElMessage.info('文件越大计算时间越长(1G通常需要20s)')
       }, 100)
     }
-    else if (file.status === 'ready') {
-      // 开始上传
-      file.status = 'uploading'
-      let { name } = file
-      const originName = name
-      // 如果开启了自动重命名,这里重命名一下
-      if (taskMoreInfo.rewrite) {
-        name
-          = infos.map(v => v.value).join(formatData.value.splitChar || '-')
-            + getFileSuffix(name)
-      }
-      // 替换不合法的字符
-      name = normalizeFileName(name)
-      const key = `easypicker2/${k.value}/${file.md5}/${name}`
+  }
 
-      FileApi.getUploadToken().then((res) => {
-        qiniuUpload(res.data.token, file.raw, key, {
-          success(data: any) {
-            const { fsize } = data
-            FileApi.addFile({
-              originName,
-              name,
-              taskKey: k.value,
-              taskName: taskInfo.name,
-              size: fsize,
-              hash: file.md5,
-              info: JSON.stringify(infos),
-              people: validModal.peopleName,
-            }).then(() => {
-              file.status = 'success'
-              ElMessage.success(`文件:${file.name}提交成功`)
-              if (taskMoreInfo.people) {
-                // 无感知更新一下
-                PeopleApi.updatePeopleStatus(
-                  k.value,
-                  name,
-                  validModal.peopleName,
-                  file.md5,
-                )
-              }
-            })
-          },
-          process(per: number, data: any, subscription: any) {
-            file.percentage = Math.floor(per)
-            // 挂载取消上传的方法
-            file.subscription = subscription
-          },
-        })
+  let uploadTokenRes: FileApiTypes.UploadToken
+  try {
+    const tr = await FileApi.getUploadToken()
+    uploadTokenRes = tr.data
+  }
+  catch {
+    return
+  }
+
+  for (const file of uploadFiles) {
+    if (!file.md5 || file.status !== 'ready') {
+      continue
+    }
+    file.status = 'uploading'
+    let { name } = file
+    const originName = name
+    if (taskMoreInfo.rewrite) {
+      name
+        = infos.map(v => v.value).join(formatData.value.splitChar || '-')
+          + getFileSuffix(name)
+    }
+    name = normalizeFileName(name)
+    const objectKey = `easypicker2/${k.value}/${file.md5}/${name}`
+
+    if (uploadTokenRes.storageMode === 'local') {
+      const maxB = uploadTokenRes.maxUploadBytes
+      if (maxB && file.raw && file.raw.size > maxB) {
+        ElMessage.error(
+          `「${file.name}」超过单文件上限 ${formatSize(maxB)}`,
+        )
+        file.status = 'fail'
+        continue
+      }
+      if (!file.raw) {
+        file.status = 'fail'
+        continue
+      }
+      localTaskFileUpload(file.raw, {
+        taskKey: k.value,
+        hash: file.md5,
+        name,
+      }, {
+        success(data: { fsize?: number }) {
+          const fsize = data?.fsize ?? 0
+          FileApi.addFile({
+            originName,
+            name,
+            taskKey: k.value,
+            taskName: taskInfo.name,
+            size: fsize,
+            hash: file.md5,
+            info: JSON.stringify(infos),
+            people: validModal.peopleName,
+          }).then(() => {
+            file.status = 'success'
+            ElMessage.success(`文件:${file.name}提交成功`)
+            if (taskMoreInfo.people) {
+              PeopleApi.updatePeopleStatus(
+                k.value,
+                name,
+                validModal.peopleName,
+                file.md5,
+              )
+            }
+          }).catch(() => {
+            file.status = 'fail'
+          })
+        },
+        error(_err, subscription) {
+          file.status = 'fail'
+          void subscription
+        },
+        process(per: number, _data: any, subscription: any) {
+          file.percentage = Math.floor(Number(per))
+          file.subscription = subscription
+        },
+      })
+    }
+    else {
+      qiniuUpload(uploadTokenRes.token, file.raw!, objectKey, {
+        success(data: any) {
+          const { fsize } = data
+          FileApi.addFile({
+            originName,
+            name,
+            taskKey: k.value,
+            taskName: taskInfo.name,
+            size: fsize,
+            hash: file.md5,
+            info: JSON.stringify(infos),
+            people: validModal.peopleName,
+          }).then(() => {
+            file.status = 'success'
+            ElMessage.success(`文件:${file.name}提交成功`)
+            if (taskMoreInfo.people) {
+              PeopleApi.updatePeopleStatus(
+                k.value,
+                name,
+                validModal.peopleName,
+                file.md5,
+              )
+            }
+          })
+        },
+        process(per: number, data: any, subscription: any) {
+          file.percentage = Math.floor(per)
+          file.subscription = subscription
+        },
+        error(_err: any, subscription: any) {
+          file.status = 'fail'
+          void subscription
+        },
       })
     }
   }
@@ -455,59 +520,74 @@ const timeInfo = computed(() => {
   return ddlStr.value
 })
 
-// tipImage
-const tipData = reactive<{
+// tip
+interface TipImg {
+  uid: number
+  name: string
+}
+interface TipDataShape {
   text: string
-  imgs: {
-    uid: number
-    name: string
-  }[]
-}>({
+  imgs: TipImg[]
+}
+const tipData = reactive({
   text: '',
   imgs: [],
-})
-const imageList = ref<
-  { name: string, uid: number, preview?: string, url: string }[]
->([])
+} as TipDataShape)
+type TaskPreviewImage = {
+  name: string
+  uid: number
+  preview?: string
+  url: string
+}
+const imageList = ref([] as TaskPreviewImage[])
+
+function syncTipFromMoreInfo() {
+  const raw = taskMoreInfo.tip
+  if (!raw) {
+    tipData.text = ''
+    tipData.imgs = []
+    imageList.value = []
+    return
+  }
+  let parsed: { imgs?: TipImg[], text?: string }
+  try {
+    parsed = JSON.parse(raw)
+  }
+  catch {
+    tipData.text = ''
+    tipData.imgs = []
+    imageList.value = []
+    return
+  }
+  tipData.imgs = parsed.imgs ?? []
+  tipData.text = parsed.text || ''
+  imageList.value = tipData.imgs.map((v) => {
+    return {
+      ...v,
+      url: 'https://img.cdn.sugarat.top/mdImg/MTY3NzkxMDI1NTU1Nw==20140524124237518.gif',
+    }
+  })
+  if (!imageList.value.length)
+    return
+  PublicApi.getTipImageUrl(
+    k.value,
+    imageList.value.map(v => ({
+      uid: v.uid,
+      name: v.name,
+    })),
+  ).then((v) => {
+    v.data.forEach((url, idx) => {
+      imageList.value[idx].url = url.cover
+      Object.assign(imageList.value[idx], {
+        preview: url.preview,
+      })
+    })
+  })
+}
 
 watch(
   () => taskMoreInfo.tip,
-  () => {
-    // 初始化
-    try {
-      const parseData = JSON.parse(taskMoreInfo.tip)
-      tipData.imgs = parseData.imgs
-      tipData.text = parseData.text || ''
-      imageList.value = tipData.imgs.map((v) => {
-        return {
-          ...v,
-          url: 'https://img.cdn.sugarat.top/mdImg/MTY3NzkxMDI1NTU1Nw==20140524124237518.gif',
-        }
-      })
-      if (imageList.value.length) {
-        // 异步填充url
-        PublicApi.getTipImageUrl(
-          k.value,
-          imageList.value.map(v => ({
-            uid: v.uid,
-            name: v.name,
-          })),
-        ).then((v) => {
-          v.data.forEach((url, idx) => {
-            imageList.value[idx].url = url.cover
-            Object.assign(imageList.value[idx], {
-              preview: url.preview,
-            })
-          })
-        })
-      }
-    }
-    catch {
-      tipData.text = ''
-      tipData.imgs = []
-      imageList.value = []
-    }
-  },
+  () => syncTipFromMoreInfo(),
 )
 
 // 禁用上传
@@ -520,6 +600,7 @@ onMounted(() => {
     TaskApi.getTaskInfo(k.value)
       .then((res) => {
         Object.assign(taskInfo, res.data)
+        submitNavTasks.value = res.data.submitNavTasks ?? []
         disabledUpload.value = !!res.data.limitUpload
         if (disabledUpload.value) {
           ElMessageBox.alert(
@@ -550,6 +631,39 @@ onUnmounted(() => {
   // 页面展示
   window.removeEventListener('focus', handleFocus)
 })
+
+watch(
+  () => $route.params.key,
+  (newKey) => {
+    const key = typeof newKey === 'string' ? newKey : ''
+    if (!key || key === k.value)
+      return
+    k.value = key
+    fileList.value = []
+    isLoadingData.value = true
+    TaskApi.getTaskInfo(k.value)
+      .then((res) => {
+        Object.assign(taskInfo, res.data)
+        submitNavTasks.value = res.data.submitNavTasks ?? []
+        disabledUpload.value = !!res.data.limitUpload
+        if (disabledUpload.value) {
+          ElMessageBox.alert(
+            '任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间',
+          )
+        }
+      })
+      .catch((err) => {
+        if (err.code === 4001) {
+          ElMessage.error('任务不存在')
+          k.value = ''
+          taskInfo.name = '任务不存在'
+        }
+      })
+    refreshTaskMoreInfo()
+    refreshWaitTime()
+  },
+)
+
 </script>
 
 <template>
@@ -589,6 +703,26 @@ onUnmounted(() => {
       <h1 class="name">
         {{ taskInfo.name }}
       </h1>
+      <div
+        v-if="submitNavTasks.length > 1"
+        class="task-nav-switch"
+        style="max-width: 400px; margin: 12px auto"
+      >
+        <span style="margin-right: 8px">切换任务</span>
+        <el-select
+          :model-value="k"
+          filterable
+          style="width: 260px"
+          @update:model-value="(key) => $router.replace({ name: 'task', params: { key } })"
+        >
+          <el-option
+            v-for="t in submitNavTasks"
+            :key="t.key"
+            :label="t.name"
+            :value="t.key"
+          />
+        </el-select>
+      </div>
       <h2 v-if="disabledUpload" style="color: red">
         任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间
       </h2>

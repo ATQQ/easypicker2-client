@@ -78,16 +78,25 @@ export default class TokenService {
     setRedisValue(this.realToken(token), JSON.stringify(user), timeout)
   }
 
-  setVerifyCode(phone: string, code: string, timeout = 60 * 2) {
-    setRedisValue(`${process.env.TOKEN_PREFIX}-code-${phone}`, code, timeout)
+  private verifyCodeKey(channel: 'phone' | 'email', target: string) {
+    return `${process.env.TOKEN_PREFIX}-code-${channel}-${target}`
   }
 
-  getVerifyCode(phone: string) {
-    return getRedisVal(`${process.env.TOKEN_PREFIX}-code-${phone}`)
+  setVerifyCode(
+    channel: 'phone' | 'email',
+    target: string,
+    code: string,
+    timeout = 60 * 2,
+  ) {
+    setRedisValue(this.verifyCodeKey(channel, target), code, timeout)
   }
 
-  expiredVerifyCode(phone: string) {
-    return expiredRedisKey(`${process.env.TOKEN_PREFIX}-code-${phone}`)
+  getVerifyCode(channel: 'phone' | 'email', target: string) {
+    return getRedisVal(this.verifyCodeKey(channel, target))
+  }
+
+  expiredVerifyCode(channel: 'phone' | 'email', target: string) {
+    return expiredRedisKey(this.verifyCodeKey(channel, target))
   }
 
   /**

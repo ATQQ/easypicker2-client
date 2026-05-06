@@ -51,6 +51,15 @@ export const UserConfigLabels = {
     password: '密码',
     auth: '是否需要鉴权',
   },
+  smtp: {
+    host: 'SMTP 主机',
+    port: '端口（465/587）',
+    secure: '是否 SSL（465 一般为 true；587 可 false）',
+    user: '发信账号',
+    pass: '密码/授权码',
+    fromAddress: '发件人邮箱',
+    fromName: '发件人显示名',
+  },
 }
 
 export const LocalEnvMap = {

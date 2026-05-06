@@ -1,7 +1,9 @@
 import process from 'node:process'
 import type { Context } from 'flash-wolves'
 import { Inject, InjectCtx, Provide, Response } from 'flash-wolves'
-import { rMobilePhone } from '@/utils/regExp'
+import { sendVerifyCodeMail } from '@/utils/mail'
+import { isEmailCodeLoginSupported } from '@/utils/siteConfig'
+import { rEmail, rMobilePhone } from '@/utils/regExp'
 import { UserError } from '@/constants/errorMsg'
 import { randomNumStr } from '@/utils/randUtil'
 import { sendMessage } from '@/utils/tencent'
@@ -53,7 +55,32 @@ export default class PublicService {
       new Date().toLocaleString(),
       `获取验证码 手机尾号:${logPhone}  验证码:${code} 成功`,
     )
-    this.tokenService.setVerifyCode(phone, code)
+    this.tokenService.setVerifyCode('phone', phone, code)
+  }
+
+  async getVerifyCodeByEmail(email: string) {
+    const addr = email.trim().toLowerCase()
+    if (!rEmail.test(addr)) {
+      this.behaviorService.add('public', `获取邮箱验证码 格式不正确:${email}`, { email })
+      throw UserError.email.fault
+    }
+    if (!isEmailCodeLoginSupported()) {
+      this.behaviorService.add('public', '获取邮箱验证码 功能未开启')
+      throw UserError.system.emailCodeLoginDisabled
+    }
+    const code = randomNumStr(4)
+    this.behaviorService.add('public', `获取邮箱验证码 ${addr.slice(0, 3)}*** 成功`, {
+      code,
+    })
+    this.tokenService.setVerifyCode('email', addr, code)
+    if (process.env.NODE_ENV !== 'development') {
+      const r = await sendVerifyCodeMail(addr, code)
+      if (!r.ok)
+        throw { code: 500, msg: r.error || 'send mail failed' }
+    }
+    else {
+      console.log(new Date().toLocaleString(), `邮箱验证码 ${addr} ${code}`)
+    }
   }
 
   reportPV() {

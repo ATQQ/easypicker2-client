@@ -20,7 +20,8 @@
         { "name": "id", "ddl": "`id` int(11) NOT NULL COMMENT '主键自增'" },
         { "name": "name", "ddl": "`name` varchar(256) NOT NULL COMMENT '分类名称'" },
         { "name": "user_id", "ddl": "`user_id` int(11) NOT NULL COMMENT '所属用户'" },
-        { "name": "k", "ddl": "`k` varchar(128) NOT NULL COMMENT '分类唯一标识'" }
+        { "name": "k", "ddl": "`k` varchar(128) NOT NULL COMMENT '分类唯一标识'" },
+        { "name": "submit_nav_task_keys", "ddl": "`submit_nav_task_keys` varchar(2048) DEFAULT NULL COMMENT '提交页可切换任务的k列表JSON'" }
       ]
     },
     {
@@ -103,7 +104,10 @@
         { "name": "login_count", "ddl": "`login_count` int(11) NOT NULL DEFAULT '1' COMMENT '登陆次数'" },
         { "name": "open_time", "ddl": "`open_time` timestamp NULL DEFAULT NULL COMMENT '解封时间'" },
         { "name": "size", "ddl": "`size` INT(11) NOT NULL DEFAULT '2' COMMENT '可支配空间上限GB'" },
-        { "name": "wallet", "ddl": "`wallet` DECIMAL(10,2) NOT NULL DEFAULT '2.00' COMMENT '钱包余额'" }
+        { "name": "wallet", "ddl": "`wallet` DECIMAL(10,2) NOT NULL DEFAULT '2.00' COMMENT '钱包余额'" },
+        { "name": "email", "ddl": "`email` varchar(128) DEFAULT NULL COMMENT '邮箱'" },
+        { "name": "email_verified", "ddl": "`email_verified` tinyint(4) NOT NULL DEFAULT '0' COMMENT '邮箱已验证'" },
+        { "name": "notify_on_submit", "ddl": "`notify_on_submit` tinyint(4) NOT NULL DEFAULT '0' COMMENT '新提交时邮件通知任务属主'" }
       ]
     }
   ],
@@ -116,6 +120,7 @@
     "ALTER TABLE `user` ADD PRIMARY KEY (`id`);",
     "ALTER TABLE `user` ADD UNIQUE KEY `user_account_uindex` (`account`);",
     "ALTER TABLE `user` ADD UNIQUE KEY `user_phone_uindex` (`phone`);",
+    "ALTER TABLE `user` ADD UNIQUE KEY `user_email_uindex` (`email`);",
     "",
     "ALTER TABLE `category` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键自增';",
     "ALTER TABLE `files` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;",

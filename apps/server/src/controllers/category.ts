@@ -5,6 +5,7 @@ import {
   Inject,
   InjectCtx,
   Post,
+  Put,
   ReqBody,
   ReqParams,
   RouterController
@@ -32,6 +33,19 @@ export default class CategoryController {
   @Get('')
   getList() {
     return this.categoryService.getList()
+  }
+
+  @Put('/:key/submit-nav')
+  async updateSubmitNav(
+    @ReqParams('key') key: string,
+    @ReqBody('keys') keys: string[],
+  ) {
+    try {
+      await this.categoryService.updateSubmitNav(key, keys || [])
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
   }
 
   @Delete('/:key')

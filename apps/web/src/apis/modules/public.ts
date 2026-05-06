@@ -12,6 +12,12 @@ function getCode(phone: string): PublicApiTypes.getCode {
   })
 }
 
+function getEmailCode(email: string): PublicApiTypes.getEmailCode {
+  return ajax.get('public/code/email', {
+    params: { email },
+  })
+}
+
 function reportPv(path: string): PublicApiTypes.reportPv {
   return ajax.post<any, BaseResponse>('public/report/pv', {
     path,
@@ -43,6 +49,7 @@ function getTipImageUrl(
 }
 export default {
   getCode,
+  getEmailCode,
   reportPv,
   checkPhone,
   getTipImageUrl,

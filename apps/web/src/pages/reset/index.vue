@@ -7,16 +7,22 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import {
+  computed,
   ref,
 } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { PublicApi, UserApi } from '@/apis'
 import {
+  rEmail,
   rMobilePhone,
   rPassword,
   rVerCode,
 } from '@/utils/regExp'
+import { useSiteConfig } from '@/composables'
+
+const { value: siteConfig } = useSiteConfig()
+const supportEmailCodeLogin = computed(() => Boolean(siteConfig.value.supportEmailCodeLogin))
 import { formatDate } from '@/utils/stringUtil'
 
 const account = ref('')
@@ -31,8 +37,14 @@ function redirectDashBoard() {
   })
 }
 function checkForm() {
-  if (!rMobilePhone.test(account.value)) {
-    ElMessage.warning('手机号格式不正确')
+  if (!(supportEmailCodeLogin.value && rEmail.test(account.value.trim()))) {
+    if (!rMobilePhone.test(account.value)) {
+      ElMessage.warning('手机号格式不正确')
+      return false
+    }
+  }
+  else if (!rEmail.test(account.value.trim())) {
+    ElMessage.warning('邮箱格式不正确')
     return false
   }
 
@@ -63,6 +75,21 @@ function refreshCodeText() {
   setTimeout(refreshCodeText, 1000)
 }
 function getCode() {
+  if (supportEmailCodeLogin.value && rEmail.test(account.value.trim())) {
+    PublicApi.getEmailCode(account.value.trim()).then(() => {
+      time.value = 120
+      refreshCodeText()
+      ElMessage.success('获取成功,请查收邮件')
+    }).catch((err) => {
+      const { code: c } = err
+      const options: Record<number, string> = {
+        1015: '邮箱格式不正确',
+        1017: '该邮箱未绑定账号',
+      }
+      ElMessage.error(options[c] || '发送失败')
+    })
+    return
+  }
   if (!rMobilePhone.test(account.value)) {
     ElMessage.warning('手机号格式不正确')
     return
@@ -77,8 +104,20 @@ function reset() {
   if (!checkForm()) {
     return
   }
+  const payload
+    = supportEmailCodeLogin.value && rEmail.test(account.value.trim())
+      ? {
+          email: account.value.trim(),
+          code: code.value,
+          pwd: pwd1.value,
+        }
+      : {
+          phone: account.value,
+          code: code.value,
+          pwd: pwd1.value,
+        }
   UserApi
-    .resetPwd(account.value, code.value, pwd1.value)
+    .resetPwd(payload)
     .then((res) => {
       ElMessage.success('密码重置成功')
       const { token } = res.data
@@ -89,6 +128,7 @@ function reset() {
       const { code: c, data } = err
       const options: any = {
         1008: '该手机号未绑定任何账号',
+        1017: '该邮箱未绑定任何账号',
         1003: '验证码不正确',
         1004: '密码格式不正确',
         1010: '账号已被封禁,有疑问请联系管理员',
@@ -107,8 +147,8 @@ function reset() {
         <div>
           <el-input
             v-model="account"
-            maxlength="11"
-            placeholder="手机号"
+            maxlength="120"
+            placeholder="手机号或邮箱"
             :prefix-icon="Phone"
             clearable
           />

@@ -4,6 +4,7 @@ import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { In } from 'typeorm'
 import { publicError } from '@/constants/errorMsg'
 import { BOOLEAN } from '@/db/model/public'
+import { CategoryRepository } from '@/db/categoryDb'
 import { TaskRepository } from '@/db/taskDb'
 import { TaskInfoRepository } from '@/db/taskInfoDb'
 import { BehaviorService, QiniuService } from '@/service'
@@ -19,6 +20,9 @@ export default class TaskInfoService {
 
   @Inject(TaskRepository)
   private taskRepository: TaskRepository
+
+  @Inject(CategoryRepository)
+  private categoryRepository: CategoryRepository
 
   @Inject(QiniuService)
   private qiniuService: QiniuService
@@ -96,22 +100,47 @@ export default class TaskInfoService {
     if (ddl && ddl?.getTime) {
       ddl = new Date(ddl.getTime() + 8 * 60 * 60 * 1000)
     }
-    this.taskRepository
-      .findOne({
-        k: key,
+    const task = await this.taskRepository.findOne({
+      k: key,
+      del: BOOLEAN.FALSE,
+    })
+    let submitNavTasks: { key: string, name: string }[] = []
+    if (task?.categoryKey) {
+      const cat = await this.categoryRepository.findOne({
+        k: task.categoryKey,
+        userId: task.userId,
       })
-      .then((task) => {
-        if (task) {
-          this.behaviorService.add(
-            'taskInfo',
-            `获取任务属性 任务:${task.name} 成功`,
-            {
-              key,
-              name: task.name,
-            },
-          )
+      if (cat?.submitNavTaskKeys) {
+        try {
+          const navKeys = JSON.parse(cat.submitNavTaskKeys) as unknown
+          if (Array.isArray(navKeys) && navKeys.length) {
+            const ks = navKeys.map(String)
+            const ts = await this.taskRepository.findMany({
+              k: In(ks),
+              userId: task.userId,
+              del: BOOLEAN.FALSE,
+            })
+            const ord = new Map(ks.map((k, i) => [k, i]))
+            submitNavTasks = [...ts]
+              .sort((a, b) => (ord.get(a.k) ?? 0) - (ord.get(b.k) ?? 0))
+              .map(t => ({ key: t.k, name: t.name }))
+          }
         }
-      })
+        catch {
+          /* ignore */
+        }
+      }
+    }
+    if (task) {
+      this.behaviorService.add(
+        'taskInfo',
+        `获取任务属性 任务:${task.name} 成功`,
+        {
+          key,
+          name: task.name,
+        },
+      )
+    }
 
     return {
       template,
@@ -123,6 +152,7 @@ export default class TaskInfoService {
       people,
       tip,
       bindField,
+      submitNavTasks,
     }
   }
 

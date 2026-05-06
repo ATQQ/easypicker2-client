@@ -28,6 +28,16 @@ export default class PublicController {
     }
   }
 
+  @Get('code/email')
+  async getEmailVerCode(@ReqQuery('email') email: string) {
+    try {
+      await this.publicService.getVerifyCodeByEmail(email)
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
+  }
+
   @Get('report/pv', {
     CORS: true,
   })

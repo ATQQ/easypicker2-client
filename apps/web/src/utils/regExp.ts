@@ -1,6 +1,9 @@
 // 手机号
 export const rMobilePhone = /^1\d{10}$/
 
+// 邮箱（与 server rEmail 保持一致）
+export const rEmail = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/
+
 // 账号
 export const rAccount = /^([\da-z]){4,11}$/i
 

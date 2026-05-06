@@ -2,7 +2,7 @@
 import { Inject, Provide } from 'flash-wolves'
 import { UserError } from '@/constants/errorMsg'
 import { UserRepository } from '@/db/userDb'
-import { rAccount, rMobilePhone, rPassword } from '@/utils/regExp'
+import { rAccount, rEmail, rMobilePhone, rPassword } from '@/utils/regExp'
 import { encryption, formatDate, getUniqueKey } from '@/utils/stringUtil'
 import { User } from '@/db/entity'
 import { BehaviorService, TokenService } from '@/service'
@@ -22,10 +22,19 @@ export default class UserService {
   private tokenService: TokenService
 
   async register(payload: any) {
-    const { account, pwd, bindPhone, phone, code } = payload
+    const {
+      account,
+      pwd,
+      bindPhone,
+      phone,
+      code,
+      bindWithEmail,
+      email,
+      emailCode,
+    } = payload
     const { needBindPhone } = LocalUserDB.getSiteConfig()
     // 注册必须绑定手机号卡控
-    if (needBindPhone && !bindPhone) {
+    if (needBindPhone && !bindPhone && !bindWithEmail) {
       throw UserError.account.bindPhone
     }
 
@@ -72,7 +81,10 @@ export default class UserService {
         )
         throw UserError.mobile.fault
       }
-      const rightCode = await this.tokenService.getVerifyCode(phone)
+      const rightCode = await this.tokenService.getVerifyCode(
+        'phone',
+        phone,
+      )
       if (!code || code !== rightCode) {
         this.behaviorService.add('user', `新用户注册 验证码错误:${code}`, {
           code,
@@ -92,12 +104,35 @@ export default class UserService {
         throw UserError.mobile.exist
       }
       // 过期验证码
-      this.tokenService.expiredToken(phone)
+      this.tokenService.expiredVerifyCode('phone', phone)
+    }
+
+    let verifiedEmail: string | null = null
+    if (bindWithEmail) {
+      const addr = String(email || '')
+        .trim()
+        .toLowerCase()
+      if (!rEmail.test(addr)) {
+        this.behaviorService.add('user', `新用户注册 邮箱格式错误:${email}`)
+        throw UserError.email.fault
+      }
+      const rightCode = await this.tokenService.getVerifyCode('email', addr)
+      if (!emailCode || emailCode !== rightCode) {
+        throw UserError.code.fault
+      }
+      const exist = await this.userRepository.findOne({ email: addr })
+      if (exist) {
+        throw UserError.email.exist
+      }
+      this.tokenService.expiredVerifyCode('email', addr)
+      verifiedEmail = addr
     }
 
     this.behaviorService.add(
       'user',
-      `新用户注册 账号:${account} 绑定手机:${bindPhone ? '是' : '否'} 注册成功`,
+      `新用户注册 账号:${account} 绑定手机:${bindPhone ? '是' : '否'} 绑定邮箱:${
+        verifiedEmail ? '是' : '否'
+      } 注册成功`,
       {
         account,
         bindPhone,
@@ -109,6 +144,10 @@ export default class UserService {
     u.password = encryption(pwd)
     if (bindPhone) {
       u.phone = phone
+    }
+    if (verifiedEmail) {
+      u.email = verifiedEmail
+      u.emailVerified = 1
     }
 
     return this.userRepository.insert(u)
@@ -167,7 +206,7 @@ export default class UserService {
 
   async loginByCode(phone: string, code: string) {
     const logPhone = phone?.slice(-4)
-    const v = await this.tokenService.getVerifyCode(phone)
+    const v = await this.tokenService.getVerifyCode('phone', phone)
     if (code !== v) {
       this.behaviorService.add('user', `验证码登录 验证码错误:${code}`, {
         code,
@@ -197,15 +236,58 @@ export default class UserService {
     this.behaviorService.add('user', `验证码登录 手机号:${logPhone} 登录成功`, {
       phone: logPhone,
     })
-    this.tokenService.expiredVerifyCode(phone)
+    this.tokenService.expiredVerifyCode('phone', phone)
+    return this.userRepository.update(user)
+  }
+
+  async loginByEmailCode(email: string, code: string) {
+    const addr = email.trim().toLowerCase()
+    const v = await this.tokenService.getVerifyCode('email', addr)
+    if (code !== v) {
+      this.behaviorService.add('user', `邮箱验证码登录 错误`, { code })
+      throw UserError.code.fault
+    }
+    let user = await this.userRepository.findOne({ email: addr })
+    if (!user) {
+      user = new User()
+      user.email = addr
+      user.emailVerified = 1
+      user.password = encryption(randomNumStr(6) + getUniqueKey().slice(6))
+      user.account = `u${getUniqueKey().replace(/[^a-zA-Z0-9]/g, '').slice(0, 9)}`
+      user.loginCount = 0
+      user = await this.userRepository.insert(user)
+    }
+    this.checkUserStatus(user)
+    this.behaviorService.add('user', `邮箱验证码登录成功:${addr.slice(0, 2)}***`)
+    this.tokenService.expiredVerifyCode('email', addr)
     return this.userRepository.update(user)
   }
 
   async updatePassword(payload) {
-    const { code, phone, pwd } = payload
+    const { code, phone, pwd, email: emailRaw } = payload
+    const email = typeof emailRaw === 'string' ? emailRaw.trim().toLowerCase() : ''
+
+    if (email) {
+      const v = await this.tokenService.getVerifyCode('email', email)
+      if (code !== v) {
+        this.behaviorService.add('user', `重置密码 邮箱验证码不正确`, { code })
+        throw UserError.code.fault
+      }
+      const user = await this.userRepository.findOne({ email })
+      if (!user) {
+        throw UserError.email.noExist
+      }
+      if (!rPassword.test(pwd))
+        throw UserError.pwd.fault
+      user.password = encryption(pwd)
+      this.tokenService.expiredVerifyCode('email', email)
+      this.behaviorService.add('user', `重置密码 邮箱用户成功`, { email })
+      this.checkUserStatus(user)
+      return this.userRepository.update(user)
+    }
 
     const logPhone = phone?.slice(-4)
-    const v = await this.tokenService.getVerifyCode(phone)
+    const v = await this.tokenService.getVerifyCode('phone', phone)
     if (code !== v) {
       this.behaviorService.add(
         'user',
@@ -237,7 +319,7 @@ export default class UserService {
       throw UserError.pwd.fault
     }
     user.password = encryption(pwd)
-    this.tokenService.expiredVerifyCode(phone)
+    this.tokenService.expiredVerifyCode('phone', phone)
     this.behaviorService.add('user', `重置密码 手机号:${logPhone} 重置成功`, {
       phone: logPhone,
     })

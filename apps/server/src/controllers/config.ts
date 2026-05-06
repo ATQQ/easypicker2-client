@@ -26,12 +26,13 @@ import {
 import { patchTable } from '@/utils/patch'
 import { getQiniuStatus, refreshQinNiuConfig } from '@/utils/qiniuUtil'
 import { rPassword } from '@/utils/regExp'
-import { isCodeLoginSupported } from '@/utils/siteConfig'
+import { isSmtpConfigured } from '@/utils/mail'
+import { isCodeLoginSupported, isEmailCodeLoginSupported } from '@/utils/siteConfig'
 import { encryption } from '@/utils/stringUtil'
 import { getTxServiceStatus, refreshTxConfig } from '@/utils/tencent'
 import LocalUserDB from '@/utils/user-local-db'
 
-type ServiceConfigType = Extract<UserConfig['type'], 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx'>
+type ServiceConfigType = Extract<UserConfig['type'], 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx' | 'smtp'>
 
 interface ServiceDefinition {
   type: ServiceConfigType
@@ -74,6 +75,18 @@ const serviceDefinitions: ServiceDefinition[] = [
     required: false,
     enabled: () => true,
     getStatus: getTxServiceStatus,
+  },
+  {
+    type: 'smtp',
+    title: 'SMTP 邮件',
+    description: '验证码、通知与告警邮件',
+    required: false,
+    enabled: () => true,
+    getStatus: async () => ({
+      type: 'smtp',
+      status: isSmtpConfigured(),
+      errMsg: isSmtpConfigured() ? undefined : '请填写 host、user、pass、fromAddress',
+    }),
   },
   {
     type: 'redis',
@@ -410,11 +423,18 @@ export default class UserController {
     const filterKey: (keyof GlobalSiteConfig)[] = [
       'maxInputLength',
       'openPraise',
+      'feedbackEntryEnabled',
       'formLength',
       'compressSizeLimit',
+      'downloadOneExpired',
+      'downloadCompressExpired',
       'needBindPhone',
+      'enableCodeLogin',
+      'enableEmailCodeLogin',
       'limitSpace',
       'limitWallet',
+      'storageMode',
+      'maxUploadSizeMB',
       'moneyStartDay',
       'appName',
       'filePagePraiseText',
@@ -434,6 +454,7 @@ export default class UserController {
     ]
     const result: Partial<GlobalSiteConfig> = {
       supportCodeLogin: isCodeLoginSupported(),
+      supportEmailCodeLogin: isEmailCodeLoginSupported(),
     }
     filterKey.forEach((cur) => {
       result[cur] = globalConfig[0].value[cur] as never

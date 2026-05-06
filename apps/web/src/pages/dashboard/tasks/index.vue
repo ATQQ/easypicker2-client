@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import LinkDialog from '@components/linkDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { TaskApi } from '@/apis'
@@ -36,6 +36,47 @@ const filterTasks = computed(() => {
   return t
 })
 
+const MAX_RECENT_TASK_KEYS = 10
+const recentTaskKeys = ref<string[]>([])
+function dashboardRecentStorageId() {
+  const token = localStorage.getItem('token') || ''
+  return token ? token.slice(-24) : 'anon'
+}
+function persistDashboardRecent() {
+  const id = dashboardRecentStorageId()
+  localStorage.setItem(
+    `ep2-dash-recent:${id}`,
+    JSON.stringify({
+      keys: recentTaskKeys.value,
+      lastCategory: selectCategory.value,
+    }),
+  )
+}
+function touchRecentTask(taskKey: string) {
+  if (!taskKey)
+    return
+  const next = [
+    taskKey,
+    ...recentTaskKeys.value.filter(k => k !== taskKey),
+  ].slice(0, MAX_RECENT_TASK_KEYS)
+  recentTaskKeys.value = next
+  persistDashboardRecent()
+}
+function removeFromRecentTasks(taskKey: string) {
+  recentTaskKeys.value = recentTaskKeys.value.filter(k => k !== taskKey)
+  persistDashboardRecent()
+}
+/** 当前分类下任务：最近操作过的排在前面 */
+const orderedFilterTasks = computed(() => {
+  const list = filterTasks.value
+  const order = recentTaskKeys.value
+  const rank = (k: string) => {
+    const i = order.indexOf(k)
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i
+  }
+  return [...list].sort((a, b) => rank(a.key) - rank(b.key))
+})
+
 // 删除任务
 function deleteTask(k: string, isTrash = false) {
   if (!k)
@@ -51,6 +92,7 @@ function deleteTask(k: string, isTrash = false) {
   )
     .then(() => {
       $store.dispatch('task/deleteTask', k).then(() => {
+        removeFromRecentTasks(k)
         ElMessage.success('删除成功')
       })
     })
@@ -63,6 +105,7 @@ function deleteTask(k: string, isTrash = false) {
 const showBaseInfoDialog = ref(false)
 const taskBaseInfo = reactive({ name: '', category: '', key: '' })
 function editBaseInfo(task: any) {
+  touchRecentTask(task.key)
   taskBaseInfo.name = task.name
   taskBaseInfo.category = task.category
   taskBaseInfo.key = task.key
@@ -84,6 +127,7 @@ const shareTaskLink = ref('')
 const showLinkModal = ref(false)
 const shareTaskName = ref('')
 function shareTask(k: string) {
+  touchRecentTask(k)
   shareTaskLink.value = 'default'
   const { origin } = window.location
   shareTaskLink.value = `${origin}/task/${k}`
@@ -106,6 +150,7 @@ function shouldOpenTaskConfigPage() {
   return true
 }
 function editMore(item: any) {
+  touchRecentTask(item.key)
   if (shouldOpenTaskConfigPage()) {
     $router.push({
       name: 'task-config',
@@ -156,9 +201,39 @@ function editMore(item: any) {
 //   }
 // })
 
+async function initTasksPage() {
+  await $store.dispatch('category/getCategory')
+  const raw = localStorage.getItem(
+    `ep2-dash-recent:${dashboardRecentStorageId()}`,
+  )
+  if (raw) {
+    try {
+      const s = JSON.parse(raw) as {
+        keys?: string[]
+        lastCategory?: string
+      }
+      if (Array.isArray(s.keys))
+        recentTaskKeys.value = s.keys.slice(0, MAX_RECENT_TASK_KEYS)
+      const allowed = new Set([
+        'default',
+        ...categorys.value.map((c: { k: string }) => c.k),
+      ])
+      if (s.lastCategory && allowed.has(s.lastCategory))
+        selectCategory.value = s.lastCategory
+    }
+    catch {
+      /* ignore */
+    }
+  }
+  await $store.dispatch('task/getTask')
+}
+
+watch(selectCategory, () => {
+  persistDashboardRecent()
+})
+
 onMounted(() => {
-  $store.dispatch('category/getCategory')
-  $store.dispatch('task/getTask')
+  initTasksPage()
 })
 
 function openTaskPage() {
@@ -181,7 +256,7 @@ function openTaskPage() {
       <!-- 任务列表 -->
       <div class="task-list">
         <TaskInfo
-          v-for="item in filterTasks"
+          v-for="item in orderedFilterTasks"
           :key="item.key"
           :item="item"
           @edit="editBaseInfo"
@@ -190,7 +265,7 @@ function openTaskPage() {
           @more="editMore"
         />
         <el-empty
-          v-if="filterTasks.length === 0"
+          v-if="orderedFilterTasks.length === 0"
           description="此分类下没有任务哟，快去创建吧"
         />
       </div>

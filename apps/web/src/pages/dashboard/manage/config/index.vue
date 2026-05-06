@@ -17,13 +17,14 @@ interface ConfigField {
   key: keyof SiteConfig
   label: string
   description: string
-  type: 'text' | 'textarea' | 'url' | 'number' | 'switch' | 'date'
+  type: 'text' | 'textarea' | 'url' | 'number' | 'switch' | 'date' | 'select'
   suffix?: string
   maxlength?: number
   min?: number
   max?: number
   step?: number
   precision?: number
+  options?: { label: string, value: string }[]
 }
 interface ConfigSection {
   title: string
@@ -53,6 +54,8 @@ const configSections: ConfigSection[] = [
       { key: 'downloadOneExpired', label: '单文件链接有效期', description: '单个文件下载链接的过期时间。', type: 'number', min: 1, step: 1, suffix: '分钟' },
       { key: 'downloadCompressExpired', label: '归档链接有效期', description: '打包下载链接的过期时间。', type: 'number', min: 1, step: 1, suffix: '分钟' },
       { key: 'compressSizeLimit', label: '压缩包大小限制', description: '允许创建压缩包的最大体积。', type: 'number', min: 1, step: 1, suffix: 'GB' },
+      { key: 'storageMode', label: '存储模式', description: '七牛云对象存储或服务器本机磁盘；本机模式需部署可写数据目录。', type: 'select', options: [{ label: '七牛云', value: 'qiniu' }, { label: '本机磁盘', value: 'local' }] },
+      { key: 'maxUploadSizeMB', label: '本机单文件上限', description: '仅存储模式为本机时，限制直传单个文件大小。', type: 'number', min: 1, step: 1, suffix: 'MB' },
     ],
   },
   {
@@ -61,6 +64,7 @@ const configSections: ConfigSection[] = [
     fields: [
       { key: 'needBindPhone', label: '强制绑定手机号', description: '开启后用户需要先绑定手机号。', type: 'switch' },
       { key: 'enableCodeLogin', label: '验证码登录', description: '开启后且腾讯云短信配置完整时，前台展示验证码登录入口。', type: 'switch' },
+      { key: 'enableEmailCodeLogin', label: '邮箱验证码', description: '开启且 SMTP 可用时，支持邮箱验证码登录、注册与找回密码。', type: 'switch' },
       { key: 'limitSpace', label: '限制存储空间', description: '开启后按用户空间额度限制上传。', type: 'switch' },
       { key: 'limitWallet', label: '限制钱包余额', description: '开启后按钱包余额限制资源消耗。', type: 'switch' },
     ],
@@ -123,6 +127,7 @@ const rules: FormRules = {
   downloadOneExpired: [{ required: true, message: '请输入单文件链接有效期', trigger: 'blur' }],
   downloadCompressExpired: [{ required: true, message: '请输入归档链接有效期', trigger: 'blur' }],
   compressSizeLimit: [{ required: true, message: '请输入压缩包大小限制', trigger: 'blur' }],
+  maxUploadSizeMB: [{ required: true, message: '请输入本机单文件上限', trigger: 'blur' }],
   moneyStartDay: [{ required: true, message: '请选择计费开始日期', trigger: 'change' }],
 }
 
@@ -147,6 +152,9 @@ function normalizeSiteConfig(): SiteConfig {
     compressSizeLimit: Number(siteForm.compressSizeLimit),
     needBindPhone: Boolean(siteForm.needBindPhone),
     enableCodeLogin: Boolean(siteForm.enableCodeLogin),
+    enableEmailCodeLogin: Boolean(siteForm.enableEmailCodeLogin),
+    storageMode: siteForm.storageMode === 'local' ? 'local' : 'qiniu',
+    maxUploadSizeMB: Number(siteForm.maxUploadSizeMB),
     limitSpace: Boolean(siteForm.limitSpace),
     limitWallet: Boolean(siteForm.limitWallet),
     qiniuOSSPrice: Number(siteForm.qiniuOSSPrice),
@@ -447,6 +455,20 @@ onMounted(() => {
                     class="number-control"
                     @update:model-value="updateFieldValue(field.key, Number($event))"
                   />
+                  <el-select
+                    v-else-if="field.type === 'select'"
+                    :model-value="String(getFieldValue(field.key))"
+                    placeholder="请选择"
+                    class="full-control"
+                    @update:model-value="updateFieldValue(field.key, $event)"
+                  >
+                    <el-option
+                      v-for="opt in field.options"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
+                  </el-select>
                   <el-input
                     v-else-if="field.type === 'textarea'"
                     :model-value="String(getFieldValue(field.key))"

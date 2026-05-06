@@ -1,4 +1,5 @@
 import LocalUserDB from './user-local-db'
+import { isSmtpConfigured } from './mail'
 
 const txRequiredKeys = [
   'secretId',
@@ -21,4 +22,8 @@ export function isTxMessageConfigured() {
 
 export function isCodeLoginSupported() {
   return Boolean(LocalUserDB.getSiteConfig()?.enableCodeLogin) && isTxMessageConfigured()
+}
+
+export function isEmailCodeLoginSupported() {
+  return Boolean(LocalUserDB.getSiteConfig()?.enableEmailCodeLogin) && isSmtpConfigured()
 }

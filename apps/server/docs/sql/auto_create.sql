@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS `category` (
   `id` int(11) NOT NULL COMMENT '主键自增',
   `name` varchar(256) NOT NULL COMMENT '分类名称',
   `user_id` int(11) NOT NULL COMMENT '所属用户',
-  `k` varchar(128) NOT NULL COMMENT '分类唯一标识'
+  `k` varchar(128) NOT NULL COMMENT '分类唯一标识',
+  `submit_nav_task_keys` varchar(2048) DEFAULT NULL COMMENT '提交页可切换任务的k列表JSON'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='任务分类';
 
 -- --------------------------------------------------------
@@ -128,7 +129,10 @@ CREATE TABLE IF NOT EXISTS `user` (
   `login_count` int(11) NOT NULL DEFAULT '1' COMMENT '登陆次数',
   `open_time` timestamp NULL DEFAULT NULL COMMENT '解封时间',
   `size` INT(11) NOT NULL DEFAULT '2' COMMENT '可支配空间上限GB',
-  `wallet` DECIMAL(10,2) NOT NULL DEFAULT '2.00' COMMENT '钱包余额'
+  `wallet` DECIMAL(10,2) NOT NULL DEFAULT '2.00' COMMENT '钱包余额',
+  `email` varchar(128) DEFAULT NULL COMMENT '邮箱',
+  `email_verified` tinyint(4) NOT NULL DEFAULT '0' COMMENT '邮箱已验证',
+  `notify_on_submit` tinyint(4) NOT NULL DEFAULT '0' COMMENT '新提交时邮件通知任务属主'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
 
 --
@@ -171,7 +175,8 @@ ALTER TABLE `task_info`
 ALTER TABLE `user`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `user_account_uindex` (`account`),
-  ADD UNIQUE KEY `user_phone_uindex` (`phone`);
+  ADD UNIQUE KEY `user_phone_uindex` (`phone`),
+  ADD UNIQUE KEY `user_email_uindex` (`email`);
 
 --
 -- AUTO_INCREMENT for dumped tables

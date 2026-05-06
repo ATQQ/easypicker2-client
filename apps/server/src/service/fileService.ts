@@ -8,6 +8,7 @@ import type { DownloadLogAnalyzeItem } from '@/types'
 import dayjs from 'dayjs'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { ObjectID, ObjectId } from 'mongodb'
+import fs from 'node:fs'
 import { In } from 'typeorm'
 import { qiniuConfig } from '@/config'
 import { publicError } from '@/constants/errorMsg'
@@ -22,6 +23,9 @@ import { expiredRedisKey, getRedisVal, setRedisValue } from '@/db/redisDb'
 import { TaskRepository } from '@/db/taskDb'
 import { UserRepository } from '@/db/userDb'
 import { batchFileStatus, createDownloadUrl, deleteObjByKey, judgeFileIsExist, makeZipWithKeys } from '@/utils/qiniuUtil'
+import { sendMail } from '@/utils/mail'
+import { getStorageMode } from '@/utils/storageMode'
+import { localObjectAbsPath } from '@/utils/localFilePath'
 import { B2GB, formatPrice, formatSize, getUniqueKey, isSameInfo, normalizeFileName, percentageValue, shortLink } from '@/utils/stringUtil'
 import { diffMonth } from '@/utils/time-utils'
 import LocalUserDB from '@/utils/user-local-db'
@@ -77,6 +81,21 @@ export default class FileService {
     return this.fileRepository.findWithLimitCount(options, count, {
       id: 'DESC',
     })
+  }
+
+  /** 批量拉取多任务的最近提交记录，避免 N+1 */
+  async selectRecentLogsByTaskKeys(taskKeys: string[], perTaskLimit: number) {
+    const rows = await this.fileRepository.findRecentFilesByTaskKeys(
+      taskKeys,
+      perTaskLimit,
+    )
+    const map = new Map<string, { name: string, date: Date }[]>()
+    for (const row of rows) {
+      const list = map.get(row.task_key) ?? []
+      list.push({ name: row.name, date: row.date })
+      map.set(row.task_key, list)
+    }
+    return map
   }
 
   getOssKey(file: File) {
@@ -358,7 +377,6 @@ export default class FileService {
 
   async downloadOne(fileId: number) {
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
-    // TODO: 后端限制超容量下载上传
     const file = await this.fileRepository.findOne({
       userId,
       id: fileId,
@@ -370,6 +388,45 @@ export default class FileService {
       })
       throw publicError.file.notExist
     }
+
+    if (getStorageMode() === 'local') {
+      const rel = file.categoryKey?.startsWith('easypicker')
+        ? file.categoryKey
+        : `easypicker2/${file.taskKey}/${file.hash}/${file.name}`
+      const abs = localObjectAbsPath(rel)
+      if (!fs.existsSync(abs)) {
+        this.behaviorService.add('file', `本机文件缺失 用户:${logAccount} ${rel}`, { account: logAccount })
+        throw publicError.file.notExist
+      }
+      const mimeType = 'application/octet-stream'
+      const expiredTime = getQiniuFileUrlExpiredTime(LocalUserDB.getSiteConfig()?.downloadOneExpired || 1)
+      const result = await addDownloadAction({
+        userId,
+        type: ActionType.Download,
+        thingId: file.id,
+      })
+      const link = shortLink(result.insertedId, this.ctx.req)
+      const data: DownloadActionData = {
+        url: link,
+        originUrl: '',
+        storage: 'local',
+        localRelPath: rel,
+        status: DownloadStatus.SUCCESS,
+        ids: [file.id],
+        tip: file.name,
+        name: file.name,
+        size: file.size,
+        account: logAccount,
+        mimeType,
+        expiredTime: expiredTime * 1000,
+      }
+      await updateAction<DownloadActionData>(
+        { _id: ObjectID(result.insertedId) },
+        { $set: { data } },
+      )
+      return { link, mimeType }
+    }
+
     let k = this.getOssKey(file)
     let isExist = false
     // 兼容旧路径的逻辑
@@ -755,10 +812,29 @@ export default class FileService {
     }
   }
 
-  addFile(file: Files) {
+  async addFile(file: Files) {
     file.name = normalizeFileName(file.name)
     file.date = new Date()
-    return this.fileRepository.insert(file)
+    const saved = await this.fileRepository.insert(file)
+    void this.notifyOwnerOnSubmit(file)
+    return saved
+  }
+
+  private async notifyOwnerOnSubmit(file: Files) {
+    try {
+      const owner = await this.userRepository.findOne({ id: file.userId })
+      if (!owner?.email || Number(owner.notifyOnSubmit) !== 1 || Number(owner.emailVerified) !== 1)
+        return
+      const site = LocalUserDB.getSiteConfig()
+      await sendMail({
+        to: owner.email,
+        subject: `${site?.appName || 'EasyPicker'} 新文件提交`,
+        text: `任务：${file.taskName}\n文件：${file.name}\n时间：${new Date().toLocaleString('zh-CN')}`,
+      })
+    }
+    catch (e) {
+      console.error('[notifyOwnerOnSubmit]', e)
+    }
   }
 
   async getUserFiles() {
@@ -802,8 +878,17 @@ export default class FileService {
 
     // 存在相同文件时，存储上共用一份数据，不能删除OSS资源
     if (!isRepeat) {
-      // 删除OSS上文件
-      deleteObjByKey(k)
+      if (getStorageMode() === 'local') {
+        const rel = file.categoryKey?.startsWith('easypicker')
+          ? file.categoryKey
+          : `easypicker2/${file.taskKey}/${file.hash}/${file.name}`
+        const abs = localObjectAbsPath(rel)
+        if (fs.existsSync(abs))
+          fs.unlinkSync(abs)
+      }
+      else {
+        deleteObjByKey(k)
+      }
     }
     if (!file.ossDelTime) {
       file.ossDelTime = new Date()

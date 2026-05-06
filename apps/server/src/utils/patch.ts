@@ -154,6 +154,12 @@ export async function initUserConfig() {
       downloadCompressExpired: 60, // 归档文件下载过期时间（min）
       compressSizeLimit: 10, // TODO: 压缩文件大小限制（GB）
       needBindPhone: false, // 是否需要绑定手机号
+      enableCodeLogin: false,
+      enableEmailCodeLogin: false,
+      alertEmails: '',
+      emailDailyLimit: 200,
+      storageMode: 'qiniu' as 'qiniu' | 'local',
+      maxUploadSizeMB: 500,
       limitSpace: false, // 是否限制空间
       limitWallet: false, // 是否限制钱包余额
       qiniuOSSPrice: 0.099, // 七牛云存储价格
@@ -177,6 +183,7 @@ export async function initUserConfig() {
       filePageSponsorSuffix: '调整空间 和 可用余额',
       filePageSelfHostLinkText: '也可以选择自己搭建💡',
       filePageSelfHostLink: 'https://docs.ep.sugarat.top/',
+      feedbackEntryEnabled: true,
     } as GlobalSiteConfig,
   })
   // 更新配置

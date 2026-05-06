@@ -2,15 +2,17 @@
 import loginPanel from '@components/loginPanel.vue'
 import { Lock, Phone, QuestionFilled, User } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { PublicApi, UserApi } from '@/apis'
 import { useSiteConfig } from '@/composables'
-import { rAccount, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
+import { rAccount, rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 
 const bindPhone = ref(false)
+const bindWithEmail = ref(false)
 const { value: siteConfig } = useSiteConfig()
+const supportEmailCodeLogin = computed(() => Boolean(siteConfig.value.supportEmailCodeLogin))
 watch(siteConfig, () => {
   if (siteConfig.value.needBindPhone) {
     bindPhone.value = true
@@ -22,6 +24,8 @@ const pwd1 = ref('')
 const pwd2 = ref('')
 const phone = ref('')
 const code = ref('')
+const email = ref('')
+const emailCode = ref('')
 const $router = useRouter()
 const codeText = ref('获取验证码')
 const time = ref(0)
@@ -45,6 +49,25 @@ function getCode() {
     ElMessage.success('获取成功,请注意查看手机短信')
   })
 }
+
+function getEmailRegCode() {
+  if (!rEmail.test(email.value.trim())) {
+    ElMessage.warning('邮箱格式不正确')
+    return
+  }
+  PublicApi.getEmailCode(email.value.trim()).then(() => {
+    time.value = 120
+    refreshCodeText()
+    ElMessage.success('获取成功,请查收邮件')
+  }).catch((err) => {
+    const { code: c } = err
+    const options: Record<number, string> = {
+      1015: '邮箱格式不正确',
+      1016: '邮箱已被注册',
+    }
+    ElMessage.error(options[c] || '发送失败')
+  })
+}
 function checkForm() {
   if (!rAccount.test(account.value)) {
     ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
@@ -59,6 +82,10 @@ function checkForm() {
     ElMessage.warning('两次输入的密码不一致')
     return false
   }
+  if (siteConfig.value.needBindPhone && !bindPhone.value && !bindWithEmail.value) {
+    ElMessage.warning('请绑定手机号或邮箱后再注册')
+    return false
+  }
   if (bindPhone.value) {
     if (!rMobilePhone.test(phone.value)) {
       ElMessage.warning('手机号格式不正确')
@@ -66,6 +93,16 @@ function checkForm() {
     }
     if (!rVerCode.test(code.value)) {
       ElMessage.warning('验证码不正确(4位 数字)')
+      return false
+    }
+  }
+  if (bindWithEmail.value) {
+    if (!rEmail.test(email.value.trim())) {
+      ElMessage.warning('邮箱格式不正确')
+      return false
+    }
+    if (!rVerCode.test(emailCode.value)) {
+      ElMessage.warning('邮箱验证码不正确(4位 数字)')
       return false
     }
   }
@@ -81,6 +118,9 @@ function handleRegister() {
     bindPhone: bindPhone.value,
     phone: phone.value,
     code: code.value,
+    bindWithEmail: bindWithEmail.value,
+    email: email.value.trim(),
+    emailCode: emailCode.value,
   })
     .then((res) => {
       const { token } = res.data
@@ -100,7 +140,9 @@ function handleRegister() {
         1004: '密码格式不正确',
         1006: '手机号格式不正确',
         1011: '系统暂不开放注册',
-        1012: '必须绑定手机号',
+        1012: '必须绑定手机号或邮箱',
+        1015: '邮箱格式不正确',
+        1016: '邮箱已被注册',
       }
       ElMessage.error(options[c] || msg)
     })
@@ -114,7 +156,7 @@ function handleRegister() {
         <div>
           <el-input
             v-model="account"
-            maxlength="11"
+            maxlength="32"
             placeholder="输入账号"
             :prefix-icon="User"
             clearable
@@ -181,6 +223,47 @@ function handleRegister() {
                 {{
                   codeText
                 }}
+              </el-button>
+            </template>
+          </el-input>
+        </div>
+        <div class="tc bind-email-line">
+          <el-checkbox
+            v-if="supportEmailCodeLogin"
+            v-model="bindWithEmail"
+          >
+            绑定邮箱
+          </el-checkbox>
+          <el-tooltip
+            v-if="supportEmailCodeLogin"
+            effect="dark"
+            content="需站点已配置 SMTP；可用于找回密码与邮件通知"
+            placement="top-start"
+          >
+            <el-icon :size="16">
+              <QuestionFilled />
+            </el-icon>
+          </el-tooltip>
+        </div>
+        <div v-if="bindWithEmail">
+          <el-input
+            v-model="email"
+            placeholder="输入邮箱"
+            clearable
+          />
+        </div>
+        <div v-if="bindWithEmail">
+          <el-input
+            v-model="emailCode"
+            maxlength="4"
+            type="number"
+            placeholder="请输入邮箱验证码"
+            :prefix-icon="Lock"
+            clearable
+          >
+            <template #append>
+              <el-button :disabled="time !== 0" @click="getEmailRegCode">
+                {{ codeText }}
               </el-button>
             </template>
           </el-input>

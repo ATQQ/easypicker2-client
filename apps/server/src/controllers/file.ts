@@ -19,6 +19,8 @@ import {
   RouterController,
 } from 'flash-wolves'
 import { ObjectID } from 'mongodb'
+import fs from 'node:fs'
+import { createReadStream } from 'node:fs'
 import { qiniuConfig } from '@/config'
 import { fileError, publicError } from '@/constants/errorMsg'
 import { findAction } from '@/db/actionDb'
@@ -36,6 +38,8 @@ import {
   judgeFileIsExist,
   mvOssFile,
 } from '@/utils/qiniuUtil'
+import { localObjectAbsPath } from '@/utils/localFilePath'
+import { getMaxUploadBytes, getStorageMode } from '@/utils/storageMode'
 import LocalUserDB from '@/utils/user-local-db'
 import { getQiniuFileUrlExpiredTime } from '@/utils/userUtil'
 // TODO: 优化上传逻辑
@@ -241,6 +245,28 @@ export default class FileController {
     })
     void this.fileService.expireDownloadCountCache(download.userId, download.data.ids)
 
+    if (
+      download.data.storage === 'local'
+      && download.data.localRelPath
+    ) {
+      const abs = localObjectAbsPath(download.data.localRelPath)
+      if (!fs.existsSync(abs)) {
+        this.behaviorService.add('file', `本机下载文件不存在 ${download.data.localRelPath}`)
+        return Response.failWithError(publicError.file.notExist)
+      }
+      this.ctx.res.setHeader(
+        'Content-Type',
+        download.data.mimeType || 'application/octet-stream',
+      )
+      const name = download.data.name || fileName || 'file'
+      this.ctx.res.setHeader(
+        'Content-Disposition',
+        `attachment; filename*=UTF-8''${encodeURIComponent(name)}`,
+      )
+      createReadStream(abs).pipe(this.ctx.res)
+      return
+    }
+
     this.ctx.res.statusCode = 302
     this.ctx.res.setHeader('Location', download.data.originUrl)
     this.ctx.res.end()
@@ -288,9 +314,17 @@ export default class FileController {
    */
   @Get('/token', noLogin)
   getUploadToken() {
+    if (getStorageMode() === 'local') {
+      this.behaviorService.add('file', '本机存储上传参数')
+      return {
+        token: '',
+        storageMode: 'local' as const,
+        maxUploadBytes: getMaxUploadBytes(),
+      }
+    }
     const token = getUploadToken()
     this.behaviorService.add('file', '获取文件上传令牌')
-    return { token }
+    return { token, storageMode: 'qiniu' as const }
   }
 
   @Post('/info', noLogin)
