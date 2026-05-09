@@ -50,6 +50,14 @@ function updateCfg(data: ConfigServiceAPITypes.ServiceConfigItem | ConfigService
   return ajax.put('/config/service/config', data)
 }
 
+function getGlobalAllConfig(type = 'site'): OverviewApiTypes.getGlobalConfig {
+  return ajax.get('/config/service/global/all', { params: { type } })
+}
+
+function updateGlobalConfig(key: string, value: any) {
+  return ajax.put('/config/service/global', { key, value })
+}
+
 export default {
   getServiceOverview,
   getMysqlSchema,
@@ -62,4 +70,6 @@ export default {
   resetConfigAdminUserPassword,
   getServiceConfig,
   updateCfg,
+  getGlobalAllConfig,
+  updateGlobalConfig,
 }

@@ -319,6 +319,8 @@ declare namespace OverviewApiTypes {
     needBindPhone: boolean
     enableCodeLogin: boolean
     enableEmailCodeLogin: boolean
+    alertEmails?: string
+    emailDailyLimit?: number
     supportCodeLogin?: boolean
     supportEmailCodeLogin?: boolean
     storageMode: 'qiniu' | 'local'
@@ -435,7 +437,7 @@ declare namespace WishApiTypes {
 }
 
 declare namespace ConfigServiceAPITypes {
-  type ServiceType = 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx'
+  type ServiceType = 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx' | 'smtp'
   interface ServiceOverviewItem {
     type: ServiceType
     title: string

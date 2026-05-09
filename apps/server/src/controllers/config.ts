@@ -414,6 +414,29 @@ export default class UserController {
     await LocalUserDB.updateLocalEnv()
   }
 
+  @Get('service/global/all')
+  async getSystemGlobalConfig(@ReqQuery('type') key = 'site') {
+    const globalConfig = LocalUserDB.findUserConfig({
+      type: 'global',
+      key,
+    })
+    return globalConfig[0].value
+  }
+
+  @Put('service/global')
+  async updateSystemGlobalConfig(@ReqBody() data) {
+    const { key, value } = data
+    await LocalUserDB.updateUserConfig(
+      {
+        type: 'global',
+        key,
+      },
+      {
+        value,
+      },
+    )
+  }
+
   @Get('global', { needLogin: false, userPower: null })
   async getGlobalConfig(@ReqQuery('type') key = 'site') {
     const globalConfig = LocalUserDB.findUserConfig({

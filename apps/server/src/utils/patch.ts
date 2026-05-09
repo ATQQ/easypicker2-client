@@ -145,6 +145,15 @@ export async function initUserConfig() {
   storeDbInfo('redis', redisConfig)
   storeDbInfo('qiniu', qiniuConfig)
   storeDbInfo('tx', txConfig)
+  storeDbInfo('smtp', {
+    host: '',
+    port: 465,
+    secure: true,
+    user: '',
+    pass: '',
+    fromAddress: '',
+    fromName: 'EasyPicker',
+  })
   storeDbInfo('global', {
     site: {
       maxInputLength: 20, // 最大输入长度

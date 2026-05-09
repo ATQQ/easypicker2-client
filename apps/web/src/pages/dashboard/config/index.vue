@@ -16,6 +16,7 @@ type MysqlLiveTable = ConfigServiceAPITypes.MysqlLiveTable
 
 /** 与 MySQL 相关的子 Tab（连接配置仍在 name=mysql 的主 Tab）；结构与脚本已与「在线库表」合并 */
 const MYSQL_INTROSPECT_TAB = 'mysql-introspect'
+const SERVICE_FEATURES_TAB = 'service-features'
 const CONFIG_ADMIN_USERS_TAB = 'config-admin-users'
 
 const { value: siteConfig } = useSiteConfig()
@@ -36,6 +37,15 @@ const loading = ref(false)
 const configLoading = ref(false)
 const activeConfigTab = ref('')
 const savingMap = reactive<Record<string, boolean>>({})
+const siteFeatureLoading = ref(false)
+const siteFeatureSaving = ref(false)
+const siteFeatureForm = reactive({
+  storageMode: 'qiniu' as 'qiniu' | 'local',
+  maxUploadSizeMB: 500,
+  enableEmailCodeLogin: false,
+  alertEmails: '',
+  emailDailyLimit: 200,
+})
 
 const overviewStats = computed(() => {
   const total = serviceOverview.value.length
@@ -59,6 +69,8 @@ const mysqlLiveOpenNames = ref<string[]>([])
 const currentConfig = computed(() => serverConfig.value.find(item => item.type === activeConfigTab.value))
 
 function isActiveConfigTabValid(name: string) {
+  if (name === SERVICE_FEATURES_TAB)
+    return true
   if (name === CONFIG_ADMIN_USERS_TAB)
     return true
   if (serverConfig.value.some(item => item.type === name))
@@ -456,7 +468,7 @@ async function getServiceConfig() {
     const { data } = await ConfigServiceAPI.getServiceConfig()
     serverConfig.value = data || []
     if (!activeConfigTab.value || !isActiveConfigTabValid(activeConfigTab.value)) {
-      activeConfigTab.value = serverConfig.value[0]?.type || CONFIG_ADMIN_USERS_TAB
+      activeConfigTab.value = serverConfig.value[0]?.type || SERVICE_FEATURES_TAB
     }
   }
   catch {
@@ -464,6 +476,60 @@ async function getServiceConfig() {
   }
   finally {
     configLoading.value = false
+  }
+}
+
+async function loadSiteFeatures() {
+  siteFeatureLoading.value = true
+  try {
+    const { data } = await ConfigServiceAPI.getGlobalAllConfig('site')
+    Object.assign(siteFeatureForm, {
+      storageMode: data?.storageMode === 'local' ? 'local' : 'qiniu',
+      maxUploadSizeMB: Number(data?.maxUploadSizeMB ?? 500),
+      enableEmailCodeLogin: Boolean(data?.enableEmailCodeLogin),
+      alertEmails: data?.alertEmails || '',
+      emailDailyLimit: Number(data?.emailDailyLimit ?? 200),
+    })
+  }
+  catch {
+    ElMessage.error('服务功能配置加载失败')
+  }
+  finally {
+    siteFeatureLoading.value = false
+  }
+}
+
+async function saveSiteFeatures() {
+  if (siteFeatureSaving.value)
+    return
+  if (siteFeatureForm.maxUploadSizeMB < 1) {
+    ElMessage.warning('本机单文件上限需大于 0')
+    return
+  }
+  if (siteFeatureForm.emailDailyLimit < 0) {
+    ElMessage.warning('每日发信上限不能小于 0')
+    return
+  }
+  siteFeatureSaving.value = true
+  try {
+    const { data } = await ConfigServiceAPI.getGlobalAllConfig('site')
+    await ConfigServiceAPI.updateGlobalConfig('site', {
+      ...data,
+      storageMode: siteFeatureForm.storageMode === 'local' ? 'local' : 'qiniu',
+      maxUploadSizeMB: Number(siteFeatureForm.maxUploadSizeMB),
+      enableEmailCodeLogin: Boolean(siteFeatureForm.enableEmailCodeLogin),
+      alertEmails: siteFeatureForm.alertEmails.trim(),
+      emailDailyLimit: Number(siteFeatureForm.emailDailyLimit),
+    })
+    ElMessage.success('服务功能配置已保存')
+    await loadSiteFeatures()
+    await refreshStatus(false)
+  }
+  catch {
+    ElMessage.error('服务功能配置保存失败')
+  }
+  finally {
+    siteFeatureSaving.value = false
   }
 }
 
@@ -588,6 +654,7 @@ async function updateCfgGroup(group?: ConfigData) {
 onMounted(() => {
   refreshStatus(false)
   getServiceConfig()
+  loadSiteFeatures()
 })
 
 async function refreshMysqlToolsTab() {
@@ -757,6 +824,98 @@ watch(activeConfigTab, (t) => {
                     :placeholder="cfgItem.isSecret ? '留空则保持原值' : '请输入'"
                     clearable
                     @update:model-value="updateConfigValue(cfgItem, $event)"
+                  />
+                </el-form-item>
+              </div>
+            </el-form>
+          </el-tab-pane>
+
+          <el-tab-pane label="服务功能" :name="SERVICE_FEATURES_TAB">
+            <div class="tab-head">
+              <div>
+                <h3>服务功能开关</h3>
+                <p>
+                  管理与部署服务直接相关的能力：文件落盘方式、邮箱验证码与服务告警邮件。
+                </p>
+              </div>
+              <el-button
+                type="primary"
+                :loading="siteFeatureSaving"
+                @click="saveSiteFeatures"
+              >
+                保存服务功能
+              </el-button>
+            </div>
+
+            <el-form v-loading="siteFeatureLoading" label-position="top" class="config-form">
+              <div class="field-list">
+                <el-form-item class="field-item">
+                  <template #label>
+                    <span class="field-label">存储模式</span>
+                    <span class="field-desc">七牛云对象存储或服务器本机磁盘；本机模式依赖服务端可写 upload 目录。</span>
+                  </template>
+                  <el-select v-model="siteFeatureForm.storageMode" class="full-control">
+                    <el-option label="七牛云对象存储" value="qiniu" />
+                    <el-option label="本机磁盘" value="local" />
+                  </el-select>
+                </el-form-item>
+
+                <el-form-item class="field-item">
+                  <template #label>
+                    <span class="field-label">本机单文件上限</span>
+                    <span class="field-desc">仅存储模式为本机时生效，限制直传单个文件大小。</span>
+                  </template>
+                  <el-input-number
+                    v-model="siteFeatureForm.maxUploadSizeMB"
+                    :min="1"
+                    :step="1"
+                    controls-position="right"
+                    class="full-control"
+                  >
+                    <template #suffix>
+                      MB
+                    </template>
+                  </el-input-number>
+                </el-form-item>
+
+                <el-form-item class="field-item">
+                  <template #label>
+                    <span class="field-label">邮箱验证码</span>
+                    <span class="field-desc">开启且 SMTP 配置完整时，支持邮箱验证码登录、注册与找回密码。</span>
+                  </template>
+                  <el-switch
+                    v-model="siteFeatureForm.enableEmailCodeLogin"
+                    inline-prompt
+                    active-text="开"
+                    inactive-text="关"
+                  />
+                </el-form-item>
+
+                <el-form-item class="field-item">
+                  <template #label>
+                    <span class="field-label">服务告警收件邮箱</span>
+                    <span class="field-desc">多个邮箱可用逗号、分号或空格分隔；SMTP 完整后服务异常会发送告警。</span>
+                  </template>
+                  <el-input
+                    v-model="siteFeatureForm.alertEmails"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="admin@example.com; ops@example.com"
+                    clearable
+                  />
+                </el-form-item>
+
+                <el-form-item class="field-item">
+                  <template #label>
+                    <span class="field-label">每日发信上限</span>
+                    <span class="field-desc">全局邮件发送上限；设为 0 表示不限制。</span>
+                  </template>
+                  <el-input-number
+                    v-model="siteFeatureForm.emailDailyLimit"
+                    :min="0"
+                    :step="10"
+                    controls-position="right"
+                    class="full-control"
                   />
                 </el-form-item>
               </div>
@@ -1093,6 +1252,18 @@ watch(activeConfigTab, (t) => {
             @click="updateCfgGroup(currentConfig)"
           >
             保存当前服务配置
+          </el-button>
+        </div>
+        <div v-else-if="activeConfigTab === SERVICE_FEATURES_TAB" class="bottom-actions-row">
+          <p class="bottom-actions-hint">
+            与当前 Tab 右上角「保存服务功能」是同一功能；表单项较多时滚到此处保存即可。
+          </p>
+          <el-button
+            type="primary"
+            :loading="siteFeatureSaving"
+            @click="saveSiteFeatures"
+          >
+            保存服务功能
           </el-button>
         </div>
       </div>
