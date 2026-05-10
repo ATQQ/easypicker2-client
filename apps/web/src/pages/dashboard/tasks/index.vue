@@ -35,6 +35,9 @@ const filterTasks = computed(() => {
   const t = tasks.value.filter(v => v.category === selectCategory.value)
   return t
 })
+const selectedCategoryConfig = computed<CateGoryApiTypes.CategoryItem | undefined>(
+  () => categorys.value.find((c: CateGoryApiTypes.CategoryItem) => c.k === selectCategory.value),
+)
 
 const MAX_RECENT_TASK_KEYS = 10
 const recentTaskKeys = ref<string[]>([])
@@ -179,6 +182,20 @@ function editMore(item: any) {
   })
 }
 
+function openCategoryConfig() {
+  if (!selectedCategoryConfig.value)
+    return
+  $router.push({
+    name: 'category-config',
+    params: {
+      key: selectedCategoryConfig.value.k,
+    },
+    query: {
+      name: selectedCategoryConfig.value.name,
+    },
+  })
+}
+
 // TODO: 有需要再优化，目前像bug
 // 用于选择默认展示项目
 // const taskCount = (c: string) => {
@@ -252,6 +269,15 @@ function openTaskPage() {
     <div class="panel task-panel">
       <!-- 创建任务 -->
       <CreateTask :active-category-key="selectCategory" />
+      <div v-if="selectedCategoryConfig" class="category-config-entry">
+        <div>
+          <strong>{{ selectedCategoryConfig.name }}</strong>
+          <span>分类配置</span>
+        </div>
+        <el-button type="primary" plain size="small" @click="openCategoryConfig">
+          分类配置
+        </el-button>
+      </div>
 
       <!-- 任务列表 -->
       <div class="task-list">
@@ -393,6 +419,24 @@ function openTaskPage() {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-around;
+}
+.category-config-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  background-color: #f8fafc;
+  color: #303133;
+
+  span {
+    margin-left: 8px;
+    color: #909399;
+    font-size: 13px;
+  }
 }
 
 @media screen and (max-width: 700px) {

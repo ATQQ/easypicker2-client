@@ -11,15 +11,14 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { ActionServiceAPI, FileApi, PublicApi, UserApi } from '@/apis'
+import { ActionServiceAPI, FileApi, UserApi } from '@/apis'
 import FloatingContact from '@/components/FloatingContact/index.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
 import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
-import { ActionType, DownloadStatus, filenamePattern, VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
+import { ActionType, DownloadStatus, filenamePattern } from '@/constants'
 import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
-import { rEmail, rVerCode } from '@/utils/regExp'
 import {
   copyRes,
   formatDate,
@@ -38,26 +37,15 @@ const showResourceLimitNotice = computed(
   () => isOpenPraise.value && (showStorageLimit.value || showWalletLimit.value),
 )
 const supportEmailFeature = computed(() => siteConfig.value.supportEmailCodeLogin)
+const $store = useStore()
+const $route = useRoute()
+const $router = useRouter()
 
 const profile = reactive({
   email: '',
   emailVerified: false,
   notifyOnSubmit: false,
 })
-const bindEmailAddr = ref('')
-const bindEmailVer = ref('')
-const bindCodeTime = ref(0)
-function refreshBindCodeText() {
-  if (bindCodeTime.value <= 0) {
-    bindCodeTime.value = 0
-    return
-  }
-  bindCodeTime.value -= 1
-  setTimeout(refreshBindCodeText, 1000)
-}
-const bindCodeBtnText = computed(() =>
-  bindCodeTime.value > 0 ? `${bindCodeTime.value}s` : '获取验证码',
-)
 
 function loadUserProfile() {
   UserApi.getProfile()
@@ -67,40 +55,19 @@ function loadUserProfile() {
     .catch(() => {})
 }
 
+function goProfileBindEmail() {
+  ElMessage.warning('请先到个人中心绑定邮箱')
+  $router.push({ name: 'profile' })
+}
+
 function saveNotify(val: boolean) {
   if (!profile.emailVerified) {
-    ElMessage.warning('请先绑定邮箱')
+    goProfileBindEmail()
     return
   }
   UserApi.setProfileNotify(val).then(() => {
     profile.notifyOnSubmit = val
     ElMessage.success('已更新')
-  })
-}
-
-function sendBindEmailCode() {
-  if (!rEmail.test(bindEmailAddr.value.trim())) {
-    ElMessage.warning('邮箱格式不正确')
-    return
-  }
-  PublicApi.getEmailCode(bindEmailAddr.value.trim())
-    .then(() => {
-      ElMessage.success('验证码已发送')
-      bindCodeTime.value = VERIFY_CODE_EXPIRE_SECONDS
-      refreshBindCodeText()
-    })
-    .catch(() => {})
-}
-
-function confirmBindEmail() {
-  if (!rEmail.test(bindEmailAddr.value.trim()) || !rVerCode.test(bindEmailVer.value)) {
-    ElMessage.warning('请填写邮箱与4位验证码')
-    return
-  }
-  UserApi.bindProfileEmail(bindEmailAddr.value.trim(), bindEmailVer.value).then(() => {
-    ElMessage.success('绑定成功')
-    bindEmailVer.value = ''
-    loadUserProfile()
   })
 }
 
@@ -117,8 +84,6 @@ const {
   priceText,
 } = useSpaceUsage()
 
-const $store = useStore()
-const $route = useRoute()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
 const showImg = ref(localStorage.getItem('ep-show-images') !== 'false')
@@ -685,24 +650,9 @@ function handleShowDetail() {
         </span>
       </div>
       <div v-else class="profile-bind">
-        <el-input
-          v-model="bindEmailAddr"
-          placeholder="邮箱"
-          class="bind-email-inp"
-          clearable
-        />
-        <el-input
-          v-model="bindEmailVer"
-          placeholder="验证码"
-          maxlength="4"
-          class="bind-code-inp"
-          clearable
-        />
-        <el-button :disabled="bindCodeTime > 0" @click="sendBindEmailCode">
-          {{ bindCodeBtnText }}
-        </el-button>
-        <el-button type="primary" @click="confirmBindEmail">
-          验证并绑定
+        <span>未绑定邮箱，绑定后可开启新提交通知</span>
+        <el-button type="primary" plain @click="goProfileBindEmail">
+          去个人中心绑定
         </el-button>
       </div>
     </div>
@@ -1232,15 +1182,8 @@ function handleShowDetail() {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-}
-
-.bind-email-inp {
-  width: 200px;
-  max-width: 100%;
-}
-
-.bind-code-inp {
-  width: 110px;
+  color: #606266;
+  font-size: 14px;
 }
 
 .stats-dashboard {

@@ -26,6 +26,7 @@ const isMobile = useIsMobile()
 // 顶部导航
 const $router = useRouter()
 const $route = useRoute()
+const k = ref('')
 const pcNavs = reactive([
   {
     title: '我也要收集',
@@ -50,7 +51,11 @@ const taskInfo = reactive({
 const taskMoreInfo = reactive({
   bindField: '',
 } as Partial<TaskApiTypes.TaskInfo>)
-type SubmitNavTaskRow = { key: string, name: string }
+const formatData = computed(() => parseFileFormat(taskMoreInfo.format))
+interface SubmitNavTaskRow {
+  key: string
+  name: string
+}
 const submitNavTasks = ref([] as SubmitNavTaskRow[])
 
 // 用于展示截止日期
@@ -533,7 +538,7 @@ const tipData = reactive({
   text: '',
   imgs: [],
 } as TipDataShape)
-type TaskPreviewImage = {
+interface TaskPreviewImage {
   name: string
   uid: number
   preview?: string
@@ -663,7 +668,6 @@ watch(
     refreshWaitTime()
   },
 )
-
 </script>
 
 <template>
