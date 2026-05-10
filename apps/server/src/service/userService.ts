@@ -162,14 +162,16 @@ export default class UserService {
   }
 
   async login(account: string, pwd: string) {
-    const isPhone = rMobilePhone.test(account)
+    const normalizedAccount = account?.trim() || ''
+    const isPhone = rMobilePhone.test(normalizedAccount)
+    const isEmail = rEmail.test(normalizedAccount)
     // 密码格式不正确
     if (!rPassword.test(pwd)) {
       this.behaviorService.add(
         'user',
-        `用户登录 账号:${account} 密码格式不正确`,
+        `用户登录 账号:${normalizedAccount} 密码格式不正确`,
         {
-          account,
+          account: normalizedAccount,
         },
       )
 
@@ -178,36 +180,46 @@ export default class UserService {
     // 规避注册时逻辑导致的问题
 
     // 先当做账号处理
-    let user = await this.userRepository.findOne({ account })
-    // 不存在&&不是手机号
-    if (!user && !isPhone) {
-      this.behaviorService.add('user', `用户登录 账号:${account} 不存在`, {
-        account,
+    let user = await this.userRepository.findOne({ account: normalizedAccount })
+    // 不存在&&不是手机号/邮箱
+    if (!user && !isPhone && !isEmail) {
+      this.behaviorService.add('user', `用户登录 账号:${normalizedAccount} 不存在`, {
+        account: normalizedAccount,
       })
       throw UserError.account.fault
     }
 
     // 不存在&&是手机号
     if (!user && isPhone) {
-      user = await this.userRepository.findOne({ phone: account })
+      user = await this.userRepository.findOne({ phone: normalizedAccount })
+    }
+    // 不存在&&是邮箱
+    if (!user && isEmail) {
+      user = await this.userRepository.findOne({ email: normalizedAccount.toLowerCase() })
+      if (user && Number(user.emailVerified) !== 1) {
+        this.behaviorService.add('user', `用户登录 邮箱:${normalizedAccount} 未验证`, {
+          account: normalizedAccount,
+        })
+        throw UserError.email.notVerified
+      }
     }
     if (!user) {
-      this.behaviorService.add('user', `用户登录 账号:${account} 不存在`, {
-        account,
+      this.behaviorService.add('user', `用户登录 账号:${normalizedAccount} 不存在`, {
+        account: normalizedAccount,
       })
 
       throw isPhone ? UserError.mobile.fault : UserError.account.fault
     }
     if (user.password !== encryption(pwd)) {
-      this.behaviorService.add('user', `用户登录 账号:${account} 密码不正确`, {
-        account,
+      this.behaviorService.add('user', `用户登录 账号:${normalizedAccount} 密码不正确`, {
+        account: normalizedAccount,
       })
 
       throw UserError.pwd.fault
     }
     this.checkUserStatus(user)
-    this.behaviorService.add('user', `用户登录 账号:${account} 登录成功`, {
-      account,
+    this.behaviorService.add('user', `用户登录 账号:${normalizedAccount} 登录成功`, {
+      account: normalizedAccount,
     })
     return this.userRepository.update(user)
   }
