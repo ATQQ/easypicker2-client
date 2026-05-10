@@ -4,7 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ConfigServiceAPI, PublicApi, UserApi } from '@/apis'
 import { useSiteConfig } from '@/composables'
-import { rAccount, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
+import { rAccount, rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 
 type ConfigData = ConfigServiceAPITypes.ConfigData
@@ -46,6 +46,48 @@ const siteFeatureForm = reactive({
   alertEmails: '',
   emailDailyLimit: 200,
 })
+const mailTestSceneOptions: Array<{
+  key: ConfigServiceAPITypes.MailTestSceneKey
+  label: string
+  description: string
+}> = [
+  {
+    key: 'smtp-basic',
+    label: 'SMTP 基础连通',
+    description: '主机、端口、SSL、账号授权与发件人。',
+  },
+  {
+    key: 'verify-code',
+    label: '邮箱验证码',
+    description: '注册、登录、找回密码、绑定邮箱共用模板。',
+  },
+  {
+    key: 'submit-notify',
+    label: '文件提交通知',
+    description: '任务收到新文件后给任务所有者的提醒。',
+  },
+  {
+    key: 'service-alert',
+    label: '服务错误告警',
+    description: '运行时异常、依赖服务异常等管理员告警。',
+  },
+  {
+    key: 'daily-limit',
+    label: '每日发信上限提示',
+    description: '确认发信上限说明类通知可达。',
+  },
+]
+const mailTestDialogVisible = ref(false)
+const mailTestSubmitting = ref(false)
+const mailTestForm = reactive<{
+  to: string
+  scenes: ConfigServiceAPITypes.MailTestSceneKey[]
+}>({
+  to: '',
+  scenes: mailTestSceneOptions.map(item => item.key),
+})
+const mailTestResults = ref<ConfigServiceAPITypes.MailTestResultItem[]>([])
+const mailTestError = ref('')
 
 const overviewStats = computed(() => {
   const total = serviceOverview.value.length
@@ -67,6 +109,7 @@ const mysqlLiveLoading = ref(false)
 const mysqlLiveOpenNames = ref<string[]>([])
 
 const currentConfig = computed(() => serverConfig.value.find(item => item.type === activeConfigTab.value))
+const emailConfigSaving = computed(() => Boolean(savingMap.smtp) || siteFeatureSaving.value)
 
 function isActiveConfigTabValid(name: string) {
   if (name === SERVICE_FEATURES_TAB)
@@ -105,6 +148,24 @@ function isBooleanConfig(item: ServiceConfigItem) {
 
 function isNumberConfig(item: ServiceConfigItem) {
   return typeof item.value === 'number' || item.key === 'port'
+}
+
+function isSmtpConfig(group?: ConfigData) {
+  return group?.type === 'smtp'
+}
+
+function getConfigTabLabel(group: ConfigData) {
+  return isSmtpConfig(group) ? '邮箱配置' : group.title
+}
+
+function getConfigHeadTitle(group: ConfigData) {
+  return isSmtpConfig(group) ? '邮箱配置' : group.title
+}
+
+function getConfigHeadDescription(group: ConfigData) {
+  if (isSmtpConfig(group))
+    return '管理 SMTP 发信连接，以及邮箱验证码、服务告警收件邮箱与每日发信上限。'
+  return group.description
 }
 
 function updateConfigValue(item: ServiceConfigItem, value: string | number | boolean) {
@@ -499,27 +560,34 @@ async function loadSiteFeatures() {
   }
 }
 
-async function saveSiteFeatures() {
+async function updateSiteConfigPatch(patch: Record<string, unknown>) {
+  const { data } = await ConfigServiceAPI.getGlobalAllConfig('site')
+  await ConfigServiceAPI.updateGlobalConfig('site', {
+    ...data,
+    ...patch,
+  })
+}
+
+function checkEmailFeatures() {
+  if (siteFeatureForm.emailDailyLimit < 0) {
+    ElMessage.warning('每日发信上限不能小于 0')
+    return false
+  }
+  return true
+}
+
+async function saveStorageFeatures() {
   if (siteFeatureSaving.value)
     return
   if (siteFeatureForm.maxUploadSizeMB < 1) {
     ElMessage.warning('本机单文件上限需大于 0')
     return
   }
-  if (siteFeatureForm.emailDailyLimit < 0) {
-    ElMessage.warning('每日发信上限不能小于 0')
-    return
-  }
   siteFeatureSaving.value = true
   try {
-    const { data } = await ConfigServiceAPI.getGlobalAllConfig('site')
-    await ConfigServiceAPI.updateGlobalConfig('site', {
-      ...data,
+    await updateSiteConfigPatch({
       storageMode: siteFeatureForm.storageMode === 'local' ? 'local' : 'qiniu',
       maxUploadSizeMB: Number(siteFeatureForm.maxUploadSizeMB),
-      enableEmailCodeLogin: Boolean(siteFeatureForm.enableEmailCodeLogin),
-      alertEmails: siteFeatureForm.alertEmails.trim(),
-      emailDailyLimit: Number(siteFeatureForm.emailDailyLimit),
     })
     ElMessage.success('服务功能配置已保存')
     await loadSiteFeatures()
@@ -530,6 +598,86 @@ async function saveSiteFeatures() {
   }
   finally {
     siteFeatureSaving.value = false
+  }
+}
+
+async function saveEmailConfig(group?: ConfigData) {
+  if (!group || !isSmtpConfig(group) || savingMap[group.type] || siteFeatureSaving.value)
+    return
+  if (!checkEmailFeatures())
+    return
+
+  savingMap[group.type] = true
+  siteFeatureSaving.value = true
+  try {
+    await ConfigServiceAPI.updateCfg(group.data)
+    await updateSiteConfigPatch({
+      enableEmailCodeLogin: Boolean(siteFeatureForm.enableEmailCodeLogin),
+      alertEmails: siteFeatureForm.alertEmails.trim(),
+      emailDailyLimit: Number(siteFeatureForm.emailDailyLimit),
+    })
+    ElMessage.success('邮箱配置已保存')
+    await getServiceConfig()
+    await loadSiteFeatures()
+    await refreshStatus(false)
+  }
+  catch {
+    ElMessage.error('邮箱配置保存失败')
+  }
+  finally {
+    savingMap[group.type] = false
+    siteFeatureSaving.value = false
+  }
+}
+
+function openMailTestDialog() {
+  mailTestResults.value = []
+  mailTestError.value = ''
+  if (mailTestForm.scenes.length === 0) {
+    mailTestForm.scenes = mailTestSceneOptions.map(item => item.key)
+  }
+  mailTestDialogVisible.value = true
+}
+
+function closeMailTestDialog() {
+  if (mailTestSubmitting.value)
+    return
+  mailTestDialogVisible.value = false
+}
+
+async function submitMailTest() {
+  const to = mailTestForm.to.trim()
+  if (!rEmail.test(to)) {
+    ElMessage.warning('请填写正确的接收邮箱')
+    return
+  }
+  if (mailTestForm.scenes.length === 0) {
+    ElMessage.warning('请至少选择一个测试场景')
+    return
+  }
+  mailTestSubmitting.value = true
+  mailTestResults.value = []
+  mailTestError.value = ''
+  try {
+    const { data } = await ConfigServiceAPI.testMailConfig({
+      to,
+      scenes: mailTestForm.scenes,
+    })
+    mailTestResults.value = data?.results ?? []
+    mailTestError.value = data?.error || ''
+    if (data?.ok) {
+      ElMessage.success('测试邮件已发送')
+    }
+    else {
+      ElMessage.warning(data?.error || '部分测试邮件发送失败')
+    }
+  }
+  catch {
+    mailTestError.value = '测试邮件发送失败，请查看服务端日志'
+    ElMessage.error(mailTestError.value)
+  }
+  finally {
+    mailTestSubmitting.value = false
   }
 }
 
@@ -771,25 +919,47 @@ watch(activeConfigTab, (t) => {
           <el-tab-pane
             v-for="serverItem in serverConfig"
             :key="serverItem.type"
-            :label="serverItem.title"
+            :label="getConfigTabLabel(serverItem)"
             :name="serverItem.type"
           >
             <div class="tab-head">
               <div>
-                <h3>{{ serverItem.title }}</h3>
-                <p>{{ serverItem.description }}</p>
+                <h3>{{ getConfigHeadTitle(serverItem) }}</h3>
+                <p>{{ getConfigHeadDescription(serverItem) }}</p>
               </div>
-              <el-button
-                type="primary"
-                :loading="savingMap[serverItem.type]"
-                @click="updateCfgGroup(serverItem)"
-              >
-                保存 {{ serverItem.title }}
-              </el-button>
+              <div class="tab-head-actions">
+                <el-button
+                  v-if="isSmtpConfig(serverItem)"
+                  :disabled="emailConfigSaving"
+                  @click="openMailTestDialog"
+                >
+                  测试邮箱
+                </el-button>
+                <el-button
+                  type="primary"
+                  :loading="isSmtpConfig(serverItem) ? emailConfigSaving : savingMap[serverItem.type]"
+                  @click="isSmtpConfig(serverItem) ? saveEmailConfig(serverItem) : updateCfgGroup(serverItem)"
+                >
+                  保存 {{ getConfigTabLabel(serverItem) }}
+                </el-button>
+              </div>
             </div>
 
-            <el-form label-position="top" class="config-form">
-              <div class="field-list">
+            <el-form
+              v-loading="isSmtpConfig(serverItem) && siteFeatureLoading"
+              label-position="top"
+              class="config-form"
+            >
+              <div
+                class="field-list"
+                :class="{ 'field-list--grouped': isSmtpConfig(serverItem) }"
+              >
+                <div v-if="isSmtpConfig(serverItem)" class="config-subsection">
+                  <div class="config-subsection__head">
+                    <h4>SMTP 配置</h4>
+                    <p>发信服务器、账号、授权码与发件人信息。</p>
+                  </div>
+                </div>
                 <el-form-item
                   v-for="cfgItem in serverItem.data"
                   :key="cfgItem.key"
@@ -826,6 +996,56 @@ watch(activeConfigTab, (t) => {
                     @update:model-value="updateConfigValue(cfgItem, $event)"
                   />
                 </el-form-item>
+
+                <div v-if="isSmtpConfig(serverItem)" class="config-subsection config-subsection--spaced">
+                  <div class="config-subsection__head">
+                    <h4>其它邮箱功能配置</h4>
+                    <p>邮箱验证码、告警收件邮箱与全局发信频率控制。</p>
+                  </div>
+                </div>
+
+                <template v-if="isSmtpConfig(serverItem)">
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">邮箱验证码</span>
+                      <span class="field-desc">开启且 SMTP 配置完整时，支持邮箱验证码登录、注册与找回密码。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.enableEmailCodeLogin"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">服务告警收件邮箱</span>
+                      <span class="field-desc">多个邮箱可用逗号、分号或空格分隔；SMTP 完整后服务异常会发送告警。</span>
+                    </template>
+                    <el-input
+                      v-model="siteFeatureForm.alertEmails"
+                      type="textarea"
+                      :rows="2"
+                      placeholder="admin@example.com; ops@example.com"
+                      clearable
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">每日发信上限</span>
+                      <span class="field-desc">全局邮件发送上限；设为 0 表示不限制。</span>
+                    </template>
+                    <el-input-number
+                      v-model="siteFeatureForm.emailDailyLimit"
+                      :min="0"
+                      :step="10"
+                      controls-position="right"
+                      class="full-control"
+                    />
+                  </el-form-item>
+                </template>
               </div>
             </el-form>
           </el-tab-pane>
@@ -835,13 +1055,13 @@ watch(activeConfigTab, (t) => {
               <div>
                 <h3>服务功能开关</h3>
                 <p>
-                  管理与部署服务直接相关的能力：文件落盘方式、邮箱验证码与服务告警邮件。
+                  管理与部署服务直接相关的能力：文件落盘方式与本机上传限制。
                 </p>
               </div>
               <el-button
                 type="primary"
                 :loading="siteFeatureSaving"
-                @click="saveSiteFeatures"
+                @click="saveStorageFeatures"
               >
                 保存服务功能
               </el-button>
@@ -876,47 +1096,6 @@ watch(activeConfigTab, (t) => {
                       MB
                     </template>
                   </el-input-number>
-                </el-form-item>
-
-                <el-form-item class="field-item">
-                  <template #label>
-                    <span class="field-label">邮箱验证码</span>
-                    <span class="field-desc">开启且 SMTP 配置完整时，支持邮箱验证码登录、注册与找回密码。</span>
-                  </template>
-                  <el-switch
-                    v-model="siteFeatureForm.enableEmailCodeLogin"
-                    inline-prompt
-                    active-text="开"
-                    inactive-text="关"
-                  />
-                </el-form-item>
-
-                <el-form-item class="field-item">
-                  <template #label>
-                    <span class="field-label">服务告警收件邮箱</span>
-                    <span class="field-desc">多个邮箱可用逗号、分号或空格分隔；SMTP 完整后服务异常会发送告警。</span>
-                  </template>
-                  <el-input
-                    v-model="siteFeatureForm.alertEmails"
-                    type="textarea"
-                    :rows="2"
-                    placeholder="admin@example.com; ops@example.com"
-                    clearable
-                  />
-                </el-form-item>
-
-                <el-form-item class="field-item">
-                  <template #label>
-                    <span class="field-label">每日发信上限</span>
-                    <span class="field-desc">全局邮件发送上限；设为 0 表示不限制。</span>
-                  </template>
-                  <el-input-number
-                    v-model="siteFeatureForm.emailDailyLimit"
-                    :min="0"
-                    :step="10"
-                    controls-position="right"
-                    class="full-control"
-                  />
                 </el-form-item>
               </div>
             </el-form>
@@ -1244,14 +1423,14 @@ watch(activeConfigTab, (t) => {
 
         <div v-if="currentConfig" class="bottom-actions-row">
           <p class="bottom-actions-hint">
-            与当前 Tab 右上角「保存 {{ currentConfig.title }}」是同一功能；表单项较多时滚到此处保存即可。
+            与当前 Tab 右上角「保存 {{ getConfigTabLabel(currentConfig) }}」是同一功能；表单项较多时滚到此处保存即可。
           </p>
           <el-button
             type="primary"
-            :loading="savingMap[currentConfig.type]"
-            @click="updateCfgGroup(currentConfig)"
+            :loading="isSmtpConfig(currentConfig) ? emailConfigSaving : savingMap[currentConfig.type]"
+            @click="isSmtpConfig(currentConfig) ? saveEmailConfig(currentConfig) : updateCfgGroup(currentConfig)"
           >
-            保存当前服务配置
+            {{ isSmtpConfig(currentConfig) ? '保存邮箱配置' : '保存当前服务配置' }}
           </el-button>
         </div>
         <div v-else-if="activeConfigTab === SERVICE_FEATURES_TAB" class="bottom-actions-row">
@@ -1261,13 +1440,80 @@ watch(activeConfigTab, (t) => {
           <el-button
             type="primary"
             :loading="siteFeatureSaving"
-            @click="saveSiteFeatures"
+            @click="saveStorageFeatures"
           >
             保存服务功能
           </el-button>
         </div>
       </div>
     </section>
+
+    <el-dialog
+      v-model="mailTestDialogVisible"
+      title="测试邮箱"
+      width="560px"
+      destroy-on-close
+      :close-on-click-modal="!mailTestSubmitting"
+      @closed="closeMailTestDialog"
+    >
+      <el-form label-position="top" class="mail-test-form">
+        <el-form-item label="接收邮箱">
+          <el-input
+            v-model="mailTestForm.to"
+            placeholder="test@example.com"
+            clearable
+            @keyup.enter="submitMailTest"
+          />
+        </el-form-item>
+        <el-form-item label="测试场景">
+          <el-checkbox-group v-model="mailTestForm.scenes" class="mail-test-scenes">
+            <el-checkbox
+              v-for="scene in mailTestSceneOptions"
+              :key="scene.key"
+              :label="scene.key"
+              class="mail-test-scene"
+            >
+              <span class="mail-test-scene__label">{{ scene.label }}</span>
+              <span class="mail-test-scene__desc">{{ scene.description }}</span>
+            </el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+      </el-form>
+
+      <el-alert
+        v-if="mailTestError"
+        class="mail-test-alert"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="mailTestError"
+      />
+
+      <div v-if="mailTestResults.length" class="mail-test-results">
+        <div
+          v-for="item in mailTestResults"
+          :key="item.key"
+          class="mail-test-result"
+          :class="{ 'mail-test-result--error': !item.ok }"
+        >
+          <strong>{{ item.label }}</strong>
+          <span>{{ item.ok ? '发送成功' : item.error || '发送失败' }}</span>
+        </div>
+      </div>
+
+      <p class="mail-test-hint">
+        测试会真实发送邮件，也会计入每日发信上限；若刚修改 SMTP 或邮箱功能配置，请先保存后再测试。
+      </p>
+
+      <template #footer>
+        <el-button :disabled="mailTestSubmitting" @click="closeMailTestDialog">
+          关闭
+        </el-button>
+        <el-button type="primary" :loading="mailTestSubmitting" @click="submitMailTest">
+          发送测试邮件
+        </el-button>
+      </template>
+    </el-dialog>
 
     <Teleport to="body">
       <div
@@ -1533,9 +1779,48 @@ watch(activeConfigTab, (t) => {
   }
 }
 
+.tab-head-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .field-list {
   display: grid;
   gap: 12px;
+}
+
+.field-list--grouped {
+  gap: 10px;
+}
+
+.config-subsection {
+  margin-top: 2px;
+  padding: 12px 14px;
+  border: 1px solid #edf0f5;
+  border-radius: 12px;
+  background: #fbfdff;
+
+  &--spaced {
+    margin-top: 10px;
+  }
+}
+
+.config-subsection__head {
+  h4 {
+    margin: 0 0 5px;
+    color: #1f2937;
+    font-size: 15px;
+  }
+
+  p {
+    margin: 0;
+    color: #8a94a6;
+    font-size: 13px;
+    line-height: 1.5;
+  }
 }
 
 .config-form :deep(.el-form-item) {
@@ -1744,6 +2029,95 @@ watch(activeConfigTab, (t) => {
   font-size: 14px;
 }
 
+.mail-test-form {
+  :deep(.el-form-item) {
+    margin-bottom: 16px;
+  }
+}
+
+.mail-test-scenes {
+  display: grid;
+  width: 100%;
+  gap: 10px;
+}
+
+.mail-test-scene {
+  width: 100%;
+  min-height: 48px;
+  margin-right: 0;
+  padding: 10px 12px;
+  border: 1px solid #edf0f5;
+  border-radius: 10px;
+  background: #fbfdff;
+
+  :deep(.el-checkbox__label) {
+    min-width: 0;
+    white-space: normal;
+  }
+}
+
+.mail-test-scene__label,
+.mail-test-scene__desc {
+  display: block;
+}
+
+.mail-test-scene__label {
+  color: #1f2937;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.mail-test-scene__desc {
+  margin-top: 2px;
+  color: #8a94a6;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.mail-test-alert {
+  margin-bottom: 12px;
+}
+
+.mail-test-results {
+  display: grid;
+  gap: 8px;
+  margin: 2px 0 12px;
+}
+
+.mail-test-result {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgb(103 194 58 / 24%);
+  border-radius: 10px;
+  background: rgb(240 249 235 / 65%);
+  color: #529b2e;
+  line-height: 1.5;
+
+  strong {
+    color: #1f2937;
+  }
+
+  span {
+    text-align: right;
+  }
+
+  &--error {
+    border-color: rgb(245 108 108 / 24%);
+    background: rgb(254 240 240 / 72%);
+    color: #c45656;
+  }
+}
+
+.mail-test-hint {
+  margin: 0;
+  color: #8a94a6;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 @media screen and (max-width: 700px) {
   .admin-create-grid {
     grid-template-columns: 1fr;
@@ -1876,6 +2250,15 @@ watch(activeConfigTab, (t) => {
   .tab-head .el-button {
     width: 100%;
     margin-top: 14px;
+  }
+
+  .tab-head-actions {
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  .tab-head-actions .el-button {
+    margin-top: 0;
   }
 
   .hero-stats {

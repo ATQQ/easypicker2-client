@@ -585,6 +585,29 @@ declare namespace ConfigServiceAPITypes {
     error?: string
   }
   type resetConfigAdminUserPassword = ResponseData<ResetConfigAdminUserPasswordResult>
+
+  type MailTestSceneKey
+    = | 'smtp-basic'
+      | 'verify-code'
+      | 'submit-notify'
+      | 'service-alert'
+      | 'daily-limit'
+  interface MailTestBody {
+    to: string
+    scenes: MailTestSceneKey[]
+  }
+  interface MailTestResultItem {
+    key: MailTestSceneKey
+    label: string
+    ok: boolean
+    error?: string
+  }
+  interface MailTestResult {
+    ok: boolean
+    error?: string
+    results: MailTestResultItem[]
+  }
+  type testMailConfig = ResponseData<MailTestResult>
 }
 
 declare namespace ActionApiTypes {

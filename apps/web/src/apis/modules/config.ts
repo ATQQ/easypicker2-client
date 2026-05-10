@@ -50,6 +50,12 @@ function updateCfg(data: ConfigServiceAPITypes.ServiceConfigItem | ConfigService
   return ajax.put('/config/service/config', data)
 }
 
+function testMailConfig(
+  body: ConfigServiceAPITypes.MailTestBody,
+): ConfigServiceAPITypes.testMailConfig {
+  return ajax.post('/config/service/mail/test', body)
+}
+
 function getGlobalAllConfig(type = 'site'): OverviewApiTypes.getGlobalConfig {
   return ajax.get('/config/service/global/all', { params: { type } })
 }
@@ -70,6 +76,7 @@ export default {
   resetConfigAdminUserPassword,
   getServiceConfig,
   updateCfg,
+  testMailConfig,
   getGlobalAllConfig,
   updateGlobalConfig,
 }

@@ -12,6 +12,7 @@ import { getMongoDBStatus, refreshMongoDb } from '@/lib/dbConnect/mongodb'
 import { getMysqlStatus, refreshPool } from '@/lib/dbConnect/mysql'
 import { getRedisStatus } from '@/lib/dbConnect/redis'
 import { UserService } from '@/service'
+import { isSmtpConfigured, sendMail, sendVerifyCodeMail } from '@/utils/mail'
 import { ensureMysqlBootstrap } from '@/utils/mysql-bootstrap'
 import { checkMysqlDatabaseExists } from '@/utils/mysql-check-database'
 import {
@@ -25,8 +26,7 @@ import {
 } from '@/utils/mysql-schema-canonical'
 import { patchTable } from '@/utils/patch'
 import { getQiniuStatus, refreshQinNiuConfig } from '@/utils/qiniuUtil'
-import { rPassword } from '@/utils/regExp'
-import { isSmtpConfigured } from '@/utils/mail'
+import { rEmail, rPassword } from '@/utils/regExp'
 import { isCodeLoginSupported, isEmailCodeLoginSupported } from '@/utils/siteConfig'
 import { encryption } from '@/utils/stringUtil'
 import { getTxServiceStatus, refreshTxConfig } from '@/utils/tencent'
@@ -42,6 +42,36 @@ interface ServiceDefinition {
   enabled: () => boolean
   getStatus: () => Promise<ServiceStatus>
 }
+
+const mailTestSceneDefinitions = [
+  {
+    key: 'smtp-basic',
+    label: 'SMTP 基础连通',
+    description: '验证 SMTP 主机、端口、SSL、账号、授权码与发件人配置。',
+  },
+  {
+    key: 'verify-code',
+    label: '邮箱验证码',
+    description: '覆盖注册、登录、找回密码与绑定邮箱共用的验证码模板。',
+  },
+  {
+    key: 'submit-notify',
+    label: '文件提交通知',
+    description: '模拟任务收到新文件后给任务所有者发送的提醒。',
+  },
+  {
+    key: 'service-alert',
+    label: '服务错误告警',
+    description: '模拟运行时异常、依赖服务异常等管理员告警邮件。',
+  },
+  {
+    key: 'daily-limit',
+    label: '每日发信上限提示',
+    description: '发送一封带当前上限配置说明的测试邮件，确认配置说明类通知可达。',
+  },
+] as const
+
+type MailTestSceneKey = typeof mailTestSceneDefinitions[number]['key']
 
 const serviceDefinitions: ServiceDefinition[] = [
   {
@@ -412,6 +442,97 @@ export default class UserController {
       await refreshMongoDb()
     }
     await LocalUserDB.updateLocalEnv()
+  }
+
+  @Post('service/mail/test')
+  async testMailConfig(@ReqBody() body: { to?: string, scenes?: string[] }) {
+    const to = String(body?.to || '').trim().toLowerCase()
+    if (!rEmail.test(to)) {
+      return {
+        ok: false,
+        error: '邮箱格式不正确',
+        results: [],
+      }
+    }
+    if (!isSmtpConfigured()) {
+      return {
+        ok: false,
+        error: 'SMTP 配置不完整，请先填写 host、user、pass、fromAddress 并保存',
+        results: [],
+      }
+    }
+
+    const requested = new Set(Array.isArray(body?.scenes) ? body.scenes : [])
+    const scenes = mailTestSceneDefinitions.filter(scene => requested.has(scene.key))
+    const picked = scenes.length > 0 ? scenes : mailTestSceneDefinitions
+    const site = LocalUserDB.getSiteConfig()
+    const app = site?.appName || 'EasyPicker'
+    const dailyLimit = typeof site?.emailDailyLimit === 'number' ? site.emailDailyLimit : 200
+    const nowText = new Date().toLocaleString('zh-CN')
+
+    const senders: Record<MailTestSceneKey, () => Promise<{ ok: boolean, error?: string }>> = {
+      'smtp-basic': () => sendMail({
+        to,
+        subject: `[${app}] SMTP 基础连通测试`,
+        text: [
+          '这是一封 SMTP 基础连通测试邮件。',
+          `测试时间：${nowText}`,
+          '如果你收到这封邮件，说明 SMTP 主机、端口、SSL、账号授权与发件人信息至少可完成一次投递。',
+        ].join('\n'),
+      }),
+      'verify-code': () => sendVerifyCodeMail(to, '1234'),
+      'submit-notify': () => sendMail({
+        to,
+        subject: `${app} 新文件提交（测试）`,
+        text: [
+          '这是一封文件提交通知测试邮件，不代表真实任务发生了提交。',
+          '任务：邮箱测试任务',
+          '文件：demo-submit-file.pdf',
+          `时间：${nowText}`,
+        ].join('\n'),
+      }),
+      'service-alert': () => sendMail({
+        to,
+        subject: `[服务告警] ${app} 邮箱测试告警`,
+        text: [
+          '这是一封服务错误告警测试邮件，不代表系统真实发生异常。',
+          '场景：运行时错误 / 依赖服务异常 / 后台任务失败等管理员告警。',
+          `时间：${nowText}`,
+        ].join('\n'),
+      }),
+      'daily-limit': () => sendMail({
+        to,
+        subject: `[${app}] 每日发信上限配置测试`,
+        text: [
+          '这是一封每日发信上限配置说明测试邮件。',
+          `当前每日发信上限：${dailyLimit === 0 ? '不限制' : `${dailyLimit} 封`}`,
+          '注意：每封测试邮件也会计入当日发信数量。',
+          `测试时间：${nowText}`,
+        ].join('\n'),
+      }),
+    }
+
+    const results: Array<{
+      key: MailTestSceneKey
+      label: string
+      ok: boolean
+      error?: string
+    }> = []
+
+    for (const scene of picked) {
+      const result = await senders[scene.key]()
+      results.push({
+        key: scene.key,
+        label: scene.label,
+        ok: result.ok,
+        error: result.ok ? undefined : result.error || '发送失败',
+      })
+    }
+
+    return {
+      ok: results.every(item => item.ok),
+      results,
+    }
   }
 
   @Get('service/global/all')
