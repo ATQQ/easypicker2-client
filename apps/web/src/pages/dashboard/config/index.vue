@@ -42,9 +42,12 @@ const siteFeatureSaving = ref(false)
 const siteFeatureForm = reactive({
   storageMode: 'qiniu' as 'qiniu' | 'local',
   maxUploadSizeMB: 500,
+  needBindPhone: false,
+  enableCodeLogin: false,
   enableEmailCodeLogin: false,
+  needBindEmail: false,
   alertEmails: '',
-  emailDailyLimit: 200,
+  emailDailyLimit: 0,
 })
 const mailTestSceneOptions: Array<{
   key: ConfigServiceAPITypes.MailTestSceneKey
@@ -110,6 +113,7 @@ const mysqlLiveOpenNames = ref<string[]>([])
 
 const currentConfig = computed(() => serverConfig.value.find(item => item.type === activeConfigTab.value))
 const emailConfigSaving = computed(() => Boolean(savingMap.smtp) || siteFeatureSaving.value)
+const txConfigSaving = computed(() => Boolean(savingMap.tx) || siteFeatureSaving.value)
 
 function isActiveConfigTabValid(name: string) {
   if (name === SERVICE_FEATURES_TAB)
@@ -154,6 +158,10 @@ function isSmtpConfig(group?: ConfigData) {
   return group?.type === 'smtp'
 }
 
+function isTxConfig(group?: ConfigData) {
+  return group?.type === 'tx'
+}
+
 function getConfigTabLabel(group: ConfigData) {
   return isSmtpConfig(group) ? '邮箱配置' : group.title
 }
@@ -165,7 +173,25 @@ function getConfigHeadTitle(group: ConfigData) {
 function getConfigHeadDescription(group: ConfigData) {
   if (isSmtpConfig(group))
     return '管理 SMTP 发信连接，以及邮箱验证码、服务告警收件邮箱与每日发信上限。'
+  if (isTxConfig(group))
+    return '管理腾讯云短信配置，以及手机号验证码登录、注册绑定手机相关能力。'
   return group.description
+}
+
+function getConfigSaving(group: ConfigData) {
+  if (isSmtpConfig(group))
+    return emailConfigSaving.value
+  if (isTxConfig(group))
+    return txConfigSaving.value
+  return Boolean(savingMap[group.type])
+}
+
+function saveConfigGroup(group: ConfigData) {
+  if (isSmtpConfig(group))
+    return saveEmailConfig(group)
+  if (isTxConfig(group))
+    return saveTxFeatures(group)
+  return updateCfgGroup(group)
 }
 
 function updateConfigValue(item: ServiceConfigItem, value: string | number | boolean) {
@@ -371,8 +397,8 @@ async function loadAdminUsers() {
   }
 }
 
-watch(() => siteConfig.value?.needBindPhone, (need) => {
-  if (need)
+watch(() => [siteConfig.value?.needBindPhone, siteConfig.value?.supportPhoneCode], ([need, supportPhone]) => {
+  if (need && supportPhone)
     adminCreateForm.bindPhone = true
 }, { immediate: true })
 
@@ -547,9 +573,12 @@ async function loadSiteFeatures() {
     Object.assign(siteFeatureForm, {
       storageMode: data?.storageMode === 'local' ? 'local' : 'qiniu',
       maxUploadSizeMB: Number(data?.maxUploadSizeMB ?? 500),
+      needBindPhone: Boolean(data?.needBindPhone),
+      enableCodeLogin: Boolean(data?.enableCodeLogin),
       enableEmailCodeLogin: Boolean(data?.enableEmailCodeLogin),
+      needBindEmail: Boolean(data?.needBindEmail),
       alertEmails: data?.alertEmails || '',
-      emailDailyLimit: Number(data?.emailDailyLimit ?? 200),
+      emailDailyLimit: Number(data?.emailDailyLimit ?? 0),
     })
   }
   catch {
@@ -574,6 +603,32 @@ function checkEmailFeatures() {
     return false
   }
   return true
+}
+
+async function saveTxFeatures(group?: ConfigData) {
+  if (!group || !isTxConfig(group) || savingMap[group.type] || siteFeatureSaving.value)
+    return
+
+  savingMap[group.type] = true
+  siteFeatureSaving.value = true
+  try {
+    await ConfigServiceAPI.updateCfg(group.data)
+    await updateSiteConfigPatch({
+      needBindPhone: Boolean(siteFeatureForm.needBindPhone),
+      enableCodeLogin: Boolean(siteFeatureForm.enableCodeLogin),
+    })
+    ElMessage.success('腾讯云配置已保存')
+    await getServiceConfig()
+    await loadSiteFeatures()
+    await refreshStatus(false)
+  }
+  catch {
+    ElMessage.error('腾讯云配置保存失败')
+  }
+  finally {
+    savingMap[group.type] = false
+    siteFeatureSaving.value = false
+  }
 }
 
 async function saveStorageFeatures() {
@@ -613,6 +668,7 @@ async function saveEmailConfig(group?: ConfigData) {
     await ConfigServiceAPI.updateCfg(group.data)
     await updateSiteConfigPatch({
       enableEmailCodeLogin: Boolean(siteFeatureForm.enableEmailCodeLogin),
+      needBindEmail: Boolean(siteFeatureForm.needBindEmail),
       alertEmails: siteFeatureForm.alertEmails.trim(),
       emailDailyLimit: Number(siteFeatureForm.emailDailyLimit),
     })
@@ -937,8 +993,8 @@ watch(activeConfigTab, (t) => {
                 </el-button>
                 <el-button
                   type="primary"
-                  :loading="isSmtpConfig(serverItem) ? emailConfigSaving : savingMap[serverItem.type]"
-                  @click="isSmtpConfig(serverItem) ? saveEmailConfig(serverItem) : updateCfgGroup(serverItem)"
+                  :loading="getConfigSaving(serverItem)"
+                  @click="saveConfigGroup(serverItem)"
                 >
                   保存 {{ getConfigTabLabel(serverItem) }}
                 </el-button>
@@ -946,18 +1002,24 @@ watch(activeConfigTab, (t) => {
             </div>
 
             <el-form
-              v-loading="isSmtpConfig(serverItem) && siteFeatureLoading"
+              v-loading="(isSmtpConfig(serverItem) || isTxConfig(serverItem)) && siteFeatureLoading"
               label-position="top"
               class="config-form"
             >
               <div
                 class="field-list"
-                :class="{ 'field-list--grouped': isSmtpConfig(serverItem) }"
+                :class="{ 'field-list--grouped': isSmtpConfig(serverItem) || isTxConfig(serverItem) }"
               >
-                <div v-if="isSmtpConfig(serverItem)" class="config-subsection">
+                <div v-if="isSmtpConfig(serverItem) || isTxConfig(serverItem)" class="config-subsection">
                   <div class="config-subsection__head">
-                    <h4>SMTP 配置</h4>
-                    <p>发信服务器、账号、授权码与发件人信息。</p>
+                    <template v-if="isSmtpConfig(serverItem)">
+                      <h4>SMTP 配置</h4>
+                      <p>发信服务器、账号、授权码与发件人信息。</p>
+                    </template>
+                    <template v-else>
+                      <h4>腾讯云短信配置</h4>
+                      <p>短信验证码所需的 Secret、短信应用、签名和模板信息。</p>
+                    </template>
                   </div>
                 </div>
                 <el-form-item
@@ -997,6 +1059,41 @@ watch(activeConfigTab, (t) => {
                   />
                 </el-form-item>
 
+                <div v-if="isTxConfig(serverItem)" class="config-subsection config-subsection--spaced">
+                  <div class="config-subsection__head">
+                    <h4>手机号验证码功能配置</h4>
+                    <p>控制手机号验证码登录，以及注册时绑定手机号入口。</p>
+                  </div>
+                </div>
+
+                <template v-if="isTxConfig(serverItem)">
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">手机号验证码登录</span>
+                      <span class="field-desc">开启且腾讯云短信配置完整时，前台展示手机号验证码登录入口。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.enableCodeLogin"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">注册绑定手机</span>
+                      <span class="field-desc">开启且腾讯云短信配置完整时，注册页展示绑定手机选项；可与邮箱绑定二选一。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.needBindPhone"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+                </template>
+
                 <div v-if="isSmtpConfig(serverItem)" class="config-subsection config-subsection--spaced">
                   <div class="config-subsection__head">
                     <h4>其它邮箱功能配置</h4>
@@ -1008,10 +1105,23 @@ watch(activeConfigTab, (t) => {
                   <el-form-item class="field-item">
                     <template #label>
                       <span class="field-label">邮箱验证码</span>
-                      <span class="field-desc">开启且 SMTP 配置完整时，支持邮箱验证码登录、注册与找回密码。</span>
+                      <span class="field-desc">默认关闭；开启且 SMTP 配置完整时，支持邮箱验证码登录、注册与找回密码。</span>
                     </template>
                     <el-switch
                       v-model="siteFeatureForm.enableEmailCodeLogin"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">强制绑定邮箱</span>
+                      <span class="field-desc">开启且 SMTP 配置完整时，注册表单会要求填写并验证邮箱。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.needBindEmail"
                       inline-prompt
                       active-text="开"
                       inactive-text="关"
@@ -1427,10 +1537,10 @@ watch(activeConfigTab, (t) => {
           </p>
           <el-button
             type="primary"
-            :loading="isSmtpConfig(currentConfig) ? emailConfigSaving : savingMap[currentConfig.type]"
-            @click="isSmtpConfig(currentConfig) ? saveEmailConfig(currentConfig) : updateCfgGroup(currentConfig)"
+            :loading="getConfigSaving(currentConfig)"
+            @click="saveConfigGroup(currentConfig)"
           >
-            {{ isSmtpConfig(currentConfig) ? '保存邮箱配置' : '保存当前服务配置' }}
+            {{ isSmtpConfig(currentConfig) ? '保存邮箱配置' : isTxConfig(currentConfig) ? '保存腾讯云配置' : '保存当前服务配置' }}
           </el-button>
         </div>
         <div v-else-if="activeConfigTab === SERVICE_FEATURES_TAB" class="bottom-actions-row">

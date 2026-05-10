@@ -103,6 +103,11 @@ declare namespace UserApiTypes {
   type loginByEmailCode = ResponseData<{ token?: string, openTime?: string }>
   type resetPwd = ResponseData<{ token?: string, openTime?: string }>
   interface UserProfile {
+    account: string
+    phone: string
+    joinTime: string
+    loginTime: string
+    loginCount: number
     email: string
     emailVerified: boolean
     notifyOnSubmit: boolean
@@ -110,6 +115,7 @@ declare namespace UserApiTypes {
   type getProfile = ResponseData<UserProfile>
   type setProfileNotify = ResponseData<{ ok: boolean }>
   type bindProfileEmail = ResponseData<{ ok: boolean }>
+  type resetProfilePassword = ResponseData<{ ok: boolean }>
   type checkPower = ResponseData<{
     power: boolean
     name: string
@@ -318,7 +324,9 @@ declare namespace OverviewApiTypes {
     compressSizeLimit: number
     needBindPhone: boolean
     enableCodeLogin: boolean
+    supportPhoneCode?: boolean
     enableEmailCodeLogin: boolean
+    needBindEmail?: boolean
     alertEmails?: string
     emailDailyLimit?: number
     supportCodeLogin?: boolean
@@ -361,6 +369,9 @@ declare namespace SuperUserApiTypes {
     loginTime: string
     openTime: string
     phone: string
+    email: string
+    emailVerified: number
+    notifyOnSubmit: number
     status: number
     // 补充信息
     fileCount: number
@@ -393,6 +404,8 @@ declare namespace SuperUserApiTypes {
   type getUserList = ResponseData<{ list: UserItem[], sumCost: string }>
   type getMessageList = ResponseData<MessageItem[]>
   type updateUserStatus = ResponseData
+  type resetEmail = ResponseData<{ ok: boolean }>
+  type sendMail = ResponseData<{ ok: boolean, error?: string }>
 }
 
 declare namespace WishApiTypes {

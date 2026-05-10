@@ -1,16 +1,16 @@
-import process from 'node:process'
 import type { Context } from 'flash-wolves'
+import process from 'node:process'
 import { Inject, InjectCtx, Provide, Response } from 'flash-wolves'
-import { sendVerifyCodeMail } from '@/utils/mail'
-import { isEmailCodeLoginSupported } from '@/utils/siteConfig'
-import { rEmail, rMobilePhone } from '@/utils/regExp'
-import { UserError } from '@/constants/errorMsg'
-import { randomNumStr } from '@/utils/randUtil'
-import { sendMessage } from '@/utils/tencent'
-import { BehaviorService, TokenService } from '@/service'
-import { UserRepository } from '@/db/userDb'
-import { createDownloadUrl } from '@/utils/qiniuUtil'
 import { qiniuConfig } from '@/config'
+import { UserError } from '@/constants/errorMsg'
+import { UserRepository } from '@/db/userDb'
+import { BehaviorService, TokenService } from '@/service'
+import { sendVerifyCodeMail } from '@/utils/mail'
+import { createDownloadUrl } from '@/utils/qiniuUtil'
+import { randomNumStr } from '@/utils/randUtil'
+import { rEmail, rMobilePhone } from '@/utils/regExp'
+import { isEmailCodeLoginSupported } from '@/utils/siteConfig'
+import { sendMessage } from '@/utils/tencent'
 
 @Provide()
 export default class PublicService {
@@ -69,14 +69,19 @@ export default class PublicService {
       throw UserError.system.emailCodeLoginDisabled
     }
     const code = randomNumStr(4)
-    this.behaviorService.add('public', `获取邮箱验证码 ${addr.slice(0, 3)}*** 成功`, {
+    this.behaviorService.add('public', `获取邮箱验证码 ${addr} 成功`, {
       code,
     })
     this.tokenService.setVerifyCode('email', addr, code)
     if (process.env.NODE_ENV !== 'development') {
       const r = await sendVerifyCodeMail(addr, code)
-      if (!r.ok)
-        throw { code: 500, msg: r.error || 'send mail failed' }
+      if (!r.ok) {
+        const err = Object.assign(new Error(r.error || 'send mail failed'), {
+          code: 500,
+          msg: r.error || 'send mail failed',
+        })
+        throw err
+      }
     }
     else {
       console.log(new Date().toLocaleString(), `邮箱验证码 ${addr} ${code}`)

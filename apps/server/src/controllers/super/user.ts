@@ -1,6 +1,8 @@
 import type {
   FWRequest,
 } from 'flash-wolves'
+import type { User } from '@/db/model/user'
+import dayjs from 'dayjs'
 import {
   Delete,
   Get,
@@ -11,36 +13,34 @@ import {
   Response,
   RouterController,
 } from 'flash-wolves'
-import dayjs from 'dayjs'
 import { In } from 'typeorm'
+import { UserError } from '@/constants/errorMsg'
+import { FileRepository, selectFiles } from '@/db/fileDb'
+import { addBehavior } from '@/db/logDb'
+import { MessageType } from '@/db/model/message'
 import { USER_POWER, USER_STATUS } from '@/db/model/user'
-import type { User } from '@/db/model/user'
+import { expiredRedisKey, getRedisVal } from '@/db/redisDb'
 import {
-  UserRepository,
   selectUserByAccount,
   selectUserById,
   selectUserByPhone,
   updateUser,
+  UserRepository,
 } from '@/db/userDb'
-import { addBehavior, findLog } from '@/db/logDb'
-import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
-import { encryption, formatSize, percentageValue } from '@/utils/stringUtil'
-import { expiredRedisKey, getRedisVal } from '@/db/redisDb'
-import { FileRepository, selectFiles } from '@/db/fileDb'
-import { UserError } from '@/constants/errorMsg'
-import FileService from '@/service/file'
-import { batchDeleteFiles } from '@/utils/qiniuUtil'
-import { MessageType } from '@/db/model/message'
-import MessageService from '@/service/message'
 import { ReqUserInfo } from '@/decorator'
 import {
   BehaviorService,
+  FileService as newFileService,
   QiniuService,
   SuperUserService,
   TokenService,
-  FileService as newFileService,
 } from '@/service'
-import { calculateSize } from '@/utils/userUtil'
+import FileService from '@/service/file'
+import MessageService from '@/service/message'
+import { sendMail } from '@/utils/mail'
+import { batchDeleteFiles } from '@/utils/qiniuUtil'
+import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
+import { encryption } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
 const power = {
@@ -142,7 +142,7 @@ export default class SuperUserController {
       const overviewData = await this.fileService.getUserOverview(user, {
         files: fileInfo,
         filesMap,
-        downloadLog: downloadLog.filter((v => v.data?.info?.data?.account === user.account)),
+        downloadLog: downloadLog.filter(v => v.data?.info?.data?.account === user.account),
       })
       Object.assign(user, overviewData)
     }
@@ -318,6 +318,98 @@ export default class SuperUserController {
         id,
       },
     )
+  }
+
+  @Put('email')
+  async resetEmail(
+    @ReqBody('id') id: number,
+    @ReqBody('email') email: string,
+    @ReqUserInfo() admin: User,
+  ) {
+    const addr = String(email || '').trim().toLowerCase()
+    const user = await this.userRepository.findOne({ id })
+    if (!user || !rEmail.test(addr)) {
+      this.behaviorService.add('super', '管理员绑定用户邮箱: 参数不合法', {
+        id,
+        email,
+      })
+      return Response.fail(500, '参数不合法')
+    }
+
+    const exist = await this.userRepository.findOne({ email: addr })
+    if (exist && exist.id !== user.id) {
+      this.behaviorService.add('super', `管理员绑定用户邮箱: 邮箱 ${addr} 已存在`, {
+        id,
+        email: addr,
+      })
+      return Response.failWithError(UserError.email.exist)
+    }
+
+    const oldEmail = user.email || ''
+    user.email = addr
+    user.emailVerified = 1
+    await this.userRepository.update(user)
+    this.behaviorService.add(
+      'super',
+      `管理员绑定用户邮箱 ${user.account} ${oldEmail || '未绑定'} => ${addr}`,
+      {
+        operator: admin?.account,
+        targetId: user.id,
+        account: user.account,
+        oldEmail,
+        email: addr,
+      },
+    )
+    return { ok: true }
+  }
+
+  @Post('mail')
+  async sendUserMail(
+    @ReqBody('id') id: number,
+    @ReqBody('subject') subject: string,
+    @ReqBody('text') text: string,
+    @ReqBody('html') html: string,
+    @ReqUserInfo() admin: User,
+  ) {
+    const user = await this.userRepository.findOne({ id })
+    const mailSubject = String(subject || '').trim()
+    const mailText = String(text || '').trim()
+    const mailHtml = String(html || '').trim()
+    if (!user || !user.email || !mailSubject || (!mailText && !mailHtml)) {
+      this.behaviorService.add('super', '管理员发送邮件给用户: 参数不合法', {
+        operator: admin?.account,
+        targetId: id,
+        subject: mailSubject,
+        text: mailText,
+        html: mailHtml,
+      })
+      return Response.fail(500, '参数不合法')
+    }
+
+    const result = await sendMail({
+      to: user.email,
+      subject: mailSubject,
+      text: mailText || mailHtml.replace(/<[^>]+>/g, ''),
+      ...mailHtml && { html: mailHtml },
+    })
+    this.behaviorService.add(
+      'super',
+      `管理员发送邮件给用户 ${user.account} ${result.ok ? '成功' : '失败'}`,
+      {
+        operator: admin?.account,
+        targetId: user.id,
+        account: user.account,
+        email: user.email,
+        subject: mailSubject,
+        text: mailText,
+        html: mailHtml,
+        result,
+      },
+    )
+    if (!result.ok) {
+      return Response.fail(500, result.error || '发送失败')
+    }
+    return result
   }
 
   @Put('size')

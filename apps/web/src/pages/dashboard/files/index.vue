@@ -17,8 +17,9 @@ import { ActionServiceAPI, FileApi, PublicApi, UserApi } from '@/apis'
 import FloatingContact from '@/components/FloatingContact/index.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
 import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
-import { ActionType, DownloadStatus, filenamePattern } from '@/constants'
+import { ActionType, DownloadStatus, filenamePattern, VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
 import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
+import { rEmail, rVerCode } from '@/utils/regExp'
 import {
   copyRes,
   formatDate,
@@ -27,7 +28,6 @@ import {
   normalizeFileName,
   parseInfo,
 } from '@/utils/stringUtil'
-import { rEmail, rVerCode } from '@/utils/regExp'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 
 const { value: siteConfig } = useSiteConfig()
@@ -86,7 +86,7 @@ function sendBindEmailCode() {
   PublicApi.getEmailCode(bindEmailAddr.value.trim())
     .then(() => {
       ElMessage.success('验证码已发送')
-      bindCodeTime.value = 120
+      bindCodeTime.value = VERIFY_CODE_EXPIRE_SECONDS
       refreshBindCodeText()
     })
     .catch(() => {})

@@ -53,6 +53,13 @@ function bindProfileEmail(
   return ajax.put('user/profile/email', { email, code })
 }
 
+function resetProfilePassword(
+  code: string,
+  pwd: string,
+): UserApiTypes.resetProfilePassword {
+  return ajax.put('user/profile/password', { code, pwd })
+}
+
 function checkPower(): UserApiTypes.checkPower {
   return ajax.get('user/power/super')
 }
@@ -78,6 +85,7 @@ export default {
   getProfile,
   setProfileNotify,
   bindProfileEmail,
+  resetProfilePassword,
   checkPower,
   checkLoginStatus,
   logout,

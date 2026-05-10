@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer'
+import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
+import { addSystemBehavior } from '@/db/logDb'
 import { getRedisVal, setRedisValue } from '@/db/redisDb'
 import LocalUserDB from '@/utils/user-local-db'
 
@@ -57,21 +59,49 @@ export async function sendMail(opts: {
   text: string
   html?: string
 }) {
+  const toList = Array.isArray(opts.to) ? opts.to : [opts.to]
+  const recordMailLog = (payload: {
+    ok: boolean
+    error?: string
+    from?: string
+  }) => {
+    try {
+      addSystemBehavior({
+        module: 'mail',
+        msg: `发送邮件${payload.ok ? '成功' : '失败'} 收件人:${toList.join(', ')} 标题:${opts.subject}`,
+        data: {
+          to: toList,
+          from: payload.from || '',
+          subject: opts.subject,
+          text: opts.text,
+          html: opts.html || opts.text.replace(/\n/g, '<br/>'),
+          ok: payload.ok,
+          error: payload.error || '',
+        },
+      })
+    }
+    catch (e) {
+      console.warn('[mail-log]', e)
+    }
+  }
+
   const transporter = createTransport()
-  if (!transporter)
+  if (!transporter) {
+    recordMailLog({ ok: false, error: 'smtp not configured' })
     return { ok: false as const, error: 'smtp not configured' }
+  }
 
   const site = LocalUserDB.getSiteConfig()
-  const limit = typeof site?.emailDailyLimit === 'number' ? site.emailDailyLimit : 200
-  if (limit > 0 && (await getGlobalDailySent()) >= limit)
+  const limit = typeof site?.emailDailyLimit === 'number' ? site.emailDailyLimit : 0
+  if (limit > 0 && (await getGlobalDailySent()) >= limit) {
+    recordMailLog({ ok: false, error: 'daily email limit reached' })
     return { ok: false as const, error: 'daily email limit reached' }
+  }
 
   const c = smtpCfg()
   const from = c.fromName
     ? `"${c.fromName}" <${c.fromAddress.trim()}>`
     : c.fromAddress.trim()
-
-  const toList = Array.isArray(opts.to) ? opts.to : [opts.to]
 
   try {
     await transporter.sendMail({
@@ -83,11 +113,14 @@ export async function sendMail(opts: {
     })
     if (limit > 0)
       await incrGlobalDailySent()
+    recordMailLog({ ok: true, from })
     return { ok: true as const }
   }
   catch (e) {
     console.error('[mail]', e)
-    return { ok: false as const, error: e instanceof Error ? e.message : String(e) }
+    const error = e instanceof Error ? e.message : String(e)
+    recordMailLog({ ok: false, error, from })
+    return { ok: false as const, error }
   }
 }
 
@@ -96,7 +129,7 @@ export async function sendVerifyCodeMail(to: string, code: string) {
   return sendMail({
     to,
     subject: `${app} 验证码`,
-    text: `您的验证码为：${code}，2 分钟内有效。如非本人操作请忽略。`,
+    text: `您的验证码为：${code}，${VERIFY_CODE_EXPIRE_SECONDS} 秒内有效，且仅可使用一次。如非本人操作请忽略。`,
   })
 }
 

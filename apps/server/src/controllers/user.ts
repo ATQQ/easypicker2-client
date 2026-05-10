@@ -25,8 +25,9 @@ import {
   UserService,
 } from '@/service'
 import { wrapperCatchError } from '@/utils/context'
+import { rEmail, rPassword } from '@/utils/regExp'
 import { isCodeLoginSupported, isEmailCodeLoginSupported } from '@/utils/siteConfig'
-import { formatSize } from '@/utils/stringUtil'
+import { encryption, formatSize } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
 @RouterController('user')
@@ -230,9 +231,23 @@ export default class UserController {
   async getProfile() {
     const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
     if (!u) {
-      return { email: '', emailVerified: false, notifyOnSubmit: false }
+      return {
+        account: '',
+        phone: '',
+        joinTime: '',
+        loginTime: '',
+        loginCount: 0,
+        email: '',
+        emailVerified: false,
+        notifyOnSubmit: false,
+      }
     }
     return {
+      account: u.account || '',
+      phone: u.phone ? u.phone.slice(-4) : '',
+      joinTime: u.joinTime ? new Date(u.joinTime).toISOString() : '',
+      loginTime: u.loginTime ? new Date(u.loginTime).toISOString() : '',
+      loginCount: u.loginCount || 0,
       email: u.email || '',
       emailVerified: Number(u.emailVerified) === 1,
       notifyOnSubmit: Number(u.notifyOnSubmit) === 1,
@@ -253,19 +268,50 @@ export default class UserController {
   async bindProfileEmail(@ReqBody() body: { email?: string, code?: string }) {
     try {
       const addr = body.email?.trim().toLowerCase() || ''
-      if (!addr)
+      if (!rEmail.test(addr))
         throw UserError.email.fault
+      const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
+      if (!u)
+        throw UserError.account.notExist
+      if (u.email && Number(u.emailVerified) === 1)
+        throw UserError.email.exist
       const v = await this.tokenService.getVerifyCode('email', addr)
       if (body.code !== v)
         throw UserError.code.fault
       const exist = await this.userRepository.findOne({ email: addr })
       if (exist && exist.id !== this.Ctx.req.userInfo.id)
         throw UserError.email.exist
-      const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
       u.email = addr
       u.emailVerified = 1
       await this.userRepository.update(u)
+      this.behaviorService.add('user', `用户绑定邮箱成功 ${u.account}`, { email: addr })
       this.tokenService.expiredVerifyCode('email', addr)
+      return { ok: true }
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
+  }
+
+  @Put('profile/password', { needLogin: true })
+  async resetProfilePassword(@ReqBody() body: { code?: string, pwd?: string }) {
+    try {
+      const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
+      if (!u)
+        throw UserError.account.notExist
+      const email = u.email?.trim().toLowerCase() || ''
+      if (!email || Number(u.emailVerified) !== 1)
+        throw UserError.email.notVerified
+      const v = await this.tokenService.getVerifyCode('email', email)
+      if (body.code !== v)
+        throw UserError.code.fault
+      if (!rPassword.test(body.pwd || ''))
+        throw UserError.pwd.fault
+      u.password = encryption(body.pwd)
+      await this.userRepository.update(u)
+      this.tokenService.expiredVerifyCode('email', email)
+      await this.tokenService.expiredAllTokens(u.account)
+      this.behaviorService.add('user', `用户通过邮箱重置登录密码成功 ${u.account}`, { email })
       return { ok: true }
     }
     catch (error) {

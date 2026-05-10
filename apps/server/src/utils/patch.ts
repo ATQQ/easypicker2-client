@@ -165,8 +165,9 @@ export async function initUserConfig() {
       needBindPhone: false, // 是否需要绑定手机号
       enableCodeLogin: false,
       enableEmailCodeLogin: false,
+      needBindEmail: false,
       alertEmails: '',
-      emailDailyLimit: 200,
+      emailDailyLimit: 0,
       storageMode: 'qiniu' as 'qiniu' | 'local',
       maxUploadSizeMB: 500,
       limitSpace: false, // 是否限制空间

@@ -43,6 +43,7 @@ export declare namespace LogBehaviorData {
       | 'public'
       | 'interceptor'
       | 'wish'
+      | 'mail'
   interface Info {
     /**
      * 一句话描述

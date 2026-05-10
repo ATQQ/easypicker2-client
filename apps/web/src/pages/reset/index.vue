@@ -13,17 +13,18 @@ import {
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { PublicApi, UserApi } from '@/apis'
+import { useSiteConfig } from '@/composables'
+import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
 import {
   rEmail,
   rMobilePhone,
   rPassword,
   rVerCode,
 } from '@/utils/regExp'
-import { useSiteConfig } from '@/composables'
+import { formatDate } from '@/utils/stringUtil'
 
 const { value: siteConfig } = useSiteConfig()
 const supportEmailCodeLogin = computed(() => Boolean(siteConfig.value.supportEmailCodeLogin))
-import { formatDate } from '@/utils/stringUtil'
 
 const account = ref('')
 const code = ref('')
@@ -77,7 +78,7 @@ function refreshCodeText() {
 function getCode() {
   if (supportEmailCodeLogin.value && rEmail.test(account.value.trim())) {
     PublicApi.getEmailCode(account.value.trim()).then(() => {
-      time.value = 120
+      time.value = VERIFY_CODE_EXPIRE_SECONDS
       refreshCodeText()
       ElMessage.success('获取成功,请查收邮件')
     }).catch((err) => {

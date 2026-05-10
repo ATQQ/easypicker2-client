@@ -11,6 +11,8 @@ export function codeMsg(code: number, msg: string): CodeMsg {
 
 export const uploadFileDir = `${process.cwd()}/upload`
 
+export const VERIFY_CODE_EXPIRE_SECONDS = 120
+
 export const UserConfigLabels = {
   tx: {
     secretId: 'SecretId',

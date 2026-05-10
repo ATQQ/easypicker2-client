@@ -6,7 +6,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { PublicApi, SuperUserApi } from '@/apis'
 import { useIsMobile, useSiteConfig } from '@/composables'
 import { USER_STATUS } from '@/constants'
-import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
+import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate, formatSize } from '@/utils/stringUtil'
 
 import Tip from '../../tasks/components/infoPanel/tip.vue'
@@ -117,6 +117,7 @@ const filterUsers = computed(() => {
         id,
         account,
         phone,
+        email,
         joinTime,
         loginCount,
         loginTime,
@@ -124,7 +125,7 @@ const filterUsers = computed(() => {
       } = v
       if (searchWord.value.length === 0)
         return true
-      return `${id} ${account} ${phone} ${loginTime} ${formatDate(
+      return `${id} ${account} ${phone} ${email} ${loginTime} ${formatDate(
         openTime,
       )} ${formatDate(loginCount)} ${formatDate(joinTime)}`.includes(
         searchWord.value,
@@ -354,6 +355,45 @@ async function handleSavePhone() {
     })
 }
 
+// 绑定邮箱
+const showEmailDialog = ref(false)
+const emailForm = reactive({
+  email: '',
+})
+function handleBindEmail(id: number, email = '') {
+  selectUserId.value = id
+  emailForm.email = email || ''
+  showEmailDialog.value = true
+}
+function checkEmailForm() {
+  if (!rEmail.test(emailForm.email.trim())) {
+    ElMessage.warning('邮箱格式不正确')
+    return false
+  }
+
+  return true
+}
+async function handleSaveEmail() {
+  if (!checkEmailForm()) {
+    return
+  }
+  SuperUserApi.resetEmail(selectUserId.value, emailForm.email.trim())
+    .then(() => {
+      ElMessage.success('绑定成功')
+      showEmailDialog.value = false
+      emailForm.email = ''
+      refreshUsers()
+    })
+    .catch((err) => {
+      const { code: c } = err
+      const options: any = {
+        1015: '邮箱格式不正确',
+        1016: '邮箱已被绑定',
+      }
+      ElMessage.error(options[c] || '绑定失败,未知错误')
+    })
+}
+
 function handleClearFiles(userId: number, type: 'month' | 'quarter' | 'half') {
   const tipWords = {
     month: '一个月前',
@@ -392,6 +432,46 @@ function sureSendMessage() {
     // 推送成功
     pushMessageText.value = ''
     showMessageDialog.value = false
+  })
+}
+
+const showMailDialog = ref(false)
+const mailForm = reactive({
+  account: '',
+  email: '',
+  subject: '',
+  text: '',
+})
+function sendMailMessage(row: SuperUserApiTypes.UserItem) {
+  if (!row.email) {
+    ElMessage.warning('该用户未绑定邮箱')
+    return
+  }
+  selectUserId.value = row.id
+  mailForm.account = row.account
+  mailForm.email = row.email
+  mailForm.subject = ''
+  mailForm.text = ''
+  showMailDialog.value = true
+}
+function sureSendMail() {
+  const subject = mailForm.subject.trim()
+  const text = mailForm.text.trim()
+  if (!subject) {
+    ElMessage.warning('请输入邮件标题')
+    return
+  }
+  if (!text) {
+    ElMessage.warning('请输入邮件内容')
+    return
+  }
+  SuperUserApi.sendMail(selectUserId.value, subject, text).then(() => {
+    ElMessage.success('邮件发送成功')
+    showMailDialog.value = false
+    mailForm.subject = ''
+    mailForm.text = ''
+  }).catch((err) => {
+    ElMessage.error(err?.msg || '邮件发送失败')
   })
 }
 function logout(account: string) {
@@ -506,6 +586,15 @@ function handleCheckDetail(price) {
           label="手机号"
           width="80"
         />
+        <el-table-column
+          prop="email"
+          label="邮箱"
+          min-width="180"
+        >
+          <template #default="scope">
+            <span>{{ scope.row.email || '未绑定' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column
           label="统计"
           width="190"
@@ -638,12 +727,28 @@ function handleCheckDetail(price) {
                 绑定手机号
               </el-button>
               <el-button
+                type="primary"
+                text
+                size="small"
+                @click="handleBindEmail(scope.row.id, scope.row.email)"
+              >
+                绑定邮箱
+              </el-button>
+              <el-button
                 type="warning"
                 text
                 size="small"
                 @click="sendMessage(scope.row.id)"
               >
                 发送消息
+              </el-button>
+              <el-button
+                type="warning"
+                text
+                size="small"
+                @click="sendMailMessage(scope.row)"
+              >
+                发送邮件
               </el-button>
               <el-button
                 type="danger"
@@ -707,6 +812,45 @@ function handleCheckDetail(price) {
         <span class="dialog-footer">
           <el-button @click="showMessageDialog = false">取 消</el-button>
           <el-button type="primary" @click="sureSendMessage">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 邮件发送弹窗 -->
+    <el-dialog
+      v-model="showMailDialog"
+      :fullscreen="isMobile"
+      center
+      title="发送邮件"
+    >
+      <el-form :model="mailForm" label-width="80px">
+        <el-form-item label="收件人">
+          <el-input
+            :model-value="`${mailForm.account} <${mailForm.email}>`"
+            disabled
+          />
+        </el-form-item>
+        <el-form-item label="标题">
+          <el-input
+            v-model="mailForm.subject"
+            clearable
+            maxlength="80"
+            show-word-limit
+            placeholder="请输入邮件标题"
+          />
+        </el-form-item>
+        <el-form-item label="内容">
+          <el-input
+            v-model="mailForm.text"
+            :autosize="{ minRows: 6, maxRows: 20 }"
+            type="textarea"
+            placeholder="请输入邮件内容"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showMailDialog = false">取 消</el-button>
+          <el-button type="primary" @click="sureSendMail">发 送</el-button>
         </span>
       </template>
     </el-dialog>
@@ -823,6 +967,32 @@ function handleCheckDetail(price) {
         <span class="dialog-footer">
           <el-button @click="showPhoneDialog = false">取 消</el-button>
           <el-button type="primary" @click="handleSavePhone">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 绑定邮箱 -->
+    <el-dialog
+      v-model="showEmailDialog"
+      :fullscreen="isMobile"
+      center
+      title="绑定邮箱"
+    >
+      <div class="tc">
+        <el-form :model="emailForm" label-width="60px">
+          <el-form-item label="邮箱">
+            <el-input
+              v-model="emailForm.email"
+              clearable
+              placeholder="请输入邮箱"
+              maxlength="128"
+            />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showEmailDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleSaveEmail">确 定</el-button>
         </span>
       </template>
     </el-dialog>

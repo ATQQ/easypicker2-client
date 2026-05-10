@@ -27,7 +27,7 @@ import {
 import { patchTable } from '@/utils/patch'
 import { getQiniuStatus, refreshQinNiuConfig } from '@/utils/qiniuUtil'
 import { rEmail, rPassword } from '@/utils/regExp'
-import { isCodeLoginSupported, isEmailCodeLoginSupported } from '@/utils/siteConfig'
+import { isCodeLoginSupported, isEmailCodeLoginSupported, isTxMessageConfigured } from '@/utils/siteConfig'
 import { encryption } from '@/utils/stringUtil'
 import { getTxServiceStatus, refreshTxConfig } from '@/utils/tencent'
 import LocalUserDB from '@/utils/user-local-db'
@@ -467,7 +467,7 @@ export default class UserController {
     const picked = scenes.length > 0 ? scenes : mailTestSceneDefinitions
     const site = LocalUserDB.getSiteConfig()
     const app = site?.appName || 'EasyPicker'
-    const dailyLimit = typeof site?.emailDailyLimit === 'number' ? site.emailDailyLimit : 200
+    const dailyLimit = typeof site?.emailDailyLimit === 'number' ? site.emailDailyLimit : 0
     const nowText = new Date().toLocaleString('zh-CN')
 
     const senders: Record<MailTestSceneKey, () => Promise<{ ok: boolean, error?: string }>> = {
@@ -575,6 +575,7 @@ export default class UserController {
       'needBindPhone',
       'enableCodeLogin',
       'enableEmailCodeLogin',
+      'needBindEmail',
       'limitSpace',
       'limitWallet',
       'storageMode',
@@ -596,13 +597,19 @@ export default class UserController {
       'filePageSelfHostLinkText',
       'filePageSelfHostLink',
     ]
+    const supportCodeLogin = isCodeLoginSupported()
+    const supportEmailCodeLogin = isEmailCodeLoginSupported()
+    const supportPhoneCode = isTxMessageConfigured()
     const result: Partial<GlobalSiteConfig> = {
-      supportCodeLogin: isCodeLoginSupported(),
-      supportEmailCodeLogin: isEmailCodeLoginSupported(),
+      supportPhoneCode,
+      supportCodeLogin,
+      supportEmailCodeLogin,
     }
     filterKey.forEach((cur) => {
       result[cur] = globalConfig[0].value[cur] as never
     })
+    result.needBindPhone = Boolean(result.needBindPhone && (supportPhoneCode || supportEmailCodeLogin))
+    result.needBindEmail = Boolean(result.needBindEmail && supportEmailCodeLogin)
     return result
   }
 

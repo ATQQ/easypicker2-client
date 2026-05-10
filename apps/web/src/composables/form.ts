@@ -14,6 +14,8 @@ export const defaultSiteConfig = {
   needBindPhone: false, // 是否需要绑定手机号
   enableCodeLogin: false, // 是否开启验证码登录
   enableEmailCodeLogin: false, // 是否开启邮箱验证码登录（需 SMTP）
+  needBindEmail: false, // 是否强制注册绑定邮箱
+  supportPhoneCode: false, // 是否支持手机号验证码（腾讯云短信配置完整）
   supportCodeLogin: false, // 是否支持验证码登录
   supportEmailCodeLogin: false, // 是否支持邮箱验证码登录
   storageMode: 'qiniu' as 'qiniu' | 'local', // 存储模式（与全局配置一致）

@@ -149,6 +149,26 @@ export async function addBehavior(req: FWRequest, info: LogBehaviorData.Info) {
 }
 
 /**
+ * 记录无请求上下文的系统行为日志
+ */
+export function addSystemBehavior(info: LogBehaviorData.Info) {
+  const data: LogBehaviorData = {
+    req: {
+      method: 'SYSTEM',
+      path: 'system',
+      userAgent: '',
+      refer: '',
+      ip: 'system',
+    },
+    user: {
+      userId: 0,
+    },
+    info,
+  }
+  insertCollection('log', getLogData('behavior', data))
+}
+
+/**
  * 记录服务端错误日志
  */
 export async function addErrorLog(

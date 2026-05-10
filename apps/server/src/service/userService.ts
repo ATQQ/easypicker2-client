@@ -1,13 +1,14 @@
 /* eslint-disable no-throw-literal */
 import { Inject, Provide } from 'flash-wolves'
 import { UserError } from '@/constants/errorMsg'
-import { UserRepository } from '@/db/userDb'
-import { rAccount, rEmail, rMobilePhone, rPassword } from '@/utils/regExp'
-import { encryption, formatDate, getUniqueKey } from '@/utils/stringUtil'
 import { User } from '@/db/entity'
-import { BehaviorService, TokenService } from '@/service'
 import { USER_STATUS } from '@/db/model/user'
+import { UserRepository } from '@/db/userDb'
+import { BehaviorService, TokenService } from '@/service'
 import { randomNumStr } from '@/utils/randUtil'
+import { rAccount, rEmail, rMobilePhone, rPassword } from '@/utils/regExp'
+import { isEmailCodeLoginSupported, isTxMessageConfigured } from '@/utils/siteConfig'
+import { encryption, formatDate, getUniqueKey } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
 @Provide()
@@ -32,10 +33,17 @@ export default class UserService {
       email,
       emailCode,
     } = payload
-    const { needBindPhone } = LocalUserDB.getSiteConfig()
-    // 注册必须绑定手机号卡控
+    const site = LocalUserDB.getSiteConfig()
+    const needBindPhone = Boolean(
+      site?.needBindPhone && (isTxMessageConfigured() || isEmailCodeLoginSupported()),
+    )
+    const needBindEmail = Boolean(site?.needBindEmail && isEmailCodeLoginSupported())
+    // 注册必须绑定手机号或邮箱卡控
     if (needBindPhone && !bindPhone && !bindWithEmail) {
       throw UserError.account.bindPhone
+    }
+    if (needBindEmail && !bindWithEmail) {
+      throw UserError.email.notVerified
     }
 
     // TODO：参数校验可优化使用zod
@@ -253,12 +261,12 @@ export default class UserService {
       user.email = addr
       user.emailVerified = 1
       user.password = encryption(randomNumStr(6) + getUniqueKey().slice(6))
-      user.account = `u${getUniqueKey().replace(/[^a-zA-Z0-9]/g, '').slice(0, 9)}`
+      user.account = `u${getUniqueKey().replace(/[^a-z0-9]/gi, '').slice(0, 9)}`
       user.loginCount = 0
       user = await this.userRepository.insert(user)
     }
     this.checkUserStatus(user)
-    this.behaviorService.add('user', `邮箱验证码登录成功:${addr.slice(0, 2)}***`)
+    this.behaviorService.add('user', `邮箱验证码登录成功:${addr}`)
     this.tokenService.expiredVerifyCode('email', addr)
     return this.userRepository.update(user)
   }
@@ -281,7 +289,7 @@ export default class UserService {
         throw UserError.pwd.fault
       user.password = encryption(pwd)
       this.tokenService.expiredVerifyCode('email', email)
-      this.behaviorService.add('user', `重置密码 邮箱用户成功`, { email })
+      this.behaviorService.add('user', `重置密码 邮箱用户成功 ${email}`, { email })
       this.checkUserStatus(user)
       return this.userRepository.update(user)
     }

@@ -7,10 +7,13 @@ export interface GlobalSiteConfig {
   compressSizeLimit: number
   needBindPhone: boolean
   enableCodeLogin: boolean
+  supportPhoneCode?: boolean
   supportCodeLogin?: boolean
   /** 开启且 SMTP 配置完整时展示邮箱验证码登录 */
   enableEmailCodeLogin?: boolean
   supportEmailCodeLogin?: boolean
+  /** 开启且 SMTP 配置完整时，注册必须绑定邮箱 */
+  needBindEmail?: boolean
   /** 逗号/分号分隔的管理员告警收件邮箱 */
   alertEmails?: string
   /** 全局每日发信上限（0 表示不限制） */

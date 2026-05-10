@@ -1,5 +1,6 @@
 import process from 'node:process'
 import { Provide } from 'flash-wolves'
+import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
 import { AppDataSource } from '@/db'
 import { User } from '@/db/entity'
 import { USER_STATUS } from '@/db/model/user'
@@ -53,6 +54,14 @@ export default class TokenService {
     }
   }
 
+  async expiredAllTokens(account: string) {
+    const tokens = await this.getAllTokens(account)
+    for (const token of tokens) {
+      expiredRedisKey(token)
+    }
+    expiredRedisKey(this.onlineTokenKey(account))
+  }
+
   async getUserInfo(token: string): Promise<User> {
     if (!token) {
       return null
@@ -86,7 +95,7 @@ export default class TokenService {
     channel: 'phone' | 'email',
     target: string,
     code: string,
-    timeout = 60 * 2,
+    timeout = VERIFY_CODE_EXPIRE_SECONDS,
   ) {
     setRedisValue(this.verifyCodeKey(channel, target), code, timeout)
   }

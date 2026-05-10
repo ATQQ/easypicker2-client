@@ -422,7 +422,7 @@ onMounted(() => {
   }
 
   .card {
-    min-width: 300px;
+    min-width: 340px;
   }
 
   .log-filter {
@@ -451,7 +451,7 @@ onMounted(() => {
   background: #fff;
   box-shadow: 4px 4px 40px rgb(0 0 0 / 5%);
   border-color: rgba(0, 0, 0, 0.05);
-  min-width: 300px;
+  min-width: 340px;
 
   .logo {
     float: left;
@@ -493,7 +493,7 @@ onMounted(() => {
 }
 
 .panel {
-  max-width: 1024px;
+  max-width: 1280px;
   padding: 1em;
   background-color: #fff;
   margin: 10px auto;
