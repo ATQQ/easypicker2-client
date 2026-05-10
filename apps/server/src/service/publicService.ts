@@ -61,7 +61,7 @@ export default class PublicService {
   async getVerifyCodeByEmail(email: string) {
     const addr = email.trim().toLowerCase()
     if (!rEmail.test(addr)) {
-      this.behaviorService.add('public', `获取邮箱验证码 格式不正确:${email}`, { email })
+      this.behaviorService.add('public', `获取邮箱验证码 邮箱:${email} 格式不正确`, { email })
       throw UserError.email.fault
     }
     if (!isEmailCodeLoginSupported()) {
@@ -69,23 +69,24 @@ export default class PublicService {
       throw UserError.system.emailCodeLoginDisabled
     }
     const code = randomNumStr(4)
-    this.behaviorService.add('public', `获取邮箱验证码 ${addr} 成功`, {
+    const r = await sendVerifyCodeMail(addr, code)
+    if (!r.ok) {
+      this.behaviorService.add('public', `获取邮箱验证码 邮箱:${addr} 失败:${r.error || 'send mail failed'}`, {
+        email: addr,
+        code,
+        error: r.error || 'send mail failed',
+      })
+      const err = Object.assign(new Error(r.error || 'send mail failed'), {
+        code: 500,
+        msg: r.error || 'send mail failed',
+      })
+      throw err
+    }
+    this.behaviorService.add('public', `获取邮箱验证码 邮箱:${addr} 成功`, {
+      email: addr,
       code,
     })
     this.tokenService.setVerifyCode('email', addr, code)
-    if (process.env.NODE_ENV !== 'development') {
-      const r = await sendVerifyCodeMail(addr, code)
-      if (!r.ok) {
-        const err = Object.assign(new Error(r.error || 'send mail failed'), {
-          code: 500,
-          msg: r.error || 'send mail failed',
-        })
-        throw err
-      }
-    }
-    else {
-      console.log(new Date().toLocaleString(), `邮箱验证码 ${addr} ${code}`)
-    }
   }
 
   reportPV() {
