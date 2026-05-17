@@ -18,15 +18,25 @@ const store: Module<State, unknown> = {
     },
   },
   actions: {
-    getTask(context) {
-      TaskApi.getList().then((res) => {
+    getTask(context, payload: { recent?: boolean } = {}) {
+      return TaskApi.getList(payload).then((res) => {
         context.commit('updateTask', res.data.tasks)
+        return res
+      })
+    },
+    getTaskByCategory(context, payload: { category: string, recent?: boolean }) {
+      return TaskApi.getByCategory(payload.category, {
+        recent: payload.recent,
+      }).then((res) => {
+        context.commit('updateTask', res.data.tasks)
+        return res
       })
     },
     createTask(context, payload) {
       const { name, category } = payload
       return TaskApi.create(name, category).then((res) => {
-        context.dispatch('getTask')
+        context.dispatch('getTaskByCategory', { category })
+        context.dispatch('category/getCategory', null, { root: true })
         return res
       })
     },
@@ -40,13 +50,20 @@ const store: Module<State, unknown> = {
         else {
           targetTask.category = 'trash'
         }
+        context.dispatch('category/getCategory', null, { root: true })
         return res
       })
     },
     updateTask(context, payload) {
-      const { key, name, category } = payload
+      const { key, name, category, listCategory } = payload
       return TaskApi.updateBaseInfo(key, name, category).then((res) => {
-        context.dispatch('getTask')
+        if (listCategory) {
+          context.dispatch('getTaskByCategory', { category: listCategory })
+        }
+        else {
+          context.dispatch('getTask')
+        }
+        context.dispatch('category/getCategory', null, { root: true })
         return res
       })
     },

@@ -26,7 +26,7 @@ async function loadCategoryConfig() {
   try {
     const [categoryRes, taskRes] = await Promise.all([
       CategoryApi.getList(),
-      TaskApi.getList(),
+      TaskApi.getByCategory(categoryKey.value, { recent: false }),
     ])
     const current = categoryRes.data.categories.find(c => c.k === categoryKey.value)
     if (!current) {
@@ -106,8 +106,6 @@ watch(categoryKey, loadCategoryConfig, { immediate: true })
         v-model="submitNavKeys"
         multiple
         filterable
-        collapse-tags
-        collapse-tags-tooltip
         placeholder="选择任务（多选）"
         class="task-select"
       >
@@ -188,6 +186,18 @@ watch(categoryKey, loadCategoryConfig, { immediate: true })
 
 .task-select {
   width: 100%;
+
+  :deep(.el-select__tags) {
+    max-width: calc(100% - 32px);
+    white-space: normal;
+  }
+
+  :deep(.el-select__wrapper) {
+    min-height: 36px;
+    align-items: flex-start;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
 }
 
 @media screen and (max-width: 700px) {

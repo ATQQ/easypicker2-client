@@ -482,6 +482,31 @@ async function checkSubmitStatus() {
 }
 const isLoadingData = ref(false)
 const readyRefresh = ref(false)
+// 禁用上传
+const disabledUpload = useLocalStorage('disabledUpload', false)
+function refreshTaskInfo(showLimitAlert = true) {
+  if (!k.value)
+    return Promise.resolve()
+
+  return TaskApi.getTaskInfo(k.value)
+    .then((res) => {
+      Object.assign(taskInfo, res.data)
+      submitNavTasks.value = res.data.submitNavTasks ?? []
+      disabledUpload.value = !!res.data.limitUpload
+      if (showLimitAlert && disabledUpload.value) {
+        ElMessageBox.alert(
+          '任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间',
+        )
+      }
+    })
+    .catch((err) => {
+      if (err.code === 4001) {
+        ElMessage.error('任务不存在')
+        k.value = ''
+        taskInfo.name = '任务不存在'
+      }
+    })
+}
 function isEqualInfos(a: InfoItem[] = [], b: InfoItem[] = []) {
   if (a.length !== b.length) {
     return false
@@ -513,6 +538,7 @@ function handleBlur() {
 function handleFocus() {
   if (readyRefresh.value && !disableForm.value) {
     readyRefresh.value = false
+    refreshTaskInfo(false)
     refreshTaskMoreInfo(true)
   }
 }
@@ -595,31 +621,11 @@ watch(
   () => syncTipFromMoreInfo(),
 )
 
-// 禁用上传
-const disabledUpload = useLocalStorage('disabledUpload', false)
-
 onMounted(() => {
   k.value = $route.params.key as string
   if (k.value) {
     isLoadingData.value = true
-    TaskApi.getTaskInfo(k.value)
-      .then((res) => {
-        Object.assign(taskInfo, res.data)
-        submitNavTasks.value = res.data.submitNavTasks ?? []
-        disabledUpload.value = !!res.data.limitUpload
-        if (disabledUpload.value) {
-          ElMessageBox.alert(
-            '任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间',
-          )
-        }
-      })
-      .catch((err) => {
-        if (err.code === 4001) {
-          ElMessage.error('任务不存在')
-          k.value = ''
-          taskInfo.name = '任务不存在'
-        }
-      })
+    refreshTaskInfo()
     refreshTaskMoreInfo()
     refreshWaitTime()
   }
@@ -646,24 +652,7 @@ watch(
     k.value = key
     fileList.value = []
     isLoadingData.value = true
-    TaskApi.getTaskInfo(k.value)
-      .then((res) => {
-        Object.assign(taskInfo, res.data)
-        submitNavTasks.value = res.data.submitNavTasks ?? []
-        disabledUpload.value = !!res.data.limitUpload
-        if (disabledUpload.value) {
-          ElMessageBox.alert(
-            '任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间',
-          )
-        }
-      })
-      .catch((err) => {
-        if (err.code === 4001) {
-          ElMessage.error('任务不存在')
-          k.value = ''
-          taskInfo.name = '任务不存在'
-        }
-      })
+    refreshTaskInfo()
     refreshTaskMoreInfo()
     refreshWaitTime()
   },

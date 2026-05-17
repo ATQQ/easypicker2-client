@@ -21,9 +21,10 @@ export default defineComponent({
     const $store = useStore()
     // 分类相关
     const categorys = computed(() => $store.state.category.categoryList)
+    const categoryTaskCounts = computed(() => $store.state.category.taskCounts || {})
     const tasks = computed(() => $store.state.task.taskList)
     const taskCount = (c: string) => {
-      const count = tasks.value.filter((t: any) => t.category === c).length
+      const count = categoryTaskCounts.value[c] ?? tasks.value.filter((t: any) => t.category === c).length
       return count === 0 ? '' : ` (${count})`
     }
     const isShowCreateCategory = ref(false)

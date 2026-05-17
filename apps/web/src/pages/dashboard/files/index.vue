@@ -174,8 +174,6 @@ const filterTasks = computed(() => {
   if (selectCategory.value === 'all') {
     return tasks.value
   }
-  // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-  selectTask.value = 'all'
   return tasks.value.filter(t => t.category === selectCategory.value)
 })
 const selectTaskName = computed(() => {
@@ -587,7 +585,21 @@ function reloadFirstPage() {
   pageCurrent.value = 1
 }
 
+function loadTaskOptions() {
+  if (selectCategory.value === 'all') {
+    return $store.dispatch('task/getTask', { recent: false })
+  }
+  return $store.dispatch('task/getTaskByCategory', {
+    category: selectCategory.value,
+    recent: false,
+  })
+}
+
 watch([selectCategory, selectTask, searchWord], reloadFirstPage)
+watch(selectCategory, () => {
+  selectTask.value = 'all'
+  loadTaskOptions()
+})
 watch([pageCurrent, pageSize], loadFiles)
 watch(showImg, () => {
   window.localStorage.setItem('ep-show-images', `${showImg.value}`)
@@ -598,7 +610,7 @@ onMounted(() => {
   loadActions()
   loadUserProfile()
   $store.dispatch('category/getCategory')
-  $store.dispatch('task/getTask')
+  loadTaskOptions()
 })
 
 const isMobile = useIsMobile()

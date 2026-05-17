@@ -1,8 +1,7 @@
 {
-  "projectId": "proj_570e7d77be33",
+  "projectId": "proj_294a7e701970",
   "outputDir": "./dist",
   "files": [
-    "dist/**/*"
-  ],
-  "preDeploy": "pnpm build"
+    "**/*"
+  ]
 }

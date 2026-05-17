@@ -1,0 +1,12 @@
+{
+  "projectId": "proj_45ab5c1d327e",
+  "outputDir": "./",
+  "files": [
+    "dist/**/*",
+    "package.json",
+    "docs/**/*",
+    ".env",
+    "scripts/kite/post-deploy-pm2.sh"
+  ],
+  "postDeploy": "bash scripts/kite/post-deploy-pm2.sh"
+}

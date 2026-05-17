@@ -5,10 +5,10 @@ import type { DownloadActionData } from '@/db/model/action'
 import type { File } from '@/db/model/file'
 import type { Log } from '@/db/model/log'
 import type { DownloadLogAnalyzeItem } from '@/types'
+import fs from 'node:fs'
 import dayjs from 'dayjs'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { ObjectID, ObjectId } from 'mongodb'
-import fs from 'node:fs'
 import { In } from 'typeorm'
 import { qiniuConfig } from '@/config'
 import { publicError } from '@/constants/errorMsg'
@@ -22,10 +22,10 @@ import { PeopleRepository } from '@/db/peopleDb'
 import { expiredRedisKey, getRedisVal, setRedisValue } from '@/db/redisDb'
 import { TaskRepository } from '@/db/taskDb'
 import { UserRepository } from '@/db/userDb'
-import { batchFileStatus, createDownloadUrl, deleteObjByKey, judgeFileIsExist, makeZipWithKeys } from '@/utils/qiniuUtil'
-import { sendMail } from '@/utils/mail'
-import { getStorageMode } from '@/utils/storageMode'
 import { localObjectAbsPath } from '@/utils/localFilePath'
+import { sendMail } from '@/utils/mail'
+import { batchFileStatus, createDownloadUrl, deleteObjByKey, judgeFileIsExist, makeZipWithKeys } from '@/utils/qiniuUtil'
+import { getStorageMode } from '@/utils/storageMode'
 import { B2GB, formatPrice, formatSize, getUniqueKey, isSameInfo, normalizeFileName, percentageValue, shortLink } from '@/utils/stringUtil'
 import { diffMonth } from '@/utils/time-utils'
 import LocalUserDB from '@/utils/user-local-db'
@@ -776,6 +776,25 @@ export default class FileService {
   limitUploadByWallet(balance: number) {
     const { limitWallet } = LocalUserDB.getSiteConfig()
     return limitWallet && balance <= 0
+  }
+
+  async getFastUploadLimit(user: User) {
+    const fileSize = await this.fileRepository.sumActiveSizeByUser(user.id)
+    const limitSize = calculateSize((user.power === USER_POWER.SUPER
+      ? Math.max(1024, user?.size)
+      : user?.size) ?? 2)
+    const limitSpace = this.limitUploadBySpace(limitSize, fileSize)
+    const isAdmin = user.power === USER_POWER.SUPER
+    const limitWallet = this.limitUploadByWallet(Number(user.wallet || 0))
+
+    return {
+      maxSize: limitSize,
+      usage: fileSize,
+      limitUpload: isAdmin ? false : (limitSpace || limitWallet),
+      limitSpace,
+      limitWallet,
+      wallet: user.wallet || 0,
+    }
   }
 
   calculateQiniuPrice(download: {

@@ -307,6 +307,14 @@ export class FileRepository extends BaseRepository<Files> {
     }
   }
 
+  async sumActiveSizeByUser(userId: number) {
+    const row = await this.createFileQueryBuilder(userId)
+      .select('COALESCE(SUM(file.size), 0)', 'size')
+      .getRawOne<{ size: string | number }>()
+
+    return Number(row?.size || 0)
+  }
+
   findRecentFilesByTaskKeys(taskKeys: string[], perTaskLimit: number) {
     return selectRecentFilesPerTaskKeys(taskKeys, perTaskLimit)
   }

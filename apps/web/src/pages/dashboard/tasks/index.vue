@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import LinkDialog from '@components/linkDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { TaskApi } from '@/apis'
@@ -38,6 +38,7 @@ const filterTasks = computed(() => {
 const selectedCategoryConfig = computed<CateGoryApiTypes.CategoryItem | undefined>(
   () => categorys.value.find((c: CateGoryApiTypes.CategoryItem) => c.k === selectCategory.value),
 )
+const isCustomCategorySelected = computed(() => !!selectedCategoryConfig.value)
 
 const MAX_RECENT_TASK_KEYS = 10
 const recentTaskKeys = ref<string[]>([])
@@ -120,7 +121,10 @@ function handleSaveEditInfo() {
     ElMessage.warning('不能为空')
     return
   }
-  $store.dispatch('task/updateTask', taskBaseInfo).then(() => {
+  $store.dispatch('task/updateTask', {
+    ...taskBaseInfo,
+    listCategory: selectCategory.value,
+  }).then(() => {
     ElMessage.success('更新成功')
   })
 }
@@ -196,6 +200,43 @@ function openCategoryConfig() {
   })
 }
 
+function loadTasksBySelectedCategory() {
+  return $store.dispatch('task/getTaskByCategory', {
+    category: selectCategory.value,
+  })
+}
+
+function isAllowedCategory(category: string) {
+  return [
+    'default',
+    'trash',
+    ...categorys.value.map((c: { k: string }) => c.k),
+  ].includes(category)
+}
+
+let tasksPageReady = false
+let readyRefreshTasksPage = false
+async function refreshTasksPageData() {
+  tasksPageReady = false
+  await $store.dispatch('category/getCategory')
+  if (!isAllowedCategory(selectCategory.value)) {
+    selectCategory.value = 'default'
+  }
+  await loadTasksBySelectedCategory()
+  tasksPageReady = true
+}
+
+function handleBlur() {
+  readyRefreshTasksPage = true
+}
+
+function handleFocus() {
+  if (!readyRefreshTasksPage)
+    return
+  readyRefreshTasksPage = false
+  void refreshTasksPageData()
+}
+
 // TODO: 有需要再优化，目前像bug
 // 用于选择默认展示项目
 // const taskCount = (c: string) => {
@@ -219,6 +260,7 @@ function openCategoryConfig() {
 // })
 
 async function initTasksPage() {
+  tasksPageReady = false
   await $store.dispatch('category/getCategory')
   const raw = localStorage.getItem(
     `ep2-dash-recent:${dashboardRecentStorageId()}`,
@@ -231,26 +273,33 @@ async function initTasksPage() {
       }
       if (Array.isArray(s.keys))
         recentTaskKeys.value = s.keys.slice(0, MAX_RECENT_TASK_KEYS)
-      const allowed = new Set([
-        'default',
-        ...categorys.value.map((c: { k: string }) => c.k),
-      ])
-      if (s.lastCategory && allowed.has(s.lastCategory))
+      if (s.lastCategory && isAllowedCategory(s.lastCategory))
         selectCategory.value = s.lastCategory
     }
     catch {
       /* ignore */
     }
   }
-  await $store.dispatch('task/getTask')
+  await loadTasksBySelectedCategory()
+  tasksPageReady = true
 }
 
 watch(selectCategory, () => {
+  if (!tasksPageReady)
+    return
   persistDashboardRecent()
+  loadTasksBySelectedCategory()
 })
 
 onMounted(() => {
   initTasksPage()
+  window.addEventListener('blur', handleBlur)
+  window.addEventListener('focus', handleFocus)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('blur', handleBlur)
+  window.removeEventListener('focus', handleFocus)
 })
 
 function openTaskPage() {
@@ -269,15 +318,16 @@ function openTaskPage() {
     <div class="panel task-panel">
       <!-- 创建任务 -->
       <CreateTask :active-category-key="selectCategory" />
-      <div v-if="selectedCategoryConfig" class="category-config-entry">
-        <div>
-          <strong>{{ selectedCategoryConfig.name }}</strong>
-          <span>分类配置</span>
-        </div>
-        <el-button type="primary" plain size="small" @click="openCategoryConfig">
-          分类配置
-        </el-button>
-      </div>
+      <el-button
+        v-if="isCustomCategorySelected"
+        class="category-config-btn"
+        type="primary"
+        plain
+        size="small"
+        @click="openCategoryConfig"
+      >
+        分类配置
+      </el-button>
 
       <!-- 任务列表 -->
       <div class="task-list">
@@ -420,23 +470,16 @@ function openTaskPage() {
   flex-wrap: wrap;
   justify-content: space-around;
 }
-.category-config-entry {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 10px 0 14px;
-  padding: 10px 12px;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  background-color: #f8fafc;
-  color: #303133;
 
-  span {
-    margin-left: 8px;
-    color: #909399;
-    font-size: 13px;
-  }
+.task-panel {
+  position: relative;
+}
+
+.category-config-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
 }
 
 @media screen and (max-width: 700px) {

@@ -212,7 +212,7 @@ declare namespace CateGoryApiTypes {
     k: string
     submitNavKeys?: string[]
   }
-  type getList = ResponseData<{ categories: CategoryItem[] }>
+  type getList = ResponseData<{ categories: CategoryItem[], taskCounts: Record<string, number> }>
   type createNew = ResponseData
   type deleteOne = ResponseData
   type updateSubmitNav = ResponseData

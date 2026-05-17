@@ -3,6 +3,7 @@ import { CategoryApi } from '@/apis'
 
 interface State {
   categoryList: any[]
+  taskCounts: Record<string, number>
 }
 
 const store: Module<State, unknown> = {
@@ -10,17 +11,23 @@ const store: Module<State, unknown> = {
   state() {
     return {
       categoryList: [],
+      taskCounts: {},
     }
   },
   mutations: {
     updateCategory(state, payload) {
       state.categoryList = payload
     },
+    updateTaskCounts(state, payload) {
+      state.taskCounts = payload || {}
+    },
   },
   actions: {
     getCategory(context) {
-      CategoryApi.getList().then((res) => {
+      return CategoryApi.getList().then((res) => {
         context.commit('updateCategory', res.data.categories)
+        context.commit('updateTaskCounts', res.data.taskCounts)
+        return res
       })
     },
     createCategory(context, name) {
