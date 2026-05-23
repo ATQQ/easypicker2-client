@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "description": "EasyPicker MySQL 完整期望结构；漂移检测与导出的 DDL 以此为唯一数据源（需与 docs/sql/auto_create.sql 保持语义一致）。",
   "exportHeader": [
     "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";",
@@ -34,6 +34,7 @@
         { "name": "category_key", "ddl": "`category_key` varchar(256) NOT NULL COMMENT '所属分类'" },
         { "name": "user_id", "ddl": "`user_id` int(11) NOT NULL COMMENT '所属用户'" },
         { "name": "name", "ddl": "`name` varchar(1024) NOT NULL COMMENT '文件名'" },
+        { "name": "storage", "ddl": "`storage` varchar(16) NOT NULL DEFAULT 'qiniu' COMMENT '文件存储位置：qiniu/local'" },
         { "name": "info", "ddl": "`info` json DEFAULT NULL COMMENT '提交填写的信息（表单项 JSON）'" },
         { "name": "hash", "ddl": "`hash` varchar(512) NOT NULL COMMENT '文件hash'" },
         { "name": "date", "ddl": "`date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传日期'" },

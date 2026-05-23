@@ -243,6 +243,7 @@ async function startUpload() {
             taskName: taskInfo.name,
             size: fsize,
             hash: file.md5,
+            storage: uploadTokenRes.storageMode,
             info: JSON.stringify(infos),
             people: validModal.peopleName,
           }).then(() => {
@@ -281,6 +282,7 @@ async function startUpload() {
             taskName: taskInfo.name,
             size: fsize,
             hash: file.md5,
+            storage: uploadTokenRes.storageMode,
             info: JSON.stringify(infos),
             people: validModal.peopleName,
           }).then(() => {

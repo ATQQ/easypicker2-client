@@ -6,6 +6,7 @@ import {
   DataAnalysis,
   Download,
   Picture,
+  QuestionFilled,
   Refresh,
   Search,
 } from '@element-plus/icons-vue'
@@ -308,6 +309,15 @@ const fileTotal = ref(0)
 const filePageCount = ref(0)
 const fileListTotalSize = ref(0)
 const filterFileTotalSize = ref(0)
+const EXPORT_PAGE_SIZE = 100
+const exportAllMatchedRecords = computed(() =>
+  selectTask.value !== 'all' || selectCategory.value !== 'all',
+)
+const exportTipText = computed(() =>
+  exportAllMatchedRecords.value
+    ? '已指定任务或分类：导出会自动分页拉取该范围内的全部匹配记录，单次接口最多100条。'
+    : '未指定任务或分类：为避免一次导出全站大量记录，仅导出当前页列表；需要全量请先选择任务或分类。',
+)
 let loadFilesId = 0
 function loadFiles() {
   const currentLoadId = ++loadFilesId
@@ -338,13 +348,16 @@ function loadFiles() {
     })
 }
 async function loadFilesForExport() {
+  if (!exportAllMatchedRecords.value) {
+    return [...files]
+  }
   const exportFiles: FileApiTypes.File[] = []
   let pageIndex = 1
   let pageCount = 1
   do {
     const { data } = await FileApi.getFilePage({
       pageIndex,
-      pageSize: 100,
+      pageSize: EXPORT_PAGE_SIZE,
       categoryKey: selectCategory.value,
       taskKey: selectTask.value,
       keyword: searchWord.value,
@@ -402,7 +415,13 @@ function handleDropdownClick(e: string) {
         ids,
         `批量下载_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}`,
       )
-        .then(() => {
+        .then((res) => {
+          if (res.data?.url) {
+            downloadUrl.value = res.data.url
+            showLinkModel.value = true
+            downLoadByUrl(res.data.url)
+            return
+          }
           loadActions()
         })
         .catch(() => {
@@ -579,7 +598,13 @@ function handleDownloadTask() {
     taskKey: selectTask.value,
     zipName: selectTaskName.value,
   })
-    .then(() => {
+    .then((res) => {
+      if (res.data?.url) {
+        downloadUrl.value = res.data.url
+        showLinkModel.value = true
+        downLoadByUrl(res.data.url)
+        return
+      }
       loadActions()
     })
     .catch(() => {
@@ -779,11 +804,16 @@ function handleShowDetail() {
           刷新
         </el-button>
         <el-button
-          title="导出当前筛选条件下的所有数据" type="success" size="default" :icon="DataAnalysis"
+          :title="exportTipText" type="success" size="default" :icon="DataAnalysis"
           :disabled="fileTotal === 0" @click="handleExportFilterFiles"
         >
           导出记录
         </el-button>
+        <el-tooltip :content="exportTipText" placement="top" effect="dark">
+          <el-icon class="export-help-icon">
+            <QuestionFilled />
+          </el-icon>
+        </el-tooltip>
         <div class="control-item">
           显示图片
           <el-switch
@@ -1283,6 +1313,12 @@ function handleShowDetail() {
   color: #409eff;
   cursor: pointer;
   font-size: 13px;
+}
+
+.export-help-icon {
+  color: #909399;
+  cursor: help;
+  font-size: 16px;
 }
 
 .imageLoading {

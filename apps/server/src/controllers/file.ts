@@ -5,6 +5,7 @@ import type {
 import type { Files } from '@/db/entity'
 import type { DownloadActionData } from '@/db/model/action'
 import type { User } from '@/db/model/user'
+import fs, { createReadStream } from 'node:fs'
 import {
   Delete,
   Get,
@@ -19,8 +20,6 @@ import {
   RouterController,
 } from 'flash-wolves'
 import { ObjectID } from 'mongodb'
-import fs from 'node:fs'
-import { createReadStream } from 'node:fs'
 import { qiniuConfig } from '@/config'
 import { fileError, publicError } from '@/constants/errorMsg'
 import { findAction } from '@/db/actionDb'
@@ -30,6 +29,7 @@ import { ActionType } from '@/db/model/action'
 import { ReqUserInfo } from '@/decorator'
 import { BehaviorService, FileService, TaskService } from '@/service'
 import { wrapperCatchError } from '@/utils/context'
+import { localObjectAbsPath } from '@/utils/localFilePath'
 import {
   batchFileStatus,
   checkFopTaskStatus,
@@ -38,7 +38,6 @@ import {
   judgeFileIsExist,
   mvOssFile,
 } from '@/utils/qiniuUtil'
-import { localObjectAbsPath } from '@/utils/localFilePath'
 import { getMaxUploadBytes, getStorageMode } from '@/utils/storageMode'
 import LocalUserDB from '@/utils/user-local-db'
 import { getQiniuFileUrlExpiredTime } from '@/utils/userUtil'
@@ -342,6 +341,7 @@ export default class FileController {
         categoryKey: '',
         people: data.people || '',
         originName: data.originName || '',
+        storage: data.storage === 'local' ? 'local' : 'qiniu',
       })
       await this.fileService.addFile(data)
       this.behaviorService.add('file', `提交文件: 文件名:${data.name} 成功`, data)

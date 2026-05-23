@@ -6,6 +6,9 @@ import type { File } from '@/db/model/file'
 import type { Log } from '@/db/model/log'
 import type { DownloadLogAnalyzeItem } from '@/types'
 import fs from 'node:fs'
+import https from 'node:https'
+import path from 'node:path'
+import { TextEncoder } from 'node:util'
 import dayjs from 'dayjs'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { ObjectID, ObjectId } from 'mongodb'
@@ -25,7 +28,6 @@ import { UserRepository } from '@/db/userDb'
 import { localObjectAbsPath } from '@/utils/localFilePath'
 import { sendMail } from '@/utils/mail'
 import { batchFileStatus, createDownloadUrl, deleteObjByKey, judgeFileIsExist, makeZipWithKeys } from '@/utils/qiniuUtil'
-import { getStorageMode } from '@/utils/storageMode'
 import { B2GB, formatPrice, formatSize, getUniqueKey, isSameInfo, normalizeFileName, percentageValue, shortLink } from '@/utils/stringUtil'
 import { diffMonth } from '@/utils/time-utils'
 import LocalUserDB from '@/utils/user-local-db'
@@ -42,6 +44,10 @@ interface FilePageOptions {
   taskKey?: string
   keyword?: string
 }
+
+type StoredFileLocation
+  = | { storage: 'local', relPath: string, size: number }
+    | { storage: 'qiniu', key: string, size: number }
 
 const DOWNLOAD_COUNT_REFRESH_INTERVAL_MS = 1000 * 60 * 10
 const DOWNLOAD_COUNT_CACHE_SECONDS = 60 * 60 * 24 * 7
@@ -102,6 +108,78 @@ export default class FileService {
     return `easypicker2/${file.task_key || file.taskKey}/${file.hash}/${
       file.name
     }`
+  }
+
+  private getFileStorage(file: Pick<Files, 'storage'>) {
+    return file.storage === 'local' ? 'local' : 'qiniu'
+  }
+
+  private getLocalRelPath(file: Pick<Files, 'taskKey' | 'hash' | 'name' | 'categoryKey'>) {
+    return file.categoryKey?.startsWith('easypicker')
+      ? file.categoryKey
+      : `easypicker2/${file.taskKey}/${file.hash}/${file.name}`
+  }
+
+  private getLocalLocation(file: Files): StoredFileLocation | null {
+    const relPath = this.getLocalRelPath(file)
+    const abs = localObjectAbsPath(relPath)
+    if (!fs.existsSync(abs)) {
+      return null
+    }
+    return {
+      storage: 'local',
+      relPath,
+      size: fs.statSync(abs).size,
+    }
+  }
+
+  private async getQiniuLocation(file: Files): Promise<StoredFileLocation | null> {
+    const key = this.getOssKey(file)
+    if (file.categoryKey && await judgeFileIsExist(file.categoryKey)) {
+      return {
+        storage: 'qiniu',
+        key: file.categoryKey,
+        size: +file.size || 0,
+      }
+    }
+    if (await judgeFileIsExist(key)) {
+      return {
+        storage: 'qiniu',
+        key,
+        size: +file.size || 0,
+      }
+    }
+    return null
+  }
+
+  private async resolveStoredFile(file: Files): Promise<StoredFileLocation | null> {
+    const storage = this.getFileStorage(file)
+    if (storage === 'local') {
+      return this.getLocalLocation(file) || await this.getQiniuLocation(file)
+    }
+    return await this.getQiniuLocation(file) || this.getLocalLocation(file)
+  }
+
+  private async deleteStoredObject(file: Files) {
+    const storage = this.getFileStorage(file)
+    if (storage === 'local') {
+      const local = this.getLocalLocation(file)
+      if (local?.storage === 'local') {
+        fs.unlinkSync(localObjectAbsPath(local.relPath))
+        return
+      }
+    }
+
+    const qiniu = await this.getQiniuLocation(file)
+    if (qiniu?.storage === 'qiniu') {
+      deleteObjByKey(qiniu.key)
+      return
+    }
+
+    const local = this.getLocalLocation(file)
+    if (local?.storage === 'local') {
+      fs.unlinkSync(localObjectAbsPath(local.relPath))
+    }
   }
 
   private getDownloadCountCacheKey(userId: number, fileId: number) {
@@ -389,15 +467,17 @@ export default class FileService {
       throw publicError.file.notExist
     }
 
-    if (getStorageMode() === 'local') {
-      const rel = file.categoryKey?.startsWith('easypicker')
-        ? file.categoryKey
-        : `easypicker2/${file.taskKey}/${file.hash}/${file.name}`
-      const abs = localObjectAbsPath(rel)
-      if (!fs.existsSync(abs)) {
-        this.behaviorService.add('file', `本机文件缺失 用户:${logAccount} ${rel}`, { account: logAccount })
-        throw publicError.file.notExist
-      }
+    const location = await this.resolveStoredFile(file)
+    if (!location) {
+      this.behaviorService.add('file', `下载文件失败 用户:${logAccount} 文件:${file.name} 已从存储中移除`, {
+        account: logAccount,
+        name: file.name,
+        storage: file.storage,
+      })
+      throw publicError.file.notExist
+    }
+
+    if (location.storage === 'local') {
       const mimeType = 'application/octet-stream'
       const expiredTime = getQiniuFileUrlExpiredTime(LocalUserDB.getSiteConfig()?.downloadOneExpired || 1)
       const result = await addDownloadAction({
@@ -410,12 +490,12 @@ export default class FileService {
         url: link,
         originUrl: '',
         storage: 'local',
-        localRelPath: rel,
+        localRelPath: location.relPath,
         status: DownloadStatus.SUCCESS,
         ids: [file.id],
         tip: file.name,
         name: file.name,
-        size: file.size,
+        size: location.size || file.size,
         account: logAccount,
         mimeType,
         expiredTime: expiredTime * 1000,
@@ -427,29 +507,7 @@ export default class FileService {
       return { link, mimeType }
     }
 
-    let k = this.getOssKey(file)
-    let isExist = false
-    // 兼容旧路径的逻辑
-    if (file.categoryKey) {
-      isExist = await judgeFileIsExist(file.categoryKey)
-    }
-
-    if (!isExist) {
-      isExist = await judgeFileIsExist(k)
-    }
-    else {
-      k = file.categoryKey
-    }
-
-    if (!isExist) {
-      this.behaviorService.add('file', `下载文件失败 用户:${logAccount} 文件:${file.name} 已从云上移除`, {
-        account: logAccount,
-        name: file.name,
-      })
-
-      throw publicError.file.notExist
-    }
-
+    const k = location.key
     const status = await batchFileStatus([k])
     const mimeType = status[0]?.data?.mimeType
     // 新日志记录在重定向链接中
@@ -492,6 +550,165 @@ export default class FileService {
     }
   }
 
+  private getArchiveEntryName(file: Files, usedNames: Set<string>) {
+    const raw = normalizeFileName(file.name || `${file.id}`) || `${file.id}`
+    const dotIndex = raw.lastIndexOf('.')
+    const name = dotIndex > 0 ? raw.slice(0, dotIndex) : raw
+    const ext = dotIndex > 0 ? raw.slice(dotIndex) : ''
+    let entryName = raw
+    let idx = 1
+    while (usedNames.has(entryName)) {
+      entryName = `${name}_${idx}${ext}`
+      idx += 1
+    }
+    usedNames.add(entryName)
+    return entryName
+  }
+
+  private getCrc32Table() {
+    const table: number[] = []
+    for (let i = 0; i < 256; i++) {
+      let c = i
+      for (let k = 0; k < 8; k++) {
+        c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1
+      }
+      table[i] = c >>> 0
+    }
+    return table
+  }
+
+  private crc32(bytes: Uint8Array) {
+    const table = this.getCrc32Table()
+    let crc = 0xFFFFFFFF
+    for (let i = 0; i < bytes.length; i++) {
+      crc = table[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8)
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0
+  }
+
+  private writeUint16(view: DataView, offset: number, value: number) {
+    view.setUint16(offset, value, true)
+  }
+
+  private writeUint32(view: DataView, offset: number, value: number) {
+    view.setUint32(offset, value >>> 0, true)
+  }
+
+  private concatBytes(chunks: Uint8Array[]) {
+    const size = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+    const res = new Uint8Array(size)
+    let offset = 0
+    chunks.forEach((chunk) => {
+      res.set(chunk, offset)
+      offset += chunk.length
+    })
+    return res
+  }
+
+  private toByteArray(data: ArrayLike<number>) {
+    const bytes = new Uint8Array(data.length)
+    for (let i = 0; i < data.length; i++) {
+      bytes[i] = data[i]
+    }
+    return bytes
+  }
+
+  private createZipBytes(entries: { name: string, data: Uint8Array }[]) {
+    const localParts: Uint8Array[] = []
+    const centralParts: Uint8Array[] = []
+    const encoder = new TextEncoder()
+    let offset = 0
+
+    entries.forEach((entry) => {
+      const nameBytes = encoder.encode(entry.name)
+      const checksum = this.crc32(entry.data)
+
+      const local = new Uint8Array(30 + nameBytes.length)
+      const localView = new DataView(local.buffer)
+      this.writeUint32(localView, 0, 0x04034B50)
+      this.writeUint16(localView, 4, 20)
+      this.writeUint16(localView, 6, 0x0800)
+      this.writeUint16(localView, 8, 0)
+      this.writeUint32(localView, 10, 0)
+      this.writeUint32(localView, 14, checksum)
+      this.writeUint32(localView, 18, entry.data.length)
+      this.writeUint32(localView, 22, entry.data.length)
+      this.writeUint16(localView, 26, nameBytes.length)
+      local.set(nameBytes, 30)
+      localParts.push(local, entry.data)
+
+      const central = new Uint8Array(46 + nameBytes.length)
+      const centralView = new DataView(central.buffer)
+      this.writeUint32(centralView, 0, 0x02014B50)
+      this.writeUint16(centralView, 4, 20)
+      this.writeUint16(centralView, 6, 20)
+      this.writeUint16(centralView, 8, 0x0800)
+      this.writeUint16(centralView, 10, 0)
+      this.writeUint32(centralView, 12, 0)
+      this.writeUint32(centralView, 16, checksum)
+      this.writeUint32(centralView, 20, entry.data.length)
+      this.writeUint32(centralView, 24, entry.data.length)
+      this.writeUint16(centralView, 28, nameBytes.length)
+      this.writeUint32(centralView, 42, offset)
+      central.set(nameBytes, 46)
+      centralParts.push(central)
+
+      offset += local.length + entry.data.length
+    })
+
+    const centralDir = this.concatBytes(centralParts)
+    const end = new Uint8Array(22)
+    const endView = new DataView(end.buffer)
+    this.writeUint32(endView, 0, 0x06054B50)
+    this.writeUint16(endView, 8, entries.length)
+    this.writeUint16(endView, 10, entries.length)
+    this.writeUint32(endView, 12, centralDir.length)
+    this.writeUint32(endView, 16, offset)
+
+    return this.concatBytes([...localParts, centralDir, end])
+  }
+
+  private downloadBuffer(url: string) {
+    return new Promise<Uint8Array>((resolve, reject) => {
+      https.get(url, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          this.downloadBuffer(res.headers.location).then(resolve, reject)
+          return
+        }
+        if (res.statusCode !== 200) {
+          reject(new Error(`download failed: ${res.statusCode}`))
+          return
+        }
+        const chunks: Uint8Array[] = []
+        res.on('data', chunk => chunks.push(this.toByteArray(chunk)))
+        res.on('end', () => resolve(this.concatBytes(chunks)))
+      }).on('error', reject)
+    })
+  }
+
+  private async makeLocalZip(
+    files: Files[],
+    locations: StoredFileLocation[],
+    zipName: string,
+  ) {
+    const usedNames = new Set<string>()
+    const entries = await Promise.all(files.map(async (file, idx) => {
+      const location = locations[idx]
+      const data = location.storage === 'local'
+        ? this.toByteArray(fs.readFileSync(localObjectAbsPath(location.relPath)))
+        : await this.downloadBuffer(createDownloadUrl(location.key))
+      return {
+        name: this.getArchiveEntryName(file, usedNames),
+        data,
+      }
+    }))
+    const relPath = `easypicker2/temp_package/${Date.now()}/${normalizeFileName(zipName)}.zip`
+    const absPath = localObjectAbsPath(relPath)
+    fs.mkdirSync(path.dirname(absPath), { recursive: true })
+    fs.writeFileSync(absPath, this.createZipBytes(entries))
+    return relPath
+  }
+
   async batchDownload(ids: number[], zipName: string) {
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
     const files = await this.fileRepository.findMany({
@@ -504,42 +721,69 @@ export default class FileService {
       })
       throw publicError.file.notExist
     }
-    let keys = []
-    for (const file of files) {
-      const { categoryKey } = file
-      const key = this.getOssKey(file)
-      if (!categoryKey) {
-        keys.push(key)
+    const resolved = await Promise.all(files.map(file => this.resolveStoredFile(file)))
+    const validFiles: Files[] = []
+    const locations: StoredFileLocation[] = []
+    resolved.forEach((location, idx) => {
+      if (location) {
+        validFiles.push(files[idx])
+        locations.push(location)
       }
-      // 兼容老板平台数据
-      if (categoryKey) {
-        const isOldExist = await judgeFileIsExist(categoryKey)
-        if (isOldExist) {
-          keys.push(categoryKey)
-        }
-        else {
-          keys.push(key)
-        }
-      }
-    }
-
-    const filesStatus = await batchFileStatus(keys)
-    let size = 0
-    keys = keys.filter((_, idx) => {
-      const { code } = filesStatus[idx]
-      if (code === 200) {
-        size += filesStatus[idx].data.fsize || 0
-      }
-      return code === 200
     })
-    if (keys.length === 0) {
-      this.behaviorService.add('file', `批量下载文件失败 用户:${logAccount} 文件均已从云上移除`, {
+
+    if (locations.length === 0) {
+      this.behaviorService.add('file', `批量下载文件失败 用户:${logAccount} 文件均已从存储中移除`, {
         account: logAccount,
       })
       throw publicError.file.notExist
     }
 
-    const filename = normalizeFileName(zipName) ?? `${getUniqueKey()}`
+    const validIds = validFiles.map(file => file.id)
+    const filename = normalizeFileName(zipName || `${getUniqueKey()}`)
+    const size = locations.reduce((sum, location) => sum + (+location.size || 0), 0)
+    const hasLocalFile = locations.some(location => location.storage === 'local')
+
+    if (hasLocalFile) {
+      const relPath = await this.makeLocalZip(validFiles, locations, filename)
+      const result = await addDownloadAction({
+        userId,
+        type: ActionType.Compress,
+      })
+      const link = shortLink(result.insertedId, this.ctx.req)
+      await updateAction<DownloadActionData>(
+        { _id: ObjectID(result.insertedId) },
+        {
+          $set: {
+            data: {
+              url: link,
+              originUrl: '',
+              storage: 'local',
+              localRelPath: relPath,
+              status: DownloadStatus.SUCCESS,
+              ids: validIds,
+              tip: `${filename}.zip (${locations.length}个文件)`,
+              name: `${filename}.zip`,
+              size,
+              account: logAccount,
+              mimeType: 'application/zip',
+            },
+          },
+        },
+      )
+      this.behaviorService.add('file', `本机批量下载任务 用户:${logAccount} 文件数量:${locations.length} 压缩文件:${relPath}`, {
+        account: logAccount,
+        length: locations.length,
+        size,
+      })
+      return {
+        k: relPath,
+        url: link,
+      }
+    }
+
+    const keys = locations
+      .filter((location): location is Extract<StoredFileLocation, { storage: 'qiniu' }> => location.storage === 'qiniu')
+      .map(location => location.key)
     const value = await makeZipWithKeys(keys, filename)
     this.behaviorService.add('file', `批量下载任务 用户:${logAccount} 文件数量:${keys.length} 压缩任务名${value}`, {
       account: logAccount,
@@ -552,7 +796,7 @@ export default class FileService {
       type: ActionType.Compress,
       data: {
         status: DownloadStatus.ARCHIVE,
-        ids,
+        ids: validIds,
         tip: `${filename}.zip (${keys.length}个文件)`,
         archiveKey: value,
       },
@@ -833,6 +1077,7 @@ export default class FileService {
 
   async addFile(file: Files) {
     file.name = normalizeFileName(file.name)
+    file.storage = file.storage === 'local' ? 'local' : 'qiniu'
     file.date = new Date()
     const saved = await this.fileRepository.insert(file)
     void this.notifyOwnerOnSubmit(file)
@@ -881,11 +1126,6 @@ export default class FileService {
       })
       throw publicError.file.notExist
     }
-    let k = `easypicker2/${file.taskKey}/${file.hash}/${file.name}`
-    // 兼容旧路径的逻辑
-    if (file.categoryKey) {
-      k = file.categoryKey
-    }
     const sameRecord = await this.fileRepository.findMany({
       taskKey: file.taskKey,
       hash: file.hash,
@@ -897,17 +1137,7 @@ export default class FileService {
 
     // 存在相同文件时，存储上共用一份数据，不能删除OSS资源
     if (!isRepeat) {
-      if (getStorageMode() === 'local') {
-        const rel = file.categoryKey?.startsWith('easypicker')
-          ? file.categoryKey
-          : `easypicker2/${file.taskKey}/${file.hash}/${file.name}`
-        const abs = localObjectAbsPath(rel)
-        if (fs.existsSync(abs))
-          fs.unlinkSync(abs)
-      }
-      else {
-        deleteObjByKey(k)
-      }
+      await this.deleteStoredObject(file)
     }
     if (!file.ossDelTime) {
       file.ossDelTime = new Date()
@@ -1067,8 +1297,7 @@ export default class FileService {
     // 删除提交记录
     // 删除文件
     if (isDelOss) {
-      const key = `easypicker2/${taskKey}/${hash}/${filename}`
-      deleteObjByKey(key)
+      await this.deleteStoredObject(passFiles[0])
     }
     await this.fileRepository.updateSpecifyFields({
       id: In(passFiles.map(file => file.id)),
@@ -1133,25 +1362,27 @@ export default class FileService {
     // TODO：上传时尽力保持每个文件的独立性
     // TODO：O(n²)的复杂度，观察一下实际操作频率优化，会导致接口时间变长
     for (const file of files) {
-      const { name, taskKey, hash, categoryKey } = file
-      // 兼容旧逻辑
-      if (categoryKey) {
-        keys.add(categoryKey)
-      }
-      else {
-        // 文件一模一样的记录避免误删
-        const dbCount = await this.fileRepository.count({
-          del: BOOLEAN.FALSE,
-          taskKey,
-          hash,
-          name,
-        })
+      const { name, taskKey, hash } = file
+      // 文件一模一样的记录避免误删
+      const dbCount = await this.fileRepository.count({
+        del: BOOLEAN.FALSE,
+        taskKey,
+        hash,
+        name,
+      })
 
-        const delCount = files.filter(
-          v => v.taskKey === taskKey && v.hash === hash && v.name === name,
-        ).length
-        if (dbCount <= delCount) {
-          keys.add(this.getOssKey(file))
+      const delCount = files.filter(
+        v => v.taskKey === taskKey && v.hash === hash && v.name === name,
+      ).length
+      if (dbCount <= delCount) {
+        const location = await this.resolveStoredFile(file)
+        if (location?.storage === 'qiniu') {
+          keys.add(location.key)
+        }
+        else if (location?.storage === 'local') {
+          const abs = localObjectAbsPath(location.relPath)
+          if (fs.existsSync(abs))
+            fs.unlinkSync(abs)
         }
       }
     }

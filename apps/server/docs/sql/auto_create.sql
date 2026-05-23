@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS `files` (
   `category_key` varchar(256) NOT NULL COMMENT '所属分类',
   `user_id` int(11) NOT NULL COMMENT '所属用户',
   `name` varchar(1024) NOT NULL COMMENT '文件名',
+  `storage` varchar(16) NOT NULL DEFAULT 'qiniu' COMMENT '文件存储位置：qiniu/local',
   `info` json DEFAULT NULL COMMENT '提交填写的信息（表单项 JSON）',
   `hash` varchar(512) NOT NULL COMMENT '文件hash',
   `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传日期',

@@ -54,6 +54,13 @@ export class Files {
   @Column('varchar', { length: 1024, name: 'name', comment: '文件名' })
   name: string
 
+  @Column('varchar', {
+    length: 16,
+    default: 'qiniu',
+    comment: '文件存储位置：qiniu/local',
+  })
+  storage: 'qiniu' | 'local'
+
   @Column({
     type: 'longtext',
     nullable: true,

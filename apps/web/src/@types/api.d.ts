@@ -12,6 +12,7 @@ declare namespace FileApiTypes {
     taskName: string
     originName: string
     categoryKey?: string
+    storage?: 'qiniu' | 'local'
     name: string
     info: string
     hash: string
@@ -28,6 +29,7 @@ declare namespace FileApiTypes {
     user_id: number
     category_key: string
     origin_name: string
+    storage?: 'qiniu' | 'local'
     date: string
     hash: string
     cover?: string
@@ -70,7 +72,7 @@ declare namespace FileApiTypes {
   type getTemplateUrl = ResponseData<{ link: string }>
   type getOneFileUrl = ResponseData<{ link: string, mimeType: string }>
   type deleteOneFile = ResponseData
-  type batchDownload = ResponseData<{ k: string }>
+  type batchDownload = ResponseData<{ k: string, url?: string }>
   type batchDel = ResponseData
   type checkCompressStatus = ResponseData<{ code: number, key?: string }>
   type getCompressDownUrl = ResponseData<{ url: string }>
