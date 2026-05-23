@@ -207,57 +207,83 @@ function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
     value: v,
     row: 2,
   }))
+  const exportInfoCache = new Map<FileApiTypes.File, InfoItem[] | null>()
+  function getExportInfo(file: FileApiTypes.File) {
+    if (exportInfoCache.has(file)) {
+      return exportInfoCache.get(file)
+    }
 
-  const infosHeader = files.reduce((pre, value) => {
     try {
-      JSON.parse(value.info).forEach((i: any) => {
-        if (!pre.includes(i.text)) {
-          pre.push(i.text)
+      const rawInfo = file.info
+      let info: InfoItem[]
+      if (Array.isArray(rawInfo)) {
+        info = parseInfo(rawInfo)
+      }
+      else if (rawInfo == null || String(rawInfo).trim() === '') {
+        info = []
+      }
+      else {
+        const parsed = JSON.parse(rawInfo)
+        if (!Array.isArray(parsed)) {
+          throw new TypeError('file info is not an array')
         }
-      })
+        info = parseInfo(parsed)
+      }
+      exportInfoCache.set(file, info)
+      return info
     }
     catch {
       ElMessage.error({
-        message: `数据异常${value.name}，可联系平台管理员处理`,
+        message: `数据异常${file.name}，可联系平台管理员处理`,
         duration: 5000,
       })
-      console.warn(value)
+      console.warn(file)
+      exportInfoCache.set(file, null)
+      return null
     }
+  }
+
+  const infosHeader = files.reduce<string[]>((pre, value) => {
+    getExportInfo(value)?.forEach((i) => {
+      if (i.text && !pre.includes(i.text)) {
+        pre.push(i.text)
+      }
+    })
     return pre
   }, [])
-  headers.push({
-    value: '提交信息',
-    col: infosHeader.length,
-  })
+  if (infosHeader.length) {
+    headers.push({
+      value: '提交信息',
+      col: infosHeader.length,
+    })
+  }
 
   const body = files.map((v) => {
     const { date, task_name: taskName, name, size, people } = v
-    try {
-      const infoObj = JSON.parse(v.info).reduce((pre, v) => {
+    const fileInfo = getExportInfo(v)
+    if (!fileInfo) {
+      return []
+    }
+    const infoObj = fileInfo.reduce<Record<string, string>>((pre, v) => {
+      if (v.text) {
         pre[v.text] = `${v.value}`
-        return pre
-      }, {})
-      const info = infosHeader.map(v => infoObj[v] ?? '-')
-      const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
-      if (showOriginName.value) {
-        rows.push(v.origin_name || '-')
       }
-      if (showPeople.value) {
-        rows.push(people || '-')
-      }
-      rows.push(...info)
-      return rows
+      return pre
+    }, {})
+    const info = infosHeader.map(v => infoObj[v] ?? '-')
+    const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
+    if (showOriginName.value) {
+      rows.push(v.origin_name || '-')
     }
-    catch {
-      ElMessage.error({
-        message: `数据异常${v.name}，可联系平台管理员处理`,
-        duration: 5000,
-      })
-      console.warn(v)
+    if (showPeople.value) {
+      rows.push(people || '-')
     }
-    return []
+    rows.push(...info)
+    return rows
   }).filter(v => !!v.length)
-  body.unshift(infosHeader)
+  if (infosHeader.length) {
+    body.unshift(infosHeader)
+  }
 
   const _filename = filename || `数据导出_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}.xlsx`
   const resFileName = selectTaskName.value ? `${normalizeFileName(selectTaskName.value)}_${_filename}` : _filename

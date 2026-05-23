@@ -70,8 +70,335 @@ export interface tableItem {
   col?: number
   row?: number
 }
+
+interface ExportCell {
+  value: unknown
+  colSpan: number
+  rowSpan: number
+}
+
+interface SheetCell {
+  value: string
+  row: number
+  col: number
+}
+
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+let crcTable: number[] | undefined
+
+function getCrcTable() {
+  if (crcTable) {
+    return crcTable
+  }
+  crcTable = []
+  for (let i = 0; i < 256; i++) {
+    let c = i
+    for (let k = 0; k < 8; k++) {
+      c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1
+    }
+    crcTable[i] = c >>> 0
+  }
+  return crcTable
+}
+
+function crc32(bytes: Uint8Array) {
+  const table = getCrcTable()
+  let crc = 0xFFFFFFFF
+  for (let i = 0; i < bytes.length; i++) {
+    crc = table[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8)
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0
+}
+
+function utf8Bytes(content: string) {
+  return new TextEncoder().encode(content)
+}
+
+function writeUint16(view: DataView, offset: number, value: number) {
+  view.setUint16(offset, value, true)
+}
+
+function writeUint32(view: DataView, offset: number, value: number) {
+  view.setUint32(offset, value >>> 0, true)
+}
+
+function concatBytes(chunks: Uint8Array[]) {
+  const size = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+  const res = new Uint8Array(size)
+  let offset = 0
+  chunks.forEach((chunk) => {
+    res.set(chunk, offset)
+    offset += chunk.length
+  })
+  return res
+}
+
+function createZip(files: Array<{ name: string, content: string }>) {
+  const localParts: Uint8Array[] = []
+  const centralParts: Uint8Array[] = []
+  let offset = 0
+
+  files.forEach((file) => {
+    const nameBytes = utf8Bytes(file.name)
+    const data = utf8Bytes(file.content)
+    const checksum = crc32(data)
+
+    const local = new Uint8Array(30 + nameBytes.length)
+    const localView = new DataView(local.buffer)
+    writeUint32(localView, 0, 0x04034B50)
+    writeUint16(localView, 4, 20)
+    writeUint16(localView, 6, 0x0800)
+    writeUint16(localView, 8, 0)
+    writeUint32(localView, 10, 0)
+    writeUint32(localView, 14, checksum)
+    writeUint32(localView, 18, data.length)
+    writeUint32(localView, 22, data.length)
+    writeUint16(localView, 26, nameBytes.length)
+    local.set(nameBytes, 30)
+
+    localParts.push(local, data)
+
+    const central = new Uint8Array(46 + nameBytes.length)
+    const centralView = new DataView(central.buffer)
+    writeUint32(centralView, 0, 0x02014B50)
+    writeUint16(centralView, 4, 20)
+    writeUint16(centralView, 6, 20)
+    writeUint16(centralView, 8, 0x0800)
+    writeUint16(centralView, 10, 0)
+    writeUint32(centralView, 12, 0)
+    writeUint32(centralView, 16, checksum)
+    writeUint32(centralView, 20, data.length)
+    writeUint32(centralView, 24, data.length)
+    writeUint16(centralView, 28, nameBytes.length)
+    writeUint32(centralView, 42, offset)
+    central.set(nameBytes, 46)
+    centralParts.push(central)
+
+    offset += local.length + data.length
+  })
+
+  const centralDir = concatBytes(centralParts)
+  const end = new Uint8Array(22)
+  const endView = new DataView(end.buffer)
+  writeUint32(endView, 0, 0x06054B50)
+  writeUint16(endView, 8, files.length)
+  writeUint16(endView, 10, files.length)
+  writeUint32(endView, 12, centralDir.length)
+  writeUint32(endView, 16, offset)
+
+  return concatBytes([...localParts, centralDir, end])
+}
+
+function escapeXml(value: string) {
+  return stripInvalidXmlChars(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+function stripInvalidXmlChars(value: string) {
+  let result = ''
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i)
+    if (code >= 0x20 || code === 0x09 || code === 0x0A || code === 0x0D) {
+      result += value[i]
+    }
+  }
+  return result
+}
+
+function isTableCell(value: unknown): value is tableItem {
+  return (
+    !!value
+    && typeof value === 'object'
+    && !(value instanceof Date)
+    && ('value' in value || 'col' in value || 'row' in value)
+  )
+}
+
+function normalizeExportCell(value: unknown): ExportCell {
+  if (isTableCell(value)) {
+    return {
+      value: value.value,
+      colSpan: Math.max(1, Number(value.col) || 1),
+      rowSpan: Math.max(1, Number(value.row) || 1),
+    }
+  }
+  return {
+    value,
+    colSpan: 1,
+    rowSpan: 1,
+  }
+}
+
+function stringifyCellValue(value: unknown) {
+  if (value == null) {
+    return ''
+  }
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? '' : value.toLocaleString()
+  }
+  return `${value}`
+}
+
+function encodeCellRef(rowIndex: number, colIndex: number) {
+  let col = ''
+  let n = colIndex + 1
+  while (n > 0) {
+    const mod = (n - 1) % 26
+    col = String.fromCharCode(65 + mod) + col
+    n = Math.floor((n - mod) / 26)
+  }
+  return `${col}${rowIndex + 1}`
+}
+
+function buildSheetData(headers: (string | tableItem)[], body: unknown[][]) {
+  const sourceRows = [headers, ...body]
+  const occupied = new Set<string>()
+  const rows: SheetCell[][] = []
+  const merges: string[] = []
+  let maxCol = 0
+
+  sourceRows.forEach((sourceRow, rowIndex) => {
+    rows[rowIndex] = rows[rowIndex] || []
+    let colIndex = 0
+
+    sourceRow.forEach((sourceCell) => {
+      while (occupied.has(`${rowIndex}:${colIndex}`)) {
+        colIndex++
+      }
+
+      const cell = normalizeExportCell(sourceCell)
+      const value = stringifyCellValue(cell.value)
+      rows[rowIndex][colIndex] = {
+        value,
+        row: rowIndex,
+        col: colIndex,
+      }
+
+      if (cell.colSpan > 1 || cell.rowSpan > 1) {
+        const endRow = rowIndex + cell.rowSpan - 1
+        const endCol = colIndex + cell.colSpan - 1
+        merges.push(`${encodeCellRef(rowIndex, colIndex)}:${encodeCellRef(endRow, endCol)}`)
+
+        for (let r = rowIndex; r <= endRow; r++) {
+          for (let c = colIndex; c <= endCol; c++) {
+            if (r !== rowIndex || c !== colIndex) {
+              occupied.add(`${r}:${c}`)
+            }
+          }
+        }
+      }
+
+      maxCol = Math.max(maxCol, colIndex + cell.colSpan)
+      colIndex++
+    })
+  })
+
+  return {
+    rows,
+    merges,
+    maxCol,
+  }
+}
+
+function createWorksheetXml(headers: (string | tableItem)[], body: unknown[][]) {
+  const { rows, merges, maxCol } = buildSheetData(headers, body)
+  const maxRow = Math.max(rows.length, 1)
+  const dimension = `A1:${encodeCellRef(maxRow - 1, Math.max(maxCol - 1, 0))}`
+  const rowXml = rows.map((row, rowIndex) => {
+    const cells = row.filter(Boolean).map((cell) => {
+      const value = escapeXml(cell.value)
+      const preserveSpace = /^\s|\s$/.test(cell.value) ? ' xml:space="preserve"' : ''
+      return `<c r="${encodeCellRef(rowIndex, cell.col)}" t="inlineStr"><is><t${preserveSpace}>${value}</t></is></c>`
+    }).join('')
+    return `<row r="${rowIndex + 1}">${cells}</row>`
+  }).join('')
+  const mergeXml = merges.length
+    ? `<mergeCells count="${merges.length}">${merges.map(ref => `<mergeCell ref="${ref}"/>`).join('')}</mergeCells>`
+    : ''
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <dimension ref="${dimension}"/>
+  <sheetViews><sheetView workbookViewId="0"/></sheetViews>
+  <sheetFormatPr defaultRowHeight="15"/>
+  <sheetData>${rowXml}</sheetData>
+  ${mergeXml}
+</worksheet>`
+}
+
+function createWorkbookBlob(headers: (string | tableItem)[], body: unknown[][]) {
+  const files = [
+    {
+      name: '[Content_Types].xml',
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`,
+    },
+    {
+      name: '_rels/.rels',
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`,
+    },
+    {
+      name: 'xl/workbook.xml',
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets>
+</workbook>`,
+    },
+    {
+      name: 'xl/_rels/workbook.xml.rels',
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`,
+    },
+    {
+      name: 'xl/styles.xml',
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+  <fills count="1"><fill><patternFill patternType="none"/></fill></fills>
+  <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+  <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+  <cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>
+</styleSheet>`,
+    },
+    {
+      name: 'xl/worksheets/sheet1.xml',
+      content: createWorksheetXml(headers, body),
+    },
+  ]
+
+  return new Blob([createZip(files)], { type: XLSX_MIME })
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 /**
- * 导出表格数据为xls
+ * 导出表格数据为xlsx
  * @param headers 头部
  * @param body 身体部分数据
  */
@@ -80,55 +407,10 @@ export function tableToExcel(
   body: any[],
   filename = 'res.xlsx',
 ) {
-  // 列标题
-  let str = `<tr>${headers
-    .map((v) => {
-      if (v instanceof Object) {
-        const { value, col = 1, row = 1 } = v
-        return `<th colspan="${col}" rowspan="${row}">${value}</th>`
-      }
-      return `<th>${v}</th>`
-    })
-    .join('')}</tr>`
-  // 循环遍历，每行加入tr标签，每个单元格加td标签
-  for (const row of body) {
-    str += '<tr>'
-    for (const cell of row) {
-      if (cell instanceof Object) {
-        const { value, col = 1, row = 1 } = cell
-        str += `<td colspan="${col}" rowspan="${row}">${value}</td>`
-      }
-      // 增加\t为了不让表格显示科学计数法或者其他格式
-      str += `<td>${`${cell}\t`}</td>`
-    }
-    str += '</tr>'
-  }
-
-  // Worksheet名
-  // const worksheet = 'sheet1'
-  // const uri = 'data:application/vnd.ms-excel;base64,'
-
-  // // 下载的表格模板数据
-  // const template =
-  //   '<html xmlns:o="urn:schemas-microsoft-com:office:office" \n' +
-  //   '      xmlns:x="urn:schemas-microsoft-com:office:excel" \n' +
-  //   '      xmlns="http://www.w3.org/TR/REC-html40">\n' +
-  //   '      <head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>\n' +
-  //   `        <x:Name>${worksheet}</x:Name>\n` +
-  //   '        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>\n' +
-  //   '        </x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->\n' +
-  //   `        </head><body><table>${str}</table></body></html>\n`
-  // 下载模板
-  // const tempA = document.createElement('a')
-  // tempA.href = uri + base64(template)
-  // tempA.download = filename
-  // document.body.appendChild(tempA)
-  // tempA.click()
-  // document.body.removeChild(tempA)
-  const tableElement = document.createElement('table')
-  tableElement.innerHTML = str
-  const wb = XLSX.utils.table_to_book(tableElement)
-  XLSX.writeFile(wb, filename)
+  const rows = Array.isArray(body)
+    ? body.map(row => (Array.isArray(row) ? row : [row]))
+    : []
+  downloadBlob(createWorkbookBlob(headers, rows), filename)
 }
 
 export function localTaskFileUpload(
