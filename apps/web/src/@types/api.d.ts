@@ -480,6 +480,12 @@ declare namespace ConfigServiceAPITypes {
   }
   type getServiceConfig = ResponseData<ConfigData[]>
 
+  interface StorageInfo {
+    cwd: string
+    uploadDir: string
+  }
+  type getStorageInfo = ResponseData<StorageInfo>
+
   interface MysqlSchemaOverview {
     autoCreateDatabase: boolean
     autoSyncSchemaOnStartup: boolean

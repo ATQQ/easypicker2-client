@@ -6,7 +6,7 @@ import { useRouter } from 'vue-router'
 import { SuperOverviewApi } from '@/apis'
 import { defaultSiteConfig as baseDefaultSiteConfig, useSiteAllConfig } from '@/composables'
 
-interface SiteConfig extends OverviewApiTypes.GlobalSiteConfig {}
+type SiteConfig = typeof baseDefaultSiteConfig
 interface RouteItem {
   path: string
   name: string
@@ -55,7 +55,7 @@ const configSections: ConfigSection[] = [
       { key: 'downloadCompressExpired', label: '归档链接有效期', description: '打包下载链接的过期时间。', type: 'number', min: 1, step: 1, suffix: '分钟' },
       { key: 'compressSizeLimit', label: '压缩包大小限制', description: '允许创建压缩包的最大体积。', type: 'number', min: 1, step: 1, suffix: 'GB' },
       { key: 'storageMode', label: '存储模式', description: '七牛云对象存储或服务器本机磁盘；本机模式需部署可写数据目录。', type: 'select', options: [{ label: '七牛云', value: 'qiniu' }, { label: '本机磁盘', value: 'local' }] },
-      { key: 'maxUploadSizeMB', label: '本机单文件上限', description: '仅存储模式为本机时，限制直传单个文件大小。', type: 'number', min: 1, step: 1, suffix: 'MB' },
+      { key: 'maxUploadSizeMB', label: '本机单文件上限', description: '单位：MB。仅存储模式为本机时，限制直传单个文件大小。', type: 'number', min: 1, step: 1, suffix: 'MB' },
     ],
   },
   {

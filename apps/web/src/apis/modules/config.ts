@@ -46,6 +46,10 @@ function getServiceConfig(): ConfigServiceAPITypes.getServiceConfig {
   return ajax.get('/config/service/config')
 }
 
+function getStorageInfo(): ConfigServiceAPITypes.getStorageInfo {
+  return ajax.get('/config/service/storage/info')
+}
+
 function updateCfg(data: ConfigServiceAPITypes.ServiceConfigItem | ConfigServiceAPITypes.ServiceConfigItem[]) {
   return ajax.put('/config/service/config', data)
 }
@@ -75,6 +79,7 @@ export default {
   createConfigAdminUser,
   resetConfigAdminUserPassword,
   getServiceConfig,
+  getStorageInfo,
   updateCfg,
   testMailConfig,
   getGlobalAllConfig,

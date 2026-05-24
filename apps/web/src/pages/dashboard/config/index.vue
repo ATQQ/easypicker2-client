@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Refresh } from '@element-plus/icons-vue'
+import { CopyDocument, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ConfigServiceAPI, PublicApi, UserApi } from '@/apis'
@@ -48,6 +48,10 @@ const siteFeatureForm = reactive({
   needBindEmail: false,
   alertEmails: '',
   emailDailyLimit: 0,
+})
+const storageInfo = ref<ConfigServiceAPITypes.StorageInfo>({
+  cwd: '',
+  uploadDir: '',
 })
 const mailTestSceneOptions: Array<{
   key: ConfigServiceAPITypes.MailTestSceneKey
@@ -569,7 +573,10 @@ async function getServiceConfig() {
 async function loadSiteFeatures() {
   siteFeatureLoading.value = true
   try {
-    const { data } = await ConfigServiceAPI.getGlobalAllConfig('site')
+    const [{ data }, storageRes] = await Promise.all([
+      ConfigServiceAPI.getGlobalAllConfig('site'),
+      ConfigServiceAPI.getStorageInfo(),
+    ])
     Object.assign(siteFeatureForm, {
       storageMode: data?.storageMode === 'local' ? 'local' : 'qiniu',
       maxUploadSizeMB: Number(data?.maxUploadSizeMB ?? 500),
@@ -580,12 +587,26 @@ async function loadSiteFeatures() {
       alertEmails: data?.alertEmails || '',
       emailDailyLimit: Number(data?.emailDailyLimit ?? 0),
     })
+    storageInfo.value = storageRes.data || { cwd: '', uploadDir: '' }
   }
   catch {
     ElMessage.error('服务功能配置加载失败')
   }
   finally {
     siteFeatureLoading.value = false
+  }
+}
+
+async function copyStorageDir() {
+  const uploadDir = storageInfo.value.uploadDir
+  if (!uploadDir)
+    return
+  try {
+    await navigator.clipboard.writeText(uploadDir)
+    ElMessage.success('存储目录已复制')
+  }
+  catch {
+    ElMessage.error('复制失败，请手动复制')
   }
 }
 
@@ -1192,20 +1213,36 @@ watch(activeConfigTab, (t) => {
 
                 <el-form-item class="field-item">
                   <template #label>
-                    <span class="field-label">本机单文件上限</span>
-                    <span class="field-desc">仅存储模式为本机时生效，限制直传单个文件大小。</span>
+                    <span class="field-label">当前本机存储目录</span>
+                    <span class="field-desc">服务端运行时的 upload 绝对路径；本机模式上传的文件会落在这里。</span>
                   </template>
-                  <el-input-number
-                    v-model="siteFeatureForm.maxUploadSizeMB"
-                    :min="1"
-                    :step="1"
-                    controls-position="right"
-                    class="full-control"
-                  >
-                    <template #suffix>
-                      MB
-                    </template>
-                  </el-input-number>
+                  <div class="readonly-path-control">
+                    <span class="readonly-path-text">{{ storageInfo.uploadDir || '-' }}</span>
+                    <el-button
+                      :icon="CopyDocument"
+                      :disabled="!storageInfo.uploadDir"
+                      @click="copyStorageDir"
+                    >
+                      复制
+                    </el-button>
+                  </div>
+                </el-form-item>
+
+                <el-form-item class="field-item">
+                  <template #label>
+                    <span class="field-label">本机单文件上限</span>
+                    <span class="field-desc">单位：MB。仅存储模式为本机时生效，限制直传单个文件大小。</span>
+                  </template>
+                  <div class="unit-control">
+                    <el-input-number
+                      v-model="siteFeatureForm.maxUploadSizeMB"
+                      :min="1"
+                      :step="1"
+                      controls-position="right"
+                      class="full-control"
+                    />
+                    <span class="unit-label">MB</span>
+                  </div>
                 </el-form-item>
               </div>
             </el-form>
@@ -1980,6 +2017,40 @@ watch(activeConfigTab, (t) => {
   width: 100%;
 }
 
+.unit-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.readonly-path-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
+  .el-button {
+    flex-shrink: 0;
+  }
+}
+
+.readonly-path-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #374151;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.unit-label {
+  flex-shrink: 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
 .bottom-actions-row {
   display: flex;
   align-items: center;
@@ -2381,6 +2452,11 @@ watch(activeConfigTab, (t) => {
 
   .field-item {
     padding: 12px;
+  }
+
+  .readonly-path-control {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .bottom-actions-row {

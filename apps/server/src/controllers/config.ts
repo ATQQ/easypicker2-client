@@ -4,7 +4,7 @@ import type { GlobalSiteConfig } from '@/types'
 import { Get, Inject, InjectCtx, Post, Put, ReqBody, ReqQuery, RouterController } from 'flash-wolves'
 import { In } from 'typeorm'
 import { kvStoreConfig } from '@/config'
-import { UserConfigLabels } from '@/constants'
+import { uploadFileDir, UserConfigLabels } from '@/constants'
 import { initTypeORM } from '@/db'
 import { USER_POWER } from '@/db/model/user'
 import { UserRepository } from '@/db/userDb'
@@ -532,6 +532,14 @@ export default class UserController {
     return {
       ok: results.every(item => item.ok),
       results,
+    }
+  }
+
+  @Get('service/storage/info')
+  getStorageInfo() {
+    return {
+      cwd: process.cwd(),
+      uploadDir: uploadFileDir,
     }
   }
 
