@@ -30,21 +30,31 @@ export function copyRes(text: string, msg = '结果已成功复制到剪贴板')
     })
 }
 
+/** 可用的短链域名列表 */
+export const shortLinkDomains = [
+  'iq1k.cn',
+  'm6z.cn',
+  'i6q.cn',
+  'b6v.cn',
+]
+
 /**
  * 生成短地址
  * @param text 长链接
+ * @param domain 短链域名，默认 iq1k.cn
  */
-export function getShortUrl(text: string): Promise<string> {
+export function getShortUrl(text: string, domain = 'iq1k.cn'): Promise<string> {
   return new Promise((resolve, reject) => {
     jsonp(
-      `https://api.suowo.cn/api.htm?format=jsonp&url=${encodeURIComponent(
+      `https://api.suolink.cn/api?format=jsonp&url=${encodeURIComponent(
         text,
-      )}&key=5ec8a001be96bd79a37f19b8@bf33c7483d0c6900bb7bc90a0e6dfdf0&expireDate=2030-03-31&domain=0`,
+      )}&key=6a1e8fac2bc5f862f60135e4e9@0484dad01967b4d45ecfb38722076cb9&expireDate=2030-03-31&domain=${domain}`,
       'shortLink',
       (res) => {
-        const { url, err } = res
-        if (err) {
-          reject(err)
+        const { url, err, code } = res
+        if (err || code === '1' || !url) {
+          reject(new Error(err || '短链生成失败'))
+          return
         }
         resolve(url)
       },

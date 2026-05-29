@@ -70,7 +70,7 @@ export function selectFilesLimitCount(options: File, count: number) {
   return query<File[]>(sql, ...params)
 }
 
-/** 每个 task_key 各取最近 perTaskLimit 条（del=0），一次查询；需 MySQL 8+ 窗口函数 */
+/** 每个 task_key 各取最近 perTaskLimit 条（del=0），兼容 MySQL 5.7+ */
 export function selectRecentFilesPerTaskKeys(
   taskKeys: string[],
   perTaskLimit: number,
@@ -80,14 +80,17 @@ export function selectRecentFilesPerTaskKeys(
   }
   const placeholders = taskKeys.map(() => '?').join(',')
   const sql = `
-SELECT task_key, name, date FROM (
-  SELECT task_key, name, date,
-    ROW_NUMBER() OVER (PARTITION BY task_key ORDER BY id DESC) AS rn
-  FROM files
-  WHERE del = 0 AND task_key IN (${placeholders})
-) ranked
-WHERE rn <= ?
-ORDER BY task_key, rn
+SELECT f.task_key, f.name, f.date
+FROM files f
+WHERE f.del = 0
+  AND f.task_key IN (${placeholders})
+  AND (
+    SELECT COUNT(*) FROM files f2
+    WHERE f2.del = 0
+      AND f2.task_key = f.task_key
+      AND f2.id >= f.id
+  ) <= ?
+ORDER BY f.task_key, f.id DESC
   `.trim()
   return query<{ task_key: string, name: string, date: Date }[]>(
     sql,
