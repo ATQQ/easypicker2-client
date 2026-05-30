@@ -1316,9 +1316,14 @@ function handleShowDetail() {
 }
 
 .export-help-icon {
+  align-items: center;
   color: #909399;
   cursor: help;
+  display: inline-flex;
   font-size: 16px;
+  height: 32px;
+  margin-left: 10px;
+  margin-bottom: 10px;
 }
 
 .imageLoading {
