@@ -42,6 +42,7 @@
     "qiniu": "^7.4.0",
     "redis": "^3.1.2",
     "reflect-metadata": "^0.1.13",
+    "sharp": "^0.34.5",
     "tencentcloud-sdk-nodejs": "^4.0.318",
     "typeorm": "^0.3.17"
   },

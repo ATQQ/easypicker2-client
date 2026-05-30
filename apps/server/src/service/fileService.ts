@@ -25,7 +25,7 @@ import { PeopleRepository } from '@/db/peopleDb'
 import { expiredRedisKey, getRedisVal, setRedisValue } from '@/db/redisDb'
 import { TaskRepository } from '@/db/taskDb'
 import { UserRepository } from '@/db/userDb'
-import { localObjectAbsPath } from '@/utils/localFilePath'
+import { getLocalImageMimeType, localObjectAbsPath, signLocalFileAccess } from '@/utils/localFilePath'
 import { sendMail } from '@/utils/mail'
 import { batchFileStatus, createDownloadUrl, deleteObjByKey, judgeFileIsExist, makeZipWithKeys } from '@/utils/qiniuUtil'
 import { B2GB, formatPrice, formatSize, getUniqueKey, isSameInfo, normalizeFileName, percentageValue, shortLink } from '@/utils/stringUtil'
@@ -51,6 +51,7 @@ type StoredFileLocation
 
 const DOWNLOAD_COUNT_REFRESH_INTERVAL_MS = 1000 * 60 * 10
 const DOWNLOAD_COUNT_CACHE_SECONDS = 60 * 60 * 24 * 7
+const FALLBACK_PREVIEW = 'https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDMxNTY4NA==649900315684'
 
 @Provide()
 export default class FileService {
@@ -120,7 +121,7 @@ export default class FileService {
       : `easypicker2/${file.taskKey}/${file.hash}/${file.name}`
   }
 
-  private getLocalLocation(file: Files): StoredFileLocation | null {
+  private getLocalLocation(file: Files): Extract<StoredFileLocation, { storage: 'local' }> | null {
     const relPath = this.getLocalRelPath(file)
     const abs = localObjectAbsPath(relPath)
     if (!fs.existsSync(abs)) {
@@ -366,21 +367,51 @@ export default class FileService {
       return new Map<number, { cover: string, preview: string }>()
     }
 
-    const keys = files.map(file => this.getOssKey(file))
     const expiredTime = getQiniuFileUrlExpiredTime(LocalUserDB.getSiteConfig()?.downloadOneExpired || 1)
-    const filesStatus = await batchFileStatus(keys)
     const previewMap = new Map<number, { cover: string, preview: string }>()
+    const qiniuFiles: Files[] = []
+    const qiniuKeys: string[] = []
+
+    files.forEach((file) => {
+      if (this.getFileStorage(file) === 'local') {
+        const local = this.getLocalLocation(file)
+        if (local && getLocalImageMimeType(file.name)) {
+          const expires = expiredTime * 1000
+          previewMap.set(file.id, {
+            cover: this.getLocalImagePreviewUrl(file.id, expires, 'cover'),
+            preview: this.getLocalImagePreviewUrl(file.id, expires, 'preview'),
+          })
+          return
+        }
+        if (local) {
+          previewMap.set(file.id, {
+            cover: '',
+            preview: FALLBACK_PREVIEW,
+          })
+          return
+        }
+      }
+
+      qiniuFiles.push(file)
+      qiniuKeys.push(this.getOssKey(file))
+    })
+
+    if (qiniuFiles.length === 0) {
+      return previewMap
+    }
+
+    const filesStatus = await batchFileStatus(qiniuKeys)
 
     filesStatus.forEach((status, idx) => {
-      const file = files[idx]
+      const file = qiniuFiles[idx]
       if (status.code === 200 && status.data?.mimeType?.includes('image')) {
         previewMap.set(file.id, {
           cover: createDownloadUrl(
-            `${keys[idx]}${qiniuConfig.imageCoverStyle}`,
+            `${qiniuKeys[idx]}${qiniuConfig.imageCoverStyle}`,
             expiredTime,
           ),
           preview: createDownloadUrl(
-            `${keys[idx]}${qiniuConfig.imagePreviewStyle}`,
+            `${qiniuKeys[idx]}${qiniuConfig.imagePreviewStyle}`,
             expiredTime,
           ),
         })
@@ -388,11 +419,68 @@ export default class FileService {
       }
       previewMap.set(file.id, {
         cover: '',
-        preview: 'https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDMxNTY4NA==649900315684',
+        preview: FALLBACK_PREVIEW,
       })
     })
 
     return previewMap
+  }
+
+  async getImagePreviewByIds(idList: number[], userId: number) {
+    if (idList.length === 0) {
+      return []
+    }
+    const files = await this.fileRepository.findMany({
+      id: In(idList),
+      userId,
+      del: BOOLEAN.FALSE,
+    })
+    const previewMap = await this.getFilePreviewMap(files)
+    return idList.map(id => previewMap.get(id) || {
+      cover: '',
+      preview: FALLBACK_PREVIEW,
+    })
+  }
+
+  private getRequestOrigin() {
+    const { headers } = this.ctx.req
+    if (headers.origin) {
+      return headers.origin
+    }
+    if (headers.referer) {
+      try {
+        return new URL(headers.referer).origin
+      }
+      catch {}
+    }
+    return `http://${headers.host}`
+  }
+
+  private getLocalImagePreviewUrl(fileId: number, expires: number, type: 'cover' | 'preview') {
+    const sign = signLocalFileAccess(fileId, expires, type)
+    return `${this.getRequestOrigin()}/api/file/image/local/${fileId}?type=${type}&expires=${expires}&sign=${sign}`
+  }
+
+  async getLocalImagePreviewFile(fileId: number) {
+    const file = await this.fileRepository.findOne({
+      id: fileId,
+      del: BOOLEAN.FALSE,
+    })
+    if (!file) {
+      return null
+    }
+    const location = this.getLocalLocation(file)
+    const mimeType = getLocalImageMimeType(file.name)
+    if (!location || !mimeType) {
+      return null
+    }
+    const absPath = localObjectAbsPath(location.relPath)
+    return {
+      absPath,
+      mimeType,
+      name: file.name,
+      size: location.size,
+    }
   }
 
   async getUserFilesPage(options: FilePageOptions) {

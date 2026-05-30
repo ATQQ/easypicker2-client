@@ -6,6 +6,8 @@ import type { Files } from '@/db/entity'
 import type { DownloadActionData } from '@/db/model/action'
 import type { User } from '@/db/model/user'
 import fs, { createReadStream } from 'node:fs'
+import { pipeline as streamPipeline } from 'node:stream'
+import { promisify } from 'node:util'
 import {
   Delete,
   Get,
@@ -20,7 +22,7 @@ import {
   RouterController,
 } from 'flash-wolves'
 import { ObjectID } from 'mongodb'
-import { qiniuConfig } from '@/config'
+import sharp from 'sharp'
 import { fileError, publicError } from '@/constants/errorMsg'
 import { findAction } from '@/db/actionDb'
 import { selectFiles, updateFileInfo } from '@/db/fileDb'
@@ -29,9 +31,8 @@ import { ActionType } from '@/db/model/action'
 import { ReqUserInfo } from '@/decorator'
 import { BehaviorService, FileService, TaskService } from '@/service'
 import { wrapperCatchError } from '@/utils/context'
-import { localObjectAbsPath } from '@/utils/localFilePath'
+import { localObjectAbsPath, verifyLocalFileAccess } from '@/utils/localFilePath'
 import {
-  batchFileStatus,
   checkFopTaskStatus,
   createDownloadUrl,
   getUploadToken,
@@ -39,8 +40,6 @@ import {
   mvOssFile,
 } from '@/utils/qiniuUtil'
 import { getMaxUploadBytes, getStorageMode } from '@/utils/storageMode'
-import LocalUserDB from '@/utils/user-local-db'
-import { getQiniuFileUrlExpiredTime } from '@/utils/userUtil'
 // TODO: 优化上传逻辑
 
 const power = {
@@ -49,6 +48,17 @@ const power = {
 
 const noLogin = {
   needLogin: false,
+}
+const pipeline = promisify(streamPipeline)
+const localImageTransformOptions = {
+  cover: {
+    size: 320,
+    quality: 70,
+  },
+  preview: {
+    size: 1600,
+    quality: 82,
+  },
 }
 
 @RouterController('file', power)
@@ -64,6 +74,72 @@ export default class FileController {
 
   @Inject(TaskService)
   private taskService: TaskService
+
+  private async sendLocalFile(
+    absPath: string,
+    options: {
+      mimeType?: string
+      name?: string
+      disposition?: 'attachment' | 'inline'
+      cacheControl?: string
+    },
+  ) {
+    const stat = fs.statSync(absPath)
+    const name = options.name || 'file'
+    this.ctx.res.setHeader(
+      'Content-Type',
+      options.mimeType || 'application/octet-stream',
+    )
+    this.ctx.res.setHeader('Content-Length', stat.size)
+    this.ctx.res.setHeader('Accept-Ranges', 'bytes')
+    this.ctx.res.setHeader(
+      'Content-Disposition',
+      `${options.disposition || 'attachment'}; filename*=UTF-8''${encodeURIComponent(name)}`,
+    )
+    if (options.cacheControl) {
+      this.ctx.res.setHeader('Cache-Control', options.cacheControl)
+    }
+    await pipeline(createReadStream(absPath), this.ctx.res)
+  }
+
+  private async sendLocalImage(
+    file: {
+      absPath: string
+      mimeType: string
+      name: string
+    },
+    type: 'cover' | 'preview',
+  ) {
+    const options = localImageTransformOptions[type]
+    try {
+      const data = await sharp(file.absPath, { animated: false })
+        .rotate()
+        .resize({
+          width: options.size,
+          height: options.size,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({ quality: options.quality })
+        .toBuffer()
+      this.ctx.res.setHeader('Content-Type', 'image/webp')
+      this.ctx.res.setHeader('Content-Length', data.length)
+      this.ctx.res.setHeader(
+        'Content-Disposition',
+        `inline; filename*=UTF-8''${encodeURIComponent(file.name)}.webp`,
+      )
+      this.ctx.res.setHeader('Cache-Control', 'private, max-age=300')
+      this.ctx.res.end(data)
+    }
+    catch {
+      await this.sendLocalFile(file.absPath, {
+        mimeType: file.mimeType,
+        name: file.name,
+        disposition: 'inline',
+        cacheControl: 'private, max-age=60',
+      })
+    }
+  }
 
   /**
    * 获取图片的预览图
@@ -82,39 +158,26 @@ export default class FileController {
         idList,
       },
     })
-    const files = await selectFiles(
-      {
-        id: idList as any,
-        userId: user.id,
-      },
-      ['task_key', 'name', 'hash'],
-    )
-    const keys = files.map(
-      file => `easypicker2/${file.task_key}/${file.hash}/${file.name}`,
-    )
-    const expiredTime = getQiniuFileUrlExpiredTime(LocalUserDB.getSiteConfig()?.downloadOneExpired || 1)
+    return this.fileService.getImagePreviewByIds(idList, user.id)
+  }
 
-    const filesStatus = await batchFileStatus(keys)
-    const result = filesStatus.map((status, idx) => {
-      if (status.code === 200 && status.data?.mimeType?.includes('image')) {
-        return {
-          cover: createDownloadUrl(
-            `${keys[idx]}${qiniuConfig.imageCoverStyle}`,
-            expiredTime,
-          ),
-          preview: createDownloadUrl(
-            `${keys[idx]}${qiniuConfig.imagePreviewStyle}`,
-            expiredTime,
-          ),
-        }
-      }
-      return {
-        cover: '',
-        preview:
-          'https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDMxNTY4NA==649900315684',
-      }
-    })
-    return result
+  @Get('/image/local/:id', noLogin)
+  async getLocalImagePreview(
+    @ReqParams('id') id: string,
+    @ReqQuery('type') type = 'preview',
+    @ReqQuery('expires') expires: string,
+    @ReqQuery('sign') sign: string,
+  ) {
+    const fileId = Number(id)
+    const previewType = type === 'cover' ? 'cover' : 'preview'
+    if (!Number.isFinite(fileId) || !verifyLocalFileAccess(fileId, expires, sign, previewType)) {
+      return Response.failWithError(publicError.request.errorParams)
+    }
+    const file = await this.fileService.getLocalImagePreviewFile(fileId)
+    if (!file) {
+      return Response.failWithError(publicError.file.notExist)
+    }
+    await this.sendLocalImage(file, previewType)
   }
 
   @Post('/download/count')
@@ -253,16 +316,11 @@ export default class FileController {
         this.behaviorService.add('file', `本机下载文件不存在 ${download.data.localRelPath}`)
         return Response.failWithError(publicError.file.notExist)
       }
-      this.ctx.res.setHeader(
-        'Content-Type',
-        download.data.mimeType || 'application/octet-stream',
-      )
-      const name = download.data.name || fileName || 'file'
-      this.ctx.res.setHeader(
-        'Content-Disposition',
-        `attachment; filename*=UTF-8''${encodeURIComponent(name)}`,
-      )
-      createReadStream(abs).pipe(this.ctx.res)
+      await this.sendLocalFile(abs, {
+        mimeType: download.data.mimeType || 'application/octet-stream',
+        name: download.data.name || fileName || 'file',
+        disposition: 'attachment',
+      })
       return
     }
 
