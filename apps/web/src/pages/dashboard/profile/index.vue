@@ -95,6 +95,10 @@ function sendBindEmailCode() {
 }
 
 function bindEmail() {
+  if (!supportEmailFeature.value) {
+    ElMessage.warning('邮箱功能未开启')
+    return
+  }
   const email = bindForm.email.trim()
   if (!rEmail.test(email)) {
     ElMessage.warning('邮箱格式不正确')
@@ -143,6 +147,10 @@ function sendResetEmailCode() {
 }
 
 function resetPassword() {
+  if (!supportEmailFeature.value) {
+    ElMessage.warning('邮箱功能未开启')
+    return
+  }
   if (!profile.emailVerified) {
     ElMessage.warning('请先绑定邮箱')
     return
@@ -175,6 +183,10 @@ function resetPassword() {
 }
 
 function saveNotify(val: boolean) {
+  if (!supportEmailFeature.value) {
+    ElMessage.warning('邮箱功能未开启')
+    return
+  }
   if (!profile.emailVerified) {
     ElMessage.warning('请先绑定邮箱')
     return
@@ -209,7 +221,7 @@ onMounted(() => {
           <span>账号</span>
           <strong>{{ profile.account || '-' }}</strong>
         </div>
-        <div class="info-item">
+        <div v-if="supportEmailFeature" class="info-item">
           <el-icon><Message /></el-icon>
           <span>邮箱</span>
           <strong>{{ profile.emailVerified ? profile.email : '未绑定' }}</strong>
@@ -233,7 +245,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="settings-grid">
+    <div v-if="supportEmailFeature" class="settings-grid">
       <section class="profile-panel">
         <div class="section-title">
           <h3>绑定邮箱</h3>
