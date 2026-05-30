@@ -23,6 +23,7 @@
     "start": "cross-env NODE_ENV=production node ./dist/index.js",
     "test": "vitest",
     "build": "tsup",
+    "check:api": "node scripts/check-api-routes.mjs",
     "upload:oss": "pnpm build && q ep server -up",
     "update:version": "npm version prerelease --preid=beta --no-git-tag-version",
     "lint": "eslint .",

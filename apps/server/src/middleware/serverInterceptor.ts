@@ -1,22 +1,30 @@
-import type { IncomingMessage } from 'http'
-import { Middleware } from 'flash-wolves'
-import formidable from 'formidable'
-import fs from 'node:fs'
+import type { Middleware } from 'flash-wolves'
+import type { IncomingMessage } from 'node:http'
+import fs, { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
-import { existsSync, mkdirSync } from 'node:fs'
+import formidable from 'formidable'
 import { uploadFileDir } from '@/constants'
 import { getClientIp } from '@/db/logDb'
 import { selectTasks } from '@/db/taskDb'
-import { getUserInfo } from '@/utils/userUtil'
-import { getMaxUploadBytes, getStorageMode } from '@/utils/storageMode'
 import { localObjectAbsPath, localObjectRelPath } from '@/utils/localFilePath'
+import { getMaxUploadBytes, getStorageMode } from '@/utils/storageMode'
+import { getUserInfo } from '@/utils/userUtil'
 
 // 允许跨域访问的源
 const allowOrigins = [
   'http://localhost:8080',
   'https://ep2.sugarat.top',
-  'https://ep2.dev.sugarat.top'
+  'https://ep2.dev.sugarat.top',
 ]
+
+function normalizePathname(url = '') {
+  const pathOnly = url.split('?')[0] || '/'
+  return pathOnly.length > 1 ? pathOnly.replace(/\/+$/, '') : pathOnly
+}
+
+function isLocalUploadPath(pathname: string) {
+  return pathname === '/api/file/upload' || pathname === '/file/upload'
+}
 
 if (!existsSync(uploadFileDir)) {
   mkdirSync(uploadFileDir)
@@ -42,10 +50,10 @@ const interceptor: Middleware = async (req, res) => {
     return
   }
 
-  const pathOnly = (req.url || '').split('?')[0]
+  const pathOnly = normalizePathname(req.url)
   if (
     method === 'POST'
-    && pathOnly === '/api/file/upload'
+    && isLocalUploadPath(pathOnly)
     && getStorageMode() === 'local'
   ) {
     const maxB = getMaxUploadBytes()
@@ -109,7 +117,7 @@ const interceptor: Middleware = async (req, res) => {
     const form = formidable({
       multiples: true,
       uploadDir: uploadFileDir,
-      keepExtensions: true
+      keepExtensions: true,
     })
     const p = new Promise((resolve, reject) => {
       form.parse(req, (err, fields, files) => {
@@ -120,7 +128,7 @@ const interceptor: Middleware = async (req, res) => {
         const data = {
           name: files.file.newFilename,
           size: files.file.size,
-          type: files.file.mimetype
+          type: files.file.mimetype,
         }
         res.end(JSON.stringify({ code: 0, data, msg: 'ok' }, null, 2))
         resolve('ok')
@@ -128,19 +136,20 @@ const interceptor: Middleware = async (req, res) => {
     })
     try {
       await p
-    } catch (error) {
+    }
+    catch (error) {
       res.end(JSON.stringify({ code: 500, msg: error }))
     }
   }
 
   // 添加ip，供 @ReqIp 取用
   Object.defineProperty(req, '_ip', {
-    value: getClientIp(req)
+    value: getClientIp(req),
   })
 
   // 添加userInfo，供@ReqUserInfo
   Object.defineProperty(req, '_userinfo', {
-    value: await getUserInfo(req)
+    value: await getUserInfo(req),
   })
 }
 export default interceptor

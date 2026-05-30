@@ -10,6 +10,8 @@
 针对 [apps/server](apps/server) 的一些说明
 
 - 如果要修改数据库，请参考[字段变更规范](./apps/server/docs/schema/字段变更流程.md)
+- 服务端接口检测脚本为 `pnpm --filter @sugarat/easypicker2-server check:api -- --base-url http://127.0.0.1:3001`，检测列表在 [apps/server/scripts/api-route-checks.json](apps/server/scripts/api-route-checks.json)。如果要强制检测本机存储专用接口，可追加 `--storage-mode local`。
+- 后续新增、删除或调整服务端接口时，必须同步维护 `apps/server/scripts/api-route-checks.json`，确保新增接口被接口检测脚本覆盖。
 
 ## 要求
 
