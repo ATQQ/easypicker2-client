@@ -29,6 +29,7 @@ import { UserRepository } from '@/db/userDb'
 import { getLocalImageMimeType, localObjectAbsPath, signLocalFileAccess } from '@/utils/localFilePath'
 import { sendMail } from '@/utils/mail'
 import { batchFileStatus, createDownloadUrl, deleteObjByKey, judgeFileIsExist, makeZipWithKeys } from '@/utils/qiniuUtil'
+import { isLocalStorageMode } from '@/utils/storageMode'
 import { B2GB, formatPrice, formatSize, getUniqueKey, isSameInfo, normalizeFileName, percentageValue, shortLink } from '@/utils/stringUtil'
 import { diffMonth } from '@/utils/time-utils'
 import LocalUserDB from '@/utils/user-local-db'
@@ -139,6 +140,9 @@ export default class FileService {
   }
 
   private async getQiniuLocation(file: Files): Promise<StoredFileLocation | null> {
+    if (isLocalStorageMode()) {
+      return null
+    }
     const key = this.getOssKey(file)
     if (file.categoryKey && await judgeFileIsExist(file.categoryKey)) {
       return {
@@ -158,6 +162,9 @@ export default class FileService {
   }
 
   private async resolveStoredFile(file: Files): Promise<StoredFileLocation | null> {
+    if (isLocalStorageMode()) {
+      return this.getLocalLocation(file)
+    }
     const storage = this.getFileStorage(file)
     if (storage === 'local') {
       return this.getLocalLocation(file) || await this.getQiniuLocation(file)
@@ -166,6 +173,13 @@ export default class FileService {
   }
 
   private async deleteStoredObject(file: Files) {
+    if (isLocalStorageMode()) {
+      const local = this.getLocalLocation(file)
+      if (local?.storage === 'local') {
+        fs.unlinkSync(localObjectAbsPath(local.relPath))
+      }
+      return
+    }
     const storage = this.getFileStorage(file)
     if (storage === 'local') {
       const local = this.getLocalLocation(file)
@@ -372,12 +386,13 @@ export default class FileService {
     }
 
     const expiredTime = getQiniuFileUrlExpiredTime(LocalUserDB.getSiteConfig()?.downloadOneExpired || 1)
+    const localMode = isLocalStorageMode()
     const previewMap = new Map<number, { cover: string, preview: string }>()
     const qiniuFiles: Files[] = []
     const qiniuKeys: string[] = []
 
     files.forEach((file) => {
-      if (this.getFileStorage(file) === 'local') {
+      if (localMode || this.getFileStorage(file) === 'local') {
         const local = this.getLocalLocation(file)
         if (local && getLocalImageMimeType(file.name)) {
           const expires = expiredTime * 1000
@@ -388,6 +403,13 @@ export default class FileService {
           return
         }
         if (local) {
+          previewMap.set(file.id, {
+            cover: '',
+            preview: FALLBACK_PREVIEW,
+          })
+          return
+        }
+        if (localMode) {
           previewMap.set(file.id, {
             cover: '',
             preview: FALLBACK_PREVIEW,
@@ -530,6 +552,13 @@ export default class FileService {
     const files = await this.fileRepository.findMany({
       userId,
     })
+
+    if (isLocalStorageMode()) {
+      return files.reduce((pre, file) => {
+        const local = this.getLocalLocation(file)
+        return pre + (local?.size || +file.size || 0)
+      }, 0)
+    }
 
     // 获取 OSS
     const ossFilesMap = await this.qiniuService.getFilesMap(files)
@@ -900,20 +929,65 @@ export default class FileService {
 
   async downloadTemplate(filename: string, taskKey: string) {
     const k = `easypicker2/${taskKey}_template/${filename}`
-    const isExist = await judgeFileIsExist(k)
-    if (!isExist) {
-      this.behaviorService.add('file', '下载模板文件 参数错误', {
-        data: this.ctx.req.query,
-      })
-      throw publicError.file.notExist
-    }
-
     const task = await this.taskRepository.findOne({
       k: taskKey,
       del: BOOLEAN.FALSE,
     })
 
     if (!task) {
+      this.behaviorService.add('file', '下载模板文件 参数错误', {
+        data: this.ctx.req.query,
+      })
+      throw publicError.file.notExist
+    }
+
+    if (isLocalStorageMode()) {
+      const abs = localObjectAbsPath(k)
+      if (!fs.existsSync(abs)) {
+        this.behaviorService.add('file', '下载本机模板文件不存在', {
+          data: this.ctx.req.query,
+          localRelPath: k,
+        })
+        throw publicError.file.notExist
+      }
+
+      const user = await this.userRepository.findOne({
+        id: task.userId,
+      })
+      const stat = fs.statSync(abs)
+      const expiredTime = getQiniuFileUrlExpiredTime(LocalUserDB.getSiteConfig()?.downloadOneExpired || 1)
+      const result = await addDownloadAction({
+        userId: task.userId,
+        type: ActionType.TemplateDownload,
+        thingId: taskKey,
+      })
+      const link = shortLink(result.insertedId, this.ctx.req)
+      const data: DownloadActionData = {
+        url: link,
+        originUrl: '',
+        storage: 'local',
+        localRelPath: k,
+        status: DownloadStatus.SUCCESS,
+        ids: [],
+        tip: filename,
+        name: filename,
+        size: stat.size,
+        account: user.account,
+        mimeType: 'application/octet-stream',
+        expiredTime: expiredTime * 1000,
+      }
+      await updateAction<DownloadActionData>(
+        { _id: ObjectID(result.insertedId) },
+        { $set: { data } },
+      )
+      return {
+        link,
+        mimeType: data.mimeType,
+      }
+    }
+
+    const isExist = await judgeFileIsExist(k)
+    if (!isExist) {
       this.behaviorService.add('file', '下载模板文件 参数错误', {
         data: this.ctx.req.query,
       })
@@ -1110,6 +1184,9 @@ export default class FileService {
   }
 
   limitUploadByWallet(balance: number) {
+    if (isLocalStorageMode()) {
+      return false
+    }
     const { limitWallet } = LocalUserDB.getSiteConfig()
     return limitWallet && balance <= 0
   }
@@ -1138,6 +1215,15 @@ export default class FileService {
     compress: DownloadLogAnalyzeItem
     template: DownloadLogAnalyzeItem
   }, ossSize: number) {
+    if (isLocalStorageMode()) {
+      return {
+        ossPrice: '0.00',
+        compressPrice: '0.00',
+        backhaulTrafficPrice: '0.00',
+        cdnPrice: '0.00',
+        total: '0.00',
+      }
+    }
     const { qiniuBackhaulTrafficPercentage, qiniuCompressPrice, qiniuBackhaulTrafficPrice, qiniuOSSPrice, qiniuCDNPrice } = LocalUserDB.getSiteConfig()
     // 存储费用
     const OSSPrice = B2GB(ossSize) * qiniuOSSPrice
@@ -1391,15 +1477,17 @@ export default class FileService {
     downloadLog: Log[]
   }>) {
     let { files, filesMap, downloadLog } = options || {}
+    const localMode = isLocalStorageMode()
     const { moneyStartDay } = LocalUserDB.getSiteConfig()
     if (!files) {
       files = await this.fileRepository.findMany({
         userId: user.id,
       })
     }
-    if (!filesMap) {
+    if (!filesMap && !localMode) {
       filesMap = await this.qiniuService.getFilesMap(files)
     }
+    filesMap = filesMap || new Map<string, Qiniu.ItemInfo>()
     if (!downloadLog) {
       downloadLog = await this.downloadLog(user.account, {
         startTime: new Date(moneyStartDay),
@@ -1415,8 +1503,10 @@ export default class FileService {
       const { date } = v
       originFileSize += (+v.size || 0)
       const ossKey = this.getOssKey(v)
-      const { fsize = 0 }
-        = filesMap.get(ossKey) || filesMap.get(v.categoryKey) || {}
+      const local = localMode ? this.getLocalLocation(v) : null
+      const fsize = localMode
+        ? (local?.size || +v.size || 0)
+        : ((filesMap.get(ossKey) || filesMap.get(v.categoryKey))?.fsize || 0)
 
       if (fsize) {
         ossCount += 1
@@ -1454,13 +1544,21 @@ export default class FileService {
 
     // TODO：累计费用 = 实时消费 + 已结算费用
     // 实时消费
-    const price = this.calculateQiniuPrice({
-      one: oneFile,
-      compress: compressFile,
-      template: templateFile,
-    }, this.getOSSFileSizeUntilNow(fileInfo, filesMap, {
-      startTime: new Date(moneyStartDay),
-    }))
+    const price = localMode
+      ? {
+          ossPrice: '0.00',
+          compressPrice: '0.00',
+          backhaulTrafficPrice: '0.00',
+          cdnPrice: '0.00',
+          total: '0.00',
+        }
+      : this.calculateQiniuPrice({
+          one: oneFile,
+          compress: compressFile,
+          template: templateFile,
+        }, this.getOSSFileSizeUntilNow(fileInfo, filesMap, {
+          startTime: new Date(moneyStartDay),
+        }))
 
     const balance = +user.wallet - +price.total
     const isAdmin = user.power === USER_POWER.SUPER

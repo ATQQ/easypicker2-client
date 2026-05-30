@@ -38,6 +38,7 @@ import { USER_POWER } from '@/db/model/user'
 import { getUserOverviewCount } from '@/db/userDb'
 import SuperService from '@/service/super'
 import { batchDeleteFiles, getFileKeys } from '@/utils/qiniuUtil'
+import { isLocalStorageMode } from '@/utils/storageMode'
 import { escapeRegexForMongo, formatSize } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
@@ -310,27 +311,27 @@ export default class OverviewController {
     const [
       userCount,
       fileCount,
-      ossFiles,
       logCount,
       logRecent,
       pvCount,
       todayPvCount,
       uv,
       todayUv,
+      ossFiles,
       compressData,
       tempTxtFilesData,
     ] = await Promise.all([
       getUserOverviewCount(nowDate),
       getFileOverviewCount(nowDate),
-      SuperService.getOssFiles(),
       findLogCount({}),
       findLogCountWithTimeRange({}, nowDate),
       findLogCount({ type: 'pv' }),
       findLogCountWithTimeRange({ type: 'pv' }, nowDate),
       findLogDistinctCount('data.ip', { type: 'pv' }),
       findLogDistinctCount('data.ip', { type: 'pv' }, nowDate),
-      SuperService.getCachedFileKeys('easypicker2/temp_package'),
-      SuperService.getCachedFileKeys('1').then(v => v.filter(v => tempTxtFileReg.test(v.key))),
+      isLocalStorageMode() ? Promise.resolve([]) : SuperService.getOssFiles(),
+      isLocalStorageMode() ? Promise.resolve([]) : SuperService.getCachedFileKeys('easypicker2/temp_package'),
+      isLocalStorageMode() ? Promise.resolve([]) : SuperService.getCachedFileKeys('1').then(v => v.filter(v => tempTxtFileReg.test(v.key))),
     ])
     const tempFiles = compressData.concat(tempTxtFilesData)
     const expiredFiles = tempFiles.filter(item =>
@@ -463,6 +464,13 @@ export default class OverviewController {
 
   @Delete('compress', power)
   async clearExpiredCompress(req: FWRequest) {
+    if (isLocalStorageMode()) {
+      addBehavior(req, {
+        module: 'super',
+        msg: '本机存储模式跳过七牛云归档清理',
+      })
+      return
+    }
     // 清理过期压缩文件
     const compressData = await getFileKeys('easypicker2/temp_package')
     const expired = compressData

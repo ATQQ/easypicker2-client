@@ -10,6 +10,7 @@ import { createDownloadUrl } from '@/utils/qiniuUtil'
 import { randomNumStr } from '@/utils/randUtil'
 import { rEmail, rMobilePhone } from '@/utils/regExp'
 import { isEmailCodeLoginSupported } from '@/utils/siteConfig'
+import { isLocalStorageMode } from '@/utils/storageMode'
 import { sendMessage } from '@/utils/tencent'
 
 @Provide()
@@ -143,6 +144,12 @@ export default class PublicService {
       name: string
     }[],
   ) {
+    if (isLocalStorageMode()) {
+      return data.map(() => ({
+        cover: '',
+        preview: '',
+      }))
+    }
     return data.map(v => ({
       cover: createDownloadUrl(
         `easypicker2/tip/${key}/${v.uid}/${v.name}${qiniuConfig.imageCoverStyle}`,

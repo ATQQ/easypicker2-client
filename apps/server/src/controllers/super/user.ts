@@ -40,6 +40,7 @@ import MessageService from '@/service/message'
 import { sendMail } from '@/utils/mail'
 import { batchDeleteFiles } from '@/utils/qiniuUtil'
 import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
+import { isLocalStorageMode } from '@/utils/storageMode'
 import { encryption } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
@@ -132,7 +133,9 @@ export default class SuperUserController {
     // 获取文件数据
     const files = await this.fileRepository.findMany({})
     const { moneyStartDay } = LocalUserDB.getSiteConfig()
-    const filesMap = await this.qiniuService.getFilesMap(files)
+    const filesMap = isLocalStorageMode()
+      ? new Map<string, Qiniu.ItemInfo>()
+      : await this.qiniuService.getFilesMap(files)
     const downloadLog = await this.fileService.downloadLog('', {
       startTime: new Date(moneyStartDay),
     })
@@ -164,6 +167,9 @@ export default class SuperUserController {
     @ReqUserInfo()
     userInfo: User,
   ) {
+    if (isLocalStorageMode()) {
+      return
+    }
     const user = (await selectUserById(id))[0]
     if (!user) {
       return

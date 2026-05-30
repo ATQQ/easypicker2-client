@@ -1,13 +1,16 @@
 import type { Context } from 'flash-wolves'
 import type { TaskInfo } from '@/db/entity'
+import fs from 'node:fs'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { In } from 'typeorm'
 import { publicError } from '@/constants/errorMsg'
-import { BOOLEAN } from '@/db/model/public'
 import { CategoryRepository } from '@/db/categoryDb'
+import { BOOLEAN } from '@/db/model/public'
 import { TaskRepository } from '@/db/taskDb'
 import { TaskInfoRepository } from '@/db/taskInfoDb'
 import { BehaviorService, QiniuService } from '@/service'
+import { localObjectAbsPath } from '@/utils/localFilePath'
+import { isLocalStorageMode } from '@/utils/storageMode'
 import { getUniqueKey } from '@/utils/stringUtil'
 
 @Provide()
@@ -79,6 +82,13 @@ export default class TaskInfoService {
         tipImageKey,
       },
     )
+    if (isLocalStorageMode()) {
+      const abs = localObjectAbsPath(tipImageKey)
+      if (fs.existsSync(abs)) {
+        fs.unlinkSync(abs)
+      }
+      return
+    }
     this.qiniuService.deleteObjByKey(tipImageKey)
   }
 
@@ -177,7 +187,15 @@ export default class TaskInfoService {
     }
     if (!template && template !== undefined) {
       // 删除旧模板文件
-      this.qiniuService.deleteFiles(`easypicker2/${key}_template/`)
+      if (isLocalStorageMode()) {
+        const abs = localObjectAbsPath(`easypicker2/${key}_template/`)
+        if (fs.existsSync(abs)) {
+          fs.rmSync(abs, { recursive: true, force: true })
+        }
+      }
+      else {
+        this.qiniuService.deleteFiles(`easypicker2/${key}_template/`)
+      }
     }
     const options = {
       template,

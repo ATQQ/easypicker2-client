@@ -1,17 +1,17 @@
-import path from 'node:path'
-import type { Context, FWRequest } from 'flash-wolves'
-import { InjectCtx, Post, ReqBody, RouterController } from 'flash-wolves'
+import type { Context } from 'flash-wolves'
 import type { FilterQuery } from 'mongodb'
-import {
-  findActionCount,
-  findActionWithPageOffset,
-  updateAction,
-} from '@/db/actionDb'
 import type {
   Action,
   DownloadAction,
   DownloadActionData,
 } from '@/db/model/action'
+import path from 'node:path'
+import { InjectCtx, Post, ReqBody, RouterController } from 'flash-wolves'
+import {
+  findActionCount,
+  findActionWithPageOffset,
+  updateAction,
+} from '@/db/actionDb'
 import {
   ActionType,
   DownloadStatus,
@@ -21,9 +21,10 @@ import {
   createDownloadUrl,
   getOSSFiles,
 } from '@/utils/qiniuUtil'
+import { isLocalStorageMode } from '@/utils/storageMode'
+import { shortLink } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 import { getQiniuFileUrlExpiredTime } from '@/utils/userUtil'
-import { shortLink } from '@/utils/stringUtil'
 
 @RouterController('action', {
   needLogin: true,
@@ -76,7 +77,7 @@ export default class ActionController {
       }
 
       // 检查归档是否完成
-      if (action.data.status === DownloadStatus.ARCHIVE) {
+      if (action.data.status === DownloadStatus.ARCHIVE && !isLocalStorageMode()) {
         const data = await checkFopTaskStatus(action.data.archiveKey)
         if (data.error) {
           action.data.status = DownloadStatus.FAIL
@@ -94,7 +95,7 @@ export default class ActionController {
             data.key,
             expiredTime,
           )
-          // @ts-expect-error
+          // @ts-expect-error mongodb action id is available at runtime
           action.data.url = shortLink(action._id, this.ctx.req)
           action.data.size = fileInfo.fsize
           action.data.expiredTime = expiredTime * 1000

@@ -39,7 +39,7 @@ import {
   judgeFileIsExist,
   mvOssFile,
 } from '@/utils/qiniuUtil'
-import { getMaxUploadBytes, getStorageMode } from '@/utils/storageMode'
+import { getMaxUploadBytes, getStorageMode, isLocalStorageMode } from '@/utils/storageMode'
 // TODO: 优化上传逻辑
 
 const power = {
@@ -225,6 +225,23 @@ export default class FileController {
     // 重命名OSS资源
     const ossKey = `easypicker2/${file.task_key}/${file.hash}/${file.name}`
     const newOssKey = `easypicker2/${file.task_key}/${file.hash}/${newName}`
+    if (isLocalStorageMode() || file.storage === 'local') {
+      const oldAbs = localObjectAbsPath(ossKey)
+      const newAbs = localObjectAbsPath(newOssKey)
+      if (!fs.existsSync(oldAbs)) {
+        return Response.failWithError(fileError.noOssFile)
+      }
+      if (fs.existsSync(newAbs)) {
+        return Response.failWithError(fileError.ossFileRepeat)
+      }
+      fs.renameSync(oldAbs, newAbs)
+      await updateFileInfo({ id, userId: user.id }, { name: newName })
+      addBehavior(req, {
+        module: 'file',
+        msg: `重命名本机资源成功 用户:${user.account} 文件id:${id} 新文件名:${newName}`,
+      })
+      return
+    }
     const isOldExist = await judgeFileIsExist(ossKey)
     const isNewExist = await judgeFileIsExist(newOssKey)
     if (!isOldExist) {
@@ -255,7 +272,9 @@ export default class FileController {
     return {
       files: files.map(v => ({
         ...v,
-        download: createDownloadUrl(this.fileService.getOssKey(v)),
+        download: (isLocalStorageMode() || v.storage === 'local')
+          ? ''
+          : createDownloadUrl(this.fileService.getOssKey(v)),
       })),
     }
   }
@@ -469,6 +488,9 @@ export default class FileController {
    */
   @Post('/compress/status')
   async compressStatus(@ReqBody('id') id: string, req: FWRequest) {
+    if (isLocalStorageMode()) {
+      return Response.fail(400, '本机存储模式不使用七牛云归档任务')
+    }
     const data = await checkFopTaskStatus(id)
     if (data.code === 3) {
       addErrorLog(req, data.desc + data.error)

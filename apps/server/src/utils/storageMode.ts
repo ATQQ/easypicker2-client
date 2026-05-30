@@ -7,6 +7,10 @@ export function getStorageMode(): StorageMode {
   return site?.storageMode === 'local' ? 'local' : 'qiniu'
 }
 
+export function isLocalStorageMode(): boolean {
+  return getStorageMode() === 'local'
+}
+
 /** 单文件上传上限（字节），由站点配置 maxUploadSizeMB 控制 */
 export function getMaxUploadBytes(): number {
   const site = LocalUserDB.getSiteConfig()
