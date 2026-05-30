@@ -44,6 +44,7 @@ const siteFeatureForm = reactive({
   maxUploadSizeMB: 500,
   needBindPhone: false,
   enableCodeLogin: false,
+  enableSmtp: false,
   enableEmailCodeLogin: false,
   needBindEmail: false,
   alertEmails: '',
@@ -96,10 +97,17 @@ const mailTestForm = reactive<{
 const mailTestResults = ref<ConfigServiceAPITypes.MailTestResultItem[]>([])
 const mailTestError = ref('')
 
+const statusServiceOverview = computed(() => {
+  if (siteFeatureForm.storageMode !== 'local') {
+    return serviceOverview.value
+  }
+  return serviceOverview.value.filter(item => item.type !== 'qiniu')
+})
 const overviewStats = computed(() => {
-  const total = serviceOverview.value.length
-  const running = serviceOverview.value.filter(item => item.status).length
-  const required = serviceOverview.value.filter(item => item.required).length
+  const services = statusServiceOverview.value
+  const total = services.length
+  const running = services.filter(item => item.status).length
+  const required = services.filter(item => item.required).length
   const optional = total - required
   return {
     total,
@@ -109,7 +117,7 @@ const overviewStats = computed(() => {
     abnormal: total - running,
   }
 })
-const showErrorList = computed(() => serviceOverview.value.filter(item => item.errMsg))
+const showErrorList = computed(() => statusServiceOverview.value.filter(item => item.errMsg))
 const showMysqlToolTabs = computed(() => serverConfig.value.some(s => s.type === 'mysql'))
 const mysqlLive = ref<MysqlLiveIntrospection | null>(null)
 const mysqlLiveLoading = ref(false)
@@ -582,6 +590,9 @@ async function loadSiteFeatures() {
       maxUploadSizeMB: Number(data?.maxUploadSizeMB ?? 500),
       needBindPhone: Boolean(data?.needBindPhone),
       enableCodeLogin: Boolean(data?.enableCodeLogin),
+      enableSmtp: typeof data?.enableSmtp === 'boolean'
+        ? data.enableSmtp
+        : Boolean(data?.enableEmailCodeLogin || data?.needBindEmail || data?.alertEmails),
       enableEmailCodeLogin: Boolean(data?.enableEmailCodeLogin),
       needBindEmail: Boolean(data?.needBindEmail),
       alertEmails: data?.alertEmails || '',
@@ -688,6 +699,7 @@ async function saveEmailConfig(group?: ConfigData) {
   try {
     await ConfigServiceAPI.updateCfg(group.data)
     await updateSiteConfigPatch({
+      enableSmtp: Boolean(siteFeatureForm.enableSmtp),
       enableEmailCodeLogin: Boolean(siteFeatureForm.enableEmailCodeLogin),
       needBindEmail: Boolean(siteFeatureForm.needBindEmail),
       alertEmails: siteFeatureForm.alertEmails.trim(),
@@ -936,10 +948,10 @@ watch(activeConfigTab, (t) => {
         </el-button>
       </div>
 
-      <el-empty v-if="!loading && !serviceOverview.length" description="暂无可展示的服务依赖" />
+      <el-empty v-if="!loading && !statusServiceOverview.length" description="暂无可展示的服务依赖" />
       <div v-else v-loading="loading" class="service-grid">
         <article
-          v-for="service in serviceOverview"
+          v-for="service in statusServiceOverview"
           :key="service.type"
           class="service-card"
           :class="{ error: !service.status }"
@@ -1031,6 +1043,89 @@ watch(activeConfigTab, (t) => {
                 class="field-list"
                 :class="{ 'field-list--grouped': isSmtpConfig(serverItem) || isTxConfig(serverItem) }"
               >
+                <template v-if="isTxConfig(serverItem)">
+                  <div class="config-subsection">
+                    <div class="config-subsection__head">
+                      <h4>手机号验证码功能配置</h4>
+                      <p>控制手机号验证码登录，以及注册时绑定手机号入口。</p>
+                    </div>
+                  </div>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">手机号验证码登录</span>
+                      <span class="field-desc">开启且腾讯云短信配置完整时，前台展示手机号验证码登录入口。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.enableCodeLogin"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">注册绑定手机</span>
+                      <span class="field-desc">开启且腾讯云短信配置完整时，注册页展示绑定手机选项；可与邮箱绑定二选一。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.needBindPhone"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+                </template>
+
+                <template v-if="isSmtpConfig(serverItem)">
+                  <div class="config-subsection">
+                    <div class="config-subsection__head">
+                      <h4>邮箱功能开关</h4>
+                      <p>控制 SMTP 邮件服务、邮箱验证码和注册绑定邮箱能力。</p>
+                    </div>
+                  </div>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">启用 SMTP 邮件</span>
+                      <span class="field-desc">开启后才展示 SMTP 状态检查，并允许邮箱验证码、通知与告警使用此邮箱配置。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.enableSmtp"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">邮箱验证码</span>
+                      <span class="field-desc">默认关闭；开启 SMTP 且配置完整时，支持邮箱验证码登录、注册与找回密码。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.enableEmailCodeLogin"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">强制绑定邮箱</span>
+                      <span class="field-desc">开启 SMTP 且配置完整时，注册表单会要求填写并验证邮箱。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.needBindEmail"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+                </template>
+
                 <div v-if="isSmtpConfig(serverItem) || isTxConfig(serverItem)" class="config-subsection">
                   <div class="config-subsection__head">
                     <template v-if="isSmtpConfig(serverItem)">
@@ -1080,79 +1175,18 @@ watch(activeConfigTab, (t) => {
                   />
                 </el-form-item>
 
-                <div v-if="isTxConfig(serverItem)" class="config-subsection config-subsection--spaced">
-                  <div class="config-subsection__head">
-                    <h4>手机号验证码功能配置</h4>
-                    <p>控制手机号验证码登录，以及注册时绑定手机号入口。</p>
-                  </div>
-                </div>
-
-                <template v-if="isTxConfig(serverItem)">
-                  <el-form-item class="field-item">
-                    <template #label>
-                      <span class="field-label">手机号验证码登录</span>
-                      <span class="field-desc">开启且腾讯云短信配置完整时，前台展示手机号验证码登录入口。</span>
-                    </template>
-                    <el-switch
-                      v-model="siteFeatureForm.enableCodeLogin"
-                      inline-prompt
-                      active-text="开"
-                      inactive-text="关"
-                    />
-                  </el-form-item>
-
-                  <el-form-item class="field-item">
-                    <template #label>
-                      <span class="field-label">注册绑定手机</span>
-                      <span class="field-desc">开启且腾讯云短信配置完整时，注册页展示绑定手机选项；可与邮箱绑定二选一。</span>
-                    </template>
-                    <el-switch
-                      v-model="siteFeatureForm.needBindPhone"
-                      inline-prompt
-                      active-text="开"
-                      inactive-text="关"
-                    />
-                  </el-form-item>
-                </template>
-
                 <div v-if="isSmtpConfig(serverItem)" class="config-subsection config-subsection--spaced">
                   <div class="config-subsection__head">
                     <h4>其它邮箱功能配置</h4>
-                    <p>邮箱验证码、告警收件邮箱与全局发信频率控制。</p>
+                    <p>告警收件邮箱与全局发信频率控制。</p>
                   </div>
                 </div>
 
                 <template v-if="isSmtpConfig(serverItem)">
                   <el-form-item class="field-item">
                     <template #label>
-                      <span class="field-label">邮箱验证码</span>
-                      <span class="field-desc">默认关闭；开启且 SMTP 配置完整时，支持邮箱验证码登录、注册与找回密码。</span>
-                    </template>
-                    <el-switch
-                      v-model="siteFeatureForm.enableEmailCodeLogin"
-                      inline-prompt
-                      active-text="开"
-                      inactive-text="关"
-                    />
-                  </el-form-item>
-
-                  <el-form-item class="field-item">
-                    <template #label>
-                      <span class="field-label">强制绑定邮箱</span>
-                      <span class="field-desc">开启且 SMTP 配置完整时，注册表单会要求填写并验证邮箱。</span>
-                    </template>
-                    <el-switch
-                      v-model="siteFeatureForm.needBindEmail"
-                      inline-prompt
-                      active-text="开"
-                      inactive-text="关"
-                    />
-                  </el-form-item>
-
-                  <el-form-item class="field-item">
-                    <template #label>
                       <span class="field-label">服务告警收件邮箱</span>
-                      <span class="field-desc">多个邮箱可用逗号、分号或空格分隔；SMTP 完整后服务异常会发送告警。</span>
+                      <span class="field-desc">多个邮箱可用逗号、分号或空格分隔；启用 SMTP 且配置完整后服务异常会发送告警。</span>
                     </template>
                     <el-input
                       v-model="siteFeatureForm.alertEmails"

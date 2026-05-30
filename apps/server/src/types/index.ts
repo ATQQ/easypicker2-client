@@ -9,6 +9,8 @@ export interface GlobalSiteConfig {
   enableCodeLogin: boolean
   supportPhoneCode?: boolean
   supportCodeLogin?: boolean
+  /** 是否启用 SMTP 邮件服务 */
+  enableSmtp?: boolean
   /** 开启且 SMTP 配置完整时展示邮箱验证码登录 */
   enableEmailCodeLogin?: boolean
   supportEmailCodeLogin?: boolean
@@ -46,6 +48,27 @@ export interface GlobalSiteConfig {
   filePageSelfHostLinkText: string
   filePageSelfHostLink: string
   feedbackEntryEnabled?: boolean
+  announcementTop?: SiteAnnouncementTopConfig
+  announcementModal?: SiteAnnouncementModalConfig
+}
+
+export type SiteAnnouncementTheme = 'info' | 'success' | 'warning' | 'danger'
+
+export interface SiteAnnouncementTopConfig {
+  enabled: boolean
+  title?: string
+  content: string
+  theme: SiteAnnouncementTheme
+  closable: boolean
+}
+
+export interface SiteAnnouncementModalConfig {
+  enabled: boolean
+  title: string
+  content: string
+  theme: SiteAnnouncementTheme
+  showTimes: number
+  confirmText?: string
 }
 
 export interface DownloadLogAnalyzeItem {

@@ -327,6 +327,7 @@ declare namespace OverviewApiTypes {
     needBindPhone: boolean
     enableCodeLogin: boolean
     supportPhoneCode?: boolean
+    enableSmtp?: boolean
     enableEmailCodeLogin: boolean
     needBindEmail?: boolean
     alertEmails?: string
@@ -358,6 +359,24 @@ declare namespace OverviewApiTypes {
     filePageSponsorSuffix: string
     filePageSelfHostLinkText: string
     filePageSelfHostLink: string
+    announcementTop?: SiteAnnouncementTopConfig
+    announcementModal?: SiteAnnouncementModalConfig
+  }
+  type SiteAnnouncementTheme = 'info' | 'success' | 'warning' | 'danger'
+  interface SiteAnnouncementTopConfig {
+    enabled: boolean
+    title?: string
+    content: string
+    theme: SiteAnnouncementTheme
+    closable: boolean
+  }
+  interface SiteAnnouncementModalConfig {
+    enabled: boolean
+    title: string
+    content: string
+    theme: SiteAnnouncementTheme
+    showTimes: number
+    confirmText?: string
   }
   type getGlobalConfig = ResponseData<GlobalSiteConfig>
 }

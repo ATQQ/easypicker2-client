@@ -12,7 +12,7 @@ import { getMongoDBStatus, refreshMongoDb } from '@/lib/dbConnect/mongodb'
 import { getMysqlStatus, refreshPool } from '@/lib/dbConnect/mysql'
 import { getRedisStatus } from '@/lib/dbConnect/redis'
 import { UserService } from '@/service'
-import { isSmtpConfigured, sendMail, sendVerifyCodeMail } from '@/utils/mail'
+import { isSmtpConfigured, isSmtpServiceEnabled, sendMail, sendVerifyCodeMail } from '@/utils/mail'
 import { ensureMysqlBootstrap } from '@/utils/mysql-bootstrap'
 import { checkMysqlDatabaseExists } from '@/utils/mysql-check-database'
 import {
@@ -27,7 +27,8 @@ import {
 import { patchTable } from '@/utils/patch'
 import { getQiniuStatus, refreshQinNiuConfig } from '@/utils/qiniuUtil'
 import { rEmail, rPassword } from '@/utils/regExp'
-import { isCodeLoginSupported, isEmailCodeLoginSupported, isTxMessageConfigured } from '@/utils/siteConfig'
+import { isCodeLoginSupported, isEmailCodeLoginSupported, isTxMessageConfigured, isTxMessageEnabled } from '@/utils/siteConfig'
+import { getStorageMode } from '@/utils/storageMode'
 import { encryption } from '@/utils/stringUtil'
 import { getTxServiceStatus, refreshTxConfig } from '@/utils/tencent'
 import LocalUserDB from '@/utils/user-local-db'
@@ -87,7 +88,7 @@ const serviceDefinitions: ServiceDefinition[] = [
     title: '七牛云',
     description: '文件对象存储与下载',
     required: true,
-    enabled: () => true,
+    enabled: () => getStorageMode() === 'qiniu',
     getStatus: getQiniuStatus,
   },
   {
@@ -103,7 +104,7 @@ const serviceDefinitions: ServiceDefinition[] = [
     title: '腾讯云',
     description: '短信验证码服务',
     required: false,
-    enabled: () => true,
+    enabled: isTxMessageEnabled,
     getStatus: getTxServiceStatus,
   },
   {
@@ -111,7 +112,7 @@ const serviceDefinitions: ServiceDefinition[] = [
     title: 'SMTP 邮件',
     description: '验证码、通知与告警邮件',
     required: false,
-    enabled: () => true,
+    enabled: isSmtpServiceEnabled,
     getStatus: async () => ({
       type: 'smtp',
       status: isSmtpConfigured(),
@@ -145,6 +146,17 @@ export default class UserController {
         type: service.type,
       }).length > 0
       return hasConfig && service.enabled()
+    })
+  }
+
+  getConfiguredServices() {
+    return serviceDefinitions.filter((service) => {
+      const hasConfig = LocalUserDB.findUserConfig({
+        type: service.type,
+      }).length > 0
+      if (service.type === 'redis')
+        return hasConfig && service.enabled()
+      return hasConfig
     })
   }
 
@@ -367,7 +379,7 @@ export default class UserController {
 
   @Get('service/config')
   async getUserConfig() {
-    return this.getActiveServices().map((service) => {
+    return this.getConfiguredServices().map((service) => {
       return {
         type: service.type,
         title: service.title,
@@ -458,6 +470,13 @@ export default class UserController {
       return {
         ok: false,
         error: 'SMTP 配置不完整，请先填写 host、user、pass、fromAddress 并保存',
+        results: [],
+      }
+    }
+    if (!isSmtpServiceEnabled()) {
+      return {
+        ok: false,
+        error: 'SMTP 邮件服务未启用，请先在邮箱配置中开启并保存',
         results: [],
       }
     }
@@ -582,6 +601,7 @@ export default class UserController {
       'downloadCompressExpired',
       'needBindPhone',
       'enableCodeLogin',
+      'enableSmtp',
       'enableEmailCodeLogin',
       'needBindEmail',
       'limitSpace',
@@ -604,6 +624,8 @@ export default class UserController {
       'filePageSponsorSuffix',
       'filePageSelfHostLinkText',
       'filePageSelfHostLink',
+      'announcementTop',
+      'announcementModal',
     ]
     const supportCodeLogin = isCodeLoginSupported()
     const supportEmailCodeLogin = isEmailCodeLoginSupported()

@@ -33,6 +33,16 @@ interface ConfigSection {
 }
 
 const defaultSiteConfig: SiteConfig = { ...baseDefaultSiteConfig }
+const ANNOUNCEMENT_TAB = '通告配置'
+const announcementThemeOptions: Array<{
+  label: string
+  value: OverviewApiTypes.SiteAnnouncementTheme
+}> = [
+  { label: '信息蓝', value: 'info' },
+  { label: '成功绿', value: 'success' },
+  { label: '提醒黄', value: 'warning' },
+  { label: '警示红', value: 'danger' },
+]
 
 const configSections: ConfigSection[] = [
   {
@@ -135,6 +145,14 @@ function syncForm(data: Partial<SiteConfig> = {}) {
   Object.assign(siteForm, {
     ...defaultSiteConfig,
     ...data,
+    announcementTop: {
+      ...defaultSiteConfig.announcementTop,
+      ...(data.announcementTop || {}),
+    },
+    announcementModal: {
+      ...defaultSiteConfig.announcementModal,
+      ...(data.announcementModal || {}),
+    },
   })
 }
 
@@ -152,6 +170,9 @@ function normalizeSiteConfig(): SiteConfig {
     compressSizeLimit: Number(siteForm.compressSizeLimit),
     needBindPhone: Boolean(siteForm.needBindPhone),
     enableCodeLogin: Boolean(siteForm.enableCodeLogin),
+    enableSmtp: typeof jsonData.value.enableSmtp === 'boolean'
+      ? Boolean(siteForm.enableSmtp)
+      : Boolean(siteForm.enableEmailCodeLogin || siteForm.needBindEmail || siteForm.alertEmails),
     enableEmailCodeLogin: Boolean(siteForm.enableEmailCodeLogin),
     storageMode: siteForm.storageMode === 'local' ? 'local' : 'qiniu',
     maxUploadSizeMB: Number(siteForm.maxUploadSizeMB),
@@ -177,6 +198,21 @@ function normalizeSiteConfig(): SiteConfig {
     filePageSponsorSuffix: siteForm.filePageSponsorSuffix.trim(),
     filePageSelfHostLinkText: siteForm.filePageSelfHostLinkText.trim(),
     filePageSelfHostLink: siteForm.filePageSelfHostLink.trim(),
+    announcementTop: {
+      enabled: Boolean(siteForm.announcementTop.enabled),
+      title: siteForm.announcementTop.title.trim(),
+      content: siteForm.announcementTop.content.trim(),
+      theme: siteForm.announcementTop.theme,
+      closable: Boolean(siteForm.announcementTop.closable),
+    },
+    announcementModal: {
+      enabled: Boolean(siteForm.announcementModal.enabled),
+      title: siteForm.announcementModal.title.trim() || '通告',
+      content: siteForm.announcementModal.content.trim(),
+      theme: siteForm.announcementModal.theme,
+      showTimes: Number(siteForm.announcementModal.showTimes),
+      confirmText: siteForm.announcementModal.confirmText.trim() || '知道了',
+    },
   }
 }
 
@@ -219,8 +255,27 @@ function formatConfirmValue(key: keyof SiteConfig, value: SiteConfig[keyof SiteC
       ? '-'
       : new Date(Number(value)).toLocaleDateString()
   }
+  if (value && typeof value === 'object') {
+    const text = JSON.stringify(value)
+    return text.length > 120 ? `${text.slice(0, 120)}...` : text
+  }
   const text = String(value ?? '')
   return text.length > 120 ? `${text.slice(0, 120)}...` : text
+}
+
+function isSameConfigValue(a: unknown, b: unknown) {
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    return JSON.stringify(a) === JSON.stringify(b)
+  }
+  return a === b
+}
+
+function getConfigChangeLabel(key: keyof SiteConfig) {
+  if (key === 'announcementTop')
+    return '顶部条通告'
+  if (key === 'announcementModal')
+    return '弹窗通告'
+  return configFieldMap.get(key)?.label || key
 }
 
 function getConfigChanges(nextConfig: SiteConfig) {
@@ -233,12 +288,12 @@ function getConfigChanges(nextConfig: SiteConfig) {
       const typedKey = key as keyof SiteConfig
       const oldValue = currentConfig[typedKey]
       const newValue = nextConfig[typedKey]
-      if (oldValue === newValue) {
+      if (isSameConfigValue(oldValue, newValue)) {
         return null
       }
       return {
         key: typedKey,
-        label: configFieldMap.get(typedKey)?.label || typedKey,
+        label: getConfigChangeLabel(typedKey),
         oldValue: formatConfirmValue(typedKey, oldValue),
         newValue: formatConfirmValue(typedKey, newValue),
       }
@@ -259,6 +314,25 @@ function buildChangeConfirmContent(changes: NonNullable<ReturnType<typeof getCon
   </div>`
 }
 
+function validateAnnouncementConfig() {
+  if (siteForm.announcementTop.enabled && !siteForm.announcementTop.content.trim()) {
+    ElMessage.warning('请填写顶部条通告内容')
+    activeConfigTab.value = ANNOUNCEMENT_TAB
+    return false
+  }
+  if (siteForm.announcementModal.enabled && !siteForm.announcementModal.content.trim()) {
+    ElMessage.warning('请填写弹窗通告内容')
+    activeConfigTab.value = ANNOUNCEMENT_TAB
+    return false
+  }
+  if (siteForm.announcementModal.showTimes < 1) {
+    ElMessage.warning('弹窗展示次数需大于 0')
+    activeConfigTab.value = ANNOUNCEMENT_TAB
+    return false
+  }
+  return true
+}
+
 async function handleSaveConfig() {
   try {
     await siteFormRef.value?.validate()
@@ -267,6 +341,8 @@ async function handleSaveConfig() {
     ElMessage.error('保存失败，请检查配置项后重试')
     return
   }
+  if (!validateAnnouncementConfig())
+    return
 
   const nextConfig = normalizeSiteConfig()
   const changes = getConfigChanges(nextConfig)
@@ -491,6 +567,164 @@ onMounted(() => {
                   <span v-if="field.suffix" class="suffix">{{ field.suffix }}</span>
                 </div>
               </el-form-item>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="通告配置" :name="ANNOUNCEMENT_TAB">
+            <div class="tab-desc">
+              配置展示给用户的顶部条和弹窗通告；每种类型只保留一条，关闭开关即可停用。
+            </div>
+
+            <div class="announcement-config">
+              <section class="announcement-block">
+                <div class="announcement-block-head">
+                  <div>
+                    <h3>页面顶部条状通告</h3>
+                    <p>显示在页面最上方，适合短通知、维护提示或重要链接说明。</p>
+                  </div>
+                  <el-switch
+                    v-model="siteForm.announcementTop.enabled"
+                    inline-prompt
+                    active-text="开"
+                    inactive-text="关"
+                  />
+                </div>
+
+                <div class="field-list">
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">顶部条标题</span>
+                      <span class="field-desc">可选，留空则只展示正文。</span>
+                    </template>
+                    <el-input v-model="siteForm.announcementTop.title" clearable placeholder="例如：系统维护" />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">顶部条内容</span>
+                      <span class="field-desc">支持换行，会以纯文本展示。</span>
+                    </template>
+                    <el-input
+                      v-model="siteForm.announcementTop.content"
+                      type="textarea"
+                      :rows="3"
+                      maxlength="300"
+                      show-word-limit
+                      placeholder="请输入顶部条通告内容"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">顶部条样式</span>
+                      <span class="field-desc">选择不同语义色以匹配内容重要程度。</span>
+                    </template>
+                    <el-select v-model="siteForm.announcementTop.theme" class="full-control">
+                      <el-option
+                        v-for="item in announcementThemeOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      />
+                    </el-select>
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">允许用户关闭</span>
+                      <span class="field-desc">开启后用户可在当前浏览器关闭此条通告；通告内容变化后会重新展示。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteForm.announcementTop.closable"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+                </div>
+
+                <div class="announcement-preview" :class="`announcement-preview--${siteForm.announcementTop.theme}`">
+                  <strong v-if="siteForm.announcementTop.title">{{ siteForm.announcementTop.title }}</strong>
+                  <span>{{ siteForm.announcementTop.content || '顶部条通告预览' }}</span>
+                </div>
+              </section>
+
+              <section class="announcement-block">
+                <div class="announcement-block-head">
+                  <div>
+                    <h3>弹窗通告</h3>
+                    <p>进入页面后自动弹出，适合需要用户明确看到的重要通知。</p>
+                  </div>
+                  <el-switch
+                    v-model="siteForm.announcementModal.enabled"
+                    inline-prompt
+                    active-text="开"
+                    inactive-text="关"
+                  />
+                </div>
+
+                <div class="field-list">
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">弹窗标题</span>
+                      <span class="field-desc">展示在弹窗顶部。</span>
+                    </template>
+                    <el-input v-model="siteForm.announcementModal.title" clearable placeholder="通告" />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">弹窗内容</span>
+                      <span class="field-desc">支持换行，会以纯文本展示。</span>
+                    </template>
+                    <el-input
+                      v-model="siteForm.announcementModal.content"
+                      type="textarea"
+                      :rows="4"
+                      maxlength="600"
+                      show-word-limit
+                      placeholder="请输入弹窗通告内容"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">弹窗样式</span>
+                      <span class="field-desc">影响弹窗内容区域背景色。</span>
+                    </template>
+                    <el-select v-model="siteForm.announcementModal.theme" class="full-control">
+                      <el-option
+                        v-for="item in announcementThemeOptions"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                      />
+                    </el-select>
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">弹窗展示次数</span>
+                      <span class="field-desc">同一浏览器内，当前这条弹窗最多展示的次数；内容变化后重新计数。</span>
+                    </template>
+                    <el-input-number
+                      v-model="siteForm.announcementModal.showTimes"
+                      :min="1"
+                      :step="1"
+                      controls-position="right"
+                      class="number-control"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">确认按钮文案</span>
+                      <span class="field-desc">留空时默认显示“知道了”。</span>
+                    </template>
+                    <el-input v-model="siteForm.announcementModal.confirmText" clearable placeholder="知道了" />
+                  </el-form-item>
+                </div>
+              </section>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -745,6 +979,87 @@ onMounted(() => {
   font-size: 13px;
 }
 
+.announcement-config {
+  display: grid;
+  gap: 16px;
+}
+
+.announcement-block {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #edf0f5;
+  border-radius: 14px;
+  background: #fbfdff;
+}
+
+.announcement-block-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  h3 {
+    margin: 0 0 6px;
+    color: #1f2937;
+    font-size: 16px;
+  }
+
+  p {
+    margin: 0;
+    color: #8a94a6;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+.announcement-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.6;
+
+  strong {
+    flex-shrink: 0;
+  }
+
+  span {
+    white-space: pre-line;
+    word-break: break-word;
+  }
+}
+
+.announcement-preview--info {
+  border-color: #d9ecff;
+  background: #ecf5ff;
+  color: #1f5f99;
+}
+
+.announcement-preview--success {
+  border-color: #e1f3d8;
+  background: #f0f9eb;
+  color: #2f7d32;
+}
+
+.announcement-preview--warning {
+  border-color: #faecd8;
+  background: #fdf6ec;
+  color: #9a5b13;
+}
+
+.announcement-preview--danger {
+  border-color: #fde2e2;
+  background: #fef0f0;
+  color: #a13030;
+}
+
 @media screen and (max-width: 900px) {
   .config-page {
     margin-top: 40px;
@@ -809,6 +1124,17 @@ onMounted(() => {
 
   .field-item {
     padding: 12px;
+  }
+
+  .announcement-block {
+    padding: 12px;
+  }
+
+  .announcement-block-head,
+  .announcement-preview {
+    align-items: flex-start;
+    flex-direction: column;
+    text-align: left;
   }
 }
 </style>

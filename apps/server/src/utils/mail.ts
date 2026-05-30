@@ -20,6 +20,13 @@ export function isSmtpConfigured(): boolean {
   })
 }
 
+export function isSmtpServiceEnabled(): boolean {
+  const site = LocalUserDB.getSiteConfig()
+  if (typeof site?.enableSmtp === 'boolean')
+    return site.enableSmtp
+  return Boolean(site?.enableEmailCodeLogin || site?.needBindEmail || site?.alertEmails)
+}
+
 function createTransport() {
   const c = smtpCfg()
   if (!isSmtpConfigured())
@@ -85,6 +92,11 @@ export async function sendMail(opts: {
     }
   }
 
+  if (!isSmtpServiceEnabled()) {
+    recordMailLog({ ok: false, error: 'smtp disabled' })
+    return { ok: false as const, error: 'smtp disabled' }
+  }
+
   const transporter = createTransport()
   if (!transporter) {
     recordMailLog({ ok: false, error: 'smtp not configured' })
@@ -147,7 +159,7 @@ export async function sendServiceAlertMail(subject: string, body: string) {
   if (!raw || typeof raw !== 'string')
     return
   const to = raw.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean)
-  if (to.length === 0 || !isSmtpConfigured())
+  if (to.length === 0 || !isSmtpServiceEnabled() || !isSmtpConfigured())
     return
   await sendMail({
     to,

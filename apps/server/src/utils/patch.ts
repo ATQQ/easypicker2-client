@@ -194,6 +194,21 @@ export async function initUserConfig() {
       filePageSelfHostLinkText: '也可以选择自己搭建💡',
       filePageSelfHostLink: 'https://docs.ep.sugarat.top/',
       feedbackEntryEnabled: true,
+      announcementTop: {
+        enabled: false,
+        title: '',
+        content: '',
+        theme: 'info',
+        closable: true,
+      },
+      announcementModal: {
+        enabled: false,
+        title: '通告',
+        content: '',
+        theme: 'info',
+        showTimes: 1,
+        confirmText: '知道了',
+      },
     } as GlobalSiteConfig,
   })
   // 更新配置
