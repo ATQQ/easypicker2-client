@@ -172,7 +172,7 @@ function normalizeSiteConfig(): SiteConfig {
     enableCodeLogin: Boolean(siteForm.enableCodeLogin),
     enableSmtp: typeof jsonData.value.enableSmtp === 'boolean'
       ? Boolean(siteForm.enableSmtp)
-      : Boolean(siteForm.enableEmailCodeLogin || siteForm.needBindEmail || siteForm.alertEmails),
+      : Boolean(siteForm.enableEmailCodeLogin || siteForm.needBindEmail),
     enableEmailCodeLogin: Boolean(siteForm.enableEmailCodeLogin),
     storageMode: siteForm.storageMode === 'local' ? 'local' : 'qiniu',
     maxUploadSizeMB: Number(siteForm.maxUploadSizeMB),
