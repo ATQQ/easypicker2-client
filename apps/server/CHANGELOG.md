@@ -1,5 +1,18 @@
 # @sugarat/easypicker2-server
 
+## 2.9.0
+
+### Minor Changes
+
+- feat: 提交页支持同分类任务切换问题
+- feat: 支持邮箱登录与邮箱绑定
+- feat: 支持文件提交消息推送
+- feat: 任务列表优化
+- feat: 支持本地模式
+- feat: 邮箱相关通知
+- feat: 支持设置通告
+- feat: 提交页显示最近文件上传记录
+
 ## 2.8.4
 
 ### Patch Changes
