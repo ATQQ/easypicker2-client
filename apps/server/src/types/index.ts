@@ -58,6 +58,7 @@ export interface SiteAnnouncementTopConfig {
   enabled: boolean
   title?: string
   content: string
+  renderHtml?: boolean
   theme: SiteAnnouncementTheme
   closable: boolean
 }
@@ -66,6 +67,7 @@ export interface SiteAnnouncementModalConfig {
   enabled: boolean
   title: string
   content: string
+  renderHtml?: boolean
   theme: SiteAnnouncementTheme
   showTimes: number
   confirmText?: string

@@ -367,6 +367,7 @@ declare namespace OverviewApiTypes {
     enabled: boolean
     title?: string
     content: string
+    renderHtml?: boolean
     theme: SiteAnnouncementTheme
     closable: boolean
   }
@@ -374,6 +375,7 @@ declare namespace OverviewApiTypes {
     enabled: boolean
     title: string
     content: string
+    renderHtml?: boolean
     theme: SiteAnnouncementTheme
     showTimes: number
     confirmText?: string

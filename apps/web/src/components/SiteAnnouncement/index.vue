@@ -82,7 +82,12 @@ watch(modalNoticeKey, tryOpenModal, { immediate: true })
   >
     <div class="site-announcement-top__content">
       <strong v-if="topNotice?.title">{{ topNotice.title }}</strong>
-      <span>{{ topNotice?.content }}</span>
+      <span
+        v-if="topNotice?.renderHtml"
+        class="site-announcement-html"
+        v-html="topNotice?.content"
+      />
+      <span v-else>{{ topNotice?.content }}</span>
     </div>
     <el-button
       v-if="topNotice?.closable"
@@ -103,7 +108,12 @@ watch(modalNoticeKey, tryOpenModal, { immediate: true })
     center
   >
     <div class="site-announcement-modal" :class="modalNoticeClass">
-      <div class="site-announcement-modal__content">
+      <div
+        v-if="modalNotice?.renderHtml"
+        class="site-announcement-modal__content site-announcement-html"
+        v-html="modalNotice?.content"
+      />
+      <div v-else class="site-announcement-modal__content">
         {{ modalNotice?.content }}
       </div>
     </div>
@@ -186,6 +196,23 @@ watch(modalNoticeKey, tryOpenModal, { immediate: true })
   line-height: 1.8;
   white-space: pre-line;
   word-break: break-word;
+}
+
+.site-announcement-html {
+  :deep(a) {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  :deep(p) {
+    margin: 0 0 8px;
+  }
+
+  :deep(p:last-child) {
+    margin-bottom: 0;
+  }
 }
 
 .site-announcement-modal--info {

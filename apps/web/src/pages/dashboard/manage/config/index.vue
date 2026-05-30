@@ -202,6 +202,7 @@ function normalizeSiteConfig(): SiteConfig {
       enabled: Boolean(siteForm.announcementTop.enabled),
       title: siteForm.announcementTop.title.trim(),
       content: siteForm.announcementTop.content.trim(),
+      renderHtml: Boolean(siteForm.announcementTop.renderHtml),
       theme: siteForm.announcementTop.theme,
       closable: Boolean(siteForm.announcementTop.closable),
     },
@@ -209,6 +210,7 @@ function normalizeSiteConfig(): SiteConfig {
       enabled: Boolean(siteForm.announcementModal.enabled),
       title: siteForm.announcementModal.title.trim() || '通告',
       content: siteForm.announcementModal.content.trim(),
+      renderHtml: Boolean(siteForm.announcementModal.renderHtml),
       theme: siteForm.announcementModal.theme,
       showTimes: Number(siteForm.announcementModal.showTimes),
       confirmText: siteForm.announcementModal.confirmText.trim() || '知道了',
@@ -602,7 +604,7 @@ onMounted(() => {
                   <el-form-item class="field-item">
                     <template #label>
                       <span class="field-label">顶部条内容</span>
-                      <span class="field-desc">支持换行，会以纯文本展示。</span>
+                      <span class="field-desc">支持换行；开启 HTML 渲染后会按 HTML 展示。</span>
                     </template>
                     <el-input
                       v-model="siteForm.announcementTop.content"
@@ -611,6 +613,19 @@ onMounted(() => {
                       maxlength="300"
                       show-word-limit
                       placeholder="请输入顶部条通告内容"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">顶部条 HTML 渲染</span>
+                      <span class="field-desc">默认关闭；开启后会将顶部条内容作为 HTML 片段渲染。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteForm.announcementTop.renderHtml"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
                     />
                   </el-form-item>
 
@@ -645,7 +660,12 @@ onMounted(() => {
 
                 <div class="announcement-preview" :class="`announcement-preview--${siteForm.announcementTop.theme}`">
                   <strong v-if="siteForm.announcementTop.title">{{ siteForm.announcementTop.title }}</strong>
-                  <span>{{ siteForm.announcementTop.content || '顶部条通告预览' }}</span>
+                  <span
+                    v-if="siteForm.announcementTop.renderHtml"
+                    class="announcement-preview-html"
+                    v-html="siteForm.announcementTop.content || '顶部条通告预览'"
+                  />
+                  <span v-else>{{ siteForm.announcementTop.content || '顶部条通告预览' }}</span>
                 </div>
               </section>
 
@@ -675,7 +695,7 @@ onMounted(() => {
                   <el-form-item class="field-item">
                     <template #label>
                       <span class="field-label">弹窗内容</span>
-                      <span class="field-desc">支持换行，会以纯文本展示。</span>
+                      <span class="field-desc">支持换行；开启 HTML 渲染后会按 HTML 展示。</span>
                     </template>
                     <el-input
                       v-model="siteForm.announcementModal.content"
@@ -684,6 +704,19 @@ onMounted(() => {
                       maxlength="600"
                       show-word-limit
                       placeholder="请输入弹窗通告内容"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">弹窗 HTML 渲染</span>
+                      <span class="field-desc">默认关闭；开启后会将弹窗内容作为 HTML 片段渲染。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteForm.announcementModal.renderHtml"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
                     />
                   </el-form-item>
 
@@ -1033,6 +1066,23 @@ onMounted(() => {
   span {
     white-space: pre-line;
     word-break: break-word;
+  }
+}
+
+.announcement-preview-html {
+  :deep(a) {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  :deep(p) {
+    margin: 0 0 6px;
+  }
+
+  :deep(p:last-child) {
+    margin-bottom: 0;
   }
 }
 
