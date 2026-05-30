@@ -174,6 +174,17 @@ function resetPassword() {
   })
 }
 
+function saveNotify(val: boolean) {
+  if (!profile.emailVerified) {
+    ElMessage.warning('请先绑定邮箱')
+    return
+  }
+  UserApi.setProfileNotify(val).then(() => {
+    profile.notifyOnSubmit = val
+    ElMessage.success('已更新')
+  })
+}
+
 onMounted(() => {
   loadProfile()
 })
@@ -267,6 +278,31 @@ onMounted(() => {
             绑定邮箱
           </el-button>
         </el-form>
+      </section>
+
+      <section v-if="supportEmailFeature" class="profile-panel">
+        <div class="section-title">
+          <div>
+            <h3>邮箱与提交通知</h3>
+            <p>有新提交时向你的邮箱发送提醒（需已验证邮箱）</p>
+          </div>
+        </div>
+        <div v-if="profile.emailVerified" class="notify-row">
+          <div>
+            <span>接收邮箱</span>
+            <strong>{{ profile.email }}</strong>
+          </div>
+          <span class="notify-toggle">
+            邮件通知
+            <el-switch
+              :model-value="profile.notifyOnSubmit"
+              @update:model-value="saveNotify"
+            />
+          </span>
+        </div>
+        <div v-else class="notify-empty">
+          未绑定邮箱，绑定后可开启新提交通知
+        </div>
       </section>
 
       <section class="profile-panel">
@@ -366,6 +402,7 @@ onMounted(() => {
   p {
     margin-top: 4px;
     color: #909399;
+    font-size: 13px;
   }
 }
 
@@ -418,6 +455,54 @@ onMounted(() => {
   word-break: break-all;
 }
 
+.notify-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  box-sizing: border-box;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  span {
+    color: #909399;
+    font-size: 13px;
+  }
+
+  strong {
+    color: #303133;
+    font-size: 15px;
+    word-break: break-all;
+  }
+}
+
+.notify-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.notify-empty {
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 4px;
+  background-color: #f5f7fa;
+  color: #606266;
+  font-size: 14px;
+}
+
 @media screen and (max-width: 700px) {
   .profile-page {
     width: calc(100% - 20px);
@@ -427,6 +512,11 @@ onMounted(() => {
   .info-grid,
   .settings-grid {
     grid-template-columns: 1fr;
+  }
+
+  .notify-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

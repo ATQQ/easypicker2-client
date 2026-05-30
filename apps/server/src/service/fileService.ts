@@ -16,6 +16,7 @@ import { In } from 'typeorm'
 import { qiniuConfig } from '@/config'
 import { publicError } from '@/constants/errorMsg'
 import { addDownloadAction, findAction, updateAction } from '@/db/actionDb'
+import { CategoryRepository } from '@/db/categoryDb'
 import { FileRepository } from '@/db/fileDb'
 import { findLog, timeToObjId } from '@/db/logDb'
 import { ActionType, DownloadStatus } from '@/db/model/action'
@@ -83,6 +84,9 @@ export default class FileService {
 
   @Inject(PeopleRepository)
   private peopleRepository: PeopleRepository
+
+  @Inject(CategoryRepository)
+  private categoryRepository: CategoryRepository
 
   async selectFilesLimitCount(options: Partial<Files>, count: number) {
     return this.fileRepository.findWithLimitCount(options, count, {
@@ -1174,19 +1178,157 @@ export default class FileService {
 
   private async notifyOwnerOnSubmit(file: Files) {
     try {
-      const owner = await this.userRepository.findOne({ id: file.userId })
-      if (!owner?.email || Number(owner.notifyOnSubmit) !== 1 || Number(owner.emailVerified) !== 1)
-        return
-      const site = LocalUserDB.getSiteConfig()
-      await sendMail({
-        to: owner.email,
-        subject: `${site?.appName || 'EasyPicker'} 新文件提交`,
-        text: `任务：${file.taskName}\n文件：${file.name}\n时间：${new Date().toLocaleString('zh-CN')}`,
-      })
+      await this.sendFileNotifyMail(file, 'submit')
     }
     catch (e) {
       console.error('[notifyOwnerOnSubmit]', e)
     }
+  }
+
+  private async notifyOwnerOnWithdraw(file: Files, peopleName = '') {
+    try {
+      await this.sendFileNotifyMail(file, 'withdraw', peopleName)
+    }
+    catch (e) {
+      console.error('[notifyOwnerOnWithdraw]', e)
+    }
+  }
+
+  private escapeHtml(value: unknown) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+  }
+
+  private parseSubmitInfo(info: unknown) {
+    let value = info
+    if (typeof value === 'string') {
+      try {
+        value = JSON.parse(value)
+      }
+      catch {
+        return []
+      }
+    }
+    if (!Array.isArray(value)) {
+      return []
+    }
+    return value
+      .map((item) => {
+        if (!item || typeof item !== 'object') {
+          return null
+        }
+        const data = item as Record<string, unknown>
+        const label = data.text ?? data.label ?? data.name ?? ''
+        const val = data.value ?? ''
+        if (!label && !val) {
+          return null
+        }
+        return {
+          label: String(label || '-'),
+          value: Array.isArray(val) ? val.join('，') : String(val || '-'),
+        }
+      })
+      .filter((item): item is { label: string, value: string } => Boolean(item))
+  }
+
+  private buildMailRows(rows: { label: string, value: string }[]) {
+    return rows.map(row => `
+      <tr>
+        <td style="width:120px;padding:10px 12px;border-bottom:1px solid #edf0f5;color:#6b7280;background:#f8fafc;">${this.escapeHtml(row.label)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #edf0f5;color:#1f2937;word-break:break-all;">${this.escapeHtml(row.value)}</td>
+      </tr>
+    `).join('')
+  }
+
+  private async getFileNotifyContext(file: Files) {
+    const task = await this.taskRepository.findOne({
+      k: file.taskKey,
+      userId: file.userId,
+      del: BOOLEAN.FALSE,
+    })
+    const categoryKey = task?.categoryKey || file.categoryKey
+    let categoryName = '默认'
+    if (categoryKey && categoryKey !== 'default') {
+      const category = await this.categoryRepository.findOne({
+        k: categoryKey,
+        userId: file.userId,
+      })
+      categoryName = category?.name || categoryKey
+    }
+    return {
+      taskName: task?.name || file.taskName || '-',
+      categoryName,
+    }
+  }
+
+  private async sendFileNotifyMail(file: Files, type: 'submit' | 'withdraw', peopleName = '') {
+    const owner = await this.userRepository.findOne({ id: file.userId })
+    if (!owner?.email || Number(owner.notifyOnSubmit) !== 1 || Number(owner.emailVerified) !== 1)
+      return
+
+    const site = LocalUserDB.getSiteConfig()
+    const appName = site?.appName || 'EasyPicker'
+    const isWithdraw = type === 'withdraw'
+    const { taskName, categoryName } = await this.getFileNotifyContext(file)
+    const submitInfo = this.parseSubmitInfo(file.info)
+    const occurredAt = new Date().toLocaleString('zh-CN')
+    const title = isWithdraw ? '文件撤回提醒' : '新文件提交'
+    const toneColor = isWithdraw ? '#f59e0b' : '#409eff'
+    const submitter = peopleName || file.people || '-'
+    const sizeText = formatSize(+file.size || 0)
+    const rows = [
+      { label: '分类', value: categoryName },
+      { label: '任务', value: taskName },
+      { label: '文件名', value: file.name || '-' },
+      { label: '文件大小', value: sizeText },
+      { label: '提交人', value: submitter },
+      { label: isWithdraw ? '撤回时间' : '提交时间', value: occurredAt },
+    ]
+    const infoRows = submitInfo.length
+      ? this.buildMailRows(submitInfo)
+      : '<tr><td colspan="2" style="padding:12px;color:#909399;">无表单信息</td></tr>'
+    const text = [
+      `${appName} ${title}`,
+      `分类：${categoryName}`,
+      `任务：${taskName}`,
+      `文件：${file.name || '-'}`,
+      `大小：${sizeText}`,
+      `提交人：${submitter}`,
+      `${isWithdraw ? '撤回时间' : '提交时间'}：${occurredAt}`,
+      '表单信息：',
+      ...(submitInfo.length ? submitInfo.map(item => `${item.label}：${item.value}`) : ['无']),
+    ].join('\n')
+
+    await sendMail({
+      to: owner.email,
+      subject: `${appName} ${title}`,
+      text,
+      html: `
+        <div style="margin:0;padding:24px;background:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,'PingFang SC','Microsoft YaHei',sans-serif;color:#1f2937;">
+          <div style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #edf0f5;border-radius:10px;overflow:hidden;box-shadow:0 10px 28px rgba(31,41,55,.08);">
+            <div style="padding:22px 24px;background:linear-gradient(135deg, ${toneColor} 0%, #67c23a 120%);color:#fff;">
+              <div style="font-size:13px;opacity:.86;">${this.escapeHtml(appName)}</div>
+              <h2 style="margin:8px 0 0;font-size:22px;line-height:1.35;">${this.escapeHtml(title)}</h2>
+              <p style="margin:8px 0 0;font-size:14px;opacity:.9;">${isWithdraw ? '投稿人撤回了一条文件提交记录。' : '你有一条新的文件提交记录。'}</p>
+            </div>
+            <div style="padding:22px 24px;">
+              <table style="width:100%;border-collapse:collapse;border:1px solid #edf0f5;border-radius:8px;overflow:hidden;font-size:14px;">
+                ${this.buildMailRows(rows)}
+              </table>
+              <h3 style="margin:22px 0 10px;font-size:16px;color:#111827;">提交填写的表单信息</h3>
+              <table style="width:100%;border-collapse:collapse;border:1px solid #edf0f5;border-radius:8px;overflow:hidden;font-size:14px;">
+                ${infoRows}
+              </table>
+              <p style="margin:18px 0 0;color:#909399;font-size:12px;line-height:1.6;">此邮件由系统自动发送。你可以在个人设置中关闭提交通知。</p>
+            </div>
+          </div>
+        </div>
+      `,
+    })
   }
 
   async getUserFiles() {
@@ -1405,6 +1547,7 @@ export default class FileService {
       peopleName,
       data,
     })
+    void this.notifyOwnerOnWithdraw(passFiles[0], peopleName)
 
     // 更新人员提交状态
     if (peopleName) {

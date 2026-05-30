@@ -12,9 +12,9 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { ActionServiceAPI, FileApi, UserApi } from '@/apis'
+import { ActionServiceAPI, FileApi } from '@/apis'
 import FloatingContact from '@/components/FloatingContact/index.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
 import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
@@ -37,40 +37,8 @@ const showWalletLimit = computed(() => siteConfig.value.limitWallet)
 const showResourceLimitNotice = computed(
   () => isOpenPraise.value && (showStorageLimit.value || showWalletLimit.value),
 )
-const supportEmailFeature = computed(() => siteConfig.value.supportEmailCodeLogin)
 const $store = useStore()
 const $route = useRoute()
-const $router = useRouter()
-
-const profile = reactive({
-  email: '',
-  emailVerified: false,
-  notifyOnSubmit: false,
-})
-
-function loadUserProfile() {
-  UserApi.getProfile()
-    .then((res) => {
-      Object.assign(profile, res.data)
-    })
-    .catch(() => {})
-}
-
-function goProfileBindEmail() {
-  ElMessage.warning('请先到个人中心绑定邮箱')
-  $router.push({ name: 'profile' })
-}
-
-function saveNotify(val: boolean) {
-  if (!profile.emailVerified) {
-    goProfileBindEmail()
-    return
-  }
-  UserApi.setProfileNotify(val).then(() => {
-    profile.notifyOnSubmit = val
-    ElMessage.success('已更新')
-  })
-}
 
 const {
   usage,
@@ -659,7 +627,6 @@ watch(showImg, () => {
 onMounted(() => {
   loadFiles()
   loadActions()
-  loadUserProfile()
   $store.dispatch('category/getCategory')
   loadTaskOptions()
 })
@@ -695,28 +662,6 @@ function handleShowDetail() {
             rel="noopener noreferrer"
           >{{ siteConfig.filePageSelfHostLinkText }}</a>
         </span>
-      </div>
-    </div>
-    <div v-if="supportEmailFeature" class="panel profile-notify">
-      <div class="profile-notify-head">
-        <strong>邮箱与提交通知</strong>
-        <span class="sub">有新提交时向你的邮箱发送提醒（需已验证邮箱）</span>
-      </div>
-      <div v-if="profile.emailVerified" class="profile-bound">
-        <span>已绑定 {{ profile.email }}</span>
-        <span class="notify-toggle">
-          邮件通知
-          <el-switch
-            :model-value="profile.notifyOnSubmit"
-            @update:model-value="saveNotify"
-          />
-        </span>
-      </div>
-      <div v-else class="profile-bind">
-        <span>未绑定邮箱，绑定后可开启新提交通知</span>
-        <el-button type="primary" plain @click="goProfileBindEmail">
-          去个人中心绑定
-        </el-button>
       </div>
     </div>
     <!-- 筛选框 -->
@@ -1211,47 +1156,6 @@ function handleShowDetail() {
   color: #909399;
   font-size: 12px;
   line-height: 1.4;
-}
-
-.profile-notify {
-  margin: 10px auto;
-  padding: 14px 18px;
-}
-
-.profile-notify-head {
-  margin-bottom: 10px;
-
-  .sub {
-    display: block;
-    margin-top: 4px;
-    color: #909399;
-    font-size: 12px;
-    font-weight: normal;
-  }
-}
-
-.profile-bound {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 14px;
-}
-
-.notify-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.profile-bind {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  color: #606266;
-  font-size: 14px;
 }
 
 .stats-dashboard {
