@@ -1,27 +1,35 @@
-import {
-  RouterController,
-  Post,
-  ReqBody,
+import type {
   FWRequest,
-  Get,
-  Put,
-  ReqParams,
-  Response
 } from 'flash-wolves'
-import { WishStatus } from '@/db/model/wish'
 import type { Wish } from '@/db/model/wish'
-import { addWishData, findWish, updateWish } from '@/db/wishDb'
-import { getObjectIdDate, getUniqueKey } from '@/utils/stringUtil'
-import { addBehavior } from '@/db/logDb'
-import { USER_POWER } from '@/db/model/user'
-import { ReqIp } from '@/decorator'
+import {
+  Get,
+  Inject,
+  Post,
+  Put,
+  ReqBody,
+  ReqParams,
+  Response,
+  RouterController,
+} from 'flash-wolves'
 import { addAction, findAction, findActionCount } from '@/db/actionDb'
+import { addBehavior } from '@/db/logDb'
 import { ActionType } from '@/db/model/action'
+import { USER_POWER } from '@/db/model/user'
+import { WishStatus } from '@/db/model/wish'
+import { UserRepository } from '@/db/userDb'
+import { addWishData, findWish, updateWish } from '@/db/wishDb'
+import { ReqIp } from '@/decorator'
+import { isSmtpConfigured, isSmtpServiceEnabled, sendMail } from '@/utils/mail'
+import { getObjectIdDate, getUniqueKey } from '@/utils/stringUtil'
 
 const adminPower = { needLogin: true, userPower: USER_POWER.SUPER }
 // TODO：mongoDB支持 typeorm
 @RouterController('wish')
 export default class WishController {
+  @Inject(UserRepository)
+  private userRepository!: UserRepository
+
   /**
    * 提交需求
    */
@@ -30,15 +38,53 @@ export default class WishController {
     addBehavior(req, {
       module: 'wish',
       msg: '需求反馈',
-      data: body
+      data: body,
     })
 
     const wish: Wish = {
       ...body,
       id: getUniqueKey(),
-      status: WishStatus.REVIEW
+      status: WishStatus.REVIEW,
     }
     await addWishData(wish)
+    void this.notifyAdminWishMail(wish)
+  }
+
+  private async notifyAdminWishMail(wish: Wish) {
+    try {
+      const admins = await this.userRepository.findMany({
+        power: USER_POWER.SUPER,
+        emailVerified: 1,
+      })
+      const emails = Array.from(new Set(
+        admins
+          .map(user => user.email?.trim())
+          .filter((email): email is string => Boolean(email)),
+      ))
+      if (emails.length === 0)
+        return
+      if (!isSmtpServiceEnabled() || !isSmtpConfigured())
+        return
+
+      const title = String(wish.title || '').trim() || '未填写标题'
+      const des = String(wish.des || '').trim() || '未填写描述'
+      const contact = String(wish.contact || '').trim() || '未填写联系方式'
+      await sendMail({
+        to: emails,
+        subject: `新的问题反馈：${title}`,
+        text: [
+          '收到一条新的问题反馈。',
+          '',
+          `标题：${title}`,
+          `描述：${des}`,
+          `联系方式：${contact}`,
+          `反馈 ID：${wish.id}`,
+        ].join('\n'),
+      })
+    }
+    catch (err) {
+      console.warn('[wish-mail]', err)
+    }
   }
 
   @Get('all', adminPower)
@@ -59,7 +105,7 @@ export default class WishController {
         status,
         id,
         contact,
-        createDate
+        createDate,
       }
     })
   }
@@ -67,7 +113,7 @@ export default class WishController {
   @Put('update', adminPower)
   async updateWishStatus(
     @ReqBody('id') id: string,
-    @ReqBody('status') status: WishStatus
+    @ReqBody('status') status: WishStatus,
   ) {
     await updateWish({ id }, { $set: { status } })
     // 不同状态，更新时间字段
@@ -91,21 +137,21 @@ export default class WishController {
       $or: [
         { status: WishStatus.START },
         { status: WishStatus.WAIT },
-        { status: WishStatus.END }
-      ]
+        { status: WishStatus.END },
+      ],
     })
     const result = []
     for (const wish of wishes) {
       const { title, des, id, startDate, status } = wish
       const count = await findActionCount({
         thingId: wish.id,
-        type: ActionType.PRAISE
+        type: ActionType.PRAISE,
       })
-      const alreadyPraise =
-        (await findActionCount({
+      const alreadyPraise
+        = (await findActionCount({
           thingId: wish.id,
           type: ActionType.PRAISE,
-          ip
+          ip,
         })) > 0
       result.push({
         title: status === WishStatus.END ? `(已上线) ${title}` : title,
@@ -114,7 +160,7 @@ export default class WishController {
         startDate,
         count,
         alreadyPraise,
-        status
+        status,
       })
     }
     // 从大到小
@@ -134,7 +180,7 @@ export default class WishController {
     const praiseData = await findAction({
       ip,
       thingId: id,
-      type: ActionType.PRAISE
+      type: ActionType.PRAISE,
     })
     if (praiseData.length) {
       return Response.fail(1, '已经点赞过了')
@@ -142,7 +188,7 @@ export default class WishController {
     await addAction({
       type: ActionType.PRAISE,
       thingId: id,
-      ip
+      ip,
     })
   }
 }
