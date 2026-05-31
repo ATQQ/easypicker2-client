@@ -384,6 +384,9 @@ function handleDropdownClick(e: string) {
         `批量下载_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}`,
       )
         .then((res) => {
+          if (res.data?.message) {
+            ElMessage.info(res.data.message)
+          }
           if (res.data?.url) {
             downloadUrl.value = res.data.url
             showLinkModel.value = true
@@ -567,6 +570,9 @@ function handleDownloadTask() {
     zipName: selectTaskName.value,
   })
     .then((res) => {
+      if (res.data?.message) {
+        ElMessage.info(res.data.message)
+      }
       if (res.data?.url) {
         downloadUrl.value = res.data.url
         showLinkModel.value = true

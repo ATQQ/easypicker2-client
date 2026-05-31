@@ -6,7 +6,6 @@ import type { File } from '@/db/model/file'
 import type { Log } from '@/db/model/log'
 import type { DownloadLogAnalyzeItem } from '@/types'
 import fs from 'node:fs'
-import https from 'node:https'
 import path from 'node:path'
 import { TextEncoder } from 'node:util'
 import dayjs from 'dayjs'
@@ -139,19 +138,19 @@ export default class FileService {
     }
   }
 
-  private async getQiniuLocation(file: Files): Promise<StoredFileLocation | null> {
-    if (isLocalStorageMode()) {
+  private async getQiniuLocation(file: Files, options: { allowInLocalMode?: boolean } = {}): Promise<StoredFileLocation | null> {
+    if (isLocalStorageMode() && !options.allowInLocalMode) {
       return null
     }
     const key = this.getOssKey(file)
-    if (file.categoryKey && await judgeFileIsExist(file.categoryKey)) {
+    if (file.categoryKey && await judgeFileIsExist(file.categoryKey, { allowInLocalMode: options.allowInLocalMode })) {
       return {
         storage: 'qiniu',
         key: file.categoryKey,
         size: +file.size || 0,
       }
     }
-    if (await judgeFileIsExist(key)) {
+    if (await judgeFileIsExist(key, { allowInLocalMode: options.allowInLocalMode })) {
       return {
         storage: 'qiniu',
         key,
@@ -161,15 +160,16 @@ export default class FileService {
     return null
   }
 
-  private async resolveStoredFile(file: Files): Promise<StoredFileLocation | null> {
-    if (isLocalStorageMode()) {
+  private async resolveStoredFile(file: Files, options: { allowQiniuInLocalMode?: boolean } = {}): Promise<StoredFileLocation | null> {
+    if (isLocalStorageMode() && !options.allowQiniuInLocalMode) {
       return this.getLocalLocation(file)
     }
+    const qiniuOptions = { allowInLocalMode: options.allowQiniuInLocalMode }
     const storage = this.getFileStorage(file)
     if (storage === 'local') {
-      return this.getLocalLocation(file) || await this.getQiniuLocation(file)
+      return this.getLocalLocation(file) || await this.getQiniuLocation(file, qiniuOptions)
     }
-    return await this.getQiniuLocation(file) || this.getLocalLocation(file)
+    return await this.getQiniuLocation(file, qiniuOptions) || this.getLocalLocation(file)
   }
 
   private async deleteStoredObject(file: Files) {
@@ -789,35 +789,15 @@ export default class FileService {
     return this.concatBytes([...localParts, centralDir, end])
   }
 
-  private downloadBuffer(url: string) {
-    return new Promise<Uint8Array>((resolve, reject) => {
-      https.get(url, (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          this.downloadBuffer(res.headers.location).then(resolve, reject)
-          return
-        }
-        if (res.statusCode !== 200) {
-          reject(new Error(`download failed: ${res.statusCode}`))
-          return
-        }
-        const chunks: Uint8Array[] = []
-        res.on('data', chunk => chunks.push(this.toByteArray(chunk)))
-        res.on('end', () => resolve(this.concatBytes(chunks)))
-      }).on('error', reject)
-    })
-  }
-
   private async makeLocalZip(
     files: Files[],
-    locations: StoredFileLocation[],
+    locations: Extract<StoredFileLocation, { storage: 'local' }>[],
     zipName: string,
   ) {
     const usedNames = new Set<string>()
     const entries = await Promise.all(files.map(async (file, idx) => {
       const location = locations[idx]
-      const data = location.storage === 'local'
-        ? this.toByteArray(fs.readFileSync(localObjectAbsPath(location.relPath)))
-        : await this.downloadBuffer(createDownloadUrl(location.key))
+      const data = this.toByteArray(fs.readFileSync(localObjectAbsPath(location.relPath)))
       return {
         name: this.getArchiveEntryName(file, usedNames),
         data,
@@ -828,6 +808,90 @@ export default class FileService {
     fs.mkdirSync(path.dirname(absPath), { recursive: true })
     fs.writeFileSync(absPath, this.createZipBytes(entries))
     return relPath
+  }
+
+  private async createLocalBatchDownloadTask(
+    userId: number,
+    logAccount: string,
+    files: Files[],
+    locations: Extract<StoredFileLocation, { storage: 'local' }>[],
+    filename: string,
+  ) {
+    const relPath = await this.makeLocalZip(files, locations, filename)
+    const size = locations.reduce((sum, location) => sum + (+location.size || 0), 0)
+    const result = await addDownloadAction({
+      userId,
+      type: ActionType.Compress,
+    })
+    const link = shortLink(result.insertedId, this.ctx.req)
+    await updateAction<DownloadActionData>(
+      { _id: ObjectID(result.insertedId) },
+      {
+        $set: {
+          data: {
+            url: link,
+            originUrl: '',
+            storage: 'local',
+            localRelPath: relPath,
+            status: DownloadStatus.SUCCESS,
+            ids: files.map(file => file.id),
+            tip: `${filename}.zip (${locations.length}个本机文件)`,
+            name: `${filename}.zip`,
+            size,
+            account: logAccount,
+            mimeType: 'application/zip',
+          },
+        },
+      },
+    )
+    this.behaviorService.add('file', `本机批量下载任务 用户:${logAccount} 文件数量:${locations.length} 压缩文件:${relPath}`, {
+      account: logAccount,
+      length: locations.length,
+      size,
+    })
+    return {
+      storage: 'local' as const,
+      count: locations.length,
+      k: relPath,
+      url: link,
+    }
+  }
+
+  private async createQiniuBatchDownloadTask(
+    userId: number,
+    logAccount: string,
+    files: Files[],
+    locations: Extract<StoredFileLocation, { storage: 'qiniu' }>[],
+    filename: string,
+  ) {
+    const keys = locations.map(location => location.key)
+    const size = locations.reduce((sum, location) => sum + (+location.size || 0), 0)
+    const value = await makeZipWithKeys(keys, filename, {
+      allowInLocalMode: true,
+    })
+    this.behaviorService.add('file', `OSS批量下载任务 用户:${logAccount} 文件数量:${keys.length} 压缩任务名${value}`, {
+      account: logAccount,
+      length: keys.length,
+      size,
+    })
+    await addDownloadAction({
+      userId,
+      type: ActionType.Compress,
+      data: {
+        status: DownloadStatus.ARCHIVE,
+        ids: files.map(file => file.id),
+        tip: `${filename}.zip (${keys.length}个OSS文件)`,
+        archiveKey: value,
+        storage: 'qiniu',
+        size,
+        account: logAccount,
+      },
+    })
+    return {
+      storage: 'qiniu' as const,
+      count: keys.length,
+      k: value,
+    }
   }
 
   async batchDownload(ids: number[], zipName: string) {
@@ -842,7 +906,9 @@ export default class FileService {
       })
       throw publicError.file.notExist
     }
-    const resolved = await Promise.all(files.map(file => this.resolveStoredFile(file)))
+    const resolved = await Promise.all(files.map(file => this.resolveStoredFile(file, {
+      allowQiniuInLocalMode: true,
+    })))
     const validFiles: Files[] = []
     const locations: StoredFileLocation[] = []
     resolved.forEach((location, idx) => {
@@ -859,71 +925,44 @@ export default class FileService {
       throw publicError.file.notExist
     }
 
-    const validIds = validFiles.map(file => file.id)
     const filename = normalizeFileName(zipName || `${getUniqueKey()}`)
-    const size = locations.reduce((sum, location) => sum + (+location.size || 0), 0)
-    const hasLocalFile = locations.some(location => location.storage === 'local')
+    const localFiles: Files[] = []
+    const localLocations: Extract<StoredFileLocation, { storage: 'local' }>[] = []
+    const qiniuFiles: Files[] = []
+    const qiniuLocations: Extract<StoredFileLocation, { storage: 'qiniu' }>[] = []
+    locations.forEach((location, idx) => {
+      if (location.storage === 'local') {
+        localFiles.push(validFiles[idx])
+        localLocations.push(location)
+      }
+      else {
+        qiniuFiles.push(validFiles[idx])
+        qiniuLocations.push(location)
+      }
+    })
 
-    if (hasLocalFile) {
-      const relPath = await this.makeLocalZip(validFiles, locations, filename)
-      const result = await addDownloadAction({
-        userId,
-        type: ActionType.Compress,
-      })
-      const link = shortLink(result.insertedId, this.ctx.req)
-      await updateAction<DownloadActionData>(
-        { _id: ObjectID(result.insertedId) },
-        {
-          $set: {
-            data: {
-              url: link,
-              originUrl: '',
-              storage: 'local',
-              localRelPath: relPath,
-              status: DownloadStatus.SUCCESS,
-              ids: validIds,
-              tip: `${filename}.zip (${locations.length}个文件)`,
-              name: `${filename}.zip`,
-              size,
-              account: logAccount,
-              mimeType: 'application/zip',
-            },
-          },
-        },
-      )
-      this.behaviorService.add('file', `本机批量下载任务 用户:${logAccount} 文件数量:${locations.length} 压缩文件:${relPath}`, {
-        account: logAccount,
-        length: locations.length,
-        size,
-      })
+    if (localLocations.length && !qiniuLocations.length) {
+      const task = await this.createLocalBatchDownloadTask(userId, logAccount, localFiles, localLocations, filename)
       return {
-        k: relPath,
-        url: link,
+        k: task.k,
+        url: task.url,
       }
     }
 
-    const keys = locations
-      .filter((location): location is Extract<StoredFileLocation, { storage: 'qiniu' }> => location.storage === 'qiniu')
-      .map(location => location.key)
-    const value = await makeZipWithKeys(keys, filename)
-    this.behaviorService.add('file', `批量下载任务 用户:${logAccount} 文件数量:${keys.length} 压缩任务名${value}`, {
-      account: logAccount,
-      length: keys.length,
-      size,
-    })
+    if (qiniuLocations.length && !localLocations.length) {
+      const task = await this.createQiniuBatchDownloadTask(userId, logAccount, qiniuFiles, qiniuLocations, filename)
+      return {
+        k: task.k,
+      }
+    }
 
-    await addDownloadAction({
-      userId,
-      type: ActionType.Compress,
-      data: {
-        status: DownloadStatus.ARCHIVE,
-        ids: validIds,
-        tip: `${filename}.zip (${keys.length}个文件)`,
-        archiveKey: value,
-      },
-    })
+    const qiniuTask = await this.createQiniuBatchDownloadTask(userId, logAccount, qiniuFiles, qiniuLocations, `${filename}_OSS`)
+    const localTask = await this.createLocalBatchDownloadTask(userId, logAccount, localFiles, localLocations, `${filename}_本机`)
     return {
-      k: value,
+      k: [qiniuTask.k, localTask.k].join(','),
+      split: true,
+      message: `所选文件分布在 OSS 与本机存储，已拆成 ${qiniuTask.count} 个 OSS 文件归档任务和 ${localTask.count} 个本机文件压缩包，请在下载历史中查看。`,
+      tasks: [qiniuTask, localTask],
     }
   }
 

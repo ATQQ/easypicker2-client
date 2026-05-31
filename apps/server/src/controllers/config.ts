@@ -635,8 +635,9 @@ export default class UserController {
       supportCodeLogin,
       supportEmailCodeLogin,
     }
+    const globalValue = (globalConfig[0]?.value || {}) as Partial<GlobalSiteConfig>
     filterKey.forEach((cur) => {
-      result[cur] = globalConfig[0].value[cur] as never
+      result[cur] = globalValue[cur] as never
     })
     result.needBindPhone = Boolean(result.needBindPhone && (supportPhoneCode || supportEmailCodeLogin))
     result.needBindEmail = Boolean(result.needBindEmail && supportEmailCodeLogin)

@@ -40,8 +40,12 @@ export async function refreshQinNiuConfig() {
  * @param key 文件的key
  * @param expiredTime
  */
-export function createDownloadUrl(key: string, expiredTime = getDeadline()): string {
-  if (isLocalStorageMode()) {
+interface QiniuStorageModeOptions {
+  allowInLocalMode?: boolean
+}
+
+export function createDownloadUrl(key: string, expiredTime = getDeadline(), options: QiniuStorageModeOptions = {}): string {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
     return ''
   }
   // 七牛云相关
@@ -56,8 +60,8 @@ export function createDownloadUrl(key: string, expiredTime = getDeadline()): str
   return url
 }
 
-export function getUploadToken(): string {
-  if (isLocalStorageMode()) {
+export function getUploadToken(options: QiniuStorageModeOptions = {}): string {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
     return ''
   }
   const putPolicy = new qiniu.rs.PutPolicy({
@@ -138,8 +142,8 @@ export function deleteObjByKey(key: string, req?: FWRequest): void {
   })
 }
 
-export function judgeFileIsExist(key: string): Promise<boolean> {
-  if (isLocalStorageMode()) {
+export function judgeFileIsExist(key: string, options: QiniuStorageModeOptions = {}): Promise<boolean> {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
     return Promise.resolve(false)
   }
   return new Promise((res) => {
@@ -177,8 +181,8 @@ function mergeRequest<T extends (...args: unknown[]) => Promise<unknown>>(
 }
 
 // 同 prefix 缓存，避免重复请求
-export const getOSSFiles = mergeRequest((prefix: string): Promise<Qiniu.ItemInfo[]> => {
-  if (isLocalStorageMode()) {
+export const getOSSFiles = mergeRequest((prefix: string, options: QiniuStorageModeOptions = {}): Promise<Qiniu.ItemInfo[]> => {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
     return Promise.resolve([])
   }
   let data = []
@@ -305,8 +309,8 @@ export function makeZipByPrefixWithKeys(prefix: string, zipName: string, keys: s
   })
 }
 
-export function makeZipWithKeys(keys: string[], zipName: string): Promise<string> {
-  if (isLocalStorageMode()) {
+export function makeZipWithKeys(keys: string[], zipName: string, options: QiniuStorageModeOptions = {}): Promise<string> {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
     return Promise.reject(new Error('local storage mode does not support qiniu archive'))
   }
   return new Promise((res) => {
@@ -330,7 +334,7 @@ export function makeZipWithKeys(keys: string[], zipName: string): Promise<string
         base = base.replace(new RegExp(pre, 'g'), post)
       })
       names.push(base)
-      const safeUrl = `/url/${urlsafeBase64Encode(createDownloadUrl(key))}/alias/${urlsafeBase64Encode(base)}`
+      const safeUrl = `/url/${urlsafeBase64Encode(createDownloadUrl(key, undefined, { allowInLocalMode: options.allowInLocalMode }))}/alias/${urlsafeBase64Encode(base)}`
       return safeUrl
     }).join('\n')
     const config = new qiniu.conf.Config({ zone: bucketZone })
@@ -339,7 +343,7 @@ export function makeZipWithKeys(keys: string[], zipName: string): Promise<string
     const inputKey = `${Date.now()}-${~~(Math.random() * 1000)}.txt`
     // 择机删除不然越来越多
     // 上传文本内容触发归档任务
-    formUploader.put(getUploadToken(), inputKey, content, putExtra, (respErr, respBody, respInfo) => {
+    formUploader.put(getUploadToken({ allowInLocalMode: options.allowInLocalMode }), inputKey, content, putExtra, (respErr, respBody, respInfo) => {
       if (respErr) {
         throw respErr
       }
@@ -378,8 +382,8 @@ export function makeZipWithKeys(keys: string[], zipName: string): Promise<string
   })
 }
 
-export function checkFopTaskStatus(persistentId: string): Promise<{ code: number, key?: string, desc?: string, error?: string }> {
-  if (isLocalStorageMode()) {
+export function checkFopTaskStatus(persistentId: string, options: QiniuStorageModeOptions = {}): Promise<{ code: number, key?: string, desc?: string, error?: string }> {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
     return Promise.resolve({
       code: 3,
       error: 'local storage mode does not support qiniu archive',

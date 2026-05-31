@@ -72,7 +72,18 @@ declare namespace FileApiTypes {
   type getTemplateUrl = ResponseData<{ link: string }>
   type getOneFileUrl = ResponseData<{ link: string, mimeType: string }>
   type deleteOneFile = ResponseData
-  type batchDownload = ResponseData<{ k: string, url?: string }>
+  type batchDownload = ResponseData<{
+    k: string
+    url?: string
+    split?: boolean
+    message?: string
+    tasks?: {
+      storage: 'local' | 'qiniu'
+      count: number
+      k: string
+      url?: string
+    }[]
+  }>
   type batchDel = ResponseData
   type checkCompressStatus = ResponseData<{ code: number, key?: string }>
   type getCompressDownUrl = ResponseData<{ url: string }>
