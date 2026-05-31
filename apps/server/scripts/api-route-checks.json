@@ -96,6 +96,8 @@
   { "name": "super-overview.count", "method": "GET", "path": "/api/super/overview/count" },
   { "name": "super-overview.request-metrics", "method": "POST", "path": "/api/super/overview/request-metrics", "body": {} },
   { "name": "super-overview.monitor-metrics", "method": "POST", "path": "/api/super/overview/monitor-metrics", "body": {} },
+  { "name": "super-overview.request-status-metrics", "method": "POST", "path": "/api/super/overview/request-status-metrics", "body": {} },
+  { "name": "super-overview.request-status-logs", "method": "POST", "path": "/api/super/overview/request-status-logs", "body": { "pageSize": 1, "pageIndex": 1, "non200Only": true } },
   { "name": "super-overview.compress-clear", "method": "DELETE", "path": "/api/super/overview/compress" },
   { "name": "super-overview.log-list", "method": "GET", "path": "/api/super/overview/log" },
   { "name": "super-overview.log-page", "method": "POST", "path": "/api/super/overview/log", "body": { "type": "", "pageSize": 1, "pageIndex": 1 } },

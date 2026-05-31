@@ -289,6 +289,23 @@ declare namespace OverviewApiTypes {
     msg: string
     count: number
   }
+  interface RequestStatusCodeMetric {
+    code: number
+    label: string
+    count: number
+    percent: number
+  }
+  interface RequestStatusLogItem {
+    id: string
+    date: string | number
+    method: string
+    url: string
+    path: string
+    duration: number
+    statusCode: number
+    ip: string
+    userId: number
+  }
   type getRequestMetrics = ResponseData<{
     startTime: number
     endTime: number
@@ -314,6 +331,19 @@ declare namespace OverviewApiTypes {
       series: MonitorCountMetricItem[]
       top: MonitorTopItem[]
     }
+  }>
+  type getRequestStatusMetrics = ResponseData<{
+    startTime: number
+    endTime: number
+    total: number
+    non200Total: number
+    codes: RequestStatusCodeMetric[]
+  }>
+  type getRequestStatusLogs = ResponseData<{
+    logs: RequestStatusLogItem[]
+    sum: number
+    pageIndex: number
+    pageSize: number
   }>
   type disabledStatus = ResponseData<{ status: boolean }>
   interface GlobalSiteConfig {

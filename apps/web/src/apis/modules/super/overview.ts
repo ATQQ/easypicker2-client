@@ -46,6 +46,28 @@ function getMonitorMetrics(options: {
   return ajax.post(`${baseUrl}/monitor-metrics`, options)
 }
 
+function getRequestStatusMetrics(options: {
+  startTime?: number
+  endTime?: number
+  method?: string
+  path?: string
+}): OverviewApiTypes.getRequestStatusMetrics {
+  return ajax.post(`${baseUrl}/request-status-metrics`, options)
+}
+
+function getRequestStatusLogs(options: {
+  startTime?: number
+  endTime?: number
+  method?: string
+  path?: string
+  statusCode?: number
+  non200Only?: boolean
+  pageSize?: number
+  pageIndex?: number
+}): OverviewApiTypes.getRequestStatusLogs {
+  return ajax.post(`${baseUrl}/request-status-logs`, options)
+}
+
 function clearExpiredCompressFile() {
   return ajax.delete(`${baseUrl}/compress`)
 }
@@ -86,6 +108,8 @@ export default {
   getLogMsgDetail,
   getRequestMetrics,
   getMonitorMetrics,
+  getRequestStatusMetrics,
+  getRequestStatusLogs,
   clearExpiredCompressFile,
   checkDisabledRoute,
   addDisabledRoute,

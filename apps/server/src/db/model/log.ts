@@ -21,6 +21,7 @@ export interface LogRequestData {
   query: any
   params: any
   body: any
+  statusCode?: number
   userAgent: string
   refer: string
   ip: string
@@ -28,6 +29,10 @@ export interface LogRequestData {
   endTime?: number
   startTime?: number
   duration?: number
+  response?: {
+    body?: any
+    truncated?: boolean
+  }
 }
 
 // eslint-disable-next-line ts/no-namespace

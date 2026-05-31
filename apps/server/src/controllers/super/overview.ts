@@ -32,6 +32,8 @@ import {
   findLogWithPageOffset,
   findMonitorMetricLogs,
   findRequestMetricLogs,
+  findRequestStatusLogs,
+  findRequestStatusMetricLogs,
 } from '@/db/logDb'
 import { ActionType } from '@/db/model/action'
 import { USER_POWER } from '@/db/model/user'
@@ -225,6 +227,45 @@ export default class OverviewController {
         method: '',
         count: item.count,
       }))
+  }
+
+  private getRequestStatusMetrics(logs: Awaited<ReturnType<typeof findRequestStatusMetricLogs>>) {
+    const statusMap = new Map<number, {
+      code: number
+      count: number
+    }>()
+    for (const log of logs) {
+      const code = Number(log.statusCode || 0)
+      const item = statusMap.get(code) || {
+        code,
+        count: 0,
+      }
+      item.count += 1
+      statusMap.set(code, item)
+    }
+    const total = logs.length
+    const non200Total = logs.filter((log) => {
+      const code = Number(log.statusCode || 0)
+      return code > 0 && code !== 200
+    }).length
+
+    return {
+      total,
+      non200Total,
+      codes: [...statusMap.values()]
+        .sort((a, b) => {
+          if (a.code === 200)
+            return -1
+          if (b.code === 200)
+            return 1
+          return b.count - a.count || a.code - b.code
+        })
+        .map(item => ({
+          ...item,
+          label: item.code ? String(item.code) : '未知',
+          percent: total ? Number(((item.count / total) * 100).toFixed(2)) : 0,
+        })),
+    }
   }
 
   private getCountMetricSeries(
@@ -460,6 +501,56 @@ export default class OverviewController {
         top: this.getTopMonitorItems(logs, 'error'),
       },
     }
+  }
+
+  @Post('request-status-metrics', power)
+  async getRequestStatusSummary(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+    @ReqBody('method') method = '',
+    @ReqBody('path') path = '',
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    const logs = await findRequestStatusMetricLogs(start, end, {
+      method: method || undefined,
+      path: path ? path.trim() : undefined,
+    })
+    return {
+      startTime: start.getTime(),
+      endTime: end.getTime(),
+      ...this.getRequestStatusMetrics(logs),
+    }
+  }
+
+  @Post('request-status-logs', power)
+  async getRequestStatusLogs(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+    @ReqBody('method') method = '',
+    @ReqBody('path') path = '',
+    @ReqBody('statusCode') statusCode?: number,
+    @ReqBody('non200Only') non200Only = true,
+    @ReqBody('pageSize') pageSize = 10,
+    @ReqBody('pageIndex') pageIndex = 1,
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    const normalizedStatusCode = statusCode === undefined || statusCode === null
+      ? Number.NaN
+      : Number(statusCode)
+    return findRequestStatusLogs(start, end, {
+      method: method || undefined,
+      path: path ? path.trim() : undefined,
+      statusCode: Number.isFinite(normalizedStatusCode) ? normalizedStatusCode : undefined,
+      non200Only,
+      pageSize,
+      pageIndex,
+    })
   }
 
   @Delete('compress', power)
