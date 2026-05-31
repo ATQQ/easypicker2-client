@@ -290,7 +290,13 @@ declare namespace OverviewApiTypes {
     count: number
   }
   interface RequestStatusCodeMetric {
-    code: number | string
+    code: number
+    label: string
+    count: number
+    percent: number
+  }
+  interface RequestBusinessStatusCodeMetric {
+    code: string
     label: string
     count: number
     percent: number
@@ -351,7 +357,7 @@ declare namespace OverviewApiTypes {
     endTime: number
     total: number
     nonZeroTotal: number
-    codes: RequestStatusCodeMetric[]
+    codes: RequestBusinessStatusCodeMetric[]
   }>
   type getRequestBusinessStatusLogs = ResponseData<{
     logs: RequestStatusLogItem[]

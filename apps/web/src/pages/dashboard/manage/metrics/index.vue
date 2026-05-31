@@ -62,7 +62,7 @@ interface RequestBusinessStatusMetricsData {
   endTime: number
   total: number
   nonZeroTotal: number
-  codes: OverviewApiTypes.RequestStatusCodeMetric[]
+  codes: OverviewApiTypes.RequestBusinessStatusCodeMetric[]
 }
 
 const now = Date.now()
@@ -120,7 +120,7 @@ const statusFilters = reactive({
 })
 const businessStatusFilters = reactive({
   nonZeroOnly: true,
-  businessCode: '' as string | number | '' | null | undefined,
+  businessCode: '' as string | '' | null | undefined,
   pageSize: 10,
   pageIndex: 1,
 })
