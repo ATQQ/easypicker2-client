@@ -1,27 +1,8 @@
 import { Router } from 'flash-wolves'
-import { publicError } from '@/constants/errorMsg'
-import {
-  deleteFileRecord,
-  deleteFiles,
-  insertFile,
-  selectFiles,
-} from '@/db/fileDb'
-import { addBehavior, addErrorLog } from '@/db/logDb'
-import type { File } from '@/db/model/file'
-import { selectPeople, updatePeople } from '@/db/peopleDb'
+import { selectFiles } from '@/db/fileDb'
+import { addBehavior } from '@/db/logDb'
 import { selectTasks } from '@/db/taskDb'
-
-import {
-  batchDeleteFiles,
-  checkFopTaskStatus,
-  createDownloadUrl,
-  deleteObjByKey,
-  getUploadToken,
-  judgeFileIsExist,
-} from '@/utils/qiniuUtil'
-import { isSameInfo, normalizeFileName } from '@/utils/stringUtil'
-import { getQiniuFileUrlExpiredTime, getUserInfo } from '@/utils/userUtil'
-import { selectTaskInfo } from '@/db/taskInfoDb'
+import { isSameInfo } from '@/utils/stringUtil'
 
 const router = new Router('file')
 
@@ -63,7 +44,7 @@ router.post('submit/people', async (req, res) => {
         msg: `查询是否提交过文件: 任务 ${taskKey} 不存在`,
         data: {
           taskKey,
-          taskName: task.name,
+          taskName: '',
           info,
         },
       })

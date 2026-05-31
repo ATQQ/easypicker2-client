@@ -1761,7 +1761,7 @@ export default class FileService {
       else {
         this.behaviorService.add('file', `查询是否提交过文件: 任务 ${taskKey} 不存在`, {
           taskKey,
-          taskName: task.name,
+          taskName: '',
           info,
         })
       }
