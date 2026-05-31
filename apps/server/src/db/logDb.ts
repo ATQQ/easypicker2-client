@@ -33,6 +33,7 @@ export interface RequestStatusLog {
   path: string
   duration: number
   statusCode: number
+  businessCode?: string | number
   ip: string
   userId: number
 }
@@ -63,6 +64,7 @@ export function ensureLogIndexes() {
         { key: { 'type': 1, 'data.method': 1, '_id': -1 }, name: 'log_type_method_id_desc' },
         { key: { 'type': 1, 'data.path': 1, '_id': -1 }, name: 'log_type_path_id_desc' },
         { key: { 'type': 1, 'data.statusCode': 1, '_id': -1 }, name: 'log_type_status_code_id_desc' },
+        { key: { 'type': 1, 'data.businessCode': 1, '_id': -1 }, name: 'log_type_business_code_id_desc' },
       ])
       .then(() => resolve())
       .catch((err) => {
@@ -91,6 +93,23 @@ function getPathnameFromUrl(url = '') {
 
 const maxResponseBodyBytes = 64 * 1024
 
+function responseChunkToBuffer(chunk: unknown, encoding?: unknown) {
+  const enc = typeof encoding === 'string' ? encoding as BufferEncoding : undefined
+  if (Buffer.isBuffer(chunk)) {
+    return chunk
+  }
+  if (typeof chunk === 'string') {
+    return Buffer.from(chunk, enc)
+  }
+  if (chunk instanceof ArrayBuffer) {
+    return Buffer.from(chunk)
+  }
+  if (ArrayBuffer.isView(chunk)) {
+    return Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength)
+  }
+  return Buffer.from(String(chunk), enc)
+}
+
 function parseResponseBody(chunks: Buffer[]) {
   if (chunks.length === 0) {
     return undefined
@@ -105,6 +124,17 @@ function parseResponseBody(chunks: Buffer[]) {
   catch {
     return text
   }
+}
+
+function getBusinessCodeFromResponseBody(body: any) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return undefined
+  }
+  const code = body.code
+  if (typeof code === 'number' || typeof code === 'string') {
+    return code
+  }
+  return undefined
 }
 
 function createRequestLogQuery(
@@ -148,6 +178,7 @@ function mapRequestStatusLog(log: Log): RequestStatusLog {
     path: data.path || getPathnameFromUrl(data.url),
     duration: data.duration || 0,
     statusCode: Number(data.statusCode || 0),
+    businessCode: data.businessCode ?? getBusinessCodeFromResponseBody(data.response?.body),
     ip: data.ip || '',
     userId: data.userId || 0,
   }
@@ -174,10 +205,7 @@ export async function addRequestLog(req: FWRequest, res: FWResponse) {
     if (chunk === undefined || chunk === null || capturedResponseBytes >= maxResponseBodyBytes) {
       return
     }
-    const enc = typeof encoding === 'string' ? encoding as BufferEncoding : undefined
-    const buffer = Buffer.isBuffer(chunk)
-      ? chunk
-      : Buffer.from(String(chunk), enc)
+    const buffer = responseChunkToBuffer(chunk, encoding)
     const remaining = maxResponseBodyBytes - capturedResponseBytes
     if (buffer.length > remaining) {
       responseChunks.push(buffer.subarray(0, remaining))
@@ -226,14 +254,16 @@ export async function addRequestLog(req: FWRequest, res: FWResponse) {
     }
     persisted = true
     const endTime = Date.now()
+    const responseBody = parseResponseBody(responseChunks)
     const data: LogRequestData = {
       ...base,
       statusCode: res.statusCode,
+      businessCode: getBusinessCodeFromResponseBody(responseBody),
       startTime,
       endTime,
       duration: Math.max(0, endTime - startTime),
       response: {
-        body: parseResponseBody(responseChunks),
+        body: responseBody,
         truncated: responseBodyTruncated,
       },
     }
@@ -429,6 +459,7 @@ export function findRequestMetricLogs(
           'data.url': 1,
           'data.duration': 1,
           'data.statusCode': 1,
+          'data.businessCode': 1,
         },
       })
       .sort({ _id: 1 })
@@ -444,6 +475,7 @@ export function findRequestMetricLogs(
             path: data.path || getPathnameFromUrl(data.url),
             duration: data.duration || 0,
             statusCode: Number(data.statusCode || 0),
+            businessCode: data.businessCode ?? getBusinessCodeFromResponseBody(data.response?.body),
           }
         }))
       })
@@ -469,6 +501,7 @@ export function findRequestStatusMetricLogs(
           'data.url': 1,
           'data.duration': 1,
           'data.statusCode': 1,
+          'data.businessCode': 1,
           'data.ip': 1,
           'data.userId': 1,
         },
@@ -562,6 +595,122 @@ export function findRequestStatusLogs(
         pageSize,
       })
     })
+  })
+}
+
+export function findRequestBusinessStatusMetricLogs(
+  start: Date,
+  end: Date,
+  options: {
+    method?: string
+    path?: string
+  } = {},
+) {
+  return mongoDbQuery<RequestStatusLog[]>((db, resolve) => {
+    db.collection<Log>('log')
+      .find(createRequestLogQuery(start, end, options), {
+        projection: {
+          '_id': 1,
+          'id': 1,
+          'data.method': 1,
+          'data.path': 1,
+          'data.url': 1,
+          'data.duration': 1,
+          'data.statusCode': 1,
+          'data.businessCode': 1,
+          'data.response.body.code': 1,
+          'data.ip': 1,
+          'data.userId': 1,
+        },
+      })
+      .sort({ _id: 1 })
+      .toArray()
+      .then(logs => resolve(logs.map(mapRequestStatusLog)))
+  })
+}
+
+export function findRequestBusinessStatusLogs(
+  start: Date,
+  end: Date,
+  options: {
+    method?: string
+    path?: string
+    businessCode?: string | number
+    nonZeroOnly?: boolean
+    pageIndex?: number
+    pageSize?: number
+  } = {},
+) {
+  const pageIndex = Math.max(1, Number(options.pageIndex || 1))
+  const pageSize = Math.min(100, Math.max(1, Number(options.pageSize || 10)))
+  const query = createRequestLogQuery(start, end, {
+    method: options.method,
+    path: options.path,
+  })
+
+  return mongoDbQuery<{
+    logs: RequestStatusLogDetail[]
+    sum: number
+    pageIndex: number
+    pageSize: number
+  }>((db, resolve) => {
+    db.collection<Log>('log')
+      .find(query, {
+        projection: {
+          '_id': 1,
+          'id': 1,
+          'data.method': 1,
+          'data.path': 1,
+          'data.url': 1,
+          'data.duration': 1,
+          'data.statusCode': 1,
+          'data.businessCode': 1,
+          'data.ip': 1,
+          'data.userId': 1,
+          'data.query': 1,
+          'data.params': 1,
+          'data.body': 1,
+          'data.userAgent': 1,
+          'data.refer': 1,
+          'data.response': 1,
+        },
+      })
+      .sort({ _id: -1 })
+      .toArray()
+      .then((logs) => {
+        const filteredLogs = logs.filter((log) => {
+          const data = log.data as LogRequestData
+          const code = data.businessCode ?? getBusinessCodeFromResponseBody(data.response?.body)
+          if (code === undefined) {
+            return false
+          }
+          if (options.businessCode !== undefined) {
+            return String(code) === String(options.businessCode)
+          }
+          if (options.nonZeroOnly) {
+            return String(code) !== '0'
+          }
+          return true
+        })
+        const pageLogs = filteredLogs.slice((pageIndex - 1) * pageSize, pageIndex * pageSize)
+        resolve({
+          logs: pageLogs.map((log) => {
+            const data = log.data as LogRequestData
+            return {
+              ...mapRequestStatusLog(log),
+              query: data.query,
+              params: data.params,
+              body: data.body,
+              userAgent: data.userAgent,
+              refer: data.refer,
+              response: data.response,
+            }
+          }),
+          sum: filteredLogs.length,
+          pageIndex,
+          pageSize,
+        })
+      })
   })
 }
 

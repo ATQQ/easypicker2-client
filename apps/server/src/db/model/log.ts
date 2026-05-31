@@ -22,6 +22,7 @@ export interface LogRequestData {
   params: any
   body: any
   statusCode?: number
+  businessCode?: string | number
   userAgent: string
   refer: string
   ip: string

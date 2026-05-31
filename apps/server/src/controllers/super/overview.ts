@@ -31,6 +31,8 @@ import {
   findLogReserve,
   findLogWithPageOffset,
   findMonitorMetricLogs,
+  findRequestBusinessStatusLogs,
+  findRequestBusinessStatusMetricLogs,
   findRequestMetricLogs,
   findRequestStatusLogs,
   findRequestStatusMetricLogs,
@@ -263,6 +265,49 @@ export default class OverviewController {
         .map(item => ({
           ...item,
           label: item.code ? String(item.code) : '未知',
+          percent: total ? Number(((item.count / total) * 100).toFixed(2)) : 0,
+        })),
+    }
+  }
+
+  private getRequestBusinessStatusMetrics(
+    logs: Awaited<ReturnType<typeof findRequestBusinessStatusMetricLogs>>,
+  ) {
+    const statusMap = new Map<string, {
+      code: string
+      count: number
+    }>()
+    for (const log of logs) {
+      if (log.businessCode === undefined) {
+        continue
+      }
+      const code = String(log.businessCode)
+      const item = statusMap.get(code) || {
+        code,
+        count: 0,
+      }
+      item.count += 1
+      statusMap.set(code, item)
+    }
+    const total = [...statusMap.values()].reduce((sum, item) => sum + item.count, 0)
+    const nonZeroTotal = [...statusMap.values()]
+      .filter(item => item.code !== '0')
+      .reduce((sum, item) => sum + item.count, 0)
+
+    return {
+      total,
+      nonZeroTotal,
+      codes: [...statusMap.values()]
+        .sort((a, b) => {
+          if (a.code === '0')
+            return -1
+          if (b.code === '0')
+            return 1
+          return b.count - a.count || a.code.localeCompare(b.code, 'zh-Hans-CN', { numeric: true })
+        })
+        .map(item => ({
+          ...item,
+          label: item.code,
           percent: total ? Number(((item.count / total) * 100).toFixed(2)) : 0,
         })),
     }
@@ -548,6 +593,55 @@ export default class OverviewController {
       path: path ? path.trim() : undefined,
       statusCode: Number.isFinite(normalizedStatusCode) ? normalizedStatusCode : undefined,
       non200Only,
+      pageSize,
+      pageIndex,
+    })
+  }
+
+  @Post('request-business-status-metrics', power)
+  async getRequestBusinessStatusSummary(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+    @ReqBody('method') method = '',
+    @ReqBody('path') path = '',
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    const logs = await findRequestBusinessStatusMetricLogs(start, end, {
+      method: method || undefined,
+      path: path ? path.trim() : undefined,
+    })
+    return {
+      startTime: start.getTime(),
+      endTime: end.getTime(),
+      ...this.getRequestBusinessStatusMetrics(logs),
+    }
+  }
+
+  @Post('request-business-status-logs', power)
+  async getRequestBusinessStatusLogs(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+    @ReqBody('method') method = '',
+    @ReqBody('path') path = '',
+    @ReqBody('businessCode') businessCode?: string | number,
+    @ReqBody('nonZeroOnly') nonZeroOnly = true,
+    @ReqBody('pageSize') pageSize = 10,
+    @ReqBody('pageIndex') pageIndex = 1,
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    return findRequestBusinessStatusLogs(start, end, {
+      method: method || undefined,
+      path: path ? path.trim() : undefined,
+      businessCode: businessCode === '' || businessCode === undefined || businessCode === null
+        ? undefined
+        : businessCode,
+      nonZeroOnly,
       pageSize,
       pageIndex,
     })

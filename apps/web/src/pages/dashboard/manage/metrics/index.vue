@@ -57,6 +57,13 @@ interface RequestStatusMetricsData {
   non200Total: number
   codes: OverviewApiTypes.RequestStatusCodeMetric[]
 }
+interface RequestBusinessStatusMetricsData {
+  startTime: number
+  endTime: number
+  total: number
+  nonZeroTotal: number
+  codes: OverviewApiTypes.RequestStatusCodeMetric[]
+}
 
 const now = Date.now()
 const filters = reactive({
@@ -94,15 +101,31 @@ const statusMetrics = ref<RequestStatusMetricsData>({
   non200Total: 0,
   codes: [],
 })
+const businessStatusMetrics = ref<RequestBusinessStatusMetricsData>({
+  startTime: filters.range[0],
+  endTime: filters.range[1],
+  total: 0,
+  nonZeroTotal: 0,
+  codes: [],
+})
 const statusLogs = ref<OverviewApiTypes.RequestStatusLogItem[]>([])
+const businessStatusLogs = ref<OverviewApiTypes.RequestStatusLogItem[]>([])
 const statusLogsTotal = ref(0)
+const businessStatusLogsTotal = ref(0)
 const statusFilters = reactive({
   non200Only: true,
   statusCode: '' as number | '' | null | undefined,
   pageSize: 10,
   pageIndex: 1,
 })
+const businessStatusFilters = reactive({
+  nonZeroOnly: true,
+  businessCode: '' as string | number | '' | null | undefined,
+  pageSize: 10,
+  pageIndex: 1,
+})
 const isLoadingStatusLogs = ref(false)
+const isLoadingBusinessStatusLogs = ref(false)
 const showRequestDetail = ref(false)
 const requestDetailData = ref({})
 
@@ -328,6 +351,10 @@ const statusCodeOptions = computed(() => {
   return statusMetrics.value.codes.filter(item => item.code)
 })
 
+const businessStatusCodeOptions = computed(() => {
+  return businessStatusMetrics.value.codes
+})
+
 const statusCodeChartOption = computed(() => ({
   tooltip: {
     trigger: 'axis',
@@ -369,6 +396,47 @@ const statusCodeChartOption = computed(() => ({
   ],
 }))
 
+const businessStatusCodeChartOption = computed(() => ({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow',
+    },
+    formatter(params: any[]) {
+      const item = params[0]
+      const source = businessStatusMetrics.value.codes[item.dataIndex]
+      return `${source.label}<br/>次数：${source.count}<br/>占比：${source.percent}%`
+    },
+  },
+  grid: {
+    top: 18,
+    left: 46,
+    right: 20,
+    bottom: 34,
+  },
+  xAxis: {
+    type: 'category',
+    data: businessStatusMetrics.value.codes.map(item => item.label),
+  },
+  yAxis: {
+    type: 'value',
+  },
+  series: [
+    {
+      name: '业务 code',
+      type: 'bar',
+      barMaxWidth: 34,
+      data: businessStatusMetrics.value.codes.map(item => item.count),
+      itemStyle: {
+        color(params: any) {
+          const code = businessStatusMetrics.value.codes[params.dataIndex]?.code
+          return getBusinessStatusColor(code)
+        },
+      },
+    },
+  ],
+}))
+
 const tableData = computed(() => {
   return groups.value
     .flatMap(group =>
@@ -395,6 +463,10 @@ function formatStatusCode(code: number) {
   return code ? String(code) : '未知'
 }
 
+function formatBusinessCode(code?: string | number) {
+  return code !== undefined && code !== null && code !== '' ? String(code) : '未知'
+}
+
 function getStatusColor(code: number) {
   if (code === 200) {
     return '#67c23a'
@@ -411,6 +483,13 @@ function getStatusColor(code: number) {
   return '#409eff'
 }
 
+function getBusinessStatusColor(code?: string | number) {
+  if (String(code) === '0') {
+    return '#67c23a'
+  }
+  return '#f56c6c'
+}
+
 function getStatusTagType(code: number) {
   if (code === 200) {
     return 'success'
@@ -422,6 +501,13 @@ function getStatusTagType(code: number) {
     return 'warning'
   }
   return 'info'
+}
+
+function getBusinessStatusTagType(code?: string | number) {
+  if (String(code) === '0') {
+    return 'success'
+  }
+  return code === undefined || code === null || code === '' ? 'info' : 'danger'
 }
 
 function getMetricOptions() {
@@ -446,6 +532,21 @@ function getStatusLogOptions(options = getMetricOptions()) {
   }
 }
 
+function getBusinessStatusLogOptions(options = getMetricOptions()) {
+  const businessCode = businessStatusFilters.businessCode === ''
+    || businessStatusFilters.businessCode === undefined
+    || businessStatusFilters.businessCode === null
+    ? undefined
+    : businessStatusFilters.businessCode
+  return {
+    ...options,
+    businessCode,
+    nonZeroOnly: businessCode === undefined ? businessStatusFilters.nonZeroOnly : false,
+    pageSize: businessStatusFilters.pageSize,
+    pageIndex: businessStatusFilters.pageIndex,
+  }
+}
+
 function loadRequestStatusLogs(options = getMetricOptions()) {
   isLoadingStatusLogs.value = true
   return SuperOverviewApi.getRequestStatusLogs(getStatusLogOptions(options))
@@ -455,6 +556,18 @@ function loadRequestStatusLogs(options = getMetricOptions()) {
     })
     .finally(() => {
       isLoadingStatusLogs.value = false
+    })
+}
+
+function loadRequestBusinessStatusLogs(options = getMetricOptions()) {
+  isLoadingBusinessStatusLogs.value = true
+  return SuperOverviewApi.getRequestBusinessStatusLogs(getBusinessStatusLogOptions(options))
+    .then((res) => {
+      businessStatusLogs.value = res.data.logs
+      businessStatusLogsTotal.value = res.data.sum
+    })
+    .finally(() => {
+      isLoadingBusinessStatusLogs.value = false
     })
 }
 
@@ -469,9 +582,18 @@ function loadMetrics() {
     }),
     SuperOverviewApi.getRequestStatusMetrics(options),
     SuperOverviewApi.getRequestStatusLogs(getStatusLogOptions(options)),
+    SuperOverviewApi.getRequestBusinessStatusMetrics(options),
+    SuperOverviewApi.getRequestBusinessStatusLogs(getBusinessStatusLogOptions(options)),
   ])
     .then((res) => {
-      const [requestRes, monitorRes, statusMetricRes, statusLogRes] = res
+      const [
+        requestRes,
+        monitorRes,
+        statusMetricRes,
+        statusLogRes,
+        businessStatusMetricRes,
+        businessStatusLogRes,
+      ] = res
       series.value = requestRes.data.series
       groups.value = requestRes.data.groups || []
       pathOptions.value = requestRes.data.paths || []
@@ -480,6 +602,9 @@ function loadMetrics() {
       statusMetrics.value = statusMetricRes.data
       statusLogs.value = statusLogRes.data.logs
       statusLogsTotal.value = statusLogRes.data.sum
+      businessStatusMetrics.value = businessStatusMetricRes.data
+      businessStatusLogs.value = businessStatusLogRes.data.logs
+      businessStatusLogsTotal.value = businessStatusLogRes.data.sum
     })
     .finally(() => {
       isLoading.value = false
@@ -489,10 +614,12 @@ function loadMetrics() {
 function handleMethodChange() {
   filters.path = ''
   statusFilters.pageIndex = 1
+  businessStatusFilters.pageIndex = 1
 }
 
 function handleQuery() {
   statusFilters.pageIndex = 1
+  businessStatusFilters.pageIndex = 1
   loadMetrics()
 }
 
@@ -512,6 +639,22 @@ function handleStatusSizeChange(pageSize: number) {
   loadRequestStatusLogs()
 }
 
+function handleBusinessStatusFilterChange() {
+  businessStatusFilters.pageIndex = 1
+  loadRequestBusinessStatusLogs()
+}
+
+function handleBusinessStatusPageChange(pageIndex: number) {
+  businessStatusFilters.pageIndex = pageIndex
+  loadRequestBusinessStatusLogs()
+}
+
+function handleBusinessStatusSizeChange(pageSize: number) {
+  businessStatusFilters.pageSize = pageSize
+  businessStatusFilters.pageIndex = 1
+  loadRequestBusinessStatusLogs()
+}
+
 function handleRequestDetail(row: OverviewApiTypes.RequestStatusLogItem) {
   SuperOverviewApi.getLogMsgDetail(row.id).then((res) => {
     const data = res.data || {}
@@ -522,6 +665,7 @@ function handleRequestDetail(row: OverviewApiTypes.RequestStatusLogItem) {
         url: data.url,
         path: data.path,
         statusCode: data.statusCode,
+        businessCode: data.businessCode ?? data.response?.body?.code,
         duration: data.duration,
         ip: data.ip,
         userId: data.userId,
@@ -751,6 +895,112 @@ onMounted(() => {
                   layout="total, sizes, prev, pager, next"
                   @current-change="handleStatusPageChange"
                   @size-change="handleStatusSizeChange"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="status-section">
+          <div class="status-header">
+            <div>
+              <div class="panel-title">
+                业务状态码
+              </div>
+            </div>
+            <div class="status-summary">
+              <span>有 code {{ businessStatusMetrics.total }}</span>
+              <span class="danger">非 0 {{ businessStatusMetrics.nonZeroTotal }}</span>
+            </div>
+          </div>
+          <div class="status-content">
+            <VChart class="status-chart" :option="businessStatusCodeChartOption" autoresize />
+            <div class="status-log-panel">
+              <div class="status-log-toolbar">
+                <el-checkbox
+                  v-model="businessStatusFilters.nonZeroOnly"
+                  :disabled="businessStatusFilters.businessCode !== '' && businessStatusFilters.businessCode !== undefined && businessStatusFilters.businessCode !== null"
+                  @change="handleBusinessStatusFilterChange"
+                >
+                  仅看非 0
+                </el-checkbox>
+                <el-select
+                  v-model="businessStatusFilters.businessCode"
+                  clearable
+                  filterable
+                  size="default"
+                  class="status-select"
+                  placeholder="业务 code"
+                  @change="handleBusinessStatusFilterChange"
+                >
+                  <el-option
+                    v-for="item in businessStatusCodeOptions"
+                    :key="item.code"
+                    :label="`${item.label} (${item.count})`"
+                    :value="item.code"
+                  />
+                </el-select>
+              </div>
+              <el-table
+                v-loading="isLoadingBusinessStatusLogs"
+                :data="businessStatusLogs"
+                size="small"
+                border
+                stripe
+                height="320"
+                empty-text="暂无业务状态码日志"
+              >
+                <el-table-column prop="date" label="时间" width="150">
+                  <template #default="scope">
+                    {{ formatDate(new Date(scope.row.date), 'MM-dd hh:mm:ss') }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="businessCode" label="业务 code" width="100">
+                  <template #default="scope">
+                    <el-tag size="small" :type="getBusinessStatusTagType(scope.row.businessCode)">
+                      {{ formatBusinessCode(scope.row.businessCode) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="statusCode" label="HTTP" width="82">
+                  <template #default="scope">
+                    <el-tag size="small" :type="getStatusTagType(scope.row.statusCode)">
+                      {{ formatStatusCode(scope.row.statusCode) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="method" label="方法" width="82" />
+                <el-table-column prop="path" label="接口" min-width="180" show-overflow-tooltip />
+                <el-table-column prop="duration" label="耗时" width="84">
+                  <template #default="scope">
+                    {{ formatDuration(scope.row.duration) }}
+                  </template>
+                </el-table-column>
+                <el-table-column fixed="right" label="操作" width="110">
+                  <template #default="scope">
+                    <el-button
+                      text
+                      type="primary"
+                      size="small"
+                      :icon="View"
+                      @click="handleRequestDetail(scope.row)"
+                    >
+                      上下文
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <div class="status-pagination">
+                <el-pagination
+                  small
+                  background
+                  :current-page="businessStatusFilters.pageIndex"
+                  :page-size="businessStatusFilters.pageSize"
+                  :total="businessStatusLogsTotal"
+                  :page-sizes="[10, 20, 50, 100]"
+                  layout="total, sizes, prev, pager, next"
+                  @current-change="handleBusinessStatusPageChange"
+                  @size-change="handleBusinessStatusSizeChange"
                 />
               </div>
             </div>
