@@ -10,6 +10,7 @@ import type {
   PvData,
 } from './model/log'
 import { Buffer } from 'node:buffer'
+import { brotliDecompressSync, gunzipSync, inflateSync } from 'node:zlib'
 import { ObjectId } from 'mongodb'
 import { insertCollection, mongoDbQuery } from '@/lib/dbConnect/mongodb'
 import { escapeRegexForMongo, timeToObjId as getTimeObjectId, getUniqueKey } from '@/utils/stringUtil'
@@ -110,11 +111,40 @@ function responseChunkToBuffer(chunk: unknown, encoding?: unknown) {
   return Buffer.from(String(chunk), enc)
 }
 
-function parseResponseBody(chunks: Buffer[]) {
-  if (chunks.length === 0) {
-    return undefined
+function bufferToUint8Array(buffer: Buffer) {
+  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+}
+
+function concatResponseChunks(chunks: Buffer[]) {
+  return Buffer.concat(chunks.map(bufferToUint8Array))
+}
+
+function decodeResponseBuffer(buffer: Buffer, contentEncoding?: string | number | string[]) {
+  const encoding = Array.isArray(contentEncoding)
+    ? contentEncoding[0]
+    : contentEncoding
+  if (typeof encoding !== 'string' || !encoding) {
+    return buffer
   }
-  const text = Buffer.concat(chunks).toString('utf8')
+  try {
+    if (encoding.includes('br')) {
+      return brotliDecompressSync(bufferToUint8Array(buffer))
+    }
+    if (encoding.includes('gzip')) {
+      return gunzipSync(bufferToUint8Array(buffer))
+    }
+    if (encoding.includes('deflate')) {
+      return inflateSync(bufferToUint8Array(buffer))
+    }
+  }
+  catch {
+    return buffer
+  }
+  return buffer
+}
+
+function parseResponseBodyFromBuffer(buffer: Buffer) {
+  const text = buffer.toString('utf8')
   if (!text) {
     return undefined
   }
@@ -199,6 +229,7 @@ export async function addRequestLog(req: FWRequest, res: FWResponse) {
   const ip = getClientIp(req)
   const user = await getUserInfo(req)
   const responseChunks: Buffer[] = []
+  let logicalResponseBody: any
   let capturedResponseBytes = 0
   let responseBodyTruncated = false
   const captureResponseChunk = (chunk: unknown, encoding?: unknown) => {
@@ -218,6 +249,13 @@ export async function addRequestLog(req: FWRequest, res: FWResponse) {
   }
   const rawWrite = (res as any).write
   const rawEnd = (res as any).end
+  const rawJson = (res as any).json
+  if (typeof rawJson === 'function') {
+    ;(res as any).json = function (body: any, ...args: any[]) {
+      logicalResponseBody = body
+      return rawJson.apply(this, [body, ...args])
+    }
+  }
   if (typeof rawWrite === 'function') {
     ;(res as any).write = function (chunk: unknown, ...args: any[]) {
       captureResponseChunk(chunk, args[0])
@@ -254,7 +292,10 @@ export async function addRequestLog(req: FWRequest, res: FWResponse) {
     }
     persisted = true
     const endTime = Date.now()
-    const responseBody = parseResponseBody(responseChunks)
+    const contentEncoding = res.getHeader('Content-Encoding') || (res as any).contentEncoding
+    const responseBody = logicalResponseBody === undefined
+      ? parseResponseBodyFromBuffer(decodeResponseBuffer(concatResponseChunks(responseChunks), contentEncoding))
+      : logicalResponseBody
     const data: LogRequestData = {
       ...base,
       statusCode: res.statusCode,
