@@ -13,14 +13,20 @@ import Tip from '../../tasks/components/infoPanel/tip.vue'
 
 const sumCost = ref('')
 const settlingBilling = ref(false)
+const usersLoading = ref(false)
 // 用户
 const users = reactive<SuperUserApiTypes.UserItem[]>([])
 function refreshUsers() {
-  return SuperUserApi.getUserList().then((res) => {
-    users.splice(0, users.length, ...res.data.list)
-    sumCost.value = res.data.sumCost
-    ElMessage.success('列表数据刷新成功')
-  })
+  usersLoading.value = true
+  return SuperUserApi.getUserList()
+    .then((res) => {
+      users.splice(0, users.length, ...res.data.list)
+      sumCost.value = res.data.sumCost
+      ElMessage.success('列表数据刷新成功')
+    })
+    .finally(() => {
+      usersLoading.value = false
+    })
 }
 
 // 筛选用户状态
@@ -588,7 +594,7 @@ function handleCheckDetail(price) {
           />
         </span>
         <span class="item">
-          <el-button size="default" :icon="Refresh" @click="refreshUsers">刷新</el-button>
+          <el-button size="default" :icon="Refresh" :loading="usersLoading" @click="refreshUsers">刷新</el-button>
         </span>
         <span class="item">
           <el-button
@@ -613,6 +619,8 @@ function handleCheckDetail(price) {
         </el-button>
       </Tip>
       <el-table
+        v-loading="usersLoading"
+        element-loading-text="正在计算/读取用户费用缓存…"
         height="550"
         stripe
         border
