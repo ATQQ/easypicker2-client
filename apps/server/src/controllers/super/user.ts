@@ -463,6 +463,13 @@ export default class SuperUserController {
     let settledCount = 0
     let skippedCount = 0
     let totalCost = 0
+    const details: {
+      id: number
+      account: string
+      oldWallet: string
+      cost: string
+      newWallet: string
+    }[] = []
 
     for (const user of normalUsers) {
       const overview = await this.fileService.getUserOverview(user)
@@ -472,11 +479,19 @@ export default class SuperUserController {
         continue
       }
       const nextWallet = Number(user.wallet || 0) - cost
+      const oldWallet = user.wallet || '0.00'
       user.wallet = nextWallet.toFixed(2)
       await this.userRepository.update(user)
       await this.fileService.expireUserOverviewCache(user.id)
       totalCost += cost
       settledCount += 1
+      details.push({
+        id: user.id,
+        account: user.account,
+        oldWallet,
+        cost: cost.toFixed(2),
+        newWallet: user.wallet,
+      })
     }
 
     const site = LocalUserDB.getSiteConfig()
@@ -503,6 +518,7 @@ export default class SuperUserController {
         totalCost: totalCost.toFixed(2),
         oldMoneyStartDay,
         newMoneyStartDay,
+        details,
       },
     )
 
