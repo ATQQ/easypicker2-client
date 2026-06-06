@@ -142,7 +142,7 @@ export default class SuperUserController {
     // 遍历用户，获取文件数和占用空间数据
     for (const user of users) {
       const fileInfo = files.filter(file => file.userId === user.id)
-      const overviewData = await this.fileService.getUserOverview(user, {
+      const overviewData = await this.fileService.getCachedUserOverview(user, {
         files: fileInfo,
         filesMap,
         downloadLog: downloadLog.filter(v => v.data?.info?.data?.account === user.account),
@@ -433,6 +433,7 @@ export default class SuperUserController {
     )
     user.size = size
     await this.userRepository.update(user)
+    await this.fileService.expireUserOverviewCache(user.id)
   }
 
   @Put('wallet')
@@ -450,5 +451,67 @@ export default class SuperUserController {
     )
     user.wallet = value.toFixed(2)
     await this.userRepository.update(user)
+    await this.fileService.expireUserOverviewCache(user.id)
+  }
+
+  @Post('billing/settle')
+  async settleBilling(@ReqUserInfo() operator: User) {
+    const oldMoneyStartDay = Number(LocalUserDB.getSiteConfig()?.moneyStartDay || Date.now())
+    const newMoneyStartDay = Date.now()
+    const users = await this.userRepository.findMany({})
+    const normalUsers = users.filter(user => user.power === USER_POWER.NORMAL)
+    let settledCount = 0
+    let skippedCount = 0
+    let totalCost = 0
+
+    for (const user of normalUsers) {
+      const overview = await this.fileService.getUserOverview(user)
+      const cost = Number(overview.cost || 0)
+      if (!Number.isFinite(cost) || cost <= 0) {
+        skippedCount += 1
+        continue
+      }
+      const nextWallet = Number(user.wallet || 0) - cost
+      user.wallet = nextWallet.toFixed(2)
+      await this.userRepository.update(user)
+      await this.fileService.expireUserOverviewCache(user.id)
+      totalCost += cost
+      settledCount += 1
+    }
+
+    const site = LocalUserDB.getSiteConfig()
+    await LocalUserDB.updateUserConfig(
+      {
+        type: 'global',
+        key: 'site',
+      },
+      {
+        value: {
+          ...site,
+          moneyStartDay: newMoneyStartDay,
+        },
+      },
+    )
+    await this.fileService.expireAllUserOverviewCache()
+    this.behaviorService.add(
+      'super',
+      `批量扣费 操作人:${operator.account} 结算人数:${settledCount} 总金额:${totalCost.toFixed(2)}￥`,
+      {
+        operator: operator.account,
+        settledCount,
+        skippedCount,
+        totalCost: totalCost.toFixed(2),
+        oldMoneyStartDay,
+        newMoneyStartDay,
+      },
+    )
+
+    return {
+      settledCount,
+      skippedCount,
+      totalCost: totalCost.toFixed(2),
+      oldMoneyStartDay,
+      newMoneyStartDay,
+    }
   }
 }

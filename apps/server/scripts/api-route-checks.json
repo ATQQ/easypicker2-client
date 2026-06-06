@@ -71,6 +71,8 @@
 
   { "name": "action.download-list", "method": "POST", "path": "/api/action/download/list", "body": { "pageSize": 1, "pageIndex": 1, "extraIds": [] } },
 
+  { "name": "super-user.billing-settle", "method": "POST", "path": "/api/super/user/billing/settle", "sideEffects": true },
+
   { "name": "wish.add", "method": "POST", "path": "/api/wish/add", "body": { "title": "api-check", "content": "api-check" }, "sideEffects": true },
   { "name": "wish.all", "method": "GET", "path": "/api/wish/all" },
   { "name": "wish.update", "method": "PUT", "path": "/api/wish/update", "body": { "id": "api-check", "status": 0 } },

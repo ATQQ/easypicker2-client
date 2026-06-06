@@ -52,11 +52,18 @@ type StoredFileLocation
 
 const DOWNLOAD_COUNT_REFRESH_INTERVAL_MS = 1000 * 60 * 10
 const DOWNLOAD_COUNT_CACHE_SECONDS = 60 * 60 * 24 * 7
+const USER_OVERVIEW_REFRESH_INTERVAL_MS = 1000 * 60 * 10
+const USER_OVERVIEW_CACHE_SECONDS = 60 * 60 * 24 * 7
+const USER_OVERVIEW_CACHE_VERSION_KEY = 'file:user-overview:version'
 const FALLBACK_PREVIEW = 'https://img.cdn.sugarat.top/mdImg/MTY0OTkwMDMxNTY4NA==649900315684'
 
 @Provide()
 export default class FileService {
   private refreshingDownloadCountKeys = new Set<string>()
+
+  private refreshingUserOverviewKeys = new Set<string>()
+
+  private userOverviewCacheVersion = 0
 
   @InjectCtx()
   private ctx: Context
@@ -205,6 +212,17 @@ export default class FileService {
     return `file:download-count:${userId}:${fileId}`
   }
 
+  private async getUserOverviewCacheVersion() {
+    const value = await getRedisVal(USER_OVERVIEW_CACHE_VERSION_KEY)
+    const version = Number(value || this.userOverviewCacheVersion || 0)
+    this.userOverviewCacheVersion = Number.isFinite(version) ? version : 0
+    return this.userOverviewCacheVersion
+  }
+
+  private getUserOverviewCacheKey(userId: number, version = this.userOverviewCacheVersion) {
+    return `file:user-overview:v${version}:${userId}`
+  }
+
   private async setDownloadCountCache(userId: number, fileId: number, count: number) {
     await setRedisValue(
       this.getDownloadCountCacheKey(userId, fileId),
@@ -302,6 +320,89 @@ export default class FileService {
     // 下载次数允许短暂不实时，分页接口不等待 Mongo 日志统计。
     void this.refreshDownloadCountCache(userId, refreshIds)
     return counts
+  }
+
+  async expireUserOverviewCache(userId?: number | string) {
+    if (!userId) {
+      return
+    }
+    const version = await this.getUserOverviewCacheVersion()
+    await expiredRedisKey(this.getUserOverviewCacheKey(Number(userId), version))
+  }
+
+  async expireAllUserOverviewCache() {
+    this.userOverviewCacheVersion += 1
+    this.refreshingUserOverviewKeys.clear()
+    await setRedisValue(
+      USER_OVERVIEW_CACHE_VERSION_KEY,
+      String(this.userOverviewCacheVersion),
+    )
+  }
+
+  private async setUserOverviewCache(userId: number, data: any) {
+    await setRedisValue(
+      this.getUserOverviewCacheKey(userId),
+      JSON.stringify({
+        data,
+        updatedAt: Date.now(),
+      }),
+      USER_OVERVIEW_CACHE_SECONDS,
+    )
+  }
+
+  private parseUserOverviewCache(value: string | null) {
+    if (!value) {
+      return null
+    }
+    try {
+      const parsed = JSON.parse(value)
+      if (!parsed?.data) {
+        return null
+      }
+      const updatedAt = Number(parsed.updatedAt || 0)
+      return {
+        data: parsed.data,
+        needRefresh: Date.now() - updatedAt > USER_OVERVIEW_REFRESH_INTERVAL_MS,
+      }
+    }
+    catch {
+      return null
+    }
+  }
+
+  private async refreshUserOverviewCache(user: User, options?: Parameters<FileService['getUserOverview']>[1]) {
+    const key = this.getUserOverviewCacheKey(user.id)
+    if (this.refreshingUserOverviewKeys.has(key)) {
+      return
+    }
+    this.refreshingUserOverviewKeys.add(key)
+    try {
+      const data = await this.getUserOverview(user, options)
+      await this.setUserOverviewCache(user.id, data)
+    }
+    catch (error) {
+      console.warn('刷新用户资源概览缓存失败', error)
+    }
+    finally {
+      this.refreshingUserOverviewKeys.delete(key)
+    }
+  }
+
+  async getCachedUserOverview(user: User, options?: Parameters<FileService['getUserOverview']>[1]) {
+    await this.getUserOverviewCacheVersion()
+    const cached = this.parseUserOverviewCache(
+      await getRedisVal(this.getUserOverviewCacheKey(user.id)),
+    )
+    if (cached) {
+      if (cached.needRefresh) {
+        void this.refreshUserOverviewCache(user, options)
+      }
+      return cached.data
+    }
+
+    const data = await this.getUserOverview(user, options)
+    await this.setUserOverviewCache(user.id, data)
+    return data
   }
 
   private normalizeFileForClient(file: Files) {
@@ -625,6 +726,7 @@ export default class FileService {
         { _id: ObjectID(result.insertedId) },
         { $set: { data } },
       )
+      void this.expireUserOverviewCache(userId)
       return { link, mimeType }
     }
 
@@ -665,6 +767,7 @@ export default class FileService {
         },
       },
     )
+    void this.expireUserOverviewCache(userId)
     return {
       link,
       mimeType,
@@ -844,6 +947,7 @@ export default class FileService {
         },
       },
     )
+    void this.expireUserOverviewCache(userId)
     this.behaviorService.add('file', `本机批量下载任务 用户:${logAccount} 文件数量:${locations.length} 压缩文件:${relPath}`, {
       account: logAccount,
       length: locations.length,
@@ -887,6 +991,7 @@ export default class FileService {
         account: logAccount,
       },
     })
+    void this.expireUserOverviewCache(userId)
     return {
       storage: 'qiniu' as const,
       count: keys.length,
@@ -1019,6 +1124,7 @@ export default class FileService {
         { _id: ObjectID(result.insertedId) },
         { $set: { data } },
       )
+      void this.expireUserOverviewCache(task.userId)
       return {
         link,
         mimeType: data.mimeType,
@@ -1072,6 +1178,7 @@ export default class FileService {
         },
       },
     )
+    void this.expireUserOverviewCache(task.userId)
 
     return {
       link,
@@ -1297,6 +1404,7 @@ export default class FileService {
     file.storage = file.storage === 'local' ? 'local' : 'qiniu'
     file.date = new Date()
     const saved = await this.fileRepository.insert(file)
+    void this.expireUserOverviewCache(file.userId)
     void this.notifyOwnerOnSubmit(file)
     return saved
   }
@@ -1500,6 +1608,7 @@ export default class FileService {
     file.del = BOOLEAN.TRUE
     file.delTime = new Date()
     await this.fileRepository.update(file)
+    void this.expireUserOverviewCache(file.userId)
     this.behaviorService.add('file', `删除文件提交记录成功 用户:${logAccount} 文件:${file.name} ${
       isRepeat ? `还存在${sameRecord.length - 1}个重复文件` : '删除OSS资源'
     }`, {
@@ -1673,6 +1782,7 @@ export default class FileService {
       ossDelTime: new Date(),
       delTime: new Date(),
     })
+    void this.expireUserOverviewCache(passFiles[0]?.userId)
     this.behaviorService.add('file', `撤回文件成功 文件:${filename} 删除记录:${
       passFiles.length
     } 删除OSS资源:${isDelOss ? '是' : '否'}`, {
@@ -1765,6 +1875,7 @@ export default class FileService {
       ossDelTime: new Date(),
       delTime: new Date(),
     })
+    void this.expireUserOverviewCache(userId)
 
     this.behaviorService.add('file', `批量删除文件成功 用户:${logAccount} 文件记录数量:${files.length} OSS资源数量:${keys.size}`, {
       account: logAccount,

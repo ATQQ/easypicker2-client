@@ -11,7 +11,7 @@ import { UserRepository } from '@/db/userDb'
 import { getMongoDBStatus, refreshMongoDb } from '@/lib/dbConnect/mongodb'
 import { getMysqlStatus, refreshPool } from '@/lib/dbConnect/mysql'
 import { getRedisStatus } from '@/lib/dbConnect/redis'
-import { UserService } from '@/service'
+import { FileService, UserService } from '@/service'
 import { isSmtpConfigured, isSmtpServiceEnabled, sendMail, sendVerifyCodeMail } from '@/utils/mail'
 import { ensureMysqlBootstrap } from '@/utils/mysql-bootstrap'
 import { checkMysqlDatabaseExists } from '@/utils/mysql-check-database'
@@ -34,6 +34,17 @@ import { getTxServiceStatus, refreshTxConfig } from '@/utils/tencent'
 import LocalUserDB from '@/utils/user-local-db'
 
 type ServiceConfigType = Extract<UserConfig['type'], 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx' | 'smtp'>
+const billingConfigKeys: (keyof GlobalSiteConfig)[] = [
+  'limitSpace',
+  'limitWallet',
+  'storageMode',
+  'moneyStartDay',
+  'qiniuOSSPrice',
+  'qiniuCDNPrice',
+  'qiniuBackhaulTrafficPrice',
+  'qiniuBackhaulTrafficPercentage',
+  'qiniuCompressPrice',
+]
 
 interface ServiceDefinition {
   type: ServiceConfigType
@@ -133,6 +144,9 @@ const serviceDefinitions: ServiceDefinition[] = [
 export default class UserController {
   @Inject(UserService)
   private userService!: UserService
+
+  @Inject(FileService)
+  private fileService!: FileService
 
   @Inject(UserRepository)
   private userRepository!: UserRepository
@@ -574,6 +588,7 @@ export default class UserController {
   @Put('service/global')
   async updateSystemGlobalConfig(@ReqBody() data) {
     const { key, value } = data
+    const oldValue = key === 'site' ? LocalUserDB.getSiteConfig() : null
     await LocalUserDB.updateUserConfig(
       {
         type: 'global',
@@ -583,6 +598,9 @@ export default class UserController {
         value,
       },
     )
+    if (this.shouldExpireUserOverviewCache(key, oldValue, value)) {
+      await this.fileService.expireAllUserOverviewCache()
+    }
   }
 
   @Get('global', { needLogin: false, userPower: null })
@@ -656,6 +674,7 @@ export default class UserController {
   @Put('global', { userPower: USER_POWER.SUPER })
   async updateGlobalConfig(@ReqBody() data) {
     const { key, value } = data
+    const oldValue = key === 'site' ? LocalUserDB.getSiteConfig() : null
     await LocalUserDB.updateUserConfig(
       {
         type: 'global',
@@ -665,5 +684,19 @@ export default class UserController {
         value,
       },
     )
+    if (this.shouldExpireUserOverviewCache(key, oldValue, value)) {
+      await this.fileService.expireAllUserOverviewCache()
+    }
+  }
+
+  private shouldExpireUserOverviewCache(
+    key: string,
+    oldValue: Partial<GlobalSiteConfig> | null,
+    value: Partial<GlobalSiteConfig>,
+  ) {
+    if (key !== 'site' || !oldValue || !value) {
+      return false
+    }
+    return billingConfigKeys.some(k => oldValue[k] !== value[k])
   }
 }

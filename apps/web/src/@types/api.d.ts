@@ -490,6 +490,13 @@ declare namespace SuperUserApiTypes {
   type updateUserStatus = ResponseData
   type resetEmail = ResponseData<{ ok: boolean }>
   type sendMail = ResponseData<{ ok: boolean, error?: string }>
+  type settleBilling = ResponseData<{
+    settledCount: number
+    skippedCount: number
+    totalCost: string
+    oldMoneyStartDay: number
+    newMoneyStartDay: number
+  }>
 }
 
 declare namespace WishApiTypes {

@@ -12,10 +12,11 @@ import { formatDate, formatSize } from '@/utils/stringUtil'
 import Tip from '../../tasks/components/infoPanel/tip.vue'
 
 const sumCost = ref('')
+const settlingBilling = ref(false)
 // 用户
 const users = reactive<SuperUserApiTypes.UserItem[]>([])
 function refreshUsers() {
-  SuperUserApi.getUserList().then((res) => {
+  return SuperUserApi.getUserList().then((res) => {
     users.splice(0, users.length, ...res.data.list)
     sumCost.value = res.data.sumCost
     ElMessage.success('列表数据刷新成功')
@@ -103,6 +104,42 @@ const sortOrderList = [
     value: 'desc',
   },
 ]
+const { value: siteConfig } = useSiteConfig()
+const moneyStartDay = computed(() => siteConfig.value.moneyStartDay)
+const isLocalStorage = computed(() => siteConfig.value.storageMode === 'local')
+
+async function handleSettleBilling() {
+  if (isLocalStorage.value) {
+    ElMessage.info('本机存储模式无费用可结算')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `将按当前计费周期（${formatDate(moneyStartDay.value)} 至今）结算全部普通用户，余额可能扣成负数，并自动更新计费开始日期。是否继续？`,
+      '确认批量扣费',
+      {
+        confirmButtonText: '确认扣费',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+  }
+  catch {
+    ElMessage.info('已取消批量扣费')
+    return
+  }
+  settlingBilling.value = true
+  try {
+    const res = await SuperUserApi.settleBilling()
+    ElMessage.success(
+      `批量扣费完成：结算 ${res.data.settledCount} 人，总金额 ${res.data.totalCost}￥`,
+    )
+    await refreshUsers()
+  }
+  finally {
+    settlingBilling.value = false
+  }
+}
 const filterUsers = computed(() => {
   const copyUsers = [...users]
   copyUsers.sort((a, b) => {
@@ -487,8 +524,6 @@ onMounted(() => {
 
 const isMobile = useIsMobile()
 
-const { moneyStartDay } = useSiteConfig()
-
 function handleCheckDetail(price) {
   const { backhaulTrafficPrice, cdnPrice, compressPrice, ossPrice } = price
   ElMessageBox.confirm(`存储：${ossPrice}, 下载：${cdnPrice},压缩：${compressPrice},回源：${backhaulTrafficPrice}`, {
@@ -557,7 +592,7 @@ function handleCheckDetail(price) {
         </span>
         <span class="item">
           <el-button
-            size="warning"
+            type="warning"
             :icon="Message"
             @click="sendMessage(null, 0)"
           >推送全局消息</el-button>
@@ -566,6 +601,16 @@ function handleCheckDetail(price) {
       <Tip>
         预估费用：{{ sumCost }}￥，
         计费起始时间：{{ formatDate(moneyStartDay) }}
+        <el-button
+          size="small"
+          type="danger"
+          plain
+          :loading="settlingBilling"
+          :disabled="isLocalStorage"
+          @click="handleSettleBilling"
+        >
+          批量扣费
+        </el-button>
       </Tip>
       <el-table
         height="550"

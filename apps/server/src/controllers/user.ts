@@ -198,7 +198,7 @@ export default class UserController {
     const user = await this.userRepository.findOne({
       id: this.Ctx.req.userInfo.id,
     })
-    const userOverview = await this.fileService.getUserOverview(user)
+    const userOverview = await this.fileService.getCachedUserOverview(user)
     const { maxSize, usage, limitUpload, wallet, cost, limitSpace, limitWallet, price } = userOverview
     if (limitSpace) {
       this.behaviorService.add('user', `用户 ${user.account} 超出容量限制`, {

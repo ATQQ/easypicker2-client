@@ -86,6 +86,10 @@ function updateWallet(id: number, value: number) {
   })
 }
 
+function settleBilling(): SuperUserApiTypes.settleBilling {
+  return ajax.post(`${baseUrl}/billing/settle`)
+}
+
 export default {
   getUserList,
   updateUserStatus,
@@ -100,4 +104,5 @@ export default {
   logout,
   resetLimitSpace,
   updateWallet,
+  settleBilling,
 }
