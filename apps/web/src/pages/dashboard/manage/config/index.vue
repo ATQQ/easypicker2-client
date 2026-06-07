@@ -69,12 +69,9 @@ const configSections: ConfigSection[] = [
     ],
   },
   {
-    title: '访问限制',
-    description: '控制用户使用前的校验与资源限制策略。',
+    title: '资源限制',
+    description: '控制用户资源额度与费用限制策略。',
     fields: [
-      { key: 'needBindPhone', label: '强制绑定手机号', description: '开启后用户需要先绑定手机号。', type: 'switch' },
-      { key: 'enableCodeLogin', label: '验证码登录', description: '开启后且腾讯云短信配置完整时，前台展示验证码登录入口。', type: 'switch' },
-      { key: 'enableEmailCodeLogin', label: '邮箱验证码', description: '开启且 SMTP 可用时，支持邮箱验证码登录、注册与找回密码。', type: 'switch' },
       { key: 'limitSpace', label: '限制存储空间', description: '开启后按用户空间额度限制上传。', type: 'switch' },
       { key: 'limitWallet', label: '限制钱包余额', description: '开启后按钱包余额限制资源消耗。', type: 'switch' },
     ],
@@ -168,12 +165,13 @@ function normalizeSiteConfig(): SiteConfig {
     downloadOneExpired: Number(siteForm.downloadOneExpired),
     downloadCompressExpired: Number(siteForm.downloadCompressExpired),
     compressSizeLimit: Number(siteForm.compressSizeLimit),
-    needBindPhone: Boolean(siteForm.needBindPhone),
-    enableCodeLogin: Boolean(siteForm.enableCodeLogin),
+    needBindPhone: Boolean(jsonData.value.needBindPhone),
+    enableCodeLogin: Boolean(jsonData.value.enableCodeLogin),
     enableSmtp: typeof jsonData.value.enableSmtp === 'boolean'
-      ? Boolean(siteForm.enableSmtp)
-      : Boolean(siteForm.enableEmailCodeLogin || siteForm.needBindEmail),
-    enableEmailCodeLogin: Boolean(siteForm.enableEmailCodeLogin),
+      ? Boolean(jsonData.value.enableSmtp)
+      : Boolean(jsonData.value.enableEmailCodeLogin || jsonData.value.needBindEmail),
+    enableEmailCodeLogin: Boolean(jsonData.value.enableEmailCodeLogin),
+    needBindEmail: Boolean(jsonData.value.needBindEmail),
     storageMode: siteForm.storageMode === 'local' ? 'local' : 'qiniu',
     maxUploadSizeMB: Number(siteForm.maxUploadSizeMB),
     limitSpace: Boolean(siteForm.limitSpace),
