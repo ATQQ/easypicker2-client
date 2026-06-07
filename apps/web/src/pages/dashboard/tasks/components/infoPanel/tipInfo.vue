@@ -5,8 +5,8 @@ import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { computed, reactive, ref, watch } from 'vue'
 import { FileApi, PublicApi, TaskApi } from '@/apis'
-import { qiniuUpload } from '@/utils/networkUtil'
-import { getTipImageKey } from '@/utils/stringUtil'
+import { localManagedFileUpload, qiniuUpload } from '@/utils/networkUtil'
+import { formatSize, getTipImageKey } from '@/utils/stringUtil'
 import { updateTaskInfo } from '../../public'
 import Tip from './tip.vue'
 
@@ -106,30 +106,70 @@ function handleChangeFile(file: UploadUserFile) {
   if (!props.k) {
     return
   }
+  if (!file.raw) {
+    ElMessage.error('图片文件不存在')
+    return
+  }
   const { name, uid } = file
   const key = getTipImageKey(props.k, name, uid)
   if (file.status === 'ready') {
-    file.status = 'success'
-    // qiniu上传
+    file.status = 'uploading'
     FileApi.getUploadToken().then((res) => {
-      qiniuUpload(res.data.token, file.raw, key, {
+      const markSuccess = () => {
+        file.status = 'success'
+        tipData.imgs.push({
+          uid,
+          name,
+        })
+        updateTip()
+      }
+      const markFail = (err?: any) => {
+        file.status = 'fail'
+        ElMessage.error(err?.message || '图片上传失败')
+      }
+      if (res.data.storageMode === 'local') {
+        const maxB = res.data.maxUploadBytes
+        if (maxB && file.raw!.size > maxB) {
+          ElMessage.error(`图片超过单文件上限 ${formatSize(maxB)}`)
+          file.status = 'fail'
+          return
+        }
+        localManagedFileUpload(file.raw!, '/task_info/tip/image/upload', {
+          taskKey: props.k,
+          uid,
+          name,
+        }, {
+          success() {
+            markSuccess()
+          },
+          error(err) {
+            markFail(err)
+          },
+        })
+        return
+      }
+      qiniuUpload(res.data.token, file.raw!, key, {
         success() {
-          tipData.imgs.push({
-            uid,
-            name,
-          })
-          updateTip()
+          markSuccess()
+        },
+        error(err) {
+          markFail(err)
         },
       })
+    }).catch(() => {
+      file.status = 'fail'
+      ElMessage.error('获取上传参数失败')
     })
   }
 }
 const handleRemove: UploadProps['onRemove'] = (file) => {
   const { uid, name } = file
   const idx = tipData.imgs.findIndex(v => v.uid === uid)
-  tipData.imgs.splice(idx, 1)
-  updateTip()
-  TaskApi.delTipImage(props.k, uid, name)
+  if (idx >= 0) {
+    tipData.imgs.splice(idx, 1)
+    updateTip()
+    TaskApi.delTipImage(props.k, uid, name)
+  }
 }
 
 function handlePictureCardPreview(file) {
@@ -180,7 +220,7 @@ function handleExceedFile() {
         placeholder="请输入要展示的批注信息"
       />
       <div class="actions">
-        <el-button type="success" @click="updateTip">
+        <el-button type="success" @click="updateTip()">
           保存批注
         </el-button>
         <el-button type="danger" plain @click="textValue = ''">

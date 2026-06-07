@@ -37,23 +37,59 @@ const props = defineProps({
 const activeTab = ref('手动添加')
 const userInputName = ref('')
 const importStatus = ref(false)
+// 查看提交情况
+const showPeopleList = ref(false)
+function getInputPeopleNames() {
+  const names: string[] = []
+  const exists = new Set<string>()
+  userInputName.value
+    .split(/\r?\n/)
+    .map(v => v.trim())
+    .filter(Boolean)
+    .forEach((name) => {
+      if (exists.has(name))
+        return
+      exists.add(name)
+      names.push(name)
+    })
+  return names
+}
 
-function handAddName() {
-  if (!userInputName.value) {
+async function handAddName() {
+  const names = getInputPeopleNames()
+  if (names.length === 0) {
+    ElMessage.warning('请输入姓名')
     return
   }
   importStatus.value = true
-  PeopleApi.addPeopleByUser(userInputName.value, props.k)
-    .then(() => {
-      ElMessage.success(`添加 ${userInputName.value} 成功`)
-    })
-    .catch(() => {
-      ElMessage.error(`${userInputName.value} 已存在`)
-    })
-    .finally(() => {
-      importStatus.value = false
+  try {
+    const res = await PeopleApi.addPeopleByUser(names, props.k)
+    const successNames = res.data?.success || []
+    const failNames = res.data?.fail || []
+    const successCount = successNames.length
+    if (failNames.length === 0) {
+      ElMessage.success(`添加成功 ${successCount} 人`)
       userInputName.value = ''
-    })
+    }
+    else if (successCount === 0) {
+      ElMessage.error(`${failNames.length} 人添加失败，可能已存在`)
+      userInputName.value = failNames.join('\n')
+    }
+    else {
+      ElMessage.warning(`添加完成：${successCount} 人成功，${failNames.length} 人失败`)
+      userInputName.value = failNames.join('\n')
+    }
+    if (showPeopleList.value && successCount > 0) {
+      refreshSubmitData()
+    }
+  }
+  catch {
+    ElMessage.error('添加失败，请稍后重试')
+    userInputName.value = names.join('\n')
+  }
+  finally {
+    importStatus.value = false
+  }
 }
 const checkMore = ref(false)
 
@@ -69,8 +105,6 @@ function updateLimitPeople(limit: boolean) {
   people.value = +limit
 }
 
-// 查看提交情况
-const showPeopleList = ref(false)
 const peopleList: any = reactive([])
 const selectSubmitStatus = ref('all')
 const searchName = ref('')
@@ -420,15 +454,21 @@ function handleSureBind() {
             <el-input
               v-model="userInputName"
               :disabled="importStatus"
-              placeholder="请输入姓名"
-            >
-              <template #append>
-                <el-button @click="handAddName">
-                  添加
-                </el-button>
-              </template>
-            </el-input>
-            <p>会自动判重，不会重复添加。大量名单优先推荐使用文件导入。</p>
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 8 }"
+              placeholder="每行一个姓名"
+            />
+            <div class="manual-add-actions">
+              <el-button
+                type="primary"
+                :loading="importStatus"
+                :disabled="!userInputName.trim()"
+                @click="handAddName"
+              >
+                批量添加
+              </el-button>
+            </div>
+            <p>会自动判重，不会重复添加。本次输入中的重复姓名会自动忽略。</p>
           </div>
         </div>
       </section>
@@ -707,6 +747,12 @@ function handleSureBind() {
   margin-left: 10px;
 }
 
+.manual-add-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
 .bind-form {
   max-width: 420px;
   margin-top: 16px;
@@ -769,6 +815,14 @@ function handleSureBind() {
     display: block;
     width: 100%;
     margin: 10px 0 0;
+  }
+
+  .manual-add-actions {
+    justify-content: stretch;
+
+    .el-button {
+      width: 100%;
+    }
   }
 }
 </style>

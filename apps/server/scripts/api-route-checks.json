@@ -15,6 +15,10 @@
   { "name": "task-info.tip-image-delete", "method": "DELETE", "path": "/api/task_info/tip/image/000000000000000000000000", "body": { "uid": 1, "name": "api-check.png" } },
   { "name": "task-info.public-detail", "method": "GET", "path": "/api/task_info/000000000000000000000000" },
   { "name": "task-info.update", "method": "PUT", "path": "/api/task_info/000000000000000000000000", "body": { "template": "", "info": ["姓名"] } },
+  { "name": "task-info.local-template-upload", "method": "POST", "path": "/api/task_info/template/upload", "storageModes": ["local"], "multipart": { "taskKey": "api-check", "name": "api-check-template.txt", "file": { "name": "api-check-template.txt", "content": "api check" } } },
+  { "name": "task-info.local-template-upload-no-prefix", "method": "POST", "path": "/task_info/template/upload", "storageModes": ["local"], "multipart": { "taskKey": "api-check", "name": "api-check-template.txt", "file": { "name": "api-check-template.txt", "content": "api check" } } },
+  { "name": "task-info.local-tip-image-upload", "method": "POST", "path": "/api/task_info/tip/image/upload", "storageModes": ["local"], "multipart": { "taskKey": "api-check", "uid": "1", "name": "api-check.png", "file": { "name": "api-check.png", "type": "image/png", "content": "api check" } } },
+  { "name": "task-info.local-tip-image-upload-no-prefix", "method": "POST", "path": "/task_info/tip/image/upload", "storageModes": ["local"], "multipart": { "taskKey": "api-check", "uid": "1", "name": "api-check.png", "file": { "name": "api-check.png", "type": "image/png", "content": "api check" } } },
 
   { "name": "file.local-upload-api-prefix", "method": "POST", "path": "/api/file/upload", "storageModes": ["local"], "multipart": { "taskKey": "api-check", "hash": "api-check-hash", "name": "api-check.txt", "file": { "name": "api-check.txt", "content": "api check" } } },
   { "name": "file.local-upload-no-prefix", "method": "POST", "path": "/file/upload", "storageModes": ["local"], "multipart": { "taskKey": "api-check", "hash": "api-check-hash", "name": "api-check.txt", "file": { "name": "api-check.txt", "content": "api check" } } },
@@ -44,6 +48,7 @@
   { "name": "people.legacy-delete", "method": "DELETE", "path": "/api/people/000000000000000000000000", "body": { "id": 0 } },
   { "name": "people.legacy-update", "method": "PUT", "path": "/api/people/000000000000000000000000", "body": { "name": "api-check", "filename": "api-check.txt", "hash": "api-check-hash" } },
   { "name": "people.add", "method": "POST", "path": "/api/people/add/000000000000000000000000", "body": { "name": "api-check" } },
+  { "name": "people.add-batch", "method": "POST", "path": "/api/people/add/000000000000000000000000", "body": { "names": ["api-check-a", "api-check-b"] } },
   { "name": "people.check", "method": "POST", "path": "/api/people/check/000000000000000000000000", "body": { "name": "api-check" } },
   { "name": "people.template-list", "method": "GET", "path": "/api/people/template/000000000000000000000000" },
   { "name": "people.template-import", "method": "PUT", "path": "/api/people/template/000000000000000000000000", "body": { "key": "api-check-source", "type": "add" } },
@@ -56,6 +61,7 @@
   { "name": "public.report-pv-post", "method": "POST", "path": "/api/public/report/pv", "body": { "path": "/api-check" }, "sideEffects": true },
   { "name": "public.check-phone", "method": "GET", "path": "/api/public/check/phone?phone=13000000000" },
   { "name": "public.tip-image", "method": "POST", "path": "/api/public/tip/image", "body": { "key": "api-check", "data": [] } },
+  { "name": "public.local-tip-image", "method": "GET", "path": "/api/public/tip/image/local?path=easypicker2%2Ftip%2Fapi-check%2F1%2Fapi-check.png&type=cover&expires=0&sign=api-check", "storageModes": ["local"] },
 
   { "name": "user.register", "method": "POST", "path": "/api/user/register", "body": { "account": "api-check", "password": "api-check-password" }, "sideEffects": true },
   { "name": "user.login", "method": "POST", "path": "/api/user/login", "body": { "account": "api-check", "password": "api-check-password" } },

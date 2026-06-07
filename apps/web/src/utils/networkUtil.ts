@@ -437,15 +437,24 @@ export function localTaskFileUpload(
   meta: { taskKey: string, hash: string, name: string },
   options?: UploadFileOptions,
 ) {
+  return localManagedFileUpload(file, '/file/upload', meta, options)
+}
+
+export function localManagedFileUpload(
+  file: File,
+  path: string,
+  fields: Record<string, string | number>,
+  options?: UploadFileOptions,
+) {
   const rawBase = import.meta.env.VITE_APP_AXIOS_BASE_URL || '/api/'
   const base = rawBase.replace(/\/?$/, '')
-  const url = `${base}/file/upload`
+  const url = `${base}${path.startsWith('/') ? path : `/${path}`}`
   const xhr = new XMLHttpRequest()
   const form = new FormData()
   form.append('file', file)
-  form.append('taskKey', meta.taskKey)
-  form.append('hash', meta.hash)
-  form.append('name', meta.name)
+  Object.entries(fields).forEach(([key, value]) => {
+    form.append(key, String(value))
+  })
   xhr.open('POST', url, true)
   const token = localStorage.getItem('token')
   if (token)
@@ -468,11 +477,11 @@ export function localTaskFileUpload(
   xhr.onload = () => {
     try {
       const res = JSON.parse(xhr.responseText || '{}')
-      if (res.code === 0) {
+      if (xhr.status >= 200 && xhr.status < 300 && res.code === 0) {
         success?.(res.data, subscription)
       }
       else {
-        error?.(new Error(res.msg || 'upload failed'), subscription)
+        error?.(new Error(res.msg || xhr.statusText || 'upload failed'), subscription)
       }
     }
     catch (e) {

@@ -5,12 +5,14 @@ import { qiniuConfig } from '@/config'
 import { UserError } from '@/constants/errorMsg'
 import { UserRepository } from '@/db/userDb'
 import { BehaviorService, TokenService } from '@/service'
+import { signLocalFileAccess } from '@/utils/localFilePath'
 import { sendVerifyCodeMail } from '@/utils/mail'
 import { createDownloadUrl } from '@/utils/qiniuUtil'
 import { randomNumStr } from '@/utils/randUtil'
 import { rEmail, rMobilePhone } from '@/utils/regExp'
 import { isEmailCodeLoginSupported } from '@/utils/siteConfig'
 import { isLocalStorageMode } from '@/utils/storageMode'
+import { getTipImageKey } from '@/utils/stringUtil'
 import { sendMessage } from '@/utils/tencent'
 
 @Provide()
@@ -145,10 +147,13 @@ export default class PublicService {
     }[],
   ) {
     if (isLocalStorageMode()) {
-      return data.map(() => ({
-        cover: '',
-        preview: '',
-      }))
+      return data.map((v) => {
+        const relPath = getTipImageKey(key, v.name, v.uid)
+        return {
+          cover: this.getLocalTipImageUrl(relPath, 'cover'),
+          preview: this.getLocalTipImageUrl(relPath, 'preview'),
+        }
+      })
     }
     return data.map(v => ({
       cover: createDownloadUrl(
@@ -158,5 +163,25 @@ export default class PublicService {
         `easypicker2/tip/${key}/${v.uid}/${v.name}${qiniuConfig.imagePreviewStyle}`,
       ),
     }))
+  }
+
+  private getRequestOrigin() {
+    const { headers } = this.ctx.req
+    if (headers.origin) {
+      return headers.origin
+    }
+    if (headers.referer) {
+      try {
+        return new URL(headers.referer).origin
+      }
+      catch {}
+    }
+    return `http://${headers.host}`
+  }
+
+  private getLocalTipImageUrl(relPath: string, type: 'cover' | 'preview') {
+    const expires = Date.now() + 5 * 60 * 1000
+    const sign = signLocalFileAccess(relPath, expires, type)
+    return `${this.getRequestOrigin()}/api/public/tip/image/local?path=${encodeURIComponent(relPath)}&type=${type}&expires=${expires}&sign=${sign}`
   }
 }

@@ -5,9 +5,11 @@ import path from 'node:path'
 import formidable from 'formidable'
 import { uploadFileDir } from '@/constants'
 import { getClientIp } from '@/db/logDb'
+import { BOOLEAN } from '@/db/model/public'
 import { selectTasks } from '@/db/taskDb'
 import { localObjectAbsPath, localObjectRelPath } from '@/utils/localFilePath'
 import { getMaxUploadBytes, getStorageMode } from '@/utils/storageMode'
+import { getTipImageKey } from '@/utils/stringUtil'
 import { getUserInfo } from '@/utils/userUtil'
 
 // 允许跨域访问的源
@@ -28,6 +30,26 @@ function isLocalUploadPath(pathname: string) {
 
 function isPublicUploadPath(pathname: string) {
   return pathname === '/api/public/upload' || pathname === '/public/upload'
+}
+
+function isTemplateUploadPath(pathname: string) {
+  return pathname === '/api/task_info/template/upload' || pathname === '/task_info/template/upload'
+}
+
+function isTipImageUploadPath(pathname: string) {
+  return pathname === '/api/task_info/tip/image/upload' || pathname === '/task_info/tip/image/upload'
+}
+
+function pickField(fields: formidable.Fields, key: string) {
+  const v = fields[key]
+  if (Array.isArray(v))
+    return v[0]
+  return v
+}
+
+function pickFile(files: formidable.Files) {
+  const f = files.file || files.files
+  return Array.isArray(f) ? f[0] : f
 }
 
 if (!existsSync(uploadFileDir)) {
@@ -65,12 +87,6 @@ const interceptor: Middleware = async (req, res) => {
       maxFileSize: maxB,
       multiples: false,
     })
-    const pick = (fields: formidable.Fields, key: string) => {
-      const v = fields[key]
-      if (Array.isArray(v))
-        return v[0]
-      return v
-    }
     const endJson = (code: number, msg: string, data?: unknown) => {
       res.writeHead(code >= 400 ? code : 200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify(data !== undefined ? { code, msg, data } : { code, msg }))
@@ -87,11 +103,10 @@ const interceptor: Middleware = async (req, res) => {
             resolve({ fields, files })
         })
       })
-      const taskKey = String(pick(fields, 'taskKey') || '')
-      const hash = String(pick(fields, 'hash') || '')
-      const name = String(pick(fields, 'name') || '')
-      const f = files.file || files.files
-      const fileItem = Array.isArray(f) ? f[0] : f
+      const taskKey = String(pickField(fields, 'taskKey') || '')
+      const hash = String(pickField(fields, 'hash') || '')
+      const name = String(pickField(fields, 'name') || '')
+      const fileItem = pickFile(files)
       if (!taskKey || !hash || !name || !fileItem) {
         endJson(400, 'missing taskKey, hash, name or file')
         return
@@ -107,6 +122,76 @@ const interceptor: Middleware = async (req, res) => {
       fs.renameSync(fileItem.filepath, abs)
       const st = fs.statSync(abs)
       endJson(0, 'ok', { fsize: st.size })
+    }
+    catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      endJson(500, msg || 'upload failed')
+    }
+    return
+  }
+
+  if (
+    method === 'POST'
+    && (isTemplateUploadPath(pathOnly) || isTipImageUploadPath(pathOnly))
+  ) {
+    const endJson = (code: number, msg: string, data?: unknown) => {
+      res.writeHead(code >= 400 ? code : 200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(data !== undefined ? { code, msg, data } : { code, msg }))
+    }
+    if (getStorageMode() !== 'local') {
+      endJson(400, 'local storage disabled')
+      return
+    }
+    const user = await getUserInfo(req)
+    if (!user?.id) {
+      endJson(401, 'not login')
+      return
+    }
+    const form = formidable({
+      maxFileSize: getMaxUploadBytes(),
+      multiples: false,
+    })
+    try {
+      const { fields, files } = await new Promise<{
+        fields: formidable.Fields
+        files: formidable.Files
+      }>((resolve, reject) => {
+        form.parse(req as IncomingMessage, (err, fields, files) => {
+          if (err)
+            reject(err)
+          else
+            resolve({ fields, files })
+        })
+      })
+      const taskKey = String(pickField(fields, 'taskKey') || '')
+      const name = String(pickField(fields, 'name') || '')
+      const uid = String(pickField(fields, 'uid') || '')
+      const fileItem = pickFile(files)
+      if (!taskKey || !name || !fileItem) {
+        endJson(400, 'missing taskKey, name or file')
+        return
+      }
+      if (isTipImageUploadPath(pathOnly) && !uid) {
+        endJson(400, 'missing uid')
+        return
+      }
+      const tasks = await selectTasks({
+        k: taskKey,
+        userId: user.id,
+        del: BOOLEAN.FALSE,
+      })
+      if (!tasks.length) {
+        endJson(403, 'task not found')
+        return
+      }
+      const rel = isTemplateUploadPath(pathOnly)
+        ? `easypicker2/${taskKey}_template/${name}`
+        : getTipImageKey(taskKey, name, uid)
+      const abs = localObjectAbsPath(rel)
+      mkdirSync(path.dirname(abs), { recursive: true })
+      fs.renameSync(fileItem.filepath, abs)
+      const st = fs.statSync(abs)
+      endJson(0, 'ok', { fsize: st.size, key: rel })
     }
     catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)

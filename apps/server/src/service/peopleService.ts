@@ -1,11 +1,12 @@
-import { Context, Inject, InjectCtx, Provide } from 'flash-wolves'
+import type { Context } from 'flash-wolves'
+import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { In } from 'typeorm'
-import { People } from '@/db/entity'
-import { BehaviorService } from '@/service'
 import { peopleError } from '@/constants/errorMsg'
+import { People } from '@/db/entity'
 import { PeopleRepository } from '@/db/peopleDb'
 import { TaskRepository } from '@/db/taskDb'
 import { TaskInfoRepository } from '@/db/taskInfoDb'
+import { BehaviorService } from '@/service'
 
 @Provide()
 export default class PeopleService {
@@ -24,43 +25,79 @@ export default class PeopleService {
   @Inject(TaskInfoRepository)
   private taskInfoRepository: TaskInfoRepository
 
-  async addPeople(key: string, name: string) {
+  private normalizePeopleNames(name: string | string[]) {
+    const names = Array.isArray(name) ? name : [name]
+    const exists = new Set<string>()
+    return names
+      .map(v => String(v || '').trim())
+      .filter(Boolean)
+      .filter((v) => {
+        if (exists.has(v))
+          return false
+        exists.add(v)
+        return true
+      })
+  }
+
+  async addPeople(key: string, name: string | string[]) {
     const user = this.ctx.req.userInfo
-    const exist = !!(await this.peopleRepository.findOne({
+    const names = this.normalizePeopleNames(name)
+    const isSingle = !Array.isArray(name)
+    if (!names.length) {
+      return {
+        success: [],
+        fail: [],
+      }
+    }
+    const existPeople = await this.peopleRepository.findWithSpecifyColumn({
       taskKey: key,
       userId: user.id,
-      name
-    }))
+      name: In(names),
+    }, ['name'])
+    const existNames = new Set(existPeople.map(v => v.name).filter(Boolean))
+    const insertNames = names.filter(v => !existNames.has(v))
+    const fail = names.filter(v => existNames.has(v))
 
     this.behaviorService.add(
       'people',
-      `直接添加成员${exist ? '失败' : '成功'}: ${name}`,
+      `直接添加成员 成功:${insertNames.length} 失败:${fail.length}`,
       {
-        name,
-        exist
-      }
+        names,
+        success: insertNames,
+        fail,
+      },
     )
-    if (exist) {
+    if (isSingle && fail.length) {
       throw peopleError.exist
     }
+    if (insertNames.length) {
+      await this.peopleRepository.insertMany(
+        insertNames.map((v) => {
+          const people = new People()
+          people.name = v
+          people.taskKey = key
+          people.userId = user.id
+          return people
+        }),
+      )
+    }
 
-    const people = new People()
-    people.name = name
-    people.taskKey = key
-    people.userId = user.id
-    await this.peopleRepository.insert(people)
+    return {
+      success: insertNames,
+      fail,
+    }
   }
 
   async checkPeopleIsExist(key: string, name: string) {
     const task = await this.taskRepository.findOne({
-      k: key
+      k: key,
     })
     if (!task) {
       return false
     }
     const people = await this.peopleRepository.findOne({
       taskKey: key,
-      name
+      name,
     })
 
     const exist = !!people
@@ -72,15 +109,15 @@ export default class PeopleService {
       {
         taskName: task.name,
         name,
-        exist
-      }
+        exist,
+      },
     )
     return exist
   }
 
   async getUsefulTemplate(key: string) {
     this.behaviorService.add('people', '查询可用的成员列表模板', {
-      taskKey: key
+      taskKey: key,
     })
 
     const user = this.ctx.req.userInfo
@@ -89,13 +126,13 @@ export default class PeopleService {
       await this.taskInfoRepository.findWithSpecifyColumn(
         {
           userId: user.id,
-          limitPeople: 1
+          limitPeople: 1,
         },
-        ['taskKey']
+        ['taskKey'],
       )
     )
-      .filter((v) => v.taskKey !== key)
-      .map((v) => v.taskKey)
+      .filter(v => v.taskKey !== key)
+      .map(v => v.taskKey)
 
     if (!taskKeyList.length) {
       return []
@@ -103,25 +140,25 @@ export default class PeopleService {
 
     const taskInfo = await this.taskRepository.findWithSpecifyColumn(
       {
-        k: In(taskKeyList)
+        k: In(taskKeyList),
       },
-      ['k', 'name']
+      ['k', 'name'],
     )
 
     // 查询每任务中的的成员名单信息
     const people = await this.peopleRepository.findWithSpecifyColumn(
       {
-        taskKey: In(taskKeyList)
+        taskKey: In(taskKeyList),
       },
-      ['taskKey', 'name']
+      ['taskKey', 'name'],
     )
 
     const data = taskInfo.map((v) => {
-      const count = people.filter((p) => p.taskKey === v.k).length
+      const count = people.filter(p => p.taskKey === v.k).length
       return {
         taskKey: v.k,
         name: v.name,
-        count
+        count,
       }
     })
     return data
@@ -130,7 +167,7 @@ export default class PeopleService {
   async importPeopleFromTpl(
     taskKey: string,
     tplKey: string,
-    type: 'override' | 'add'
+    type: 'override' | 'add',
   ) {
     const fail: string[] = []
     const success: string[] = []
@@ -138,11 +175,11 @@ export default class PeopleService {
     if (taskKey === tplKey) {
       this.behaviorService.error(
         '非法导入人员模板',
-        new Error('非法导入人员模板').stack
+        new Error('非法导入人员模板').stack,
       )
       return {
         success: success.length,
-        fail
+        fail,
       }
     }
 
@@ -152,31 +189,32 @@ export default class PeopleService {
     const people = await this.peopleRepository.findWithSpecifyColumn(
       {
         taskKey: tplKey,
-        userId: user.id
+        userId: user.id,
       },
-      ['name']
+      ['name'],
     )
     // 如果是覆盖
     if (type === 'override') {
       // 先删除当前任务中的
       await this.peopleRepository.delete({
         taskKey,
-        userId: user.id
+        userId: user.id,
       })
-      success.push(...people.map((v) => v.name))
+      success.push(...people.map(v => v.name))
     }
     if (type === 'add') {
       // 取当前任务
       const nowPeople = (
         await this.peopleRepository.findWithSpecifyColumn(
           { userId: user.id, taskKey },
-          ['name']
+          ['name'],
         )
-      ).map((v) => v.name)
+      ).map(v => v.name)
       for (const p of people) {
         if (nowPeople.includes(p.name)) {
           fail.push(p.name)
-        } else {
+        }
+        else {
           success.push(p.name)
         }
       }
@@ -189,7 +227,7 @@ export default class PeopleService {
           p.taskKey = taskKey
           p.userId = user.id
           return p
-        })
+        }),
       )
     }
     this.behaviorService.add(
@@ -198,13 +236,13 @@ export default class PeopleService {
       {
         account: user.account,
         success: success.length,
-        fail: fail.length
-      }
+        fail: fail.length,
+      },
     )
 
     return {
       success: success.length,
-      fail
+      fail,
     }
   }
 }
