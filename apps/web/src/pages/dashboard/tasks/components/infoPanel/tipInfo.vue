@@ -101,6 +101,21 @@ function updateTip(notify = true) {
   updateTaskInfo(props.k, { tip: JSON.stringify(tipData) }, notify)
 }
 
+function fillTipImageUrl(file: UploadUserFile) {
+  PublicApi.getTipImageUrl(props.k, [{
+    uid: file.uid,
+    name: file.name,
+  }]).then((res) => {
+    const url = res.data?.[0]
+    if (!url)
+      return
+    file.url = url.cover || url.preview
+    Object.assign(file, {
+      preview: url.preview || url.cover,
+    })
+  })
+}
+
 const imageViewerVisible = ref(false)
 function handleChangeFile(file: UploadUserFile) {
   if (!props.k) {
@@ -122,6 +137,7 @@ function handleChangeFile(file: UploadUserFile) {
           name,
         })
         updateTip()
+        fillTipImageUrl(file)
       }
       const markFail = (err?: any) => {
         file.status = 'fail'
