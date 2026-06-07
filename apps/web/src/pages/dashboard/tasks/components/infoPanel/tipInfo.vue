@@ -35,11 +35,41 @@ const tipData = reactive<{
 })
 const MaxImgCount = ref(3)
 const imageList = ref<UploadUserFile[]>([])
+const tipImagePlaceholder = 'https://img.cdn.sugarat.top/mdImg/MTY3NzkxMDI1NTU1Nw==20140524124237518.gif'
 const previewList = computed(() => {
   // @ts-expect-error
   return imageList.value.map(v => v!.preview || v.url)
 })
 const previewIdx = ref(0)
+
+function fillTipImageUrls() {
+  if (!imageList.value.length)
+    return
+  PublicApi.getTipImageUrl(
+    props.k,
+    imageList.value.map(v => ({
+      uid: v.uid,
+      name: v.name,
+    })),
+  ).then((v) => {
+    v.data.forEach((url, idx) => {
+      imageList.value[idx].url = url.cover || url.preview
+      Object.assign(imageList.value[idx], {
+        preview: url.preview || url.cover,
+      })
+    })
+  })
+}
+
+function rebuildTipImageList() {
+  imageList.value = tipData.imgs.map((v) => {
+    return {
+      ...v,
+      url: tipImagePlaceholder,
+    }
+  })
+  fillTipImageUrls()
+}
 
 watch(
   () => props.tip,
@@ -47,31 +77,9 @@ watch(
     // 初始化
     try {
       const parseData = JSON.parse(props.tip)
-      tipData.imgs = parseData.imgs
+      tipData.imgs = Array.isArray(parseData.imgs) ? parseData.imgs : []
       tipData.text = parseData.text || ''
-      imageList.value = tipData.imgs.map((v) => {
-        return {
-          ...v,
-          url: 'https://img.cdn.sugarat.top/mdImg/MTY3NzkxMDI1NTU1Nw==20140524124237518.gif',
-        }
-      })
-      if (imageList.value.length) {
-        // 异步填充url
-        PublicApi.getTipImageUrl(
-          props.k,
-          imageList.value.map(v => ({
-            uid: v.uid,
-            name: v.name,
-          })),
-        ).then((v) => {
-          v.data.forEach((url, idx) => {
-            imageList.value[idx].url = url.cover
-            Object.assign(imageList.value[idx], {
-              preview: url.preview,
-            })
-          })
-        })
-      }
+      rebuildTipImageList()
     }
     catch {
       tipData.text = props.tip || ''
@@ -101,21 +109,6 @@ function updateTip(notify = true) {
   updateTaskInfo(props.k, { tip: JSON.stringify(tipData) }, notify)
 }
 
-function fillTipImageUrl(file: UploadUserFile) {
-  PublicApi.getTipImageUrl(props.k, [{
-    uid: file.uid,
-    name: file.name,
-  }]).then((res) => {
-    const url = res.data?.[0]
-    if (!url)
-      return
-    file.url = url.cover || url.preview
-    Object.assign(file, {
-      preview: url.preview || url.cover,
-    })
-  })
-}
-
 const imageViewerVisible = ref(false)
 function handleChangeFile(file: UploadUserFile) {
   if (!props.k) {
@@ -137,7 +130,7 @@ function handleChangeFile(file: UploadUserFile) {
           name,
         })
         updateTip()
-        fillTipImageUrl(file)
+        rebuildTipImageList()
       }
       const markFail = (err?: any) => {
         file.status = 'fail'
