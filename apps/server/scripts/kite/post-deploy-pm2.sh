@@ -19,5 +19,5 @@ export SERVER_PORT
 if pm2 describe "${PM2_NAME}" >/dev/null 2>&1; then
   pm2 restart "${PM2_NAME}" --update-env
 else
-  pm2 start npm --name "${PM2_NAME}" -- run start
+  pm2 start npm --name "${PM2_NAME}" --update-env -- run start
 fi

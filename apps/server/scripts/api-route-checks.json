@@ -48,6 +48,8 @@
   { "name": "people.template-list", "method": "GET", "path": "/api/people/template/000000000000000000000000" },
   { "name": "people.template-import", "method": "PUT", "path": "/api/people/template/000000000000000000000000", "body": { "key": "api-check-source", "type": "add" } },
 
+  { "name": "public.upload-api-prefix", "method": "POST", "path": "/api/public/upload", "multipart": { "file": { "name": "api-check.txt", "content": "api check" } } },
+  { "name": "public.upload-no-prefix", "method": "POST", "path": "/public/upload", "multipart": { "file": { "name": "api-check.txt", "content": "api check" } } },
   { "name": "public.phone-code", "method": "GET", "path": "/api/public/code?phone=13000000000", "sideEffects": true },
   { "name": "public.email-code", "method": "GET", "path": "/api/public/code/email?email=api-check@example.com", "sideEffects": true },
   { "name": "public.report-pv-get", "method": "GET", "path": "/api/public/report/pv?path=/api-check", "sideEffects": true },

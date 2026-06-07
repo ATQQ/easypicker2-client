@@ -152,7 +152,11 @@ function submitUploadPeople() {
       `${import.meta.env.VITE_APP_AXIOS_BASE_URL}public/upload`,
       {
         success: (e: any) => {
-          const { name, type } = e.data
+          const { name, type } = e?.data || {}
+          if (!name) {
+            ElMessage.error(e?.msg || '名单文件上传失败')
+            return
+          }
           PeopleApi.importPeople(props.k, name, type).then((res) => {
             const { success, fail } = res.data
             ElMessage.success(`导入完成:${success}成功,${fail.length}失败`)
@@ -171,6 +175,9 @@ function submitUploadPeople() {
             }
             clearFiles()
           })
+        },
+        error: (e: any) => {
+          ElMessage.error(e?.msg || '名单文件上传失败')
         },
       },
     )

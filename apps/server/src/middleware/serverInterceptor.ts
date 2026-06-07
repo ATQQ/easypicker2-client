@@ -26,6 +26,10 @@ function isLocalUploadPath(pathname: string) {
   return pathname === '/api/file/upload' || pathname === '/file/upload'
 }
 
+function isPublicUploadPath(pathname: string) {
+  return pathname === '/api/public/upload' || pathname === '/public/upload'
+}
+
 if (!existsSync(uploadFileDir)) {
   mkdirSync(uploadFileDir)
 }
@@ -113,7 +117,7 @@ const interceptor: Middleware = async (req, res) => {
 
   // 处理文件上传
   // 单独抽离文件上传API
-  if (req.url === '/public/upload') {
+  if (method === 'POST' && isPublicUploadPath(pathOnly)) {
     const form = formidable({
       multiples: true,
       uploadDir: uploadFileDir,
@@ -123,12 +127,18 @@ const interceptor: Middleware = async (req, res) => {
       form.parse(req, (err, fields, files) => {
         if (err) {
           reject(err)
+          return
+        }
+        const file = Array.isArray(files.file) ? files.file[0] : files.file
+        if (!file) {
+          reject(new Error('missing file'))
+          return
         }
         res.writeHead(200, { 'Content-Type': 'application/json' })
         const data = {
-          name: files.file.newFilename,
-          size: files.file.size,
-          type: files.file.mimetype,
+          name: file.newFilename,
+          size: file.size,
+          type: file.mimetype,
         }
         res.end(JSON.stringify({ code: 0, data, msg: 'ok' }, null, 2))
         resolve('ok')
@@ -138,8 +148,10 @@ const interceptor: Middleware = async (req, res) => {
       await p
     }
     catch (error) {
-      res.end(JSON.stringify({ code: 500, msg: error }))
+      const msg = error instanceof Error ? error.message : String(error)
+      res.end(JSON.stringify({ code: 500, msg }))
     }
+    return
   }
 
   // 添加ip，供 @ReqIp 取用

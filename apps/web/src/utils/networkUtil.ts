@@ -22,6 +22,18 @@ interface UploadFileOptions {
   process?: any
   method?: string
 }
+
+function parseUploadResponse(response: string) {
+  if (!response)
+    return undefined
+  try {
+    return JSON.parse(response)
+  }
+  catch {
+    return undefined
+  }
+}
+
 export function uploadFile(
   file: File,
   url: string,
@@ -40,11 +52,18 @@ export function uploadFile(
     // 上传完成
     xhr.onload = (e) => {
       const target = e?.currentTarget as any
-      if (target.response) {
-        options.success(JSON.parse(target.response))
+      const data = parseUploadResponse(target.response)
+      const success = target.status >= 200
+        && target.status < 300
+        && (data?.code === undefined || data.code === 0)
+      if (!success) {
+        options?.error?.(data || {
+          code: target.status,
+          msg: target.statusText || '上传失败',
+        })
         return
       }
-      options.success()
+      options.success(data)
     }
   }
   if (options?.error) {

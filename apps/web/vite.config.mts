@@ -23,18 +23,8 @@ export default defineConfig({
     //   defaultLocale: 'zh-cn'
     // })
   ],
-  optimizeDeps: {
-    include: ['vue', 'vue-router', 'vuex', 'axios', 'vue-json-viewer'],
-  },
   build: {
     sourcemap: true,
-  },
-  css: {
-    preprocessorOptions: {
-      scss: {
-        silenceDeprecations: ['legacy-js-api'],
-      },
-    },
   },
   server: {
     host: '0.0.0.0',
