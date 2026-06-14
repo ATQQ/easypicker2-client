@@ -10,6 +10,7 @@ import { TaskRepository } from '@/db/taskDb'
 import { TaskInfoRepository } from '@/db/taskInfoDb'
 import { BehaviorService, QiniuService } from '@/service'
 import { localObjectAbsPath } from '@/utils/localFilePath'
+import { deleteObjByKey } from '@/utils/qiniuUtil'
 import { isLocalStorageMode } from '@/utils/storageMode'
 import { getUniqueKey } from '@/utils/stringUtil'
 
@@ -82,14 +83,11 @@ export default class TaskInfoService {
         tipImageKey,
       },
     )
-    if (isLocalStorageMode()) {
-      const abs = localObjectAbsPath(tipImageKey)
-      if (fs.existsSync(abs)) {
-        fs.unlinkSync(abs)
-      }
-      return
+    const abs = localObjectAbsPath(tipImageKey)
+    if (fs.existsSync(abs)) {
+      fs.unlinkSync(abs)
     }
-    this.qiniuService.deleteObjByKey(tipImageKey)
+    deleteObjByKey(tipImageKey, this.ctx.req, { allowInLocalMode: true })
   }
 
   async getTaskInfo(key: string) {

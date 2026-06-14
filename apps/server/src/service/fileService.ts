@@ -50,6 +50,10 @@ type StoredFileLocation
   = | { storage: 'local', relPath: string, size: number }
     | { storage: 'qiniu', key: string, size: number }
 
+type TemplateStoredLocation
+  = | { storage: 'local', relPath: string, size: number, mimeType: string }
+    | { storage: 'qiniu', key: string, size: number, mimeType: string }
+
 const DOWNLOAD_COUNT_REFRESH_INTERVAL_MS = 1000 * 60 * 10
 const DOWNLOAD_COUNT_CACHE_SECONDS = 60 * 60 * 24 * 7
 const USER_OVERVIEW_REFRESH_INTERVAL_MS = 1000 * 60 * 10
@@ -177,6 +181,45 @@ export default class FileService {
       return this.getLocalLocation(file) || await this.getQiniuLocation(file, qiniuOptions)
     }
     return await this.getQiniuLocation(file, qiniuOptions) || this.getLocalLocation(file)
+  }
+
+  private getLocalTemplateLocation(relPath: string): Extract<TemplateStoredLocation, { storage: 'local' }> | null {
+    const abs = localObjectAbsPath(relPath)
+    if (!fs.existsSync(abs)) {
+      return null
+    }
+    return {
+      storage: 'local',
+      relPath,
+      size: fs.statSync(abs).size,
+      mimeType: 'application/octet-stream',
+    }
+  }
+
+  private async getQiniuTemplateLocation(
+    key: string,
+    options: { allowInLocalMode?: boolean } = {},
+  ): Promise<Extract<TemplateStoredLocation, { storage: 'qiniu' }> | null> {
+    const allowInLocalMode = options.allowInLocalMode === true
+    if (!await judgeFileIsExist(key, { allowInLocalMode })) {
+      return null
+    }
+    const [fileInfo] = await batchFileStatus([key], { allowInLocalMode })
+    return {
+      storage: 'qiniu',
+      key,
+      size: fileInfo?.data?.fsize || 0,
+      mimeType: fileInfo?.data?.mimeType || 'application/octet-stream',
+    }
+  }
+
+  private async resolveTemplateLocation(relPath: string): Promise<TemplateStoredLocation | null> {
+    if (isLocalStorageMode()) {
+      return this.getLocalTemplateLocation(relPath)
+        || await this.getQiniuTemplateLocation(relPath, { allowInLocalMode: true })
+    }
+    return await this.getQiniuTemplateLocation(relPath)
+      || this.getLocalTemplateLocation(relPath)
   }
 
   private async deleteStoredObject(file: Files) {
@@ -1085,56 +1128,11 @@ export default class FileService {
       throw publicError.file.notExist
     }
 
-    if (isLocalStorageMode()) {
-      const abs = localObjectAbsPath(k)
-      if (!fs.existsSync(abs)) {
-        this.behaviorService.add('file', '下载本机模板文件不存在', {
-          data: this.ctx.req.query,
-          localRelPath: k,
-        })
-        throw publicError.file.notExist
-      }
-
-      const user = await this.userRepository.findOne({
-        id: task.userId,
-      })
-      const stat = fs.statSync(abs)
-      const expiredTime = getQiniuFileUrlExpiredTime(LocalUserDB.getSiteConfig()?.downloadOneExpired || 1)
-      const result = await addDownloadAction({
-        userId: task.userId,
-        type: ActionType.TemplateDownload,
-        thingId: taskKey,
-      })
-      const link = shortLink(result.insertedId, this.ctx.req)
-      const data: DownloadActionData = {
-        url: link,
-        originUrl: '',
-        storage: 'local',
-        localRelPath: k,
-        status: DownloadStatus.SUCCESS,
-        ids: [],
-        tip: filename,
-        name: filename,
-        size: stat.size,
-        account: user.account,
-        mimeType: 'application/octet-stream',
-        expiredTime: expiredTime * 1000,
-      }
-      await updateAction<DownloadActionData>(
-        { _id: ObjectID(result.insertedId) },
-        { $set: { data } },
-      )
-      void this.expireUserOverviewCache(task.userId)
-      return {
-        link,
-        mimeType: data.mimeType,
-      }
-    }
-
-    const isExist = await judgeFileIsExist(k)
-    if (!isExist) {
+    const location = await this.resolveTemplateLocation(k)
+    if (!location) {
       this.behaviorService.add('file', '下载模板文件 参数错误', {
         data: this.ctx.req.query,
+        localRelPath: k,
       })
       throw publicError.file.notExist
     }
@@ -1143,12 +1141,8 @@ export default class FileService {
       id: task.userId,
     })
 
-    const [fileInfo] = await batchFileStatus([k])
-    const { mimeType, fsize } = fileInfo?.data || {}
-
     // 单个文件链接默认 1 分钟有效期，避免频繁重复下载
     const expiredTime = getQiniuFileUrlExpiredTime(LocalUserDB.getSiteConfig()?.downloadOneExpired || 1)
-    const originUrl = createDownloadUrl(k, expiredTime)
 
     const result = await addDownloadAction({
       userId: task.userId,
@@ -1157,18 +1151,36 @@ export default class FileService {
     })
 
     const link = shortLink(result.insertedId, this.ctx.req)
-    const data: DownloadActionData = {
-      url: link,
-      originUrl,
-      status: DownloadStatus.SUCCESS,
-      ids: [],
-      tip: filename,
-      name: filename,
-      size: fsize,
-      account: user.account,
-      mimeType,
-      expiredTime: expiredTime * 1000,
-    }
+    const data: DownloadActionData = location.storage === 'local'
+      ? {
+          url: link,
+          originUrl: '',
+          storage: 'local',
+          localRelPath: location.relPath,
+          status: DownloadStatus.SUCCESS,
+          ids: [],
+          tip: filename,
+          name: filename,
+          size: location.size,
+          account: user.account,
+          mimeType: location.mimeType,
+          expiredTime: expiredTime * 1000,
+        }
+      : {
+          url: link,
+          originUrl: createDownloadUrl(location.key, expiredTime, {
+            allowInLocalMode: isLocalStorageMode(),
+          }),
+          storage: 'qiniu',
+          status: DownloadStatus.SUCCESS,
+          ids: [],
+          tip: filename,
+          name: filename,
+          size: location.size,
+          account: user.account,
+          mimeType: location.mimeType,
+          expiredTime: expiredTime * 1000,
+        }
 
     await updateAction<DownloadActionData>(
       { _id: ObjectID(result.insertedId) },
@@ -1182,7 +1194,7 @@ export default class FileService {
 
     return {
       link,
-      mimeType,
+      mimeType: data.mimeType,
     }
   }
 

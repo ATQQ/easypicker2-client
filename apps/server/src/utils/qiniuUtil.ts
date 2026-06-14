@@ -123,8 +123,8 @@ export function batchDeleteFiles(keys: string[], req?: FWRequest) {
   })
 }
 
-export function deleteObjByKey(key: string, req?: FWRequest): void {
-  if (isLocalStorageMode()) {
+export function deleteObjByKey(key: string, req?: FWRequest, options: QiniuStorageModeOptions = {}): void {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
     return
   }
   const config = new qiniu.conf.Config()
@@ -425,8 +425,8 @@ interface FileStat {
 /**
  * 批量查询文件状态
  */
-export function batchFileStatus(keys: string[]): Promise<FileStat[]> {
-  if (isLocalStorageMode()) {
+export function batchFileStatus(keys: string[], options: QiniuStorageModeOptions = {}): Promise<FileStat[]> {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
     return Promise.resolve(keys.map(() => ({
       code: 612,
       data: {

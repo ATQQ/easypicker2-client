@@ -1,13 +1,14 @@
 import type { Context } from 'flash-wolves'
+import fs from 'node:fs'
 import process from 'node:process'
 import { Inject, InjectCtx, Provide, Response } from 'flash-wolves'
 import { qiniuConfig } from '@/config'
 import { UserError } from '@/constants/errorMsg'
 import { UserRepository } from '@/db/userDb'
 import { BehaviorService, TokenService } from '@/service'
-import { signLocalFileAccess } from '@/utils/localFilePath'
+import { localObjectAbsPath, signLocalFileAccess } from '@/utils/localFilePath'
 import { sendVerifyCodeMail } from '@/utils/mail'
-import { createDownloadUrl } from '@/utils/qiniuUtil'
+import { createDownloadUrl, judgeFileIsExist } from '@/utils/qiniuUtil'
 import { randomNumStr } from '@/utils/randUtil'
 import { rEmail, rMobilePhone } from '@/utils/regExp'
 import { isEmailCodeLoginSupported } from '@/utils/siteConfig'
@@ -146,23 +147,57 @@ export default class PublicService {
       name: string
     }[],
   ) {
-    if (isLocalStorageMode()) {
-      return data.map((v) => {
-        const relPath = getTipImageKey(key, v.name, v.uid)
+    return await Promise.all(data.map(async (v) => {
+      const relPath = getTipImageKey(key, v.name, v.uid)
+      const storage = await this.resolveTipImageStorage(relPath)
+      if (storage === 'local') {
         return {
           cover: this.getLocalTipImageUrl(relPath, 'cover'),
           preview: this.getLocalTipImageUrl(relPath, 'preview'),
         }
-      })
-    }
-    return data.map(v => ({
-      cover: createDownloadUrl(
-        `easypicker2/tip/${key}/${v.uid}/${v.name}${qiniuConfig.imageCoverStyle}`,
-      ),
-      preview: createDownloadUrl(
-        `easypicker2/tip/${key}/${v.uid}/${v.name}${qiniuConfig.imagePreviewStyle}`,
-      ),
+      }
+      const allowInLocalMode = isLocalStorageMode()
+      return {
+        cover: createDownloadUrl(
+          `${relPath}${qiniuConfig.imageCoverStyle}`,
+          undefined,
+          { allowInLocalMode },
+        ),
+        preview: createDownloadUrl(
+          `${relPath}${qiniuConfig.imagePreviewStyle}`,
+          undefined,
+          { allowInLocalMode },
+        ),
+      }
     }))
+  }
+
+  private hasLocalObject(relPath: string) {
+    try {
+      return fs.existsSync(localObjectAbsPath(relPath))
+    }
+    catch {
+      return false
+    }
+  }
+
+  private async resolveTipImageStorage(relPath: string) {
+    if (isLocalStorageMode()) {
+      if (this.hasLocalObject(relPath)) {
+        return 'local' as const
+      }
+      if (await judgeFileIsExist(relPath, { allowInLocalMode: true })) {
+        return 'qiniu' as const
+      }
+      return 'local' as const
+    }
+    if (await judgeFileIsExist(relPath)) {
+      return 'qiniu' as const
+    }
+    if (this.hasLocalObject(relPath)) {
+      return 'local' as const
+    }
+    return 'qiniu' as const
   }
 
   private getRequestOrigin() {
