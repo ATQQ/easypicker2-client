@@ -47,7 +47,7 @@ ep2 deploy server --pm2-name 你的进程名
 
 ::: -->
 
-## v2.9.0 (2026/05/30) <Badge text="最新版" type="tip"/>
+## v2.9.0 (2026/06/14) <Badge text="最新版" type="tip"/>
 
 ### Feature
 
