@@ -1,10 +1,12 @@
-import { Inject, InjectCtx, Context, Provide } from 'flash-wolves'
+import type { Context } from 'flash-wolves'
+import { Inject, InjectCtx, Provide } from 'flash-wolves'
+import { CategoryError, publicError } from '@/constants/errorMsg'
 import { CategoryRepository } from '@/db/categoryDb'
-import BehaviorService from './behaviorService'
-import { CategoryError } from '@/constants/errorMsg'
 import { Category } from '@/db/entity'
-import { getUniqueKey } from '@/utils/stringUtil'
+import { BOOLEAN } from '@/db/model/public'
 import { TaskRepository } from '@/db/taskDb'
+import { getUniqueKey } from '@/utils/stringUtil'
+import BehaviorService from './behaviorService'
 
 @Provide()
 export default class CategoryService {
@@ -24,7 +26,7 @@ export default class CategoryService {
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
     const categories = await this.categoryRepository.findMany({
       userId,
-      name
+      name,
     })
 
     // 分类已存在
@@ -34,8 +36,8 @@ export default class CategoryService {
         `创建分类失败(已存在) 用户:${logAccount} 名称:${name}`,
         {
           name,
-          account: logAccount
-        }
+          account: logAccount,
+        },
       )
       throw CategoryError.exist
     }
@@ -44,8 +46,8 @@ export default class CategoryService {
       `创建分类成功 用户:${logAccount} 名称:${name}`,
       {
         name,
-        account: logAccount
-      }
+        account: logAccount,
+      },
     )
     const category = new Category()
     category.userId = userId
@@ -57,17 +59,46 @@ export default class CategoryService {
   async getList() {
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
     this.behaviorService.add('category', `获取分类列表 用户:${logAccount}`, {
-      account: logAccount
+      account: logAccount,
     })
 
     const categories = await this.categoryRepository.findMany({
-      userId
+      userId,
     })
-    categories.forEach((v) => {
-      delete v.userId
+    const taskRows = await this.taskRepository.findWithSpecifyColumn(
+      {
+        userId,
+        del: BOOLEAN.FALSE,
+      },
+      ['categoryKey'],
+    )
+    const taskCounts = taskRows.reduce((pre, task) => {
+      const key = task.categoryKey || 'default'
+      pre[key] = (pre[key] || 0) + 1
+      return pre
+    }, {} as Record<string, number>)
+    const mapped = categories.map((v) => {
+      const { userId: _u, submitNavTaskKeys, ...rest } = v
+      let submitNavKeys: string[] = []
+      if (submitNavTaskKeys) {
+        try {
+          const parsed = JSON.parse(submitNavTaskKeys) as unknown
+          if (Array.isArray(parsed))
+            submitNavKeys = parsed.map(String)
+        }
+        catch {
+          /* ignore */
+        }
+      }
+      return {
+        ...rest,
+        submitNavTaskKeys,
+        submitNavKeys,
+      }
     })
     return {
-      categories
+      categories: mapped,
+      taskCounts,
     }
   }
 
@@ -75,20 +106,20 @@ export default class CategoryService {
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
     const c = await this.categoryRepository.findOne({
       userId,
-      k: key
+      k: key,
     })
     if (c) {
       await this.categoryRepository.delete({
-        id: c.id
+        id: c.id,
       })
       // 删掉的分类下的所有任务变为默认分类
       await this.taskRepository.updateSpecifyFields(
         {
-          categoryKey: key
+          categoryKey: key,
         },
         {
-          categoryKey: 'default'
-        }
+          categoryKey: 'default',
+        },
       )
       // 记录日志
       this.behaviorService.add(
@@ -96,9 +127,38 @@ export default class CategoryService {
         `删除指定分类 用户:${logAccount} 名称:${c.name}`,
         {
           account: logAccount,
-          name: c.name
-        }
+          name: c.name,
+        },
       )
     }
+  }
+
+  async updateSubmitNav(categoryKey: string, taskKeys: string[]) {
+    const { id: userId, account: logAccount } = this.ctx.req.userInfo
+    const cat = await this.categoryRepository.findOne({
+      userId,
+      k: categoryKey,
+    })
+    if (!cat) {
+      this.behaviorService.add('category', `更新提交导航 分类不存在 ${categoryKey}`)
+      throw publicError.request.errorParams
+    }
+    const keys = Array.isArray(taskKeys) ? taskKeys.map(String) : []
+    const tasks = await this.taskRepository.findMany({
+      userId,
+      categoryKey,
+      del: BOOLEAN.FALSE,
+    })
+    const allowed = new Set(tasks.map(t => t.k))
+    for (const k of keys) {
+      if (!allowed.has(k))
+        throw publicError.request.errorParams
+    }
+    cat.submitNavTaskKeys = JSON.stringify(keys)
+    await this.categoryRepository.update(cat)
+    this.behaviorService.add(
+      'category',
+      `更新提交导航 用户:${logAccount} 分类:${categoryKey} keys:${keys.length}`,
+    )
   }
 }

@@ -74,6 +74,10 @@ export interface DownloadActionData {
   account?: string
   mimeType?: string
   name?: string
+  /** local 模式直传磁盘 */
+  storage?: 'qiniu' | 'local'
+  /** 相对 upload 根目录的路径，同 OSS key */
+  localRelPath?: string
 }
 
 export type DownloadAction = Action<DownloadActionData>

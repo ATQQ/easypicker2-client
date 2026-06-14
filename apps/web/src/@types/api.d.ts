@@ -3,6 +3,8 @@ type ResponseData<T = any> = Promise<BaseResponse<T>>
 declare namespace FileApiTypes {
   interface UploadToken {
     token: string
+    storageMode?: 'qiniu' | 'local'
+    maxUploadBytes?: number
   }
   interface FileOptions {
     size: number
@@ -10,6 +12,7 @@ declare namespace FileApiTypes {
     taskName: string
     originName: string
     categoryKey?: string
+    storage?: 'qiniu' | 'local'
     name: string
     info: string
     hash: string
@@ -26,6 +29,7 @@ declare namespace FileApiTypes {
     user_id: number
     category_key: string
     origin_name: string
+    storage?: 'qiniu' | 'local'
     date: string
     hash: string
     cover?: string
@@ -68,7 +72,18 @@ declare namespace FileApiTypes {
   type getTemplateUrl = ResponseData<{ link: string }>
   type getOneFileUrl = ResponseData<{ link: string, mimeType: string }>
   type deleteOneFile = ResponseData
-  type batchDownload = ResponseData<{ k: string }>
+  type batchDownload = ResponseData<{
+    k: string
+    url?: string
+    split?: boolean
+    message?: string
+    tasks?: {
+      storage: 'local' | 'qiniu'
+      count: number
+      k: string
+      url?: string
+    }[]
+  }>
   type batchDel = ResponseData
   type checkCompressStatus = ResponseData<{ code: number, key?: string }>
   type getCompressDownUrl = ResponseData<{ url: string }>
@@ -87,6 +102,9 @@ declare namespace UserApiTypes {
     bindPhone: boolean
     phone?: string
     code?: string
+    bindWithEmail?: boolean
+    email?: string
+    emailCode?: string
   }
   type register = ResponseData<{ token?: string }>
   type login = ResponseData<{
@@ -95,7 +113,22 @@ declare namespace UserApiTypes {
     system: boolean
   }>
   type codeLogin = ResponseData<{ token?: string, openTime?: string }>
+  type loginByEmailCode = ResponseData<{ token?: string, openTime?: string }>
   type resetPwd = ResponseData<{ token?: string, openTime?: string }>
+  interface UserProfile {
+    account: string
+    phone: string
+    joinTime: string
+    loginTime: string
+    loginCount: number
+    email: string
+    emailVerified: boolean
+    notifyOnSubmit: boolean
+  }
+  type getProfile = ResponseData<UserProfile>
+  type setProfileNotify = ResponseData<{ ok: boolean }>
+  type bindProfileEmail = ResponseData<{ ok: boolean }>
+  type resetProfilePassword = ResponseData<{ ok: boolean }>
   type checkPower = ResponseData<{
     power: boolean
     name: string
@@ -143,6 +176,8 @@ declare namespace TaskApiTypes {
     tip?: string
     size?: number
     bindField?: string
+    /** 同分类下可在提交页切换的关联任务 */
+    submitNavTasks?: { key: string, name: string }[]
   }
 
   type getList = ResponseData<{ tasks: TaskItem[] }>
@@ -159,6 +194,7 @@ declare namespace TaskApiTypes {
 
 declare namespace PublicApiTypes {
   type getCode = ResponseData
+  type getEmailCode = ResponseData
   type reportPv = ResponseData
   type checkPhone = ResponseData
 }
@@ -187,10 +223,12 @@ declare namespace CateGoryApiTypes {
     id: number
     name: string
     k: string
+    submitNavKeys?: string[]
   }
-  type getList = ResponseData<{ categories: CategoryItem[] }>
+  type getList = ResponseData<{ categories: CategoryItem[], taskCounts: Record<string, number> }>
   type createNew = ResponseData
   type deleteOne = ResponseData
+  type updateSubmitNav = ResponseData
 }
 
 declare namespace OverviewApiTypes {
@@ -262,6 +300,30 @@ declare namespace OverviewApiTypes {
     msg: string
     count: number
   }
+  interface RequestStatusCodeMetric {
+    code: number
+    label: string
+    count: number
+    percent: number
+  }
+  interface RequestBusinessStatusCodeMetric {
+    code: string
+    label: string
+    count: number
+    percent: number
+  }
+  interface RequestStatusLogItem {
+    id: string
+    date: string | number
+    method: string
+    url: string
+    path: string
+    duration: number
+    statusCode: number
+    businessCode?: string | number
+    ip: string
+    userId: number
+  }
   type getRequestMetrics = ResponseData<{
     startTime: number
     endTime: number
@@ -288,6 +350,32 @@ declare namespace OverviewApiTypes {
       top: MonitorTopItem[]
     }
   }>
+  type getRequestStatusMetrics = ResponseData<{
+    startTime: number
+    endTime: number
+    total: number
+    non200Total: number
+    codes: RequestStatusCodeMetric[]
+  }>
+  type getRequestStatusLogs = ResponseData<{
+    logs: RequestStatusLogItem[]
+    sum: number
+    pageIndex: number
+    pageSize: number
+  }>
+  type getRequestBusinessStatusMetrics = ResponseData<{
+    startTime: number
+    endTime: number
+    total: number
+    nonZeroTotal: number
+    codes: RequestBusinessStatusCodeMetric[]
+  }>
+  type getRequestBusinessStatusLogs = ResponseData<{
+    logs: RequestStatusLogItem[]
+    sum: number
+    pageIndex: number
+    pageSize: number
+  }>
   type disabledStatus = ResponseData<{ status: boolean }>
   interface GlobalSiteConfig {
     maxInputLength: number
@@ -299,7 +387,16 @@ declare namespace OverviewApiTypes {
     compressSizeLimit: number
     needBindPhone: boolean
     enableCodeLogin: boolean
+    supportPhoneCode?: boolean
+    enableSmtp?: boolean
+    enableEmailCodeLogin: boolean
+    needBindEmail?: boolean
+    alertEmails?: string
+    emailDailyLimit?: number
     supportCodeLogin?: boolean
+    supportEmailCodeLogin?: boolean
+    storageMode: 'qiniu' | 'local'
+    maxUploadSizeMB: number
     limitSpace: boolean
     limitWallet: boolean
     qiniuOSSPrice: number
@@ -323,6 +420,26 @@ declare namespace OverviewApiTypes {
     filePageSponsorSuffix: string
     filePageSelfHostLinkText: string
     filePageSelfHostLink: string
+    announcementTop?: SiteAnnouncementTopConfig
+    announcementModal?: SiteAnnouncementModalConfig
+  }
+  type SiteAnnouncementTheme = 'info' | 'success' | 'warning' | 'danger'
+  interface SiteAnnouncementTopConfig {
+    enabled: boolean
+    title?: string
+    content: string
+    renderHtml?: boolean
+    theme: SiteAnnouncementTheme
+    closable: boolean
+  }
+  interface SiteAnnouncementModalConfig {
+    enabled: boolean
+    title: string
+    content: string
+    renderHtml?: boolean
+    theme: SiteAnnouncementTheme
+    showTimes: number
+    confirmText?: string
   }
   type getGlobalConfig = ResponseData<GlobalSiteConfig>
 }
@@ -336,6 +453,9 @@ declare namespace SuperUserApiTypes {
     loginTime: string
     openTime: string
     phone: string
+    email: string
+    emailVerified: number
+    notifyOnSubmit: number
     status: number
     // 补充信息
     fileCount: number
@@ -368,6 +488,15 @@ declare namespace SuperUserApiTypes {
   type getUserList = ResponseData<{ list: UserItem[], sumCost: string }>
   type getMessageList = ResponseData<MessageItem[]>
   type updateUserStatus = ResponseData
+  type resetEmail = ResponseData<{ ok: boolean }>
+  type sendMail = ResponseData<{ ok: boolean, error?: string }>
+  type settleBilling = ResponseData<{
+    settledCount: number
+    skippedCount: number
+    totalCost: string
+    oldMoneyStartDay: number
+    newMoneyStartDay: number
+  }>
 }
 
 declare namespace WishApiTypes {
@@ -412,7 +541,7 @@ declare namespace WishApiTypes {
 }
 
 declare namespace ConfigServiceAPITypes {
-  type ServiceType = 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx'
+  type ServiceType = 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx' | 'smtp'
   interface ServiceOverviewItem {
     type: ServiceType
     title: string
@@ -439,6 +568,12 @@ declare namespace ConfigServiceAPITypes {
     data: ServiceConfigItem[]
   }
   type getServiceConfig = ResponseData<ConfigData[]>
+
+  interface StorageInfo {
+    cwd: string
+    uploadDir: string
+  }
+  type getStorageInfo = ResponseData<StorageInfo>
 
   interface MysqlSchemaOverview {
     autoCreateDatabase: boolean
@@ -560,6 +695,29 @@ declare namespace ConfigServiceAPITypes {
     error?: string
   }
   type resetConfigAdminUserPassword = ResponseData<ResetConfigAdminUserPasswordResult>
+
+  type MailTestSceneKey
+    = | 'smtp-basic'
+      | 'verify-code'
+      | 'submit-notify'
+      | 'service-alert'
+      | 'daily-limit'
+  interface MailTestBody {
+    to: string
+    scenes: MailTestSceneKey[]
+  }
+  interface MailTestResultItem {
+    key: MailTestSceneKey
+    label: string
+    ok: boolean
+    error?: string
+  }
+  interface MailTestResult {
+    ok: boolean
+    error?: string
+    results: MailTestResultItem[]
+  }
+  type testMailConfig = ResponseData<MailTestResult>
 }
 
 declare namespace ActionApiTypes {

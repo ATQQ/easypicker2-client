@@ -2,6 +2,7 @@
 import { ElConfigProvider } from 'element-plus'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import FeedbackEntry from './components/FeedbackEntry/index.vue'
+import SiteAnnouncement from './components/SiteAnnouncement/index.vue'
 import { useSiteConfig } from './composables'
 import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/message-box/style/css'
@@ -11,6 +12,7 @@ const { value: siteConfig } = useSiteConfig()
 
 <template>
   <ElConfigProvider size="large" :z-index="1000" :locale="zhCn">
+    <SiteAnnouncement />
     <el-alert v-if="siteConfig.openPraise" center type="error">
       <template #title>
         ☕️ 支持一下作者 👉🏻

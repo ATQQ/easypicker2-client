@@ -88,7 +88,7 @@ const shadowColor = computed(() => {
       <a
         target="_blank"
         rel="noopener"
-        href="https://docs.ep.sugarat.top/author.html"
+        href="https://sugarat.top"
       >粥里有勺糖</a>
     </p>
   </div>

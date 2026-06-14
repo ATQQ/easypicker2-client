@@ -4,6 +4,7 @@ import type { FWRequest } from 'flash-wolves'
 import qiniu from 'qiniu'
 import { qiniuConfig } from '@/config'
 import { addBehavior, addErrorLog } from '@/db/logDb'
+import { isLocalStorageMode } from '@/utils/storageMode'
 import { getKeyInfo } from './stringUtil'
 import LocalUserDB from './user-local-db'
 // [node-sdk文档地址](https://developer.qiniu.com/kodo/1289/nodejs#server-upload)
@@ -39,7 +40,14 @@ export async function refreshQinNiuConfig() {
  * @param key 文件的key
  * @param expiredTime
  */
-export function createDownloadUrl(key: string, expiredTime = getDeadline()): string {
+interface QiniuStorageModeOptions {
+  allowInLocalMode?: boolean
+}
+
+export function createDownloadUrl(key: string, expiredTime = getDeadline(), options: QiniuStorageModeOptions = {}): string {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
+    return ''
+  }
   // 七牛云相关
   const config = new qiniu.conf.Config()
   // 鉴权的内容，请求的时候生成，避免过期
@@ -52,7 +60,10 @@ export function createDownloadUrl(key: string, expiredTime = getDeadline()): str
   return url
 }
 
-export function getUploadToken(): string {
+export function getUploadToken(options: QiniuStorageModeOptions = {}): string {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
+    return ''
+  }
   const putPolicy = new qiniu.rs.PutPolicy({
     scope: bucket,
     // returnBody: '{"key":"$(key)","hash":"$(etag)","fsize":$(fsize),"bucket":"$(bucket)","name":"$(x:name)"}'
@@ -62,6 +73,9 @@ export function getUploadToken(): string {
 }
 
 export function deleteFiles(prefix: string): void {
+  if (isLocalStorageMode()) {
+    return
+  }
   const config = new qiniu.conf.Config()
   const bucketManager = new qiniu.rs.BucketManager(mac, config)
   bucketManager.listPrefix(bucket, {
@@ -75,6 +89,9 @@ export function deleteFiles(prefix: string): void {
 }
 
 export function batchDeleteFiles(keys: string[], req?: FWRequest) {
+  if (isLocalStorageMode()) {
+    return
+  }
   if (!keys.length)
     return
   const config = new qiniu.conf.Config()
@@ -106,7 +123,10 @@ export function batchDeleteFiles(keys: string[], req?: FWRequest) {
   })
 }
 
-export function deleteObjByKey(key: string, req?: FWRequest): void {
+export function deleteObjByKey(key: string, req?: FWRequest, options: QiniuStorageModeOptions = {}): void {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
+    return
+  }
   const config = new qiniu.conf.Config()
   const bucketManager = new qiniu.rs.BucketManager(mac, config)
   bucketManager.delete(bucket, key, (err) => {
@@ -122,7 +142,10 @@ export function deleteObjByKey(key: string, req?: FWRequest): void {
   })
 }
 
-export function judgeFileIsExist(key: string): Promise<boolean> {
+export function judgeFileIsExist(key: string, options: QiniuStorageModeOptions = {}): Promise<boolean> {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
+    return Promise.resolve(false)
+  }
   return new Promise((res) => {
     const config = new qiniu.conf.Config()
     const bucketManager = new qiniu.rs.BucketManager(mac, config)
@@ -158,7 +181,10 @@ function mergeRequest<T extends (...args: unknown[]) => Promise<unknown>>(
 }
 
 // 同 prefix 缓存，避免重复请求
-export const getOSSFiles = mergeRequest((prefix: string): Promise<Qiniu.ItemInfo[]> => {
+export const getOSSFiles = mergeRequest((prefix: string, options: QiniuStorageModeOptions = {}): Promise<Qiniu.ItemInfo[]> => {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
+    return Promise.resolve([])
+  }
   let data = []
   let marker = ''
   const ops: any = {
@@ -188,6 +214,9 @@ export const getOSSFiles = mergeRequest((prefix: string): Promise<Qiniu.ItemInfo
 })
 
 export function getFileKeys(prefix: string): Promise<Qiniu.ItemInfo[]> {
+  if (isLocalStorageMode()) {
+    return Promise.resolve([])
+  }
   return new Promise((res) => {
     const config = new qiniu.conf.Config()
     const bucketManager = new qiniu.rs.BucketManager(mac, config)
@@ -200,6 +229,9 @@ export function getFileKeys(prefix: string): Promise<Qiniu.ItemInfo[]> {
 }
 
 export function makeZipByPrefixWithKeys(prefix: string, zipName: string, keys: string[] = []): Promise<string> {
+  if (isLocalStorageMode()) {
+    return Promise.reject(new Error('local storage mode does not support qiniu archive'))
+  }
   return new Promise((res) => {
     const config = new qiniu.conf.Config()
     const bucketManager = new qiniu.rs.BucketManager(mac, config)
@@ -277,7 +309,10 @@ export function makeZipByPrefixWithKeys(prefix: string, zipName: string, keys: s
   })
 }
 
-export function makeZipWithKeys(keys: string[], zipName: string): Promise<string> {
+export function makeZipWithKeys(keys: string[], zipName: string, options: QiniuStorageModeOptions = {}): Promise<string> {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
+    return Promise.reject(new Error('local storage mode does not support qiniu archive'))
+  }
   return new Promise((res) => {
     const names = []
     const content = keys.map((key) => {
@@ -299,7 +334,7 @@ export function makeZipWithKeys(keys: string[], zipName: string): Promise<string
         base = base.replace(new RegExp(pre, 'g'), post)
       })
       names.push(base)
-      const safeUrl = `/url/${urlsafeBase64Encode(createDownloadUrl(key))}/alias/${urlsafeBase64Encode(base)}`
+      const safeUrl = `/url/${urlsafeBase64Encode(createDownloadUrl(key, undefined, { allowInLocalMode: options.allowInLocalMode }))}/alias/${urlsafeBase64Encode(base)}`
       return safeUrl
     }).join('\n')
     const config = new qiniu.conf.Config({ zone: bucketZone })
@@ -308,7 +343,7 @@ export function makeZipWithKeys(keys: string[], zipName: string): Promise<string
     const inputKey = `${Date.now()}-${~~(Math.random() * 1000)}.txt`
     // 择机删除不然越来越多
     // 上传文本内容触发归档任务
-    formUploader.put(getUploadToken(), inputKey, content, putExtra, (respErr, respBody, respInfo) => {
+    formUploader.put(getUploadToken({ allowInLocalMode: options.allowInLocalMode }), inputKey, content, putExtra, (respErr, respBody, respInfo) => {
       if (respErr) {
         throw respErr
       }
@@ -347,7 +382,13 @@ export function makeZipWithKeys(keys: string[], zipName: string): Promise<string
   })
 }
 
-export function checkFopTaskStatus(persistentId: string): Promise<{ code: number, key?: string, desc?: string, error?: string }> {
+export function checkFopTaskStatus(persistentId: string, options: QiniuStorageModeOptions = {}): Promise<{ code: number, key?: string, desc?: string, error?: string }> {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
+    return Promise.resolve({
+      code: 3,
+      error: 'local storage mode does not support qiniu archive',
+    })
+  }
   const config = new qiniu.conf.Config()
   const operManager = new qiniu.fop.OperationManager(null, config)
   return new Promise((res) => {
@@ -384,10 +425,19 @@ interface FileStat {
 /**
  * 批量查询文件状态
  */
-export function batchFileStatus(keys: string[]): Promise<FileStat[]> {
+export function batchFileStatus(keys: string[], options: QiniuStorageModeOptions = {}): Promise<FileStat[]> {
+  if (isLocalStorageMode() && !options.allowInLocalMode) {
+    return Promise.resolve(keys.map(() => ({
+      code: 612,
+      data: {
+        error: 'local storage mode',
+      },
+    })))
+  }
   return new Promise((resolve, reject) => {
     if (keys.length === 0) {
-      return []
+      resolve([])
+      return
     }
     const statOperations = keys.map(k => qiniu.rs.statOp(bucket, k))
     const config = new qiniu.conf.Config()
@@ -426,6 +476,14 @@ function qiniuSdkErrMessage(err: unknown, body?: { error?: string } | null): str
 
 export function getQiniuStatus() {
   return new Promise<ServiceStatus>((resolve) => {
+    if (isLocalStorageMode()) {
+      resolve({
+        type: 'qiniu',
+        status: false,
+        errMsg: '当前为本机存储模式，未启用七牛云',
+      })
+      return
+    }
     if (!qiniuConfig.bucketDomain.startsWith('http')) {
       resolve({
         type: 'qiniu',
@@ -487,6 +545,9 @@ export function getQiniuStatus() {
 }
 
 export function mvOssFile(oldKey: string, newKey: string, req?: FWRequest) {
+  if (isLocalStorageMode()) {
+    return Promise.resolve(false)
+  }
   const config = new qiniu.conf.Config()
   const bucketManager = new qiniu.rs.BucketManager(mac, config)
   const srcBucket = qiniuConfig.bucketName

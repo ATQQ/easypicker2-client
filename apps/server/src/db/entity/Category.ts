@@ -17,6 +17,11 @@ export class Category {
   })
   k: string
 
-  // @Column('tinyint', { default: 0 })
-  // del: number
+  @Column('varchar', {
+    length: 2048,
+    nullable: true,
+    name: 'submit_nav_task_keys',
+    comment: '提交页可切换任务的 k 列表 JSON 字符串',
+  })
+  submitNavTaskKeys: string | null
 }

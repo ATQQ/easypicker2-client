@@ -1,7 +1,22 @@
 import ajax from '../ajax'
 
-function getList(): TaskApiTypes.getList {
-  return ajax.get('task')
+function getList(options: { recent?: boolean } = {}): TaskApiTypes.getList {
+  return ajax.get('task', {
+    params: {
+      recent: options.recent === false ? 'false' : undefined,
+    },
+  })
+}
+
+function getByCategory(
+  categoryKey: string,
+  options: { recent?: boolean } = {},
+): TaskApiTypes.getList {
+  return ajax.get(`task/category/${categoryKey}`, {
+    params: {
+      recent: options.recent === false ? 'false' : undefined,
+    },
+  })
 }
 
 function create(name: string, category: string): TaskApiTypes.create {
@@ -56,6 +71,7 @@ function delTipImage(key: string, uid: number, name: string) {
 
 export default {
   getList,
+  getByCategory,
   create,
   deleteOne,
   updateBaseInfo,

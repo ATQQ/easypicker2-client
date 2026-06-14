@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import type { FormInstance, UploadInstance, UploadUserFile } from 'element-plus'
+import type { UploadUserFile } from 'element-plus'
 import HomeFooter from '@components/HomeFooter/index.vue'
 import LinkDialog from '@components/linkDialog.vue'
-import { UploadFilled } from '@element-plus/icons-vue'
+import { QuestionFilled, UploadFilled } from '@element-plus/icons-vue'
 import { useLocalStorage } from '@vueuse/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
@@ -10,7 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { FileApi, PeopleApi, PublicApi, TaskApi } from '@/apis'
 import InfosForm from '@/components/InfosForm/index.vue'
 import { useIsMobile } from '@/composables'
-import { downLoadByUrl, qiniuUpload } from '@/utils/networkUtil'
+import { downLoadByUrl, localTaskFileUpload, qiniuUpload } from '@/utils/networkUtil'
 import {
   formatDate,
   formatSize,
@@ -26,6 +26,7 @@ const isMobile = useIsMobile()
 // 顶部导航
 const $router = useRouter()
 const $route = useRoute()
+const k = ref('')
 const pcNavs = reactive([
   {
     title: '我也要收集',
@@ -43,15 +44,19 @@ function handleNav(idx: number) {
 }
 
 // 任务基本信息展示
-const taskInfo = reactive<TaskApiTypes.TaskInfo>({
+const taskInfo = reactive({
   name: '',
   category: '',
-})
-const taskMoreInfo = reactive<Partial<TaskApiTypes.TaskInfo>>({
+} as TaskApiTypes.TaskInfo)
+const taskMoreInfo = reactive({
   bindField: '',
-})
+} as Partial<TaskApiTypes.TaskInfo>)
 const formatData = computed(() => parseFileFormat(taskMoreInfo.format))
-const k = ref('')
+interface SubmitNavTaskRow {
+  key: string
+  name: string
+}
+const submitNavTasks = ref([] as SubmitNavTaskRow[])
 
 // 用于展示截止日期
 const waitTime = ref(0)
@@ -89,15 +94,14 @@ const ddlStr = computed(() => {
 })
 
 // 必填信息
-const infos = reactive<InfoItem[]>([])
+const infos = reactive([] as InfoItem[])
 
 // 文件上传部分
 
 // 文件上传
-const fileList = ref<(UploadUserFile & { md5: string, subscription: any })[]>(
-  [],
-)
-const fileUpload = ref<UploadInstance>()
+type FileUploadRow = UploadUserFile & { md5: string, subscription: any }
+const fileList = ref([] as FileUploadRow[])
+const fileUpload = ref()
 const disableForm = computed(
   () => fileList.value.filter(item => item.status === 'uploading').length > 0,
 )
@@ -159,7 +163,7 @@ function validatePeopleName(rule: any, value: any, callback: any) {
   })
 }
 
-const validModalRef = ref<FormInstance>()
+const validModalRef = ref()
 const validModalRules = reactive({
   peopleName: [{ validator: validatePeopleName, trigger: 'blur' }],
 })
@@ -175,7 +179,155 @@ function confirmPeopleName() {
   return validModalRef.value.validate((isValid: boolean) => isValid)
 }
 
-function startUpload() {
+type TaskActionLogType = 'submit' | 'query' | 'withdraw'
+interface TaskActionLogInfo {
+  text: string
+  value: string
+}
+interface TaskActionLogItem {
+  id: string
+  taskKey: string
+  taskName: string
+  action: TaskActionLogType
+  createdAt: number
+  peopleName: string
+  infos: TaskActionLogInfo[]
+  fileName?: string
+  originName?: string
+  fileSize?: number
+  storage?: 'qiniu' | 'local'
+  isSubmit?: boolean
+}
+
+const TASK_ACTION_LOG_STORAGE_KEY = 'ep-task-action-logs-v1'
+const MAX_TASK_ACTION_LOGS = 200
+const showActionLogDrawer = ref(false)
+
+function loadTaskActionLogs(): TaskActionLogItem[] {
+  try {
+    const raw = localStorage.getItem(TASK_ACTION_LOG_STORAGE_KEY)
+    const logs = raw ? JSON.parse(raw) : []
+    return Array.isArray(logs) ? logs : []
+  }
+  catch {
+    return []
+  }
+}
+
+const taskActionLogs = ref<TaskActionLogItem[]>(loadTaskActionLogs())
+const currentTaskActionLogs = computed(() =>
+  taskActionLogs.value.filter(item => item.taskKey === k.value),
+)
+const recentTaskActionLogs = computed(() => currentTaskActionLogs.value.slice(0, 3))
+
+function persistTaskActionLogs(logs: TaskActionLogItem[]) {
+  localStorage.setItem(
+    TASK_ACTION_LOG_STORAGE_KEY,
+    JSON.stringify(logs.slice(0, MAX_TASK_ACTION_LOGS)),
+  )
+}
+
+function getCurrentInfoSnapshot(): TaskActionLogInfo[] {
+  return infos
+    .filter(item => item.type !== 'text')
+    .map(item => ({
+      text: item.text,
+      value: `${item.value || ''}`,
+    }))
+    .filter(item => item.text || item.value)
+}
+
+function addTaskActionLog(log: Omit<TaskActionLogItem, 'id' | 'taskKey' | 'taskName' | 'createdAt' | 'peopleName' | 'infos'>) {
+  const next = [
+    {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      taskKey: k.value,
+      taskName: taskInfo.name,
+      createdAt: Date.now(),
+      peopleName: validModal.peopleName,
+      infos: getCurrentInfoSnapshot(),
+      ...log,
+    },
+    ...taskActionLogs.value,
+  ].slice(0, MAX_TASK_ACTION_LOGS)
+  taskActionLogs.value = next
+  persistTaskActionLogs(next)
+}
+
+function recordSubmitSuccess(options: {
+  fileName: string
+  originName: string
+  fileSize?: number
+  storage?: 'qiniu' | 'local'
+}) {
+  addTaskActionLog({
+    action: 'submit',
+    ...options,
+  })
+}
+
+function getActionLogTagType(log: TaskActionLogItem) {
+  if (log.action === 'submit')
+    return 'success'
+  if (log.action === 'withdraw')
+    return 'warning'
+  return log.isSubmit ? 'success' : 'info'
+}
+
+function getActionLogText(log: TaskActionLogItem) {
+  if (log.action === 'submit')
+    return '提交'
+  if (log.action === 'withdraw')
+    return '撤回'
+  return log.isSubmit ? '查询：已提交' : '查询：未提交'
+}
+
+function getActionLogTitle(log: TaskActionLogItem) {
+  if (log.action === 'submit')
+    return log.fileName ? `提交了 ${log.fileName}` : '提交了文件'
+  if (log.action === 'withdraw')
+    return log.fileName ? `撤回了 ${log.fileName}` : '撤回了文件'
+  return log.isSubmit ? '查询到已有提交记录' : '查询到暂无提交记录'
+}
+
+function getActionLogMeta(log: TaskActionLogItem) {
+  const parts = []
+  if (log.peopleName)
+    parts.push(`${limitBindField.value}: ${log.peopleName}`)
+  if (log.fileSize)
+    parts.push(formatSize(log.fileSize))
+  if (log.storage)
+    parts.push(log.storage === 'local' ? '本机存储' : '七牛云存储')
+  return parts.join(' · ')
+}
+
+function getActionLogInfoText(log: TaskActionLogItem) {
+  return log.infos
+    .filter(item => item.value)
+    .map(item => `${item.text}: ${item.value}`)
+    .join(' / ')
+}
+
+function clearCurrentTaskActionLogs() {
+  ElMessageBox.confirm(
+    '只会清除当前浏览器里这个任务的本机记录，不会影响服务器上的提交数据。',
+    '清空本机记录',
+    {
+      type: 'warning',
+      confirmButtonText: '清空',
+      cancelButtonText: '取消',
+    },
+  )
+    .then(() => {
+      const next = taskActionLogs.value.filter(item => item.taskKey !== k.value)
+      taskActionLogs.value = next
+      persistTaskActionLogs(next)
+      ElMessage.success('本机记录已清空')
+    })
+    .catch(() => undefined)
+}
+
+async function startUpload() {
   const uploadFiles = fileList.value
   for (const file of uploadFiles) {
     if (!file.md5) {
@@ -186,54 +338,134 @@ function startUpload() {
         ElMessage.info('文件越大计算时间越长(1G通常需要20s)')
       }, 100)
     }
-    else if (file.status === 'ready') {
-      // 开始上传
-      file.status = 'uploading'
-      let { name } = file
-      const originName = name
-      // 如果开启了自动重命名,这里重命名一下
-      if (taskMoreInfo.rewrite) {
-        name
-          = infos.map(v => v.value).join(formatData.value.splitChar || '-')
-            + getFileSuffix(name)
-      }
-      // 替换不合法的字符
-      name = normalizeFileName(name)
-      const key = `easypicker2/${k.value}/${file.md5}/${name}`
+  }
 
-      FileApi.getUploadToken().then((res) => {
-        qiniuUpload(res.data.token, file.raw, key, {
-          success(data: any) {
-            const { fsize } = data
-            FileApi.addFile({
+  let uploadTokenRes: FileApiTypes.UploadToken
+  try {
+    const tr = await FileApi.getUploadToken()
+    uploadTokenRes = tr.data
+  }
+  catch {
+    return
+  }
+
+  for (const file of uploadFiles) {
+    if (!file.md5 || file.status !== 'ready') {
+      continue
+    }
+    file.status = 'uploading'
+    let { name } = file
+    const originName = name
+    if (taskMoreInfo.rewrite) {
+      name
+        = infos.map(v => v.value).join(formatData.value.splitChar || '-')
+          + getFileSuffix(name)
+    }
+    name = normalizeFileName(name)
+    const objectKey = `easypicker2/${k.value}/${file.md5}/${name}`
+
+    if (uploadTokenRes.storageMode === 'local') {
+      const maxB = uploadTokenRes.maxUploadBytes
+      if (maxB && file.raw && file.raw.size > maxB) {
+        ElMessage.error(
+          `「${file.name}」超过单文件上限 ${formatSize(maxB)}`,
+        )
+        file.status = 'fail'
+        continue
+      }
+      if (!file.raw) {
+        file.status = 'fail'
+        continue
+      }
+      localTaskFileUpload(file.raw, {
+        taskKey: k.value,
+        hash: file.md5,
+        name,
+      }, {
+        success(data: { fsize?: number }) {
+          const fsize = data?.fsize ?? 0
+          FileApi.addFile({
+            originName,
+            name,
+            taskKey: k.value,
+            taskName: taskInfo.name,
+            size: fsize,
+            hash: file.md5,
+            storage: uploadTokenRes.storageMode,
+            info: JSON.stringify(infos),
+            people: validModal.peopleName,
+          }).then(() => {
+            file.status = 'success'
+            ElMessage.success(`文件:${file.name}提交成功`)
+            recordSubmitSuccess({
+              fileName: name,
               originName,
-              name,
-              taskKey: k.value,
-              taskName: taskInfo.name,
-              size: fsize,
-              hash: file.md5,
-              info: JSON.stringify(infos),
-              people: validModal.peopleName,
-            }).then(() => {
-              file.status = 'success'
-              ElMessage.success(`文件:${file.name}提交成功`)
-              if (taskMoreInfo.people) {
-                // 无感知更新一下
-                PeopleApi.updatePeopleStatus(
-                  k.value,
-                  name,
-                  validModal.peopleName,
-                  file.md5,
-                )
-              }
+              fileSize: fsize,
+              storage: uploadTokenRes.storageMode,
             })
-          },
-          process(per: number, data: any, subscription: any) {
-            file.percentage = Math.floor(per)
-            // 挂载取消上传的方法
-            file.subscription = subscription
-          },
-        })
+            if (taskMoreInfo.people) {
+              PeopleApi.updatePeopleStatus(
+                k.value,
+                name,
+                validModal.peopleName,
+                file.md5,
+              )
+            }
+          }).catch(() => {
+            file.status = 'fail'
+          })
+        },
+        error(_err, subscription) {
+          file.status = 'fail'
+          void subscription
+        },
+        process(per: number, _data: any, subscription: any) {
+          file.percentage = Math.floor(Number(per))
+          file.subscription = subscription
+        },
+      })
+    }
+    else {
+      qiniuUpload(uploadTokenRes.token, file.raw!, objectKey, {
+        success(data: any) {
+          const { fsize } = data
+          FileApi.addFile({
+            originName,
+            name,
+            taskKey: k.value,
+            taskName: taskInfo.name,
+            size: fsize,
+            hash: file.md5,
+            storage: uploadTokenRes.storageMode,
+            info: JSON.stringify(infos),
+            people: validModal.peopleName,
+          }).then(() => {
+            file.status = 'success'
+            ElMessage.success(`文件:${file.name}提交成功`)
+            recordSubmitSuccess({
+              fileName: name,
+              originName,
+              fileSize: fsize,
+              storage: uploadTokenRes.storageMode,
+            })
+            if (taskMoreInfo.people) {
+              PeopleApi.updatePeopleStatus(
+                k.value,
+                name,
+                validModal.peopleName,
+                file.md5,
+              )
+            }
+          })
+        },
+        process(per: number, data: any, subscription: any) {
+          file.percentage = Math.floor(per)
+          file.subscription = subscription
+        },
+        error(_err: any, subscription: any) {
+          file.status = 'fail'
+          void subscription
+        },
       })
     }
   }
@@ -346,6 +578,12 @@ function runWithdraw() {
       })
         .then(() => {
           ElMessage.success(`文件:${file.name}撤回成功`)
+          addTaskActionLog({
+            action: 'withdraw',
+            fileName: name,
+            originName: file.name,
+            fileSize: file.size,
+          })
           file.name += ' - (已撤回 ✅ )'
           file.status = 'fail'
         })
@@ -401,6 +639,10 @@ async function checkSubmitStatus() {
   }
   FileApi.checkSubmitStatus(k.value, infos, validModal.peopleName).then(
     (res) => {
+      addTaskActionLog({
+        action: 'query',
+        isSubmit: res.data.isSubmit,
+      })
       if (res.data.isSubmit) {
         ElMessage.success('已经提交过啦')
       }
@@ -412,6 +654,31 @@ async function checkSubmitStatus() {
 }
 const isLoadingData = ref(false)
 const readyRefresh = ref(false)
+// 禁用上传
+const disabledUpload = useLocalStorage('disabledUpload', false)
+function refreshTaskInfo(showLimitAlert = true) {
+  if (!k.value)
+    return Promise.resolve()
+
+  return TaskApi.getTaskInfo(k.value)
+    .then((res) => {
+      Object.assign(taskInfo, res.data)
+      submitNavTasks.value = res.data.submitNavTasks ?? []
+      disabledUpload.value = !!res.data.limitUpload
+      if (showLimitAlert && disabledUpload.value) {
+        ElMessageBox.alert(
+          '任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间',
+        )
+      }
+    })
+    .catch((err) => {
+      if (err.code === 4001) {
+        ElMessage.error('任务不存在')
+        k.value = ''
+        taskInfo.name = '任务不存在'
+      }
+    })
+}
 function isEqualInfos(a: InfoItem[] = [], b: InfoItem[] = []) {
   if (a.length !== b.length) {
     return false
@@ -443,6 +710,7 @@ function handleBlur() {
 function handleFocus() {
   if (readyRefresh.value && !disableForm.value) {
     readyRefresh.value = false
+    refreshTaskInfo(false)
     refreshTaskMoreInfo(true)
   }
 }
@@ -455,85 +723,81 @@ const timeInfo = computed(() => {
   return ddlStr.value
 })
 
-// tipImage
-const tipData = reactive<{
+// tip
+interface TipImg {
+  uid: number
+  name: string
+}
+interface TipDataShape {
   text: string
-  imgs: {
-    uid: number
-    name: string
-  }[]
-}>({
+  imgs: TipImg[]
+}
+const tipData = reactive({
   text: '',
   imgs: [],
-})
-const imageList = ref<
-  { name: string, uid: number, preview?: string, url: string }[]
->([])
+} as TipDataShape)
+interface TaskPreviewImage {
+  name: string
+  uid: number
+  preview?: string
+  url: string
+}
+const imageList = ref([] as TaskPreviewImage[])
+
+function syncTipFromMoreInfo() {
+  const raw = taskMoreInfo.tip
+  if (!raw) {
+    tipData.text = ''
+    tipData.imgs = []
+    imageList.value = []
+    return
+  }
+  let parsed: { imgs?: TipImg[], text?: string }
+  try {
+    parsed = JSON.parse(raw)
+  }
+  catch {
+    tipData.text = ''
+    tipData.imgs = []
+    imageList.value = []
+    return
+  }
+  tipData.imgs = parsed.imgs ?? []
+  tipData.text = parsed.text || ''
+  imageList.value = tipData.imgs.map((v) => {
+    return {
+      ...v,
+      url: 'https://img.cdn.sugarat.top/mdImg/MTY3NzkxMDI1NTU1Nw==20140524124237518.gif',
+    }
+  })
+  if (!imageList.value.length)
+    return
+  PublicApi.getTipImageUrl(
+    k.value,
+    imageList.value.map(v => ({
+      uid: v.uid,
+      name: v.name,
+    })),
+  ).then((v) => {
+    v.data.forEach((url, idx) => {
+      imageList.value[idx].url = url.cover
+      Object.assign(imageList.value[idx], {
+        preview: url.preview,
+      })
+    })
+  })
+}
 
 watch(
   () => taskMoreInfo.tip,
-  () => {
-    // 初始化
-    try {
-      const parseData = JSON.parse(taskMoreInfo.tip)
-      tipData.imgs = parseData.imgs
-      tipData.text = parseData.text || ''
-      imageList.value = tipData.imgs.map((v) => {
-        return {
-          ...v,
-          url: 'https://img.cdn.sugarat.top/mdImg/MTY3NzkxMDI1NTU1Nw==20140524124237518.gif',
-        }
-      })
-      if (imageList.value.length) {
-        // 异步填充url
-        PublicApi.getTipImageUrl(
-          k.value,
-          imageList.value.map(v => ({
-            uid: v.uid,
-            name: v.name,
-          })),
-        ).then((v) => {
-          v.data.forEach((url, idx) => {
-            imageList.value[idx].url = url.cover
-            Object.assign(imageList.value[idx], {
-              preview: url.preview,
-            })
-          })
-        })
-      }
-    }
-    catch {
-      tipData.text = ''
-      tipData.imgs = []
-      imageList.value = []
-    }
-  },
+  () => syncTipFromMoreInfo(),
 )
-
-// 禁用上传
-const disabledUpload = useLocalStorage('disabledUpload', false)
 
 onMounted(() => {
   k.value = $route.params.key as string
   if (k.value) {
     isLoadingData.value = true
-    TaskApi.getTaskInfo(k.value)
-      .then((res) => {
-        Object.assign(taskInfo, res.data)
-        disabledUpload.value = !!res.data.limitUpload
-        if (disabledUpload.value) {
-          ElMessageBox.alert(
-            '任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间',
-          )
-        }
-      })
-      .catch((err) => {
-        if (err.code === 4001) {
-          ElMessage.error('任务不存在')
-          k.value = ''
-          taskInfo.name = '任务不存在'
-        }
-      })
+    refreshTaskInfo()
     refreshTaskMoreInfo()
     refreshWaitTime()
   }
@@ -550,6 +814,21 @@ onUnmounted(() => {
   // 页面展示
   window.removeEventListener('focus', handleFocus)
 })
+
+watch(
+  () => $route.params.key,
+  (newKey) => {
+    const key = typeof newKey === 'string' ? newKey : ''
+    if (!key || key === k.value)
+      return
+    k.value = key
+    fileList.value = []
+    isLoadingData.value = true
+    refreshTaskInfo()
+    refreshTaskMoreInfo()
+    refreshWaitTime()
+  },
+)
 </script>
 
 <template>
@@ -589,6 +868,26 @@ onUnmounted(() => {
       <h1 class="name">
         {{ taskInfo.name }}
       </h1>
+      <div
+        v-if="submitNavTasks.length > 1"
+        class="task-nav-switch"
+        style="max-width: 400px; margin: 12px auto"
+      >
+        <span style="margin-right: 8px">切换任务</span>
+        <el-select
+          :model-value="k"
+          filterable
+          style="width: 260px"
+          @update:model-value="(key) => $router.replace({ name: 'task', params: { key } })"
+        >
+          <el-option
+            v-for="t in submitNavTasks"
+            :key="t.key"
+            :label="t.name"
+            :value="t.key"
+          />
+        </el-select>
+      </div>
       <h2 v-if="disabledUpload" style="color: red">
         任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间
       </h2>
@@ -792,6 +1091,46 @@ onUnmounted(() => {
           </el-button>
         </div>
       </div>
+      <section v-if="currentTaskActionLogs.length" class="local-log-section">
+        <div class="local-log-section-head">
+          <div class="local-log-section-title">
+            <strong>最近操作记录</strong>
+            <el-tooltip
+              effect="dark"
+              placement="top"
+              content="记录只保存在当前浏览器 localStorage，用来提示你在这台设备上的提交、查询和撤回操作；换设备、换浏览器或清理数据后不会同步。"
+            >
+              <el-icon class="local-log-help">
+                <QuestionFilled />
+              </el-icon>
+            </el-tooltip>
+          </div>
+          <el-button
+            v-if="currentTaskActionLogs.length"
+            size="small"
+            text
+            @click="showActionLogDrawer = true"
+          >
+            更多
+          </el-button>
+        </div>
+
+        <div class="local-log-compact-list">
+          <article
+            v-for="log in recentTaskActionLogs"
+            :key="log.id"
+            class="local-log-compact-item"
+          >
+            <div class="local-log-compact-main">
+              <el-tag size="small" :type="getActionLogTagType(log)" effect="plain">
+                {{ getActionLogText(log) }}
+              </el-tag>
+              <span class="local-log-compact-title">{{ getActionLogTitle(log) }}</span>
+            </div>
+            <time>{{ formatDate(log.createdAt, 'MM-dd hh:mm') }}</time>
+          </article>
+        </div>
+      </section>
     </div>
     <!-- 无效任务 -->
     <div v-else class="panel tc">
@@ -804,6 +1143,48 @@ onUnmounted(() => {
       title="示例文件下载链接"
       :link="templateLink"
     />
+    <el-dialog
+      v-model="showActionLogDrawer"
+      title="本机操作记录"
+      :fullscreen="isMobile"
+      width="420px"
+    >
+      <div class="local-log-drawer">
+        <div class="local-log-hint">
+          记录仅存在当前浏览器本地，用来帮助你回想自己是否在这台设备上提交、查询或撤回过；它不会同步到其它设备，也不代表服务器最终数据。
+        </div>
+        <el-empty
+          v-if="!currentTaskActionLogs.length"
+          description="暂无本机操作记录"
+        />
+        <div v-else class="local-log-list">
+          <article
+            v-for="log in currentTaskActionLogs"
+            :key="log.id"
+            class="local-log-item"
+          >
+            <div class="local-log-item-head">
+              <el-tag size="small" :type="getActionLogTagType(log)">
+                {{ getActionLogText(log) }}
+              </el-tag>
+              <span>{{ formatDate(log.createdAt) }}</span>
+            </div>
+            <h4>{{ getActionLogTitle(log) }}</h4>
+            <p v-if="getActionLogMeta(log)">
+              {{ getActionLogMeta(log) }}
+            </p>
+            <p v-if="getActionLogInfoText(log)">
+              {{ getActionLogInfoText(log) }}
+            </p>
+          </article>
+        </div>
+        <div v-if="currentTaskActionLogs.length" class="local-log-footer">
+          <el-button type="danger" plain @click="clearCurrentTaskActionLogs">
+            清空当前任务记录
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
     <div style="padding-top: 20px">
       <HomeFooter type="task" />
     </div>
@@ -925,6 +1306,145 @@ onUnmounted(() => {
   text-align: right;
 }
 
+.local-log-section {
+  max-width: 520px;
+  margin: 18px auto 0;
+  padding: 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+}
+
+.local-log-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.local-log-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  strong {
+    color: #303133;
+    font-size: 14px;
+  }
+}
+
+.local-log-help {
+  color: #909399;
+  cursor: help;
+  font-size: 16px;
+}
+
+.local-log-compact-list {
+  display: grid;
+  gap: 6px;
+}
+
+.local-log-compact-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+  padding: 6px 0;
+  border-top: 1px solid #f2f3f5;
+
+  &:first-child {
+    border-top: 0;
+  }
+
+  time {
+    flex-shrink: 0;
+    color: #a8abb2;
+    font-size: 12px;
+  }
+}
+
+.local-log-compact-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+
+.local-log-compact-title {
+  overflow: hidden;
+  color: #606266;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.local-log-drawer {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.local-log-hint {
+  padding: 10px 12px;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #606266;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.local-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.local-log-item {
+  padding: 12px 14px;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(31 41 55 / 4%);
+
+  h4 {
+    margin: 8px 0 6px;
+    color: #303133;
+    font-size: 15px;
+    line-height: 1.4;
+    word-break: break-all;
+  }
+
+  p {
+    margin: 4px 0 0;
+    color: #606266;
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+}
+
+.local-log-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+
+  span {
+    color: #909399;
+    font-size: 12px;
+  }
+}
+
+.local-log-footer {
+  margin-top: auto;
+  padding-top: 16px;
+}
+
 .tip-wrapper {
   line-height: 20px;
   text-align: left;
@@ -935,5 +1455,49 @@ onUnmounted(() => {
   color: #e6a23c;
   max-width: 320px;
   font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .pc-nav {
+    .nav {
+      width: 100%;
+      justify-content: space-between;
+      gap: 8px;
+
+      nav {
+        flex-shrink: 0;
+      }
+    }
+
+    .logo {
+      width: 150px;
+      margin: 0;
+
+      img {
+        max-width: 150px;
+        object-fit: contain;
+      }
+    }
+  }
+
+  .panel {
+    margin: 8px;
+    padding: 12px;
+  }
+
+  .local-log-section {
+    max-width: none;
+    padding: 10px;
+  }
+
+  .local-log-compact-item {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .local-log-compact-title {
+    white-space: normal;
+  }
 }
 </style>

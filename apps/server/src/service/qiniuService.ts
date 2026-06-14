@@ -1,12 +1,13 @@
 /* eslint-disable node/handle-callback-err */
 import type { Context } from 'flash-wolves'
+import type { File } from '@/db/model/file'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import qiniu from 'qiniu'
-import BehaviorService from './behaviorService'
-import { getTipImageKey } from '@/utils/stringUtil'
 import { qiniuConfig } from '@/config'
-import type { File } from '@/db/model/file'
 import SuperService from '@/service/super'
+import { isLocalStorageMode } from '@/utils/storageMode'
+import { getTipImageKey } from '@/utils/stringUtil'
+import BehaviorService from './behaviorService'
 
 @Provide()
 export default class QiniuService {
@@ -30,6 +31,9 @@ export default class QiniuService {
   }
 
   deleteObjByKey(key: string) {
+    if (isLocalStorageMode()) {
+      return
+    }
     const config = new qiniu.conf.Config()
     const bucketManager = new qiniu.rs.BucketManager(this.mac, config)
 
@@ -54,6 +58,9 @@ export default class QiniuService {
   }
 
   deleteFiles(prefix: string): void {
+    if (isLocalStorageMode()) {
+      return
+    }
     const config = new qiniu.conf.Config()
     const bucketManager = new qiniu.rs.BucketManager(this.mac, config)
     bucketManager.listPrefix(
@@ -71,6 +78,9 @@ export default class QiniuService {
   }
 
   batchDeleteFiles(keys: string[]) {
+    if (isLocalStorageMode()) {
+      return
+    }
     if (!keys.length)
       return
     const { bucket, mac } = this
@@ -110,6 +120,25 @@ export default class QiniuService {
 
   async getFilesMap(files: File[]) {
     const filesMap = new Map<string, Qiniu.ItemInfo>()
+    if (isLocalStorageMode()) {
+      files.forEach((file) => {
+        const taskKey = file.task_key || file.taskKey
+        if (!taskKey || !file.hash || !file.name)
+          return
+        const key = `easypicker2/${taskKey}/${file.hash}/${file.name}`
+        filesMap.set(key, {
+          key,
+          hash: file.hash,
+          fsize: +file.size || 0,
+          mimeType: '',
+          putTime: file.date ? new Date(file.date).getTime() * 10000 : 0,
+          type: 0,
+          status: 0,
+          md5: '',
+        })
+      })
+      return filesMap
+    }
     const startTime = Date.now()
     const ossFiles = await SuperService.getOssFiles()
 

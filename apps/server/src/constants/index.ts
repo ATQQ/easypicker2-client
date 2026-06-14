@@ -11,6 +11,8 @@ export function codeMsg(code: number, msg: string): CodeMsg {
 
 export const uploadFileDir = `${process.cwd()}/upload`
 
+export const VERIFY_CODE_EXPIRE_SECONDS = 120
+
 export const UserConfigLabels = {
   tx: {
     secretId: 'SecretId',
@@ -50,6 +52,15 @@ export const UserConfigLabels = {
     port: '端口号',
     password: '密码',
     auth: '是否需要鉴权',
+  },
+  smtp: {
+    host: 'SMTP 主机',
+    port: '端口（465/587）',
+    secure: '是否 SSL（465 一般为 true；587 可 false）',
+    user: '发信账号',
+    pass: '密码/授权码',
+    fromAddress: '发件人邮箱',
+    fromName: '发件人显示名',
   },
 }
 

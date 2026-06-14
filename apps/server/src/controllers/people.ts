@@ -1,27 +1,21 @@
+import type {
+  Context,
+} from 'flash-wolves'
 import {
-  RouterController,
+  Get,
+  Inject,
+  InjectCtx,
   Post,
+  Put,
   ReqBody,
   ReqParams,
-  FWRequest,
-  Get,
-  Put,
-  InjectCtx,
-  Context,
-  Inject
+  RouterController,
 } from 'flash-wolves'
-import { selectTasks } from '@/db/taskDb'
-import { deletePeople, insertPeople, selectPeople } from '@/db/peopleDb'
-import { addBehavior, addErrorLog } from '@/db/logDb'
-import { getUserInfo } from '@/utils/userUtil'
-import { selectTaskInfo } from '@/db/taskInfoDb'
-import { ReqUserInfo } from '@/decorator'
-import type { User } from '@/db/model/user'
 import { BehaviorService, PeopleService } from '@/service'
 import { wrapperCatchError } from '@/utils/context'
 
 const power = {
-  needLogin: true
+  needLogin: true,
 }
 
 @RouterController('people')
@@ -39,11 +33,13 @@ export default class PeopleController {
   async addPeople(
     // TODO:需要装饰器支持校验参数
     @ReqParams('key') key: string,
-    @ReqBody('name') name: string
+    @ReqBody('name') name: string | string[],
+    @ReqBody('names') names?: string[],
   ) {
     try {
-      await this.peopleService.addPeople(key, name)
-    } catch (error) {
+      return await this.peopleService.addPeople(key, names || name)
+    }
+    catch (error) {
       return wrapperCatchError(error)
     }
   }
@@ -54,11 +50,11 @@ export default class PeopleController {
   @Post('/check/:key')
   async checkPeopleIsExist(
     @ReqBody('name') name: string,
-    @ReqParams('key') key: string
+    @ReqParams('key') key: string,
   ) {
     const exist = await this.peopleService.checkPeopleIsExist(key, name)
     return {
-      exist
+      exist,
     }
   }
 
@@ -71,7 +67,7 @@ export default class PeopleController {
   async importPeopleFromTpl(
     @ReqParams('key') taskKey: string,
     @ReqBody('key') tplKey,
-    @ReqBody('type') type: 'override' | 'add'
+    @ReqBody('type') type: 'override' | 'add',
   ) {
     return this.peopleService.importPeopleFromTpl(taskKey, tplKey, type)
   }

@@ -22,16 +22,42 @@ function codeLogin(phone: string, code: string): UserApiTypes.codeLogin {
   })
 }
 
-function resetPwd(
-  phone: string,
+function loginByEmailCode(
+  email: string,
+  code: string,
+): UserApiTypes.loginByEmailCode {
+  return ajax.post('user/login/email-code', { email, code })
+}
+
+function resetPwd(payload: {
+  phone?: string
+  email?: string
+  code: string
+  pwd: string
+}): UserApiTypes.resetPwd {
+  return ajax.put('user/password', payload)
+}
+
+function getProfile(): UserApiTypes.getProfile {
+  return ajax.get('user/profile')
+}
+
+function setProfileNotify(notifyOnSubmit: boolean): UserApiTypes.setProfileNotify {
+  return ajax.put('user/profile/notify', { notifyOnSubmit })
+}
+
+function bindProfileEmail(
+  email: string,
+  code: string,
+): UserApiTypes.bindProfileEmail {
+  return ajax.put('user/profile/email', { email, code })
+}
+
+function resetProfilePassword(
   code: string,
   pwd: string,
-): UserApiTypes.resetPwd {
-  return ajax.put('user/password', {
-    phone,
-    code,
-    pwd,
-  })
+): UserApiTypes.resetProfilePassword {
+  return ajax.put('user/profile/password', { code, pwd })
 }
 
 function checkPower(): UserApiTypes.checkPower {
@@ -54,7 +80,12 @@ export default {
   register,
   login,
   codeLogin,
+  loginByEmailCode,
   resetPwd,
+  getProfile,
+  setProfileNotify,
+  bindProfileEmail,
+  resetProfilePassword,
   checkPower,
   checkLoginStatus,
   logout,

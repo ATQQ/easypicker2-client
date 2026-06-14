@@ -25,8 +25,9 @@ import {
   UserService,
 } from '@/service'
 import { wrapperCatchError } from '@/utils/context'
-import { isCodeLoginSupported } from '@/utils/siteConfig'
-import { formatSize } from '@/utils/stringUtil'
+import { rEmail, rPassword } from '@/utils/regExp'
+import { isCodeLoginSupported, isEmailCodeLoginSupported } from '@/utils/siteConfig'
+import { encryption, formatSize } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
 @RouterController('user')
@@ -146,6 +147,22 @@ export default class UserController {
     }
   }
 
+  @Post('login/email-code')
+  async loginByEmailCode(@ReqBody() body: { email?: string, code?: string }) {
+    try {
+      if (!isEmailCodeLoginSupported()) {
+        return Response.failWithError(UserError.system.emailCodeLoginDisabled)
+      }
+      const { code, email } = body
+      const user = await this.userService.loginByEmailCode(email || '', code || '')
+      const token = await this.tokenService.createTokenByUser(user)
+      return { token }
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
+  }
+
   @Put('password')
   async updatePassword(@ReqBody() body) {
     try {
@@ -181,7 +198,7 @@ export default class UserController {
     const user = await this.userRepository.findOne({
       id: this.Ctx.req.userInfo.id,
     })
-    const userOverview = await this.fileService.getUserOverview(user)
+    const userOverview = await this.fileService.getCachedUserOverview(user)
     const { maxSize, usage, limitUpload, wallet, cost, limitSpace, limitWallet, price } = userOverview
     if (limitSpace) {
       this.behaviorService.add('user', `用户 ${user.account} 超出容量限制`, {
@@ -207,6 +224,98 @@ export default class UserController {
         storage: price.ossPrice,
         download: (+price.backhaulTrafficPrice + +price.cdnPrice + +price.compressPrice).toFixed(2),
       },
+    }
+  }
+
+  @Get('profile', { needLogin: true })
+  async getProfile() {
+    const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
+    if (!u) {
+      return {
+        account: '',
+        phone: '',
+        joinTime: '',
+        loginTime: '',
+        loginCount: 0,
+        email: '',
+        emailVerified: false,
+        notifyOnSubmit: false,
+      }
+    }
+    return {
+      account: u.account || '',
+      phone: u.phone ? u.phone.slice(-4) : '',
+      joinTime: u.joinTime ? new Date(u.joinTime).toISOString() : '',
+      loginTime: u.loginTime ? new Date(u.loginTime).toISOString() : '',
+      loginCount: u.loginCount || 0,
+      email: u.email || '',
+      emailVerified: Number(u.emailVerified) === 1,
+      notifyOnSubmit: Number(u.notifyOnSubmit) === 1,
+    }
+  }
+
+  @Put('profile/notify', { needLogin: true })
+  async setNotify(@ReqBody('notifyOnSubmit') notifyOnSubmit: boolean) {
+    const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
+    if (!u)
+      return Response.failWithError(UserError.account.notExist)
+    u.notifyOnSubmit = notifyOnSubmit ? 1 : 0
+    await this.userRepository.update(u)
+    return { ok: true }
+  }
+
+  @Put('profile/email', { needLogin: true })
+  async bindProfileEmail(@ReqBody() body: { email?: string, code?: string }) {
+    try {
+      const addr = body.email?.trim().toLowerCase() || ''
+      if (!rEmail.test(addr))
+        throw UserError.email.fault
+      const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
+      if (!u)
+        throw UserError.account.notExist
+      if (u.email && Number(u.emailVerified) === 1)
+        throw UserError.email.exist
+      const v = await this.tokenService.getVerifyCode('email', addr)
+      if (body.code !== v)
+        throw UserError.code.fault
+      const exist = await this.userRepository.findOne({ email: addr })
+      if (exist && exist.id !== this.Ctx.req.userInfo.id)
+        throw UserError.email.exist
+      u.email = addr
+      u.emailVerified = 1
+      await this.userRepository.update(u)
+      this.behaviorService.add('user', `用户绑定邮箱成功 ${u.account}`, { email: addr })
+      this.tokenService.expiredVerifyCode('email', addr)
+      return { ok: true }
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
+  }
+
+  @Put('profile/password', { needLogin: true })
+  async resetProfilePassword(@ReqBody() body: { code?: string, pwd?: string }) {
+    try {
+      const u = await this.userRepository.findOne({ id: this.Ctx.req.userInfo.id })
+      if (!u)
+        throw UserError.account.notExist
+      const email = u.email?.trim().toLowerCase() || ''
+      if (!email || Number(u.emailVerified) !== 1)
+        throw UserError.email.notVerified
+      const v = await this.tokenService.getVerifyCode('email', email)
+      if (body.code !== v)
+        throw UserError.code.fault
+      if (!rPassword.test(body.pwd || ''))
+        throw UserError.pwd.fault
+      u.password = encryption(body.pwd)
+      await this.userRepository.update(u)
+      this.tokenService.expiredVerifyCode('email', email)
+      await this.tokenService.expiredAllTokens(u.account)
+      this.behaviorService.add('user', `用户通过邮箱重置登录密码成功 ${u.account}`, { email })
+      return { ok: true }
+    }
+    catch (error) {
+      return wrapperCatchError(error)
     }
   }
 }

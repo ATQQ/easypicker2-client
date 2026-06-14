@@ -1,9 +1,13 @@
 import { getRedisValueJSON } from '@/db/redisDb'
 import { getFileKeys, getOSSFiles } from '@/utils/qiniuUtil'
+import { isLocalStorageMode } from '@/utils/storageMode'
 import LocalUserDB from '@/utils/user-local-db'
 
 class SuperService {
   async getOssFiles() {
+    if (isLocalStorageMode()) {
+      return []
+    }
     const systemUser = LocalUserDB.getUserConfigByType('server').USER || 'local'
     const cacheKey = `${systemUser}-oss-files-easypicker2/`
 
@@ -20,6 +24,9 @@ class SuperService {
     if (!prefix) {
       return
     }
+    if (isLocalStorageMode()) {
+      return []
+    }
     const systemUser = LocalUserDB.getUserConfigByType('server').USER || 'local'
     const cacheKey = `${systemUser}-oss-files-${prefix}`
 
@@ -33,6 +40,9 @@ class SuperService {
   }
 
   async getCachedFileKeys(prefix: string) {
+    if (isLocalStorageMode()) {
+      return []
+    }
     const systemUser = LocalUserDB.getUserConfigByType('server').USER || 'local'
     const cacheKey = `${systemUser}-file-keys-${prefix}`
 

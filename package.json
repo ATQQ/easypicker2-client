@@ -37,7 +37,8 @@
     "release": "pnpm -r build && changeset publish",
     "mongo:restore:ep-prod": "bash scripts/restore-ep-prod-mongo.sh",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "deploy:local": "npm run web:build && npm run server:build && cd apps/web && kite push --env local && cd ../server && kite push --env local"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^1.1.4",

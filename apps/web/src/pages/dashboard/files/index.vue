@@ -6,6 +6,7 @@ import {
   DataAnalysis,
   Download,
   Picture,
+  QuestionFilled,
   Refresh,
   Search,
 } from '@element-plus/icons-vue'
@@ -36,6 +37,8 @@ const showWalletLimit = computed(() => siteConfig.value.limitWallet)
 const showResourceLimitNotice = computed(
   () => isOpenPraise.value && (showStorageLimit.value || showWalletLimit.value),
 )
+const $store = useStore()
+const $route = useRoute()
 
 const {
   usage,
@@ -50,8 +53,6 @@ const {
   priceText,
 } = useSpaceUsage()
 
-const $store = useStore()
-const $route = useRoute()
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
 const showImg = ref(localStorage.getItem('ep-show-images') !== 'false')
@@ -142,8 +143,6 @@ const filterTasks = computed(() => {
   if (selectCategory.value === 'all') {
     return tasks.value
   }
-  // eslint-disable-next-line vue/no-side-effects-in-computed-properties
-  selectTask.value = 'all'
   return tasks.value.filter(t => t.category === selectCategory.value)
 })
 const selectTaskName = computed(() => {
@@ -177,57 +176,83 @@ function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
     value: v,
     row: 2,
   }))
+  const exportInfoCache = new Map<FileApiTypes.File, InfoItem[] | null>()
+  function getExportInfo(file: FileApiTypes.File) {
+    if (exportInfoCache.has(file)) {
+      return exportInfoCache.get(file)
+    }
 
-  const infosHeader = files.reduce((pre, value) => {
     try {
-      JSON.parse(value.info).forEach((i: any) => {
-        if (!pre.includes(i.text)) {
-          pre.push(i.text)
+      const rawInfo = file.info
+      let info: InfoItem[]
+      if (Array.isArray(rawInfo)) {
+        info = parseInfo(rawInfo)
+      }
+      else if (rawInfo == null || String(rawInfo).trim() === '') {
+        info = []
+      }
+      else {
+        const parsed = JSON.parse(rawInfo)
+        if (!Array.isArray(parsed)) {
+          throw new TypeError('file info is not an array')
         }
-      })
+        info = parseInfo(parsed)
+      }
+      exportInfoCache.set(file, info)
+      return info
     }
     catch {
       ElMessage.error({
-        message: `数据异常${value.name}，可联系平台管理员处理`,
+        message: `数据异常${file.name}，可联系平台管理员处理`,
         duration: 5000,
       })
-      console.warn(value)
+      console.warn(file)
+      exportInfoCache.set(file, null)
+      return null
     }
+  }
+
+  const infosHeader = files.reduce<string[]>((pre, value) => {
+    getExportInfo(value)?.forEach((i) => {
+      if (i.text && !pre.includes(i.text)) {
+        pre.push(i.text)
+      }
+    })
     return pre
   }, [])
-  headers.push({
-    value: '提交信息',
-    col: infosHeader.length,
-  })
+  if (infosHeader.length) {
+    headers.push({
+      value: '提交信息',
+      col: infosHeader.length,
+    })
+  }
 
   const body = files.map((v) => {
     const { date, task_name: taskName, name, size, people } = v
-    try {
-      const infoObj = JSON.parse(v.info).reduce((pre, v) => {
+    const fileInfo = getExportInfo(v)
+    if (!fileInfo) {
+      return []
+    }
+    const infoObj = fileInfo.reduce<Record<string, string>>((pre, v) => {
+      if (v.text) {
         pre[v.text] = `${v.value}`
-        return pre
-      }, {})
-      const info = infosHeader.map(v => infoObj[v] ?? '-')
-      const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
-      if (showOriginName.value) {
-        rows.push(v.origin_name || '-')
       }
-      if (showPeople.value) {
-        rows.push(people || '-')
-      }
-      rows.push(...info)
-      return rows
+      return pre
+    }, {})
+    const info = infosHeader.map(v => infoObj[v] ?? '-')
+    const rows = [formatDate(new Date(date)), taskName, name, formatSize(size)]
+    if (showOriginName.value) {
+      rows.push(v.origin_name || '-')
     }
-    catch {
-      ElMessage.error({
-        message: `数据异常${v.name}，可联系平台管理员处理`,
-        duration: 5000,
-      })
-      console.warn(v)
+    if (showPeople.value) {
+      rows.push(people || '-')
     }
-    return []
+    rows.push(...info)
+    return rows
   }).filter(v => !!v.length)
-  body.unshift(infosHeader)
+  if (infosHeader.length) {
+    body.unshift(infosHeader)
+  }
 
   const _filename = filename || `数据导出_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}.xlsx`
   const resFileName = selectTaskName.value ? `${normalizeFileName(selectTaskName.value)}_${_filename}` : _filename
@@ -252,6 +277,15 @@ const fileTotal = ref(0)
 const filePageCount = ref(0)
 const fileListTotalSize = ref(0)
 const filterFileTotalSize = ref(0)
+const EXPORT_PAGE_SIZE = 100
+const exportAllMatchedRecords = computed(() =>
+  selectTask.value !== 'all' || selectCategory.value !== 'all',
+)
+const exportTipText = computed(() =>
+  exportAllMatchedRecords.value
+    ? '已指定任务或分类：导出会自动分页拉取该范围内的全部匹配记录，单次接口最多100条。'
+    : '未指定任务或分类：为避免一次导出全站大量记录，仅导出当前页列表；需要全量请先选择任务或分类。',
+)
 let loadFilesId = 0
 function loadFiles() {
   const currentLoadId = ++loadFilesId
@@ -282,13 +316,16 @@ function loadFiles() {
     })
 }
 async function loadFilesForExport() {
+  if (!exportAllMatchedRecords.value) {
+    return [...files]
+  }
   const exportFiles: FileApiTypes.File[] = []
   let pageIndex = 1
   let pageCount = 1
   do {
     const { data } = await FileApi.getFilePage({
       pageIndex,
-      pageSize: 100,
+      pageSize: EXPORT_PAGE_SIZE,
       categoryKey: selectCategory.value,
       taskKey: selectTask.value,
       keyword: searchWord.value,
@@ -346,14 +383,24 @@ function handleDropdownClick(e: string) {
         ids,
         `批量下载_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}`,
       )
-        .then(() => {
+        .then((res) => {
+          if (res.data?.message) {
+            ElMessage.info(res.data.message)
+          }
+          if (res.data?.url) {
+            downloadUrl.value = res.data.url
+            showLinkModel.value = true
+            downLoadByUrl(res.data.url)
+            return
+          }
           loadActions()
         })
         .catch(() => {
           ElMessage.error('所选文件均已从服务器上移除')
           batchDownStart.value = false
         })
-      ElMessage.info('开始归档选中的文件,请赖心等待')
+      showHistoryPanel.value = true
+      ElMessage.info('开始归档选中的文件,请耐心等待')
       break
     case 'delete':
       if (selectItem.length === 0) {
@@ -523,7 +570,16 @@ function handleDownloadTask() {
     taskKey: selectTask.value,
     zipName: selectTaskName.value,
   })
-    .then(() => {
+    .then((res) => {
+      if (res.data?.message) {
+        ElMessage.info(res.data.message)
+      }
+      if (res.data?.url) {
+        downloadUrl.value = res.data.url
+        showLinkModel.value = true
+        downLoadByUrl(res.data.url)
+        return
+      }
       loadActions()
     })
     .catch(() => {
@@ -534,7 +590,8 @@ function handleDownloadTask() {
         batchDownStart.value = false
       }, 1000)
     })
-  ElMessage.info('开始归档选中的文件,请赖心等待')
+  showHistoryPanel.value = true
+  ElMessage.info('开始归档选中的文件,请耐心等待')
 }
 
 const viewImageFilename = ref('')
@@ -555,7 +612,21 @@ function reloadFirstPage() {
   pageCurrent.value = 1
 }
 
+function loadTaskOptions() {
+  if (selectCategory.value === 'all') {
+    return $store.dispatch('task/getTask', { recent: false })
+  }
+  return $store.dispatch('task/getTaskByCategory', {
+    category: selectCategory.value,
+    recent: false,
+  })
+}
+
 watch([selectCategory, selectTask, searchWord], reloadFirstPage)
+watch(selectCategory, () => {
+  selectTask.value = 'all'
+  loadTaskOptions()
+})
 watch([pageCurrent, pageSize], loadFiles)
 watch(showImg, () => {
   window.localStorage.setItem('ep-show-images', `${showImg.value}`)
@@ -565,7 +636,7 @@ onMounted(() => {
   loadFiles()
   loadActions()
   $store.dispatch('category/getCategory')
-  $store.dispatch('task/getTask')
+  loadTaskOptions()
 })
 
 const isMobile = useIsMobile()
@@ -686,11 +757,16 @@ function handleShowDetail() {
           刷新
         </el-button>
         <el-button
-          title="导出当前筛选条件下的所有数据" type="success" size="default" :icon="DataAnalysis"
+          :title="exportTipText" type="success" size="default" :icon="DataAnalysis"
           :disabled="fileTotal === 0" @click="handleExportFilterFiles"
         >
           导出记录
         </el-button>
+        <el-tooltip :content="exportTipText" placement="top" effect="dark">
+          <el-icon class="export-help-icon">
+            <QuestionFilled />
+          </el-icon>
+        </el-tooltip>
         <div class="control-item">
           显示图片
           <el-switch
@@ -1149,6 +1225,17 @@ function handleShowDetail() {
   color: #409eff;
   cursor: pointer;
   font-size: 13px;
+}
+
+.export-help-icon {
+  align-items: center;
+  color: #909399;
+  cursor: help;
+  display: inline-flex;
+  font-size: 16px;
+  height: 32px;
+  margin-left: 10px;
+  margin-bottom: 10px;
 }
 
 .imageLoading {

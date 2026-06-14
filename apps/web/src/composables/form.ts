@@ -13,7 +13,14 @@ export const defaultSiteConfig = {
   compressSizeLimit: 10, // TODO: 压缩文件大小限制（GB）
   needBindPhone: false, // 是否需要绑定手机号
   enableCodeLogin: false, // 是否开启验证码登录
+  enableSmtp: false, // 是否启用 SMTP 邮件服务
+  enableEmailCodeLogin: false, // 是否开启邮箱验证码登录（需 SMTP）
+  needBindEmail: false, // 是否强制注册绑定邮箱
+  supportPhoneCode: false, // 是否支持手机号验证码（腾讯云短信配置完整）
   supportCodeLogin: false, // 是否支持验证码登录
+  supportEmailCodeLogin: false, // 是否支持邮箱验证码登录
+  storageMode: 'qiniu' as 'qiniu' | 'local', // 存储模式（与全局配置一致）
+  maxUploadSizeMB: 500, // 本机存储时单文件上限（MB）
   limitSpace: false, // 是否限制空间
   limitWallet: false, // 是否限制费用
   qiniuOSSPrice: 0.099, // 七牛云存储价格
@@ -37,12 +44,34 @@ export const defaultSiteConfig = {
   filePageSponsorSuffix: '调整空间 和 可用余额',
   filePageSelfHostLinkText: '也可以选择自己搭建💡',
   filePageSelfHostLink: 'https://docs.ep.sugarat.top/',
+  announcementTop: {
+    enabled: false,
+    title: '',
+    content: '',
+    renderHtml: false,
+    theme: 'info' as OverviewApiTypes.SiteAnnouncementTheme,
+    closable: true,
+  },
+  announcementModal: {
+    enabled: false,
+    title: '通告',
+    content: '',
+    renderHtml: false,
+    theme: 'info' as OverviewApiTypes.SiteAnnouncementTheme,
+    showTimes: 1,
+    confirmText: '知道了',
+  },
 }
 
 function mergeSiteConfig(config: Partial<typeof defaultSiteConfig>) {
   return Object.keys(defaultSiteConfig).reduce<typeof defaultSiteConfig>((pre, key) => {
     const typedKey = key as keyof typeof defaultSiteConfig
-    ;(pre as Record<string, unknown>)[key] = config[typedKey] ?? defaultSiteConfig[typedKey]
+    const value = config[typedKey]
+    const defaultValue = defaultSiteConfig[typedKey]
+    ;(pre as Record<string, unknown>)[key]
+      = value && typeof value === 'object' && !Array.isArray(value)
+        ? { ...defaultValue, ...value }
+        : value ?? defaultValue
     return pre
   }, { ...defaultSiteConfig })
 }

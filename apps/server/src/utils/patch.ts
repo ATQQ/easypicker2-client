@@ -145,6 +145,15 @@ export async function initUserConfig() {
   storeDbInfo('redis', redisConfig)
   storeDbInfo('qiniu', qiniuConfig)
   storeDbInfo('tx', txConfig)
+  storeDbInfo('smtp', {
+    host: '',
+    port: 465,
+    secure: true,
+    user: '',
+    pass: '',
+    fromAddress: '',
+    fromName: 'EasyPicker',
+  })
   storeDbInfo('global', {
     site: {
       maxInputLength: 20, // 最大输入长度
@@ -154,6 +163,13 @@ export async function initUserConfig() {
       downloadCompressExpired: 60, // 归档文件下载过期时间（min）
       compressSizeLimit: 10, // TODO: 压缩文件大小限制（GB）
       needBindPhone: false, // 是否需要绑定手机号
+      enableCodeLogin: false,
+      enableEmailCodeLogin: false,
+      needBindEmail: false,
+      alertEmails: '',
+      emailDailyLimit: 0,
+      storageMode: 'qiniu' as 'qiniu' | 'local',
+      maxUploadSizeMB: 500,
       limitSpace: false, // 是否限制空间
       limitWallet: false, // 是否限制钱包余额
       qiniuOSSPrice: 0.099, // 七牛云存储价格
@@ -177,6 +193,24 @@ export async function initUserConfig() {
       filePageSponsorSuffix: '调整空间 和 可用余额',
       filePageSelfHostLinkText: '也可以选择自己搭建💡',
       filePageSelfHostLink: 'https://docs.ep.sugarat.top/',
+      feedbackEntryEnabled: true,
+      announcementTop: {
+        enabled: false,
+        title: '',
+        content: '',
+        renderHtml: false,
+        theme: 'info',
+        closable: true,
+      },
+      announcementModal: {
+        enabled: false,
+        title: '通告',
+        content: '',
+        renderHtml: false,
+        theme: 'info',
+        showTimes: 1,
+        confirmText: '知道了',
+      },
     } as GlobalSiteConfig,
   })
   // 更新配置

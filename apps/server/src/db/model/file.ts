@@ -16,6 +16,7 @@ export interface File {
   people?: string
   originName?: string
   origin_name?: string
+  storage?: 'qiniu' | 'local'
   del?: number
   ossDelTime?: Date
   oss_del_time?: Date

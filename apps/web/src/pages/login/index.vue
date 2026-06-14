@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import loginPanel from '@components/loginPanel.vue'
-import { Lock, Phone, User } from '@element-plus/icons-vue'
+import { Lock, Message, Phone, User } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { PublicApi, UserApi } from '@/apis'
 import { useSiteConfig, useSupportRegister } from '@/composables'
-import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
+import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
+import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
 
 const supportRegister = useSupportRegister()
@@ -18,6 +19,32 @@ const pwd = ref('')
 const remember = ref(false)
 const accountLogin = ref(true)
 const supportCodeLogin = computed(() => Boolean(siteConfig.value.supportCodeLogin))
+const supportEmailCodeLogin = computed(() => Boolean(siteConfig.value.supportEmailCodeLogin))
+const accountPlaceholder = computed(() => {
+  const methods = ['账号']
+  if (supportCodeLogin.value) {
+    methods.push('手机号')
+  }
+  if (supportEmailCodeLogin.value) {
+    methods.push('邮箱')
+  }
+  return `输入${methods.join('/')}`
+})
+const codeLoginPlaceholder = computed(() => {
+  if (supportCodeLogin.value && supportEmailCodeLogin.value) {
+    return '输入手机号或邮箱'
+  }
+  if (supportEmailCodeLogin.value) {
+    return '输入邮箱'
+  }
+  return '输入手机号'
+})
+const accountPrefixIcon = computed(() => {
+  if (accountLogin.value) {
+    return User
+  }
+  return supportEmailCodeLogin.value && !supportCodeLogin.value ? Message : Phone
+})
 const $store = useStore()
 const $router = useRouter()
 function redirectDashBoard(system?: boolean) {
@@ -40,24 +67,46 @@ function redirectDashBoard(system?: boolean) {
   })
 }
 function checkForm() {
-  if (account.value.length === 11) {
-    if (!rMobilePhone.test(account.value)) {
-      ElMessage.warning('手机号格式不正确')
+  if (accountLogin.value) {
+    if (supportCodeLogin.value && account.value.length === 11) {
+      if (!rMobilePhone.test(account.value)) {
+        ElMessage.warning('手机号格式不正确')
+        return false
+      }
+    }
+    if (account.value.includes('@') && !rEmail.test(account.value.trim())) {
+      ElMessage.warning('邮箱格式不正确')
       return false
     }
-  }
-  // else if (!rAccount.test(account.value)) {
-  // 兼容老平台数据,不校验账号
-  // ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
-  // return false
-  // }
 
-  if (accountLogin.value && !rPassword.test(pwd.value)) {
-    ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
+    if (!rPassword.test(pwd.value)) {
+      ElMessage.warning('密码格式不正确(6-16位 支持字母/数字/下划线)')
+      return false
+    }
+    return true
+  }
+
+  const supportPhone = supportCodeLogin.value
+  const supportEmail = supportEmailCodeLogin.value
+  const input = account.value.trim()
+
+  if (supportEmail && rEmail.test(input)) {
+    /* 邮箱验证码 */
+  }
+  else if (supportPhone && rMobilePhone.test(input)) {
+    /* 手机号验证码 */
+  }
+  else {
+    const msg = supportPhone && supportEmail
+      ? '请输入正确的手机号或邮箱'
+      : supportEmail
+        ? '请输入正确的邮箱'
+        : '手机号格式不正确'
+    ElMessage.warning(msg)
     return false
   }
 
-  if (!accountLogin.value && !rVerCode.test(pwd.value)) {
+  if (!rVerCode.test(pwd.value)) {
     ElMessage.warning('验证码不正确(4位 数字)')
     return false
   }
@@ -75,8 +124,29 @@ function refreshCodeText() {
   setTimeout(refreshCodeText, 1000)
 }
 function getCode() {
-  if (!supportCodeLogin.value) {
+  if (!supportCodeLogin.value && !supportEmailCodeLogin.value) {
     ElMessage.warning('暂未开启验证码登录')
+    return
+  }
+  if (supportEmailCodeLogin.value && rEmail.test(account.value.trim())) {
+    PublicApi.getEmailCode(account.value.trim())
+      .then(() => {
+        time.value = VERIFY_CODE_EXPIRE_SECONDS
+        refreshCodeText()
+        ElMessage.success('获取成功,请查收邮件')
+      })
+      .catch((err) => {
+        const { code: c } = err
+        const options: Record<number, string> = {
+          1015: '邮箱格式不正确',
+          1014: '暂未开启邮箱验证码登录',
+        }
+        ElMessage.error(options[c] || '发送失败')
+      })
+    return
+  }
+  if (!supportCodeLogin.value) {
+    ElMessage.warning(supportEmailCodeLogin.value ? '请输入正确的邮箱' : '暂未开启手机号验证码登录')
     return
   }
   if (!rMobilePhone.test(account.value)) {
@@ -104,6 +174,8 @@ function loginErrorMsg(err: any, msg: string) {
   const msgs: any = {
     1010: '账号已被封禁,有疑问请联系管理员',
     1013: '暂未开启验证码登录',
+    1014: '暂未开启邮箱验证码登录',
+    1018: '邮箱未验证',
     1009: `账号已被冻结,解冻时间${
       data?.openTime && formatDate(new Date(data.openTime))
     }`,
@@ -119,11 +191,12 @@ function login() {
   }
   // 账号密码
   if (accountLogin.value) {
+    const loginAccount = account.value.trim()
     if (remember.value) {
       localStorage.setItem(
         'userinfo',
         JSON.stringify({
-          account: account.value,
+          account: loginAccount,
           pwd: pwd.value,
           remember: remember.value,
         }),
@@ -132,7 +205,7 @@ function login() {
     else {
       localStorage.removeItem('userinfo')
     }
-    UserApi.login(account.value, pwd.value)
+    UserApi.login(loginAccount, pwd.value)
       .then((res) => {
         const { token, system } = res.data
         $store.commit('user/setToken', token)
@@ -148,13 +221,18 @@ function login() {
       })
   }
   else {
-    if (!supportCodeLogin.value) {
+    if (!supportCodeLogin.value && !supportEmailCodeLogin.value) {
       accountLogin.value = true
       ElMessage.warning('暂未开启验证码登录')
       return
     }
     // 手机号验证码登录
-    UserApi.codeLogin(account.value, pwd.value)
+    const loginAccount = account.value.trim()
+    const isEmail = supportEmailCodeLogin.value && rEmail.test(loginAccount)
+    const loginReq = isEmail
+      ? UserApi.loginByEmailCode(loginAccount, pwd.value)
+      : UserApi.codeLogin(loginAccount, pwd.value)
+    loginReq
       .then((res) => {
         const { token } = res.data
         $store.commit('user/setToken', token)
@@ -171,8 +249,8 @@ function login() {
   }
 }
 
-watch(supportCodeLogin, (support) => {
-  if (!support && !accountLogin.value) {
+watch([supportCodeLogin, supportEmailCodeLogin], ([supportPhone, supportEmail]) => {
+  if (!accountLogin.value && !supportPhone && !supportEmail) {
     accountLogin.value = true
   }
 })
@@ -201,11 +279,11 @@ onMounted(() => {
         <div>
           <el-input
             v-model="account"
-            :placeholder="accountLogin ? '输入账号/手机号' : '输入手机号'"
-            :prefix-icon="accountLogin ? User : Phone"
+            :placeholder="accountLogin ? accountPlaceholder : codeLoginPlaceholder"
+            :prefix-icon="accountPrefixIcon"
             clearable
           >
-            <template v-if="supportCodeLogin" #append>
+            <template v-if="supportCodeLogin || supportEmailCodeLogin" #append>
               <template v-if="accountLogin">
                 <el-button @click="accountLogin = !accountLogin">
                   验证码登录

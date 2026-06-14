@@ -70,6 +70,35 @@ export function selectFilesLimitCount(options: File, count: number) {
   return query<File[]>(sql, ...params)
 }
 
+/** 每个 task_key 各取最近 perTaskLimit 条（del=0），兼容 MySQL 5.7+ */
+export function selectRecentFilesPerTaskKeys(
+  taskKeys: string[],
+  perTaskLimit: number,
+) {
+  if (taskKeys.length === 0 || perTaskLimit <= 0) {
+    return Promise.resolve([] as { task_key: string, name: string, date: Date }[])
+  }
+  const placeholders = taskKeys.map(() => '?').join(',')
+  const sql = `
+SELECT f.task_key, f.name, f.date
+FROM files f
+WHERE f.del = 0
+  AND f.task_key IN (${placeholders})
+  AND (
+    SELECT COUNT(*) FROM files f2
+    WHERE f2.del = 0
+      AND f2.task_key = f.task_key
+      AND f2.id >= f.id
+  ) <= ?
+ORDER BY f.task_key, f.id DESC
+  `.trim()
+  return query<{ task_key: string, name: string, date: Date }[]>(
+    sql,
+    ...taskKeys,
+    perTaskLimit,
+  )
+}
+
 export function updateFileInfo(_query: File, file: File) {
   const { sql, params } = updateTableByModel('files', file, _query)
   return query<OkPacket>(sql, ...params)
@@ -279,5 +308,17 @@ export class FileRepository extends BaseRepository<Files> {
       totalSize: Number(row?.size || 0),
       filterSize: Number(row?.size || 0),
     }
+  }
+
+  async sumActiveSizeByUser(userId: number) {
+    const row = await this.createFileQueryBuilder(userId)
+      .select('COALESCE(SUM(file.size), 0)', 'size')
+      .getRawOne<{ size: string | number }>()
+
+    return Number(row?.size || 0)
+  }
+
+  findRecentFilesByTaskKeys(taskKeys: string[], perTaskLimit: number) {
+    return selectRecentFilesPerTaskKeys(taskKeys, perTaskLimit)
   }
 }

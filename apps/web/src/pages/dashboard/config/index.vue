@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { Refresh } from '@element-plus/icons-vue'
+import { CopyDocument, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ConfigServiceAPI, PublicApi, UserApi } from '@/apis'
 import { useSiteConfig } from '@/composables'
-import { rAccount, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
+import { rAccount, rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 
 type ConfigData = ConfigServiceAPITypes.ConfigData
@@ -16,6 +16,7 @@ type MysqlLiveTable = ConfigServiceAPITypes.MysqlLiveTable
 
 /** 与 MySQL 相关的子 Tab（连接配置仍在 name=mysql 的主 Tab）；结构与脚本已与「在线库表」合并 */
 const MYSQL_INTROSPECT_TAB = 'mysql-introspect'
+const SERVICE_FEATURES_TAB = 'service-features'
 const CONFIG_ADMIN_USERS_TAB = 'config-admin-users'
 
 const { value: siteConfig } = useSiteConfig()
@@ -36,11 +37,77 @@ const loading = ref(false)
 const configLoading = ref(false)
 const activeConfigTab = ref('')
 const savingMap = reactive<Record<string, boolean>>({})
+const siteFeatureLoading = ref(false)
+const siteFeatureSaving = ref(false)
+const siteFeatureForm = reactive({
+  storageMode: 'qiniu' as 'qiniu' | 'local',
+  maxUploadSizeMB: 500,
+  needBindPhone: false,
+  enableCodeLogin: false,
+  enableSmtp: false,
+  enableEmailCodeLogin: false,
+  needBindEmail: false,
+  alertEmails: '',
+  emailDailyLimit: 0,
+})
+const storageInfo = ref<ConfigServiceAPITypes.StorageInfo>({
+  cwd: '',
+  uploadDir: '',
+})
+const mailTestSceneOptions: Array<{
+  key: ConfigServiceAPITypes.MailTestSceneKey
+  label: string
+  description: string
+}> = [
+  {
+    key: 'smtp-basic',
+    label: 'SMTP 基础连通',
+    description: '主机、端口、SSL、账号授权与发件人。',
+  },
+  {
+    key: 'verify-code',
+    label: '邮箱验证码',
+    description: '注册、登录、找回密码、绑定邮箱共用模板。',
+  },
+  {
+    key: 'submit-notify',
+    label: '文件提交通知',
+    description: '任务收到新文件后给任务所有者的提醒。',
+  },
+  {
+    key: 'service-alert',
+    label: '服务错误告警',
+    description: '运行时异常、依赖服务异常等管理员告警。',
+  },
+  {
+    key: 'daily-limit',
+    label: '每日发信上限提示',
+    description: '确认发信上限说明类通知可达。',
+  },
+]
+const mailTestDialogVisible = ref(false)
+const mailTestSubmitting = ref(false)
+const mailTestForm = reactive<{
+  to: string
+  scenes: ConfigServiceAPITypes.MailTestSceneKey[]
+}>({
+  to: '',
+  scenes: mailTestSceneOptions.map(item => item.key),
+})
+const mailTestResults = ref<ConfigServiceAPITypes.MailTestResultItem[]>([])
+const mailTestError = ref('')
 
+const statusServiceOverview = computed(() => {
+  if (siteFeatureForm.storageMode !== 'local') {
+    return serviceOverview.value
+  }
+  return serviceOverview.value.filter(item => item.type !== 'qiniu')
+})
 const overviewStats = computed(() => {
-  const total = serviceOverview.value.length
-  const running = serviceOverview.value.filter(item => item.status).length
-  const required = serviceOverview.value.filter(item => item.required).length
+  const services = statusServiceOverview.value
+  const total = services.length
+  const running = services.filter(item => item.status).length
+  const required = services.filter(item => item.required).length
   const optional = total - required
   return {
     total,
@@ -50,15 +117,19 @@ const overviewStats = computed(() => {
     abnormal: total - running,
   }
 })
-const showErrorList = computed(() => serviceOverview.value.filter(item => item.errMsg))
+const showErrorList = computed(() => statusServiceOverview.value.filter(item => item.errMsg))
 const showMysqlToolTabs = computed(() => serverConfig.value.some(s => s.type === 'mysql'))
 const mysqlLive = ref<MysqlLiveIntrospection | null>(null)
 const mysqlLiveLoading = ref(false)
 const mysqlLiveOpenNames = ref<string[]>([])
 
 const currentConfig = computed(() => serverConfig.value.find(item => item.type === activeConfigTab.value))
+const emailConfigSaving = computed(() => Boolean(savingMap.smtp) || siteFeatureSaving.value)
+const txConfigSaving = computed(() => Boolean(savingMap.tx) || siteFeatureSaving.value)
 
 function isActiveConfigTabValid(name: string) {
+  if (name === SERVICE_FEATURES_TAB)
+    return true
   if (name === CONFIG_ADMIN_USERS_TAB)
     return true
   if (serverConfig.value.some(item => item.type === name))
@@ -93,6 +164,46 @@ function isBooleanConfig(item: ServiceConfigItem) {
 
 function isNumberConfig(item: ServiceConfigItem) {
   return typeof item.value === 'number' || item.key === 'port'
+}
+
+function isSmtpConfig(group?: ConfigData) {
+  return group?.type === 'smtp'
+}
+
+function isTxConfig(group?: ConfigData) {
+  return group?.type === 'tx'
+}
+
+function getConfigTabLabel(group: ConfigData) {
+  return isSmtpConfig(group) ? '邮箱配置' : group.title
+}
+
+function getConfigHeadTitle(group: ConfigData) {
+  return isSmtpConfig(group) ? '邮箱配置' : group.title
+}
+
+function getConfigHeadDescription(group: ConfigData) {
+  if (isSmtpConfig(group))
+    return '管理 SMTP 发信连接，以及邮箱验证码、服务告警收件邮箱与每日发信上限。'
+  if (isTxConfig(group))
+    return '管理腾讯云短信配置，以及手机号验证码登录、注册绑定手机相关能力。'
+  return group.description
+}
+
+function getConfigSaving(group: ConfigData) {
+  if (isSmtpConfig(group))
+    return emailConfigSaving.value
+  if (isTxConfig(group))
+    return txConfigSaving.value
+  return Boolean(savingMap[group.type])
+}
+
+function saveConfigGroup(group: ConfigData) {
+  if (isSmtpConfig(group))
+    return saveEmailConfig(group)
+  if (isTxConfig(group))
+    return saveTxFeatures(group)
+  return updateCfgGroup(group)
 }
 
 function updateConfigValue(item: ServiceConfigItem, value: string | number | boolean) {
@@ -298,8 +409,8 @@ async function loadAdminUsers() {
   }
 }
 
-watch(() => siteConfig.value?.needBindPhone, (need) => {
-  if (need)
+watch(() => [siteConfig.value?.needBindPhone, siteConfig.value?.supportPhoneCode], ([need, supportPhone]) => {
+  if (need && supportPhone)
     adminCreateForm.bindPhone = true
 }, { immediate: true })
 
@@ -456,7 +567,7 @@ async function getServiceConfig() {
     const { data } = await ConfigServiceAPI.getServiceConfig()
     serverConfig.value = data || []
     if (!activeConfigTab.value || !isActiveConfigTabValid(activeConfigTab.value)) {
-      activeConfigTab.value = serverConfig.value[0]?.type || CONFIG_ADMIN_USERS_TAB
+      activeConfigTab.value = serverConfig.value[0]?.type || SERVICE_FEATURES_TAB
     }
   }
   catch {
@@ -464,6 +575,198 @@ async function getServiceConfig() {
   }
   finally {
     configLoading.value = false
+  }
+}
+
+async function loadSiteFeatures() {
+  siteFeatureLoading.value = true
+  try {
+    const [{ data }, storageRes] = await Promise.all([
+      ConfigServiceAPI.getGlobalAllConfig('site'),
+      ConfigServiceAPI.getStorageInfo(),
+    ])
+    Object.assign(siteFeatureForm, {
+      storageMode: data?.storageMode === 'local' ? 'local' : 'qiniu',
+      maxUploadSizeMB: Number(data?.maxUploadSizeMB ?? 500),
+      needBindPhone: Boolean(data?.needBindPhone),
+      enableCodeLogin: Boolean(data?.enableCodeLogin),
+      enableSmtp: typeof data?.enableSmtp === 'boolean'
+        ? data.enableSmtp
+        : Boolean(data?.enableEmailCodeLogin || data?.needBindEmail || data?.alertEmails),
+      enableEmailCodeLogin: Boolean(data?.enableEmailCodeLogin),
+      needBindEmail: Boolean(data?.needBindEmail),
+      alertEmails: data?.alertEmails || '',
+      emailDailyLimit: Number(data?.emailDailyLimit ?? 0),
+    })
+    storageInfo.value = storageRes.data || { cwd: '', uploadDir: '' }
+  }
+  catch {
+    ElMessage.error('服务功能配置加载失败')
+  }
+  finally {
+    siteFeatureLoading.value = false
+  }
+}
+
+async function copyStorageDir() {
+  const uploadDir = storageInfo.value.uploadDir
+  if (!uploadDir)
+    return
+  try {
+    await navigator.clipboard.writeText(uploadDir)
+    ElMessage.success('存储目录已复制')
+  }
+  catch {
+    ElMessage.error('复制失败，请手动复制')
+  }
+}
+
+async function updateSiteConfigPatch(patch: Record<string, unknown>) {
+  const { data } = await ConfigServiceAPI.getGlobalAllConfig('site')
+  await ConfigServiceAPI.updateGlobalConfig('site', {
+    ...data,
+    ...patch,
+  })
+}
+
+function checkEmailFeatures() {
+  if (siteFeatureForm.emailDailyLimit < 0) {
+    ElMessage.warning('每日发信上限不能小于 0')
+    return false
+  }
+  return true
+}
+
+async function saveTxFeatures(group?: ConfigData) {
+  if (!group || !isTxConfig(group) || savingMap[group.type] || siteFeatureSaving.value)
+    return
+
+  savingMap[group.type] = true
+  siteFeatureSaving.value = true
+  try {
+    await ConfigServiceAPI.updateCfg(group.data)
+    await updateSiteConfigPatch({
+      needBindPhone: Boolean(siteFeatureForm.needBindPhone),
+      enableCodeLogin: Boolean(siteFeatureForm.enableCodeLogin),
+    })
+    ElMessage.success('腾讯云配置已保存')
+    await getServiceConfig()
+    await loadSiteFeatures()
+    await refreshStatus(false)
+  }
+  catch {
+    ElMessage.error('腾讯云配置保存失败')
+  }
+  finally {
+    savingMap[group.type] = false
+    siteFeatureSaving.value = false
+  }
+}
+
+async function saveStorageFeatures() {
+  if (siteFeatureSaving.value)
+    return
+  if (siteFeatureForm.maxUploadSizeMB < 1) {
+    ElMessage.warning('本机单文件上限需大于 0')
+    return
+  }
+  siteFeatureSaving.value = true
+  try {
+    await updateSiteConfigPatch({
+      storageMode: siteFeatureForm.storageMode === 'local' ? 'local' : 'qiniu',
+      maxUploadSizeMB: Number(siteFeatureForm.maxUploadSizeMB),
+    })
+    ElMessage.success('服务功能配置已保存')
+    await loadSiteFeatures()
+    await refreshStatus(false)
+  }
+  catch {
+    ElMessage.error('服务功能配置保存失败')
+  }
+  finally {
+    siteFeatureSaving.value = false
+  }
+}
+
+async function saveEmailConfig(group?: ConfigData) {
+  if (!group || !isSmtpConfig(group) || savingMap[group.type] || siteFeatureSaving.value)
+    return
+  if (!checkEmailFeatures())
+    return
+
+  savingMap[group.type] = true
+  siteFeatureSaving.value = true
+  try {
+    await ConfigServiceAPI.updateCfg(group.data)
+    await updateSiteConfigPatch({
+      enableSmtp: Boolean(siteFeatureForm.enableSmtp),
+      enableEmailCodeLogin: Boolean(siteFeatureForm.enableEmailCodeLogin),
+      needBindEmail: Boolean(siteFeatureForm.needBindEmail),
+      alertEmails: siteFeatureForm.alertEmails.trim(),
+      emailDailyLimit: Number(siteFeatureForm.emailDailyLimit),
+    })
+    ElMessage.success('邮箱配置已保存')
+    await getServiceConfig()
+    await loadSiteFeatures()
+    await refreshStatus(false)
+  }
+  catch {
+    ElMessage.error('邮箱配置保存失败')
+  }
+  finally {
+    savingMap[group.type] = false
+    siteFeatureSaving.value = false
+  }
+}
+
+function openMailTestDialog() {
+  mailTestResults.value = []
+  mailTestError.value = ''
+  if (mailTestForm.scenes.length === 0) {
+    mailTestForm.scenes = mailTestSceneOptions.map(item => item.key)
+  }
+  mailTestDialogVisible.value = true
+}
+
+function closeMailTestDialog() {
+  if (mailTestSubmitting.value)
+    return
+  mailTestDialogVisible.value = false
+}
+
+async function submitMailTest() {
+  const to = mailTestForm.to.trim()
+  if (!rEmail.test(to)) {
+    ElMessage.warning('请填写正确的接收邮箱')
+    return
+  }
+  if (mailTestForm.scenes.length === 0) {
+    ElMessage.warning('请至少选择一个测试场景')
+    return
+  }
+  mailTestSubmitting.value = true
+  mailTestResults.value = []
+  mailTestError.value = ''
+  try {
+    const { data } = await ConfigServiceAPI.testMailConfig({
+      to,
+      scenes: mailTestForm.scenes,
+    })
+    mailTestResults.value = data?.results ?? []
+    mailTestError.value = data?.error || ''
+    if (data?.ok) {
+      ElMessage.success('测试邮件已发送')
+    }
+    else {
+      ElMessage.warning(data?.error || '部分测试邮件发送失败')
+    }
+  }
+  catch {
+    mailTestError.value = '测试邮件发送失败，请查看服务端日志'
+    ElMessage.error(mailTestError.value)
+  }
+  finally {
+    mailTestSubmitting.value = false
   }
 }
 
@@ -588,6 +891,7 @@ async function updateCfgGroup(group?: ConfigData) {
 onMounted(() => {
   refreshStatus(false)
   getServiceConfig()
+  loadSiteFeatures()
 })
 
 async function refreshMysqlToolsTab() {
@@ -644,10 +948,10 @@ watch(activeConfigTab, (t) => {
         </el-button>
       </div>
 
-      <el-empty v-if="!loading && !serviceOverview.length" description="暂无可展示的服务依赖" />
+      <el-empty v-if="!loading && !statusServiceOverview.length" description="暂无可展示的服务依赖" />
       <div v-else v-loading="loading" class="service-grid">
         <article
-          v-for="service in serviceOverview"
+          v-for="service in statusServiceOverview"
           :key="service.type"
           class="service-card"
           :class="{ error: !service.status }"
@@ -704,25 +1008,136 @@ watch(activeConfigTab, (t) => {
           <el-tab-pane
             v-for="serverItem in serverConfig"
             :key="serverItem.type"
-            :label="serverItem.title"
+            :label="getConfigTabLabel(serverItem)"
             :name="serverItem.type"
           >
             <div class="tab-head">
               <div>
-                <h3>{{ serverItem.title }}</h3>
-                <p>{{ serverItem.description }}</p>
+                <h3>{{ getConfigHeadTitle(serverItem) }}</h3>
+                <p>{{ getConfigHeadDescription(serverItem) }}</p>
               </div>
-              <el-button
-                type="primary"
-                :loading="savingMap[serverItem.type]"
-                @click="updateCfgGroup(serverItem)"
-              >
-                保存 {{ serverItem.title }}
-              </el-button>
+              <div class="tab-head-actions">
+                <el-button
+                  v-if="isSmtpConfig(serverItem)"
+                  :disabled="emailConfigSaving"
+                  @click="openMailTestDialog"
+                >
+                  测试邮箱
+                </el-button>
+                <el-button
+                  type="primary"
+                  :loading="getConfigSaving(serverItem)"
+                  @click="saveConfigGroup(serverItem)"
+                >
+                  保存 {{ getConfigTabLabel(serverItem) }}
+                </el-button>
+              </div>
             </div>
 
-            <el-form label-position="top" class="config-form">
-              <div class="field-list">
+            <el-form
+              v-loading="(isSmtpConfig(serverItem) || isTxConfig(serverItem)) && siteFeatureLoading"
+              label-position="top"
+              class="config-form"
+            >
+              <div
+                class="field-list"
+                :class="{ 'field-list--grouped': isSmtpConfig(serverItem) || isTxConfig(serverItem) }"
+              >
+                <template v-if="isTxConfig(serverItem)">
+                  <div class="config-subsection">
+                    <div class="config-subsection__head">
+                      <h4>手机号验证码功能配置</h4>
+                      <p>控制手机号验证码登录，以及注册时绑定手机号入口。</p>
+                    </div>
+                  </div>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">手机号验证码登录</span>
+                      <span class="field-desc">开启且腾讯云短信配置完整时，前台展示手机号验证码登录入口。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.enableCodeLogin"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">注册绑定手机</span>
+                      <span class="field-desc">开启且腾讯云短信配置完整时，注册页展示绑定手机选项；可与邮箱绑定二选一。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.needBindPhone"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+                </template>
+
+                <template v-if="isSmtpConfig(serverItem)">
+                  <div class="config-subsection">
+                    <div class="config-subsection__head">
+                      <h4>邮箱功能开关</h4>
+                      <p>控制 SMTP 邮件服务、邮箱验证码和注册绑定邮箱能力。</p>
+                    </div>
+                  </div>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">启用 SMTP 邮件</span>
+                      <span class="field-desc">开启后才展示 SMTP 状态检查，并允许邮箱验证码、通知与告警使用此邮箱配置。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.enableSmtp"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">邮箱验证码</span>
+                      <span class="field-desc">默认关闭；开启 SMTP 且配置完整时，支持邮箱验证码登录、注册与找回密码。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.enableEmailCodeLogin"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">强制绑定邮箱</span>
+                      <span class="field-desc">开启 SMTP 且配置完整时，注册表单会要求填写并验证邮箱。</span>
+                    </template>
+                    <el-switch
+                      v-model="siteFeatureForm.needBindEmail"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                    />
+                  </el-form-item>
+                </template>
+
+                <div v-if="isSmtpConfig(serverItem) || isTxConfig(serverItem)" class="config-subsection">
+                  <div class="config-subsection__head">
+                    <template v-if="isSmtpConfig(serverItem)">
+                      <h4>SMTP 配置</h4>
+                      <p>发信服务器、账号、授权码与发件人信息。</p>
+                    </template>
+                    <template v-else>
+                      <h4>腾讯云短信配置</h4>
+                      <p>短信验证码所需的 Secret、短信应用、签名和模板信息。</p>
+                    </template>
+                  </div>
+                </div>
                 <el-form-item
                   v-for="cfgItem in serverItem.data"
                   :key="cfgItem.key"
@@ -758,6 +1173,110 @@ watch(activeConfigTab, (t) => {
                     clearable
                     @update:model-value="updateConfigValue(cfgItem, $event)"
                   />
+                </el-form-item>
+
+                <div v-if="isSmtpConfig(serverItem)" class="config-subsection config-subsection--spaced">
+                  <div class="config-subsection__head">
+                    <h4>其它邮箱功能配置</h4>
+                    <p>告警收件邮箱与全局发信频率控制。</p>
+                  </div>
+                </div>
+
+                <template v-if="isSmtpConfig(serverItem)">
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">服务告警收件邮箱</span>
+                      <span class="field-desc">多个邮箱可用逗号、分号或空格分隔；启用 SMTP 且配置完整后服务异常会发送告警。</span>
+                    </template>
+                    <el-input
+                      v-model="siteFeatureForm.alertEmails"
+                      type="textarea"
+                      :rows="2"
+                      placeholder="admin@example.com; ops@example.com"
+                      clearable
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="field-item">
+                    <template #label>
+                      <span class="field-label">每日发信上限</span>
+                      <span class="field-desc">全局邮件发送上限；设为 0 表示不限制。</span>
+                    </template>
+                    <el-input-number
+                      v-model="siteFeatureForm.emailDailyLimit"
+                      :min="0"
+                      :step="10"
+                      controls-position="right"
+                      class="full-control"
+                    />
+                  </el-form-item>
+                </template>
+              </div>
+            </el-form>
+          </el-tab-pane>
+
+          <el-tab-pane label="服务功能" :name="SERVICE_FEATURES_TAB">
+            <div class="tab-head">
+              <div>
+                <h3>服务功能开关</h3>
+                <p>
+                  管理与部署服务直接相关的能力：文件落盘方式与本机上传限制。
+                </p>
+              </div>
+              <el-button
+                type="primary"
+                :loading="siteFeatureSaving"
+                @click="saveStorageFeatures"
+              >
+                保存服务功能
+              </el-button>
+            </div>
+
+            <el-form v-loading="siteFeatureLoading" label-position="top" class="config-form">
+              <div class="field-list">
+                <el-form-item class="field-item">
+                  <template #label>
+                    <span class="field-label">存储模式</span>
+                    <span class="field-desc">七牛云对象存储或服务器本机磁盘；本机模式依赖服务端可写 upload 目录。</span>
+                  </template>
+                  <el-select v-model="siteFeatureForm.storageMode" class="full-control">
+                    <el-option label="七牛云对象存储" value="qiniu" />
+                    <el-option label="本机磁盘" value="local" />
+                  </el-select>
+                </el-form-item>
+
+                <el-form-item class="field-item">
+                  <template #label>
+                    <span class="field-label">当前本机存储目录</span>
+                    <span class="field-desc">服务端运行时的 upload 绝对路径；本机模式上传的文件会落在这里。</span>
+                  </template>
+                  <div class="readonly-path-control">
+                    <span class="readonly-path-text">{{ storageInfo.uploadDir || '-' }}</span>
+                    <el-button
+                      :icon="CopyDocument"
+                      :disabled="!storageInfo.uploadDir"
+                      @click="copyStorageDir"
+                    >
+                      复制
+                    </el-button>
+                  </div>
+                </el-form-item>
+
+                <el-form-item class="field-item">
+                  <template #label>
+                    <span class="field-label">本机单文件上限</span>
+                    <span class="field-desc">单位：MB。仅存储模式为本机时生效，限制直传单个文件大小。</span>
+                  </template>
+                  <div class="unit-control">
+                    <el-input-number
+                      v-model="siteFeatureForm.maxUploadSizeMB"
+                      :min="1"
+                      :step="1"
+                      controls-position="right"
+                      class="full-control"
+                    />
+                    <span class="unit-label">MB</span>
+                  </div>
                 </el-form-item>
               </div>
             </el-form>
@@ -1085,18 +1604,97 @@ watch(activeConfigTab, (t) => {
 
         <div v-if="currentConfig" class="bottom-actions-row">
           <p class="bottom-actions-hint">
-            与当前 Tab 右上角「保存 {{ currentConfig.title }}」是同一功能；表单项较多时滚到此处保存即可。
+            与当前 Tab 右上角「保存 {{ getConfigTabLabel(currentConfig) }}」是同一功能；表单项较多时滚到此处保存即可。
           </p>
           <el-button
             type="primary"
-            :loading="savingMap[currentConfig.type]"
-            @click="updateCfgGroup(currentConfig)"
+            :loading="getConfigSaving(currentConfig)"
+            @click="saveConfigGroup(currentConfig)"
           >
-            保存当前服务配置
+            {{ isSmtpConfig(currentConfig) ? '保存邮箱配置' : isTxConfig(currentConfig) ? '保存腾讯云配置' : '保存当前服务配置' }}
+          </el-button>
+        </div>
+        <div v-else-if="activeConfigTab === SERVICE_FEATURES_TAB" class="bottom-actions-row">
+          <p class="bottom-actions-hint">
+            与当前 Tab 右上角「保存服务功能」是同一功能；表单项较多时滚到此处保存即可。
+          </p>
+          <el-button
+            type="primary"
+            :loading="siteFeatureSaving"
+            @click="saveStorageFeatures"
+          >
+            保存服务功能
           </el-button>
         </div>
       </div>
     </section>
+
+    <el-dialog
+      v-model="mailTestDialogVisible"
+      title="测试邮箱"
+      width="560px"
+      destroy-on-close
+      :close-on-click-modal="!mailTestSubmitting"
+      @closed="closeMailTestDialog"
+    >
+      <el-form label-position="top" class="mail-test-form">
+        <el-form-item label="接收邮箱">
+          <el-input
+            v-model="mailTestForm.to"
+            placeholder="test@example.com"
+            clearable
+            @keyup.enter="submitMailTest"
+          />
+        </el-form-item>
+        <el-form-item label="测试场景">
+          <el-checkbox-group v-model="mailTestForm.scenes" class="mail-test-scenes">
+            <el-checkbox
+              v-for="scene in mailTestSceneOptions"
+              :key="scene.key"
+              :label="scene.key"
+              class="mail-test-scene"
+            >
+              <span class="mail-test-scene__label">{{ scene.label }}</span>
+              <span class="mail-test-scene__desc">{{ scene.description }}</span>
+            </el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+      </el-form>
+
+      <el-alert
+        v-if="mailTestError"
+        class="mail-test-alert"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="mailTestError"
+      />
+
+      <div v-if="mailTestResults.length" class="mail-test-results">
+        <div
+          v-for="item in mailTestResults"
+          :key="item.key"
+          class="mail-test-result"
+          :class="{ 'mail-test-result--error': !item.ok }"
+        >
+          <strong>{{ item.label }}</strong>
+          <span>{{ item.ok ? '发送成功' : item.error || '发送失败' }}</span>
+        </div>
+      </div>
+
+      <p class="mail-test-hint">
+        测试会真实发送邮件，也会计入每日发信上限；若刚修改 SMTP 或邮箱功能配置，请先保存后再测试。
+      </p>
+
+      <template #footer>
+        <el-button :disabled="mailTestSubmitting" @click="closeMailTestDialog">
+          关闭
+        </el-button>
+        <el-button type="primary" :loading="mailTestSubmitting" @click="submitMailTest">
+          发送测试邮件
+        </el-button>
+      </template>
+    </el-dialog>
 
     <Teleport to="body">
       <div
@@ -1362,9 +1960,48 @@ watch(activeConfigTab, (t) => {
   }
 }
 
+.tab-head-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .field-list {
   display: grid;
   gap: 12px;
+}
+
+.field-list--grouped {
+  gap: 10px;
+}
+
+.config-subsection {
+  margin-top: 2px;
+  padding: 12px 14px;
+  border: 1px solid #edf0f5;
+  border-radius: 12px;
+  background: #fbfdff;
+
+  &--spaced {
+    margin-top: 10px;
+  }
+}
+
+.config-subsection__head {
+  h4 {
+    margin: 0 0 5px;
+    color: #1f2937;
+    font-size: 15px;
+  }
+
+  p {
+    margin: 0;
+    color: #8a94a6;
+    font-size: 13px;
+    line-height: 1.5;
+  }
 }
 
 .config-form :deep(.el-form-item) {
@@ -1412,6 +2049,40 @@ watch(activeConfigTab, (t) => {
 
 .full-control {
   width: 100%;
+}
+
+.unit-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.readonly-path-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
+  .el-button {
+    flex-shrink: 0;
+  }
+}
+
+.readonly-path-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #374151;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.unit-label {
+  flex-shrink: 0;
+  color: #6b7280;
+  font-size: 13px;
 }
 
 .bottom-actions-row {
@@ -1573,6 +2244,95 @@ watch(activeConfigTab, (t) => {
   font-size: 14px;
 }
 
+.mail-test-form {
+  :deep(.el-form-item) {
+    margin-bottom: 16px;
+  }
+}
+
+.mail-test-scenes {
+  display: grid;
+  width: 100%;
+  gap: 10px;
+}
+
+.mail-test-scene {
+  width: 100%;
+  min-height: 48px;
+  margin-right: 0;
+  padding: 10px 12px;
+  border: 1px solid #edf0f5;
+  border-radius: 10px;
+  background: #fbfdff;
+
+  :deep(.el-checkbox__label) {
+    min-width: 0;
+    white-space: normal;
+  }
+}
+
+.mail-test-scene__label,
+.mail-test-scene__desc {
+  display: block;
+}
+
+.mail-test-scene__label {
+  color: #1f2937;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.mail-test-scene__desc {
+  margin-top: 2px;
+  color: #8a94a6;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.mail-test-alert {
+  margin-bottom: 12px;
+}
+
+.mail-test-results {
+  display: grid;
+  gap: 8px;
+  margin: 2px 0 12px;
+}
+
+.mail-test-result {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgb(103 194 58 / 24%);
+  border-radius: 10px;
+  background: rgb(240 249 235 / 65%);
+  color: #529b2e;
+  line-height: 1.5;
+
+  strong {
+    color: #1f2937;
+  }
+
+  span {
+    text-align: right;
+  }
+
+  &--error {
+    border-color: rgb(245 108 108 / 24%);
+    background: rgb(254 240 240 / 72%);
+    color: #c45656;
+  }
+}
+
+.mail-test-hint {
+  margin: 0;
+  color: #8a94a6;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 @media screen and (max-width: 700px) {
   .admin-create-grid {
     grid-template-columns: 1fr;
@@ -1707,6 +2467,15 @@ watch(activeConfigTab, (t) => {
     margin-top: 14px;
   }
 
+  .tab-head-actions {
+    width: 100%;
+    margin-top: 14px;
+  }
+
+  .tab-head-actions .el-button {
+    margin-top: 0;
+  }
+
   .hero-stats {
     grid-template-columns: 1fr;
   }
@@ -1717,6 +2486,11 @@ watch(activeConfigTab, (t) => {
 
   .field-item {
     padding: 12px;
+  }
+
+  .readonly-path-control {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .bottom-actions-row {

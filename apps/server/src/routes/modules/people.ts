@@ -1,22 +1,24 @@
 /* eslint-disable no-case-declarations */
 
-import path from 'node:path'
+import type { People } from '@/db/model/people'
 import fs from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
 import { Router } from 'flash-wolves'
-import { getUserInfo } from '@/utils/userUtil'
 import { publicError } from '@/constants/errorMsg'
-import type { People } from '@/db/model/people'
+import { selectFiles } from '@/db/fileDb'
+import { addBehavior, addErrorLog, findLogCount } from '@/db/logDb'
 import {
   deletePeople,
   insertPeople,
   selectPeople,
   updatePeople,
 } from '@/db/peopleDb'
-import { selectFiles } from '@/db/fileDb'
-import { addBehavior, addErrorLog, findLog, findLogCount, getClientIp } from '@/db/logDb'
 import { selectTasks } from '@/db/taskDb'
+import { localObjectAbsPath } from '@/utils/localFilePath'
 import { batchFileStatus } from '@/utils/qiniuUtil'
+import { isLocalStorageMode } from '@/utils/storageMode'
+import { getUserInfo } from '@/utils/userUtil'
 
 const router = new Router('people')
 const fileDir = `${process.cwd()}/upload`
@@ -135,17 +137,13 @@ router.get(
         people: p.name,
       })
       // 真现存文件数量
-      const ossStatus
-        = p.status && existPeopleSubmitFiles.length && showDetail
-          ? await batchFileStatus(
-            existPeopleSubmitFiles.map(
-              v => `easypicker2/${v.task_key}/${v.hash}/${v.name}`,
-            ),
-          )
-          : []
-
-      const fileCount = p.status
-        ? ossStatus.filter(v => v.code === 200).length
+      const fileKeys = existPeopleSubmitFiles.map(
+        v => `easypicker2/${v.task_key}/${v.hash}/${v.name}`,
+      )
+      const fileCount = p.status && showDetail
+        ? isLocalStorageMode()
+          ? fileKeys.filter(k => fs.existsSync(localObjectAbsPath(k))).length
+          : (await batchFileStatus(fileKeys)).filter(v => v.code === 200).length
         : 0
       p.fileCount = fileCount
 

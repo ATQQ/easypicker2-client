@@ -3,7 +3,7 @@ import QrCode from '@components/QrCode.vue'
 import { ElMessage } from 'element-plus'
 import { computed, defineComponent, ref, watchEffect } from 'vue'
 import { useIsMobile, useSiteConfig } from '@/composables'
-import { copyRes, getShortUrl } from '@/utils/stringUtil'
+import { copyRes, getShortUrl, shortLinkDomains } from '@/utils/stringUtil'
 
 export default defineComponent({
   name: 'LinkDialog',
@@ -36,6 +36,8 @@ export default defineComponent({
     const shareLink = ref('')
     const showModel = ref(false)
     const isMobile = useIsMobile()
+    const selectedDomain = ref('iq1k.cn')
+    const domainOptions = shortLinkDomains
     const copyLink = () => {
       copyRes(shareLink.value)
     }
@@ -56,9 +58,11 @@ export default defineComponent({
       context.emit('update:value', false)
     }
     const createShortLink = () => {
-      getShortUrl(shareLink.value).then((v) => {
+      getShortUrl(shareLink.value, selectedDomain.value).then((v) => {
         shareLink.value = v
         ElMessage.success('短链生成成功')
+      }).catch((e: Error) => {
+        ElMessage.error(e.message || '短链生成失败')
       })
     }
     const appName = computed(() => siteConfig.value.appName)
@@ -80,6 +84,8 @@ export default defineComponent({
       shareText,
       copyShareText,
       showShareTextPanel,
+      selectedDomain,
+      domainOptions,
     }
   },
 })
@@ -102,11 +108,24 @@ export default defineComponent({
       <div class="center">
         <QrCode :value="shareLink" />
       </div>
+      <!-- 短链功能暂时禁用（API 付费限制）
+      <div class="center">
+        <span style="margin-right: 8px">短链域名：</span>
+        <el-select v-model="selectedDomain" style="width: 160px">
+          <el-option
+            v-for="d in domainOptions"
+            :key="d"
+            :label="d"
+            :value="d"
+          />
+        </el-select>
+      </div>
       <div class="center">
         <el-button type="primary" @click="createShortLink">
           生成短链
         </el-button>
       </div>
+      -->
       <template v-if="showShareTextPanel">
         <div class="center">
           <el-input

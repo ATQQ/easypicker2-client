@@ -46,8 +46,26 @@ function getServiceConfig(): ConfigServiceAPITypes.getServiceConfig {
   return ajax.get('/config/service/config')
 }
 
+function getStorageInfo(): ConfigServiceAPITypes.getStorageInfo {
+  return ajax.get('/config/service/storage/info')
+}
+
 function updateCfg(data: ConfigServiceAPITypes.ServiceConfigItem | ConfigServiceAPITypes.ServiceConfigItem[]) {
   return ajax.put('/config/service/config', data)
+}
+
+function testMailConfig(
+  body: ConfigServiceAPITypes.MailTestBody,
+): ConfigServiceAPITypes.testMailConfig {
+  return ajax.post('/config/service/mail/test', body)
+}
+
+function getGlobalAllConfig(type = 'site'): OverviewApiTypes.getGlobalConfig {
+  return ajax.get('/config/service/global/all', { params: { type } })
+}
+
+function updateGlobalConfig(key: string, value: any) {
+  return ajax.put('/config/service/global', { key, value })
 }
 
 export default {
@@ -61,5 +79,9 @@ export default {
   createConfigAdminUser,
   resetConfigAdminUserPassword,
   getServiceConfig,
+  getStorageInfo,
   updateCfg,
+  testMailConfig,
+  getGlobalAllConfig,
+  updateGlobalConfig,
 }

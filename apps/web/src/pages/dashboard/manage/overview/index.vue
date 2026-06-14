@@ -13,12 +13,17 @@ import {
 import { ElMessage } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { SuperOverviewApi } from '@/apis'
-import { useIsMobile } from '@/composables'
+import { useIsMobile, useSiteConfig } from '@/composables'
 import { tableToExcel } from '@/utils/networkUtil'
 import { debounce } from '@/utils/other'
 import { copyRes, formatDate } from '@/utils/stringUtil'
 
 const isMobile = useIsMobile()
+const { value: siteConfig } = useSiteConfig()
+const storageModeText = computed(() => siteConfig.value.storageMode === 'local' ? '本机磁盘' : '七牛云对象存储')
+const storageModeDesc = computed(() => siteConfig.value.storageMode === 'local'
+  ? '当前文件上传到服务端本机 upload 目录'
+  : '当前文件上传到七牛云对象存储')
 
 const isLoadingOverview = ref(false)
 const cardList = reactive([
@@ -251,6 +256,11 @@ onMounted(() => {
 
 <template>
   <div class="overview">
+    <div class="storage-mode-tip">
+      <span class="storage-mode-label">当前存储方案</span>
+      <strong>{{ storageModeText }}</strong>
+      <span>{{ storageModeDesc }}</span>
+    </div>
     <div
       v-loading="isLoadingOverview"
       class="card-list"
@@ -422,7 +432,7 @@ onMounted(() => {
   }
 
   .card {
-    min-width: 300px;
+    min-width: 340px;
   }
 
   .log-filter {
@@ -432,6 +442,33 @@ onMounted(() => {
 
 .overview {
   margin: 0 auto;
+}
+
+.storage-mode-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 14px 10px 4px;
+  padding: 10px 14px;
+  color: #303133;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  box-shadow: 4px 4px 24px rgb(0 0 0 / 4%);
+  font-size: 14px;
+
+  strong {
+    color: #409eff;
+  }
+
+  span:last-child {
+    color: #606266;
+  }
+}
+
+.storage-mode-label {
+  color: #909399;
 }
 
 .card-list {
@@ -451,7 +488,7 @@ onMounted(() => {
   background: #fff;
   box-shadow: 4px 4px 40px rgb(0 0 0 / 5%);
   border-color: rgba(0, 0, 0, 0.05);
-  min-width: 300px;
+  min-width: 340px;
 
   .logo {
     float: left;
@@ -493,7 +530,7 @@ onMounted(() => {
 }
 
 .panel {
-  max-width: 1024px;
+  max-width: 1280px;
   padding: 1em;
   background-color: #fff;
   margin: 10px auto;

@@ -81,3 +81,5 @@ export enum DownloadStatus {
 }
 
 export const filenamePattern = /[\\/:*?"<>|]/g
+
+export const VERIFY_CODE_EXPIRE_SECONDS = 120

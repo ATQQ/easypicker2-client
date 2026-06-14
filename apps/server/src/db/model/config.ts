@@ -5,6 +5,7 @@ export type UserConfigType =
   | 'qiniu'
   | 'server'
   | 'tx'
+  | 'smtp'
   | 'global'
 export interface UserConfig {
   type: UserConfigType

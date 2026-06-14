@@ -46,7 +46,13 @@ const configSections = [
   },
 ]
 
-const activeInfo = ref(configSections[0].name)
+function normalizeConfigTab(tab: unknown) {
+  const value = Array.isArray(tab) ? tab[0] : tab
+  const name = String(value || '')
+  return configSections.some(v => v.name === name) ? name : configSections[0].name
+}
+
+const activeInfo = ref(normalizeConfigTab($route.query.tab))
 const activeConfig = computed(
   () => configSections.find(v => v.name === activeInfo.value) || configSections[0],
 )
@@ -108,7 +114,31 @@ function openTaskPage() {
   window.open(`/task/${activeTask.key}`)
 }
 
+function updateActiveInfo(name: string) {
+  activeInfo.value = name
+}
+
 watch(taskKey, loadTaskConfig, { immediate: true })
+watch(
+  () => $route.query.tab,
+  (tab) => {
+    const next = normalizeConfigTab(tab)
+    if (activeInfo.value !== next) {
+      activeInfo.value = next
+    }
+  },
+)
+watch(activeInfo, (tab) => {
+  if (normalizeConfigTab($route.query.tab) === tab && $route.query.tab) {
+    return
+  }
+  $router.replace({
+    query: {
+      ...$route.query,
+      tab,
+    },
+  })
+})
 </script>
 
 <template>
@@ -139,7 +169,7 @@ watch(taskKey, loadTaskConfig, { immediate: true })
           class="nav-item"
           :class="{ active: activeInfo === section.name }"
           type="button"
-          @click="activeInfo = section.name"
+          @click="updateActiveInfo(section.name)"
         >
           <span class="nav-title">{{ section.title }}</span>
           <span class="nav-desc">{{ section.description }}</span>
@@ -153,7 +183,7 @@ watch(taskKey, loadTaskConfig, { immediate: true })
           class="mobile-nav-item"
           :class="{ active: activeInfo === section.name }"
           type="button"
-          @click="activeInfo = section.name"
+          @click="updateActiveInfo(section.name)"
         >
           {{ section.title }}
         </button>

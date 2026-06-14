@@ -2,20 +2,32 @@
 import loginPanel from '@components/loginPanel.vue'
 import { Lock, Phone, QuestionFilled, User } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { PublicApi, UserApi } from '@/apis'
 import { useSiteConfig } from '@/composables'
-import { rAccount, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
+import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
+import { rAccount, rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 
 const bindPhone = ref(false)
 const { value: siteConfig } = useSiteConfig()
-watch(siteConfig, () => {
-  if (siteConfig.value.needBindPhone) {
+const email = ref('')
+const emailCode = ref('')
+const supportPhoneBind = computed(() => Boolean(siteConfig.value.needBindPhone && siteConfig.value.supportPhoneCode))
+const supportEmailCodeLogin = computed(() => Boolean(siteConfig.value.supportEmailCodeLogin))
+const showEmailBind = computed(() => supportEmailCodeLogin.value)
+const needBindEmail = computed(() => Boolean(siteConfig.value.needBindEmail && supportEmailCodeLogin.value))
+const showEmailCodeInput = computed(() => rEmail.test(email.value.trim()) || Boolean(emailCode.value))
+const shouldBindEmail = computed(() => needBindEmail.value || Boolean(email.value.trim() || emailCode.value))
+watch([supportPhoneBind, supportEmailCodeLogin], ([supportPhone, supportEmail]) => {
+  if (!supportPhone) {
+    bindPhone.value = false
+  }
+  else if (!supportEmail) {
     bindPhone.value = true
   }
-})
+}, { immediate: true })
 const $store = useStore()
 const account = ref('')
 const pwd1 = ref('')
@@ -45,6 +57,25 @@ function getCode() {
     ElMessage.success('获取成功,请注意查看手机短信')
   })
 }
+
+function getEmailRegCode() {
+  if (!rEmail.test(email.value.trim())) {
+    ElMessage.warning('邮箱格式不正确')
+    return
+  }
+  PublicApi.getEmailCode(email.value.trim()).then(() => {
+    time.value = VERIFY_CODE_EXPIRE_SECONDS
+    refreshCodeText()
+    ElMessage.success('获取成功,请查收邮件')
+  }).catch((err) => {
+    const { code: c } = err
+    const options: Record<number, string> = {
+      1015: '邮箱格式不正确',
+      1016: '邮箱已被注册',
+    }
+    ElMessage.error(options[c] || '发送失败')
+  })
+}
 function checkForm() {
   if (!rAccount.test(account.value)) {
     ElMessage.warning('帐号格式不正确(4-11位 数字字母)')
@@ -59,13 +90,27 @@ function checkForm() {
     ElMessage.warning('两次输入的密码不一致')
     return false
   }
-  if (bindPhone.value) {
+  if (siteConfig.value.needBindPhone && !bindPhone.value && !shouldBindEmail.value) {
+    ElMessage.warning('请绑定手机号或邮箱后再注册')
+    return false
+  }
+  if (supportPhoneBind.value && bindPhone.value) {
     if (!rMobilePhone.test(phone.value)) {
       ElMessage.warning('手机号格式不正确')
       return false
     }
     if (!rVerCode.test(code.value)) {
       ElMessage.warning('验证码不正确(4位 数字)')
+      return false
+    }
+  }
+  if (shouldBindEmail.value) {
+    if (!rEmail.test(email.value.trim())) {
+      ElMessage.warning('邮箱格式不正确')
+      return false
+    }
+    if (!rVerCode.test(emailCode.value)) {
+      ElMessage.warning('邮箱验证码不正确(4位 数字)')
       return false
     }
   }
@@ -78,9 +123,12 @@ function handleRegister() {
   UserApi.register({
     account: account.value,
     pwd: pwd1.value,
-    bindPhone: bindPhone.value,
+    bindPhone: supportPhoneBind.value && bindPhone.value,
     phone: phone.value,
     code: code.value,
+    bindWithEmail: shouldBindEmail.value,
+    email: email.value.trim(),
+    emailCode: emailCode.value,
   })
     .then((res) => {
       const { token } = res.data
@@ -100,7 +148,10 @@ function handleRegister() {
         1004: '密码格式不正确',
         1006: '手机号格式不正确',
         1011: '系统暂不开放注册',
-        1012: '必须绑定手机号',
+        1012: '必须绑定手机号或邮箱',
+        1015: '邮箱格式不正确',
+        1016: '邮箱已被注册',
+        1018: '请先完成邮箱验证',
       }
       ElMessage.error(options[c] || msg)
     })
@@ -111,10 +162,49 @@ function handleRegister() {
   <div class="register">
     <login-panel>
       <div class="inputArea">
+        <template v-if="showEmailBind">
+          <div v-if="!needBindEmail" class="tc bind-email-line">
+            <span class="bind-email-title">
+              邮箱绑定（可选）
+            </span>
+            <el-tooltip
+              effect="dark"
+              content="需站点已配置 SMTP；可用于找回密码与邮件通知"
+              placement="top-start"
+            >
+              <el-icon :size="16">
+                <QuestionFilled />
+              </el-icon>
+            </el-tooltip>
+          </div>
+          <div>
+            <el-input
+              v-model="email"
+              :placeholder="needBindEmail ? '输入邮箱（必填）' : '输入邮箱（可选）'"
+              clearable
+            />
+          </div>
+          <div v-if="showEmailCodeInput">
+            <el-input
+              v-model="emailCode"
+              maxlength="4"
+              type="number"
+              :placeholder="needBindEmail ? '请输入邮箱验证码（必填）' : '请输入邮箱验证码'"
+              :prefix-icon="Lock"
+              clearable
+            >
+              <template #append>
+                <el-button :disabled="time !== 0" @click="getEmailRegCode">
+                  {{ codeText }}
+                </el-button>
+              </template>
+            </el-input>
+          </div>
+        </template>
         <div>
           <el-input
             v-model="account"
-            maxlength="11"
+            maxlength="32"
             placeholder="输入账号"
             :prefix-icon="User"
             clearable
@@ -144,8 +234,8 @@ function handleRegister() {
             clearable
           />
         </div>
-        <div class="tc">
-          <el-checkbox v-model="bindPhone" :disabled="siteConfig.needBindPhone">
+        <div v-if="supportPhoneBind" class="tc">
+          <el-checkbox v-model="bindPhone" :disabled="siteConfig.needBindPhone && !supportEmailCodeLogin">
             绑定手机
           </el-checkbox>
           <el-tooltip
@@ -158,7 +248,7 @@ function handleRegister() {
             </el-icon>
           </el-tooltip>
         </div>
-        <div v-if="bindPhone">
+        <div v-if="supportPhoneBind && bindPhone">
           <el-input
             v-model="phone"
             maxlength="11"
@@ -167,7 +257,7 @@ function handleRegister() {
             clearable
           />
         </div>
-        <div v-if="bindPhone">
+        <div v-if="supportPhoneBind && bindPhone">
           <el-input
             v-model="code"
             maxlength="4"
@@ -226,5 +316,9 @@ function handleRegister() {
     color: #409eff;
     margin-left: 10px;
   }
+}
+.bind-email-title {
+  color: #606266;
+  font-size: 14px;
 }
 </style>

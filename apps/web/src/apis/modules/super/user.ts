@@ -27,6 +27,22 @@ function resetPhone(id: number, phone: string, code: string) {
   })
 }
 
+function resetEmail(id: number, email: string) {
+  return ajax.put(`${baseUrl}/email`, {
+    id,
+    email,
+  })
+}
+
+function sendMail(id: number, subject: string, text: string, html = '') {
+  return ajax.post(`${baseUrl}/mail`, {
+    id,
+    subject,
+    text,
+    html,
+  })
+}
+
 function clearOssFile(id: number, type: string) {
   return ajax.delete(`${baseUrl}/clear/oss`, {
     params: { id, type },
@@ -70,11 +86,17 @@ function updateWallet(id: number, value: number) {
   })
 }
 
+function settleBilling(): SuperUserApiTypes.settleBilling {
+  return ajax.post(`${baseUrl}/billing/settle`)
+}
+
 export default {
   getUserList,
   updateUserStatus,
   resetPassword,
   resetPhone,
+  resetEmail,
+  sendMail,
   clearOssFile,
   getMessageList,
   readMessage,
@@ -82,4 +104,5 @@ export default {
   logout,
   resetLimitSpace,
   updateWallet,
+  settleBilling,
 }

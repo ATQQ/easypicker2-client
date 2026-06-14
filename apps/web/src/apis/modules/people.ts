@@ -64,10 +64,11 @@ function importPeopleFromTpl(
   })
 }
 
-function addPeopleByUser(name: string, key: string) {
-  return ajax.post(`/people/add/${key}`, {
-    name,
-  })
+function addPeopleByUser(name: string | string[], key: string) {
+  const isBatch = Array.isArray(name)
+  return ajax.post(`/people/add/${key}`, isBatch
+    ? { names: name }
+    : { name })
 }
 export default {
   importPeopleFromTpl,

@@ -1,0 +1,7 @@
+{
+  "projectId": "proj_bbc4d518b8c1",
+  "outputDir": "./dist",
+  "files": [
+    "**/*"
+  ]
+}

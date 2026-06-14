@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import LinkDialog from '@components/linkDialog.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { TaskApi } from '@/apis'
@@ -35,6 +35,51 @@ const filterTasks = computed(() => {
   const t = tasks.value.filter(v => v.category === selectCategory.value)
   return t
 })
+const selectedCategoryConfig = computed<CateGoryApiTypes.CategoryItem | undefined>(
+  () => categorys.value.find((c: CateGoryApiTypes.CategoryItem) => c.k === selectCategory.value),
+)
+const isCustomCategorySelected = computed(() => !!selectedCategoryConfig.value)
+
+const MAX_RECENT_TASK_KEYS = 10
+const recentTaskKeys = ref<string[]>([])
+function dashboardRecentStorageId() {
+  const token = localStorage.getItem('token') || ''
+  return token ? token.slice(-24) : 'anon'
+}
+function persistDashboardRecent() {
+  const id = dashboardRecentStorageId()
+  localStorage.setItem(
+    `ep2-dash-recent:${id}`,
+    JSON.stringify({
+      keys: recentTaskKeys.value,
+      lastCategory: selectCategory.value,
+    }),
+  )
+}
+function touchRecentTask(taskKey: string) {
+  if (!taskKey)
+    return
+  const next = [
+    taskKey,
+    ...recentTaskKeys.value.filter(k => k !== taskKey),
+  ].slice(0, MAX_RECENT_TASK_KEYS)
+  recentTaskKeys.value = next
+  persistDashboardRecent()
+}
+function removeFromRecentTasks(taskKey: string) {
+  recentTaskKeys.value = recentTaskKeys.value.filter(k => k !== taskKey)
+  persistDashboardRecent()
+}
+/** 当前分类下任务：最近操作过的排在前面 */
+const orderedFilterTasks = computed(() => {
+  const list = filterTasks.value
+  const order = recentTaskKeys.value
+  const rank = (k: string) => {
+    const i = order.indexOf(k)
+    return i === -1 ? Number.MAX_SAFE_INTEGER : i
+  }
+  return [...list].sort((a, b) => rank(a.key) - rank(b.key))
+})
 
 // 删除任务
 function deleteTask(k: string, isTrash = false) {
@@ -51,6 +96,7 @@ function deleteTask(k: string, isTrash = false) {
   )
     .then(() => {
       $store.dispatch('task/deleteTask', k).then(() => {
+        removeFromRecentTasks(k)
         ElMessage.success('删除成功')
       })
     })
@@ -63,6 +109,7 @@ function deleteTask(k: string, isTrash = false) {
 const showBaseInfoDialog = ref(false)
 const taskBaseInfo = reactive({ name: '', category: '', key: '' })
 function editBaseInfo(task: any) {
+  touchRecentTask(task.key)
   taskBaseInfo.name = task.name
   taskBaseInfo.category = task.category
   taskBaseInfo.key = task.key
@@ -74,7 +121,10 @@ function handleSaveEditInfo() {
     ElMessage.warning('不能为空')
     return
   }
-  $store.dispatch('task/updateTask', taskBaseInfo).then(() => {
+  $store.dispatch('task/updateTask', {
+    ...taskBaseInfo,
+    listCategory: selectCategory.value,
+  }).then(() => {
     ElMessage.success('更新成功')
   })
 }
@@ -84,6 +134,7 @@ const shareTaskLink = ref('')
 const showLinkModal = ref(false)
 const shareTaskName = ref('')
 function shareTask(k: string) {
+  touchRecentTask(k)
   shareTaskLink.value = 'default'
   const { origin } = window.location
   shareTaskLink.value = `${origin}/task/${k}`
@@ -106,6 +157,7 @@ function shouldOpenTaskConfigPage() {
   return true
 }
 function editMore(item: any) {
+  touchRecentTask(item.key)
   if (shouldOpenTaskConfigPage()) {
     $router.push({
       name: 'task-config',
@@ -134,6 +186,57 @@ function editMore(item: any) {
   })
 }
 
+function openCategoryConfig() {
+  if (!selectedCategoryConfig.value)
+    return
+  $router.push({
+    name: 'category-config',
+    params: {
+      key: selectedCategoryConfig.value.k,
+    },
+    query: {
+      name: selectedCategoryConfig.value.name,
+    },
+  })
+}
+
+function loadTasksBySelectedCategory() {
+  return $store.dispatch('task/getTaskByCategory', {
+    category: selectCategory.value,
+  })
+}
+
+function isAllowedCategory(category: string) {
+  return [
+    'default',
+    'trash',
+    ...categorys.value.map((c: { k: string }) => c.k),
+  ].includes(category)
+}
+
+let tasksPageReady = false
+let readyRefreshTasksPage = false
+async function refreshTasksPageData() {
+  tasksPageReady = false
+  await $store.dispatch('category/getCategory')
+  if (!isAllowedCategory(selectCategory.value)) {
+    selectCategory.value = 'default'
+  }
+  await loadTasksBySelectedCategory()
+  tasksPageReady = true
+}
+
+function handleBlur() {
+  readyRefreshTasksPage = true
+}
+
+function handleFocus() {
+  if (!readyRefreshTasksPage)
+    return
+  readyRefreshTasksPage = false
+  void refreshTasksPageData()
+}
+
 // TODO: 有需要再优化，目前像bug
 // 用于选择默认展示项目
 // const taskCount = (c: string) => {
@@ -156,9 +259,47 @@ function editMore(item: any) {
 //   }
 // })
 
+async function initTasksPage() {
+  tasksPageReady = false
+  await $store.dispatch('category/getCategory')
+  const raw = localStorage.getItem(
+    `ep2-dash-recent:${dashboardRecentStorageId()}`,
+  )
+  if (raw) {
+    try {
+      const s = JSON.parse(raw) as {
+        keys?: string[]
+        lastCategory?: string
+      }
+      if (Array.isArray(s.keys))
+        recentTaskKeys.value = s.keys.slice(0, MAX_RECENT_TASK_KEYS)
+      if (s.lastCategory && isAllowedCategory(s.lastCategory))
+        selectCategory.value = s.lastCategory
+    }
+    catch {
+      /* ignore */
+    }
+  }
+  await loadTasksBySelectedCategory()
+  tasksPageReady = true
+}
+
+watch(selectCategory, () => {
+  if (!tasksPageReady)
+    return
+  persistDashboardRecent()
+  loadTasksBySelectedCategory()
+})
+
 onMounted(() => {
-  $store.dispatch('category/getCategory')
-  $store.dispatch('task/getTask')
+  initTasksPage()
+  window.addEventListener('blur', handleBlur)
+  window.addEventListener('focus', handleFocus)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('blur', handleBlur)
+  window.removeEventListener('focus', handleFocus)
 })
 
 function openTaskPage() {
@@ -177,11 +318,21 @@ function openTaskPage() {
     <div class="panel task-panel">
       <!-- 创建任务 -->
       <CreateTask :active-category-key="selectCategory" />
+      <el-button
+        v-if="isCustomCategorySelected"
+        class="category-config-btn"
+        type="primary"
+        plain
+        size="small"
+        @click="openCategoryConfig"
+      >
+        分类配置
+      </el-button>
 
       <!-- 任务列表 -->
       <div class="task-list">
         <TaskInfo
-          v-for="item in filterTasks"
+          v-for="item in orderedFilterTasks"
           :key="item.key"
           :item="item"
           @edit="editBaseInfo"
@@ -190,7 +341,7 @@ function openTaskPage() {
           @more="editMore"
         />
         <el-empty
-          v-if="filterTasks.length === 0"
+          v-if="orderedFilterTasks.length === 0"
           description="此分类下没有任务哟，快去创建吧"
         />
       </div>
@@ -318,6 +469,17 @@ function openTaskPage() {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-around;
+}
+
+.task-panel {
+  position: relative;
+}
+
+.category-config-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
 }
 
 @media screen and (max-width: 700px) {

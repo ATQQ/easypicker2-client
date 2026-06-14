@@ -1,6 +1,8 @@
 import type {
   FWRequest,
 } from 'flash-wolves'
+import type { User } from '@/db/model/user'
+import dayjs from 'dayjs'
 import {
   Delete,
   Get,
@@ -11,36 +13,35 @@ import {
   Response,
   RouterController,
 } from 'flash-wolves'
-import dayjs from 'dayjs'
 import { In } from 'typeorm'
+import { UserError } from '@/constants/errorMsg'
+import { FileRepository, selectFiles } from '@/db/fileDb'
+import { addBehavior } from '@/db/logDb'
+import { MessageType } from '@/db/model/message'
 import { USER_POWER, USER_STATUS } from '@/db/model/user'
-import type { User } from '@/db/model/user'
+import { expiredRedisKey, getRedisVal } from '@/db/redisDb'
 import {
-  UserRepository,
   selectUserByAccount,
   selectUserById,
   selectUserByPhone,
   updateUser,
+  UserRepository,
 } from '@/db/userDb'
-import { addBehavior, findLog } from '@/db/logDb'
-import { rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
-import { encryption, formatSize, percentageValue } from '@/utils/stringUtil'
-import { expiredRedisKey, getRedisVal } from '@/db/redisDb'
-import { FileRepository, selectFiles } from '@/db/fileDb'
-import { UserError } from '@/constants/errorMsg'
-import FileService from '@/service/file'
-import { batchDeleteFiles } from '@/utils/qiniuUtil'
-import { MessageType } from '@/db/model/message'
-import MessageService from '@/service/message'
 import { ReqUserInfo } from '@/decorator'
 import {
   BehaviorService,
+  FileService as newFileService,
   QiniuService,
   SuperUserService,
   TokenService,
-  FileService as newFileService,
 } from '@/service'
-import { calculateSize } from '@/utils/userUtil'
+import FileService from '@/service/file'
+import MessageService from '@/service/message'
+import { sendMail } from '@/utils/mail'
+import { batchDeleteFiles } from '@/utils/qiniuUtil'
+import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
+import { isLocalStorageMode } from '@/utils/storageMode'
+import { encryption } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
 const power = {
@@ -132,17 +133,19 @@ export default class SuperUserController {
     // 获取文件数据
     const files = await this.fileRepository.findMany({})
     const { moneyStartDay } = LocalUserDB.getSiteConfig()
-    const filesMap = await this.qiniuService.getFilesMap(files)
+    const filesMap = isLocalStorageMode()
+      ? new Map<string, Qiniu.ItemInfo>()
+      : await this.qiniuService.getFilesMap(files)
     const downloadLog = await this.fileService.downloadLog('', {
       startTime: new Date(moneyStartDay),
     })
     // 遍历用户，获取文件数和占用空间数据
     for (const user of users) {
       const fileInfo = files.filter(file => file.userId === user.id)
-      const overviewData = await this.fileService.getUserOverview(user, {
+      const overviewData = await this.fileService.getCachedUserOverview(user, {
         files: fileInfo,
         filesMap,
-        downloadLog: downloadLog.filter((v => v.data?.info?.data?.account === user.account)),
+        downloadLog: downloadLog.filter(v => v.data?.info?.data?.account === user.account),
       })
       Object.assign(user, overviewData)
     }
@@ -164,6 +167,9 @@ export default class SuperUserController {
     @ReqUserInfo()
     userInfo: User,
   ) {
+    if (isLocalStorageMode()) {
+      return
+    }
     const user = (await selectUserById(id))[0]
     if (!user) {
       return
@@ -320,6 +326,98 @@ export default class SuperUserController {
     )
   }
 
+  @Put('email')
+  async resetEmail(
+    @ReqBody('id') id: number,
+    @ReqBody('email') email: string,
+    @ReqUserInfo() admin: User,
+  ) {
+    const addr = String(email || '').trim().toLowerCase()
+    const user = await this.userRepository.findOne({ id })
+    if (!user || !rEmail.test(addr)) {
+      this.behaviorService.add('super', '管理员绑定用户邮箱: 参数不合法', {
+        id,
+        email,
+      })
+      return Response.fail(500, '参数不合法')
+    }
+
+    const exist = await this.userRepository.findOne({ email: addr })
+    if (exist && exist.id !== user.id) {
+      this.behaviorService.add('super', `管理员绑定用户邮箱: 邮箱 ${addr} 已存在`, {
+        id,
+        email: addr,
+      })
+      return Response.failWithError(UserError.email.exist)
+    }
+
+    const oldEmail = user.email || ''
+    user.email = addr
+    user.emailVerified = 1
+    await this.userRepository.update(user)
+    this.behaviorService.add(
+      'super',
+      `管理员绑定用户邮箱 ${user.account} ${oldEmail || '未绑定'} => ${addr}`,
+      {
+        operator: admin?.account,
+        targetId: user.id,
+        account: user.account,
+        oldEmail,
+        email: addr,
+      },
+    )
+    return { ok: true }
+  }
+
+  @Post('mail')
+  async sendUserMail(
+    @ReqBody('id') id: number,
+    @ReqBody('subject') subject: string,
+    @ReqBody('text') text: string,
+    @ReqBody('html') html: string,
+    @ReqUserInfo() admin: User,
+  ) {
+    const user = await this.userRepository.findOne({ id })
+    const mailSubject = String(subject || '').trim()
+    const mailText = String(text || '').trim()
+    const mailHtml = String(html || '').trim()
+    if (!user || !user.email || !mailSubject || (!mailText && !mailHtml)) {
+      this.behaviorService.add('super', '管理员发送邮件给用户: 参数不合法', {
+        operator: admin?.account,
+        targetId: id,
+        subject: mailSubject,
+        text: mailText,
+        html: mailHtml,
+      })
+      return Response.fail(500, '参数不合法')
+    }
+
+    const result = await sendMail({
+      to: user.email,
+      subject: mailSubject,
+      text: mailText || mailHtml.replace(/<[^>]+>/g, ''),
+      ...mailHtml && { html: mailHtml },
+    })
+    this.behaviorService.add(
+      'super',
+      `管理员发送邮件给用户 ${user.account} ${result.ok ? '成功' : '失败'}`,
+      {
+        operator: admin?.account,
+        targetId: user.id,
+        account: user.account,
+        email: user.email,
+        subject: mailSubject,
+        text: mailText,
+        html: mailHtml,
+        result,
+      },
+    )
+    if (!result.ok) {
+      return Response.fail(500, result.error || '发送失败')
+    }
+    return result
+  }
+
   @Put('size')
   async changeSize(@ReqBody('id') id: number, @ReqBody('size') size: number) {
     const user = await this.userRepository.findOne({
@@ -335,6 +433,7 @@ export default class SuperUserController {
     )
     user.size = size
     await this.userRepository.update(user)
+    await this.fileService.expireUserOverviewCache(user.id)
   }
 
   @Put('wallet')
@@ -352,5 +451,83 @@ export default class SuperUserController {
     )
     user.wallet = value.toFixed(2)
     await this.userRepository.update(user)
+    await this.fileService.expireUserOverviewCache(user.id)
+  }
+
+  @Post('billing/settle')
+  async settleBilling(@ReqUserInfo() operator: User) {
+    const oldMoneyStartDay = Number(LocalUserDB.getSiteConfig()?.moneyStartDay || Date.now())
+    const newMoneyStartDay = Date.now()
+    const users = await this.userRepository.findMany({})
+    const normalUsers = users.filter(user => user.power === USER_POWER.NORMAL)
+    let settledCount = 0
+    let skippedCount = 0
+    let totalCost = 0
+    const details: {
+      id: number
+      account: string
+      oldWallet: string
+      cost: string
+      newWallet: string
+    }[] = []
+
+    for (const user of normalUsers) {
+      const overview = await this.fileService.getUserOverview(user)
+      const cost = Number(overview.cost || 0)
+      if (!Number.isFinite(cost) || cost <= 0) {
+        skippedCount += 1
+        continue
+      }
+      const nextWallet = Number(user.wallet || 0) - cost
+      const oldWallet = user.wallet || '0.00'
+      user.wallet = nextWallet.toFixed(2)
+      await this.userRepository.update(user)
+      await this.fileService.expireUserOverviewCache(user.id)
+      totalCost += cost
+      settledCount += 1
+      details.push({
+        id: user.id,
+        account: user.account,
+        oldWallet,
+        cost: cost.toFixed(2),
+        newWallet: user.wallet,
+      })
+    }
+
+    const site = LocalUserDB.getSiteConfig()
+    await LocalUserDB.updateUserConfig(
+      {
+        type: 'global',
+        key: 'site',
+      },
+      {
+        value: {
+          ...site,
+          moneyStartDay: newMoneyStartDay,
+        },
+      },
+    )
+    await this.fileService.expireAllUserOverviewCache()
+    this.behaviorService.add(
+      'super',
+      `批量扣费 操作人:${operator.account} 结算人数:${settledCount} 总金额:${totalCost.toFixed(2)}￥`,
+      {
+        operator: operator.account,
+        settledCount,
+        skippedCount,
+        totalCost: totalCost.toFixed(2),
+        oldMoneyStartDay,
+        newMoneyStartDay,
+        details,
+      },
+    )
+
+    return {
+      settledCount,
+      skippedCount,
+      totalCost: totalCost.toFixed(2),
+      oldMoneyStartDay,
+      newMoneyStartDay,
+    }
   }
 }

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import HomeFooter from '@components/HomeFooter/index.vue'
-import { ArrowDown, Close, Expand } from '@element-plus/icons-vue'
+import { ArrowDown, Close, Expand, Setting } from '@element-plus/icons-vue'
 
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, reactive, ref, watch } from 'vue'
@@ -25,6 +25,10 @@ const navList = reactive<
   {
     title: '任务管理',
     path: '/dashboard/tasks',
+  },
+  {
+    title: '个人设置',
+    path: '/dashboard/profile',
   },
 ])
 const navActiveIdx = ref(0)
@@ -185,6 +189,9 @@ onMounted(() => {
           </span>
           <template #dropdown>
             <el-dropdown-menu>
+              <el-dropdown-item :icon="Setting" @click="$router.push({ name: 'profile' })">
+                个人设置
+              </el-dropdown-item>
               <el-dropdown-item :icon="Close" @click="handleLogout">
                 退出
               </el-dropdown-item>

@@ -1,0 +1,8 @@
+{
+  "projectId": "proj_92ee1ab5b928",
+  "serverUrl": "http://localhost:5430",
+  "outputDir": "./dist",
+  "files": [
+    "**/*"
+  ]
+}

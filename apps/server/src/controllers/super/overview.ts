@@ -31,13 +31,18 @@ import {
   findLogReserve,
   findLogWithPageOffset,
   findMonitorMetricLogs,
+  findRequestBusinessStatusLogs,
+  findRequestBusinessStatusMetricLogs,
   findRequestMetricLogs,
+  findRequestStatusLogs,
+  findRequestStatusMetricLogs,
 } from '@/db/logDb'
 import { ActionType } from '@/db/model/action'
 import { USER_POWER } from '@/db/model/user'
 import { getUserOverviewCount } from '@/db/userDb'
 import SuperService from '@/service/super'
 import { batchDeleteFiles, getFileKeys } from '@/utils/qiniuUtil'
+import { isLocalStorageMode } from '@/utils/storageMode'
 import { escapeRegexForMongo, formatSize } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
@@ -226,6 +231,88 @@ export default class OverviewController {
       }))
   }
 
+  private getRequestStatusMetrics(logs: Awaited<ReturnType<typeof findRequestStatusMetricLogs>>) {
+    const statusMap = new Map<number, {
+      code: number
+      count: number
+    }>()
+    for (const log of logs) {
+      const code = Number(log.statusCode || 0)
+      const item = statusMap.get(code) || {
+        code,
+        count: 0,
+      }
+      item.count += 1
+      statusMap.set(code, item)
+    }
+    const total = logs.length
+    const non200Total = logs.filter((log) => {
+      const code = Number(log.statusCode || 0)
+      return code > 0 && code !== 200
+    }).length
+
+    return {
+      total,
+      non200Total,
+      codes: [...statusMap.values()]
+        .sort((a, b) => {
+          if (a.code === 200)
+            return -1
+          if (b.code === 200)
+            return 1
+          return b.count - a.count || a.code - b.code
+        })
+        .map(item => ({
+          ...item,
+          label: item.code ? String(item.code) : '未知',
+          percent: total ? Number(((item.count / total) * 100).toFixed(2)) : 0,
+        })),
+    }
+  }
+
+  private getRequestBusinessStatusMetrics(
+    logs: Awaited<ReturnType<typeof findRequestBusinessStatusMetricLogs>>,
+  ) {
+    const statusMap = new Map<string, {
+      code: string
+      count: number
+    }>()
+    for (const log of logs) {
+      if (log.businessCode === undefined) {
+        continue
+      }
+      const code = String(log.businessCode)
+      const item = statusMap.get(code) || {
+        code,
+        count: 0,
+      }
+      item.count += 1
+      statusMap.set(code, item)
+    }
+    const total = [...statusMap.values()].reduce((sum, item) => sum + item.count, 0)
+    const nonZeroTotal = [...statusMap.values()]
+      .filter(item => item.code !== '0')
+      .reduce((sum, item) => sum + item.count, 0)
+
+    return {
+      total,
+      nonZeroTotal,
+      codes: [...statusMap.values()]
+        .sort((a, b) => {
+          if (a.code === '0')
+            return -1
+          if (b.code === '0')
+            return 1
+          return b.count - a.count || a.code.localeCompare(b.code, 'zh-Hans-CN', { numeric: true })
+        })
+        .map(item => ({
+          ...item,
+          label: item.code,
+          percent: total ? Number(((item.count / total) * 100).toFixed(2)) : 0,
+        })),
+    }
+  }
+
   private getCountMetricSeries(
     logs: Awaited<ReturnType<typeof findMonitorMetricLogs>>,
     start: Date,
@@ -310,27 +397,27 @@ export default class OverviewController {
     const [
       userCount,
       fileCount,
-      ossFiles,
       logCount,
       logRecent,
       pvCount,
       todayPvCount,
       uv,
       todayUv,
+      ossFiles,
       compressData,
       tempTxtFilesData,
     ] = await Promise.all([
       getUserOverviewCount(nowDate),
       getFileOverviewCount(nowDate),
-      SuperService.getOssFiles(),
       findLogCount({}),
       findLogCountWithTimeRange({}, nowDate),
       findLogCount({ type: 'pv' }),
       findLogCountWithTimeRange({ type: 'pv' }, nowDate),
       findLogDistinctCount('data.ip', { type: 'pv' }),
       findLogDistinctCount('data.ip', { type: 'pv' }, nowDate),
-      SuperService.getCachedFileKeys('easypicker2/temp_package'),
-      SuperService.getCachedFileKeys('1').then(v => v.filter(v => tempTxtFileReg.test(v.key))),
+      isLocalStorageMode() ? Promise.resolve([]) : SuperService.getOssFiles(),
+      isLocalStorageMode() ? Promise.resolve([]) : SuperService.getCachedFileKeys('easypicker2/temp_package'),
+      isLocalStorageMode() ? Promise.resolve([]) : SuperService.getCachedFileKeys('1').then(v => v.filter(v => tempTxtFileReg.test(v.key))),
     ])
     const tempFiles = compressData.concat(tempTxtFilesData)
     const expiredFiles = tempFiles.filter(item =>
@@ -461,8 +548,114 @@ export default class OverviewController {
     }
   }
 
+  @Post('request-status-metrics', power)
+  async getRequestStatusSummary(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+    @ReqBody('method') method = '',
+    @ReqBody('path') path = '',
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    const logs = await findRequestStatusMetricLogs(start, end, {
+      method: method || undefined,
+      path: path ? path.trim() : undefined,
+    })
+    return {
+      startTime: start.getTime(),
+      endTime: end.getTime(),
+      ...this.getRequestStatusMetrics(logs),
+    }
+  }
+
+  @Post('request-status-logs', power)
+  async getRequestStatusLogs(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+    @ReqBody('method') method = '',
+    @ReqBody('path') path = '',
+    @ReqBody('statusCode') statusCode?: number,
+    @ReqBody('non200Only') non200Only = true,
+    @ReqBody('pageSize') pageSize = 10,
+    @ReqBody('pageIndex') pageIndex = 1,
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    const normalizedStatusCode = statusCode === undefined || statusCode === null
+      ? Number.NaN
+      : Number(statusCode)
+    return findRequestStatusLogs(start, end, {
+      method: method || undefined,
+      path: path ? path.trim() : undefined,
+      statusCode: Number.isFinite(normalizedStatusCode) ? normalizedStatusCode : undefined,
+      non200Only,
+      pageSize,
+      pageIndex,
+    })
+  }
+
+  @Post('request-business-status-metrics', power)
+  async getRequestBusinessStatusSummary(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+    @ReqBody('method') method = '',
+    @ReqBody('path') path = '',
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    const logs = await findRequestBusinessStatusMetricLogs(start, end, {
+      method: method || undefined,
+      path: path ? path.trim() : undefined,
+    })
+    return {
+      startTime: start.getTime(),
+      endTime: end.getTime(),
+      ...this.getRequestBusinessStatusMetrics(logs),
+    }
+  }
+
+  @Post('request-business-status-logs', power)
+  async getRequestBusinessStatusLogs(
+    @ReqBody('startTime') startTime?: number,
+    @ReqBody('endTime') endTime?: number,
+    @ReqBody('method') method = '',
+    @ReqBody('path') path = '',
+    @ReqBody('businessCode') businessCode?: string | number,
+    @ReqBody('nonZeroOnly') nonZeroOnly = true,
+    @ReqBody('pageSize') pageSize = 10,
+    @ReqBody('pageIndex') pageIndex = 1,
+  ) {
+    const end = endTime ? new Date(endTime) : new Date()
+    const start = startTime
+      ? new Date(startTime)
+      : new Date(end.getTime() - 1000 * 60 * 60 * 12)
+    return findRequestBusinessStatusLogs(start, end, {
+      method: method || undefined,
+      path: path ? path.trim() : undefined,
+      businessCode: businessCode === '' || businessCode === undefined || businessCode === null
+        ? undefined
+        : businessCode,
+      nonZeroOnly,
+      pageSize,
+      pageIndex,
+    })
+  }
+
   @Delete('compress', power)
   async clearExpiredCompress(req: FWRequest) {
+    if (isLocalStorageMode()) {
+      addBehavior(req, {
+        module: 'super',
+        msg: '本机存储模式跳过七牛云归档清理',
+      })
+      return
+    }
     // 清理过期压缩文件
     const compressData = await getFileKeys('easypicker2/temp_package')
     const expired = compressData

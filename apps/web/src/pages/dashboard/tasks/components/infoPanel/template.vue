@@ -3,7 +3,8 @@ import type { UploadUserFile } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { defineComponent, ref, watchEffect } from 'vue'
 import { FileApi } from '@/apis'
-import { qiniuUpload } from '@/utils/networkUtil'
+import { localManagedFileUpload, qiniuUpload } from '@/utils/networkUtil'
+import { formatSize } from '@/utils/stringUtil'
 import { updateTaskInfo } from '../../public'
 import Tip from './tip.vue'
 
@@ -57,27 +58,63 @@ export default defineComponent({
         if (!props.k) {
           return
         }
+        if (!file.raw) {
+          ElMessage.error('模板文件不存在')
+          return
+        }
         const { name } = file
         const key = `easypicker2/${props.k}_template/${name}`
         if (file.status === 'ready') {
           file.status = 'uploading'
-          // qiniu上传
           FileApi.getUploadToken().then((res) => {
-            qiniuUpload(res.data.token, file.raw, key, {
+            const markSuccess = () => {
+              ElMessage.success('上传成功')
+              updateTaskInfo(props.k, { template: name })
+              clearFiles()
+              template.value = name
+              file.status = 'success'
+            }
+            const markFail = (err?: any) => {
+              file.status = 'fail'
+              ElMessage.error(err?.message || '上传失败')
+            }
+            if (res.data.storageMode === 'local') {
+              const maxB = res.data.maxUploadBytes
+              if (maxB && file.raw!.size > maxB) {
+                ElMessage.error(`模板文件超过单文件上限 ${formatSize(maxB)}`)
+                file.status = 'fail'
+                return
+              }
+              localManagedFileUpload(file.raw!, '/task_info/template/upload', {
+                taskKey: props.k,
+                name,
+              }, {
+                success() {
+                  markSuccess()
+                },
+                error(err) {
+                  markFail(err)
+                },
+                process(per: number) {
+                  file.percentage = ~~per
+                },
+              })
+              return
+            }
+            qiniuUpload(res.data.token, file.raw!, key, {
               success() {
-                ElMessage.success('上传成功')
-                updateTaskInfo(props.k, { template: name })
-                // 清理上传完成的
-                clearFiles()
-                template.value = name
-                file.status = 'success'
-                // hash,key
-                // console.log(data)
+                markSuccess()
+              },
+              error(err) {
+                markFail(err)
               },
               process(per: number) {
                 file.percentage = ~~per
               },
             })
+          }).catch(() => {
+            file.status = 'fail'
+            ElMessage.error('获取上传参数失败')
           })
         }
       })

@@ -10,16 +10,14 @@ import {
   Put,
   ReqBody,
   ReqParams,
+  ReqQuery,
   RouterController,
 } from 'flash-wolves'
-import { BehaviorService, FileService, TaskService } from '@/service'
 import { Task } from '@/db/entity'
-import { wrapperCatchError } from '@/utils/context'
 import { UserRepository } from '@/db/userDb'
-import { calculateSize } from '@/utils/userUtil'
-import { USER_POWER } from '@/db/model/user'
+import { BehaviorService, FileService, TaskService } from '@/service'
+import { wrapperCatchError } from '@/utils/context'
 import { formatSize } from '@/utils/stringUtil'
-import LocalUserDB from '@/utils/user-local-db'
 
 const needLogin = {
   needLogin: true,
@@ -65,9 +63,22 @@ export default class TaskController {
   }
 
   @Get('')
-  async getTasks() {
+  async getTasks(@ReqQuery('recent') recent?: string) {
     const { id, account } = this.Ctx.req.userInfo
-    return this.taskService.getTasks(id, account)
+    return this.taskService.getTasks(id, account, {
+      recent: recent !== 'false',
+    })
+  }
+
+  @Get('/category/:categoryKey')
+  async getTasksByCategory(
+    @ReqParams('categoryKey') categoryKey: string,
+    @ReqQuery('recent') recent?: string,
+  ) {
+    const { id, account } = this.Ctx.req.userInfo
+    return this.taskService.getTasksByCategory(id, account, categoryKey, {
+      recent: recent !== 'false',
+    })
   }
 
   @Get('/:key', { needLogin: false })
@@ -78,10 +89,8 @@ export default class TaskController {
         id: data.userId,
       })
 
-      // user.size = 0
-      // user.power = USER_POWER.NORMAL
-      const userOverview = await this.fileService.getUserOverview(user)
-      const { maxSize, usage, limitUpload, wallet, cost, limitSpace, limitWallet } = userOverview
+      const userOverview = await this.fileService.getFastUploadLimit(user)
+      const { maxSize, usage, limitUpload, wallet, limitSpace, limitWallet } = userOverview
       if (limitSpace) {
         this.behaviorService.add('user', `用户 ${user.account} 超出容量限制`, {
           space: formatSize(maxSize),
@@ -91,7 +100,6 @@ export default class TaskController {
       if (limitWallet) {
         this.behaviorService.add('user', `用户 ${user.account} 余额不足`, {
           wallet,
-          cost,
         })
       }
       return {

@@ -1,17 +1,17 @@
-import path from 'node:path'
-import type { Context, FWRequest } from 'flash-wolves'
-import { InjectCtx, Post, ReqBody, RouterController } from 'flash-wolves'
+import type { Context } from 'flash-wolves'
 import type { FilterQuery } from 'mongodb'
-import {
-  findActionCount,
-  findActionWithPageOffset,
-  updateAction,
-} from '@/db/actionDb'
 import type {
   Action,
   DownloadAction,
   DownloadActionData,
 } from '@/db/model/action'
+import path from 'node:path'
+import { InjectCtx, Post, ReqBody, RouterController } from 'flash-wolves'
+import {
+  findActionCount,
+  findActionWithPageOffset,
+  updateAction,
+} from '@/db/actionDb'
 import {
   ActionType,
   DownloadStatus,
@@ -21,9 +21,10 @@ import {
   createDownloadUrl,
   getOSSFiles,
 } from '@/utils/qiniuUtil'
+import { isLocalStorageMode } from '@/utils/storageMode'
+import { shortLink } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 import { getQiniuFileUrlExpiredTime } from '@/utils/userUtil'
-import { shortLink } from '@/utils/stringUtil'
 
 @RouterController('action', {
   needLogin: true,
@@ -76,15 +77,20 @@ export default class ActionController {
       }
 
       // 检查归档是否完成
-      if (action.data.status === DownloadStatus.ARCHIVE) {
-        const data = await checkFopTaskStatus(action.data.archiveKey)
+      if (action.data.status === DownloadStatus.ARCHIVE && (!isLocalStorageMode() || action.data.storage === 'qiniu')) {
+        const allowQiniuInLocalMode = action.data.storage === 'qiniu'
+        const data = await checkFopTaskStatus(action.data.archiveKey, {
+          allowInLocalMode: allowQiniuInLocalMode,
+        })
         if (data.error) {
           action.data.status = DownloadStatus.FAIL
           action.data.error = data.error
           needUpdate = true
         }
         if (data.code === 0) {
-          const [fileInfo] = await getOSSFiles(data.key)
+          const [fileInfo] = await getOSSFiles(data.key, {
+            allowInLocalMode: allowQiniuInLocalMode,
+          })
           action.data.status = DownloadStatus.SUCCESS
           // 获取过期时间
           const expiredTime
@@ -93,8 +99,11 @@ export default class ActionController {
           action.data.originUrl = createDownloadUrl(
             data.key,
             expiredTime,
+            {
+              allowInLocalMode: allowQiniuInLocalMode,
+            },
           )
-          // @ts-expect-error
+          // @ts-expect-error mongodb action id is available at runtime
           action.data.url = shortLink(action._id, this.ctx.req)
           action.data.size = fileInfo.fsize
           action.data.expiredTime = expiredTime * 1000

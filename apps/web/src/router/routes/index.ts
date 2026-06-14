@@ -11,9 +11,11 @@ const Author = () => import('@/pages/callme/index.vue')
 const Feedback = () => import('@/pages/feedback/index.vue')
 const Dashboard = () => import('@/pages/dashboard/index.vue')
 const Files = () => import('@/pages/dashboard/files/index.vue')
+const Profile = () => import('@/pages/dashboard/profile/index.vue')
 const Config = () => import('@/pages/dashboard/config/index.vue')
 const Tasks = () => import('@/pages/dashboard/tasks/index.vue')
 const TaskConfig = () => import('@/pages/dashboard/tasks/config.vue')
+const CategoryConfig = () => import('@/pages/dashboard/tasks/category-config.vue')
 const Manage = () => import('@/pages/dashboard/manage/index.vue')
 const Overview = () => import('@/pages/dashboard/manage/overview/index.vue')
 const Metrics = () => import('@/pages/dashboard/manage/metrics/index.vue')
@@ -133,6 +135,14 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
+        name: 'profile',
+        path: 'profile',
+        component: Profile,
+        meta: {
+          title: '个人设置',
+        },
+      },
+      {
         name: 'files',
         path: 'files',
         component: Files,
@@ -154,6 +164,14 @@ const routes: RouteRecordRaw[] = [
         component: TaskConfig,
         meta: {
           title: '任务配置',
+        },
+      },
+      {
+        name: 'category-config',
+        path: 'tasks/category/:key/config',
+        component: CategoryConfig,
+        meta: {
+          title: '分类配置',
         },
       },
       {

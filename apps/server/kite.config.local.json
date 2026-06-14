@@ -1,0 +1,17 @@
+{
+  "projectId": "proj_50c343d70149",
+  "serverUrl": "http://localhost:5430",
+  "outputDir": "./",
+  "files": [
+    "dist/**/*",
+    "package.json",
+    "docs/**/*",
+    ".env",
+    "scripts/kite/post-deploy-pm2.sh"
+  ],
+  "postDeploy": "bash scripts/kite/post-deploy-pm2.sh",
+  "env": {
+    "SERVER_PORT": "3001",
+    "PM2_NAME": "ep-server"
+  }
+}

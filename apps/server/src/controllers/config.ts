@@ -4,14 +4,15 @@ import type { GlobalSiteConfig } from '@/types'
 import { Get, Inject, InjectCtx, Post, Put, ReqBody, ReqQuery, RouterController } from 'flash-wolves'
 import { In } from 'typeorm'
 import { kvStoreConfig } from '@/config'
-import { UserConfigLabels } from '@/constants'
+import { uploadFileDir, UserConfigLabels } from '@/constants'
 import { initTypeORM } from '@/db'
 import { USER_POWER } from '@/db/model/user'
 import { UserRepository } from '@/db/userDb'
 import { getMongoDBStatus, refreshMongoDb } from '@/lib/dbConnect/mongodb'
 import { getMysqlStatus, refreshPool } from '@/lib/dbConnect/mysql'
 import { getRedisStatus } from '@/lib/dbConnect/redis'
-import { UserService } from '@/service'
+import { FileService, UserService } from '@/service'
+import { isSmtpConfigured, isSmtpServiceEnabled, sendMail, sendVerifyCodeMail } from '@/utils/mail'
 import { ensureMysqlBootstrap } from '@/utils/mysql-bootstrap'
 import { checkMysqlDatabaseExists } from '@/utils/mysql-check-database'
 import {
@@ -25,13 +26,25 @@ import {
 } from '@/utils/mysql-schema-canonical'
 import { patchTable } from '@/utils/patch'
 import { getQiniuStatus, refreshQinNiuConfig } from '@/utils/qiniuUtil'
-import { rPassword } from '@/utils/regExp'
-import { isCodeLoginSupported } from '@/utils/siteConfig'
+import { rEmail, rPassword } from '@/utils/regExp'
+import { isCodeLoginSupported, isEmailCodeLoginSupported, isTxMessageConfigured, isTxMessageEnabled } from '@/utils/siteConfig'
+import { getStorageMode } from '@/utils/storageMode'
 import { encryption } from '@/utils/stringUtil'
 import { getTxServiceStatus, refreshTxConfig } from '@/utils/tencent'
 import LocalUserDB from '@/utils/user-local-db'
 
-type ServiceConfigType = Extract<UserConfig['type'], 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx'>
+type ServiceConfigType = Extract<UserConfig['type'], 'mysql' | 'mongo' | 'redis' | 'qiniu' | 'tx' | 'smtp'>
+const billingConfigKeys: (keyof GlobalSiteConfig)[] = [
+  'limitSpace',
+  'limitWallet',
+  'storageMode',
+  'moneyStartDay',
+  'qiniuOSSPrice',
+  'qiniuCDNPrice',
+  'qiniuBackhaulTrafficPrice',
+  'qiniuBackhaulTrafficPercentage',
+  'qiniuCompressPrice',
+]
 
 interface ServiceDefinition {
   type: ServiceConfigType
@@ -41,6 +54,36 @@ interface ServiceDefinition {
   enabled: () => boolean
   getStatus: () => Promise<ServiceStatus>
 }
+
+const mailTestSceneDefinitions = [
+  {
+    key: 'smtp-basic',
+    label: 'SMTP 基础连通',
+    description: '验证 SMTP 主机、端口、SSL、账号、授权码与发件人配置。',
+  },
+  {
+    key: 'verify-code',
+    label: '邮箱验证码',
+    description: '覆盖注册、登录、找回密码与绑定邮箱共用的验证码模板。',
+  },
+  {
+    key: 'submit-notify',
+    label: '文件提交通知',
+    description: '模拟任务收到新文件后给任务所有者发送的提醒。',
+  },
+  {
+    key: 'service-alert',
+    label: '服务错误告警',
+    description: '模拟运行时异常、依赖服务异常等管理员告警邮件。',
+  },
+  {
+    key: 'daily-limit',
+    label: '每日发信上限提示',
+    description: '发送一封带当前上限配置说明的测试邮件，确认配置说明类通知可达。',
+  },
+] as const
+
+type MailTestSceneKey = typeof mailTestSceneDefinitions[number]['key']
 
 const serviceDefinitions: ServiceDefinition[] = [
   {
@@ -56,7 +99,7 @@ const serviceDefinitions: ServiceDefinition[] = [
     title: '七牛云',
     description: '文件对象存储与下载',
     required: true,
-    enabled: () => true,
+    enabled: () => getStorageMode() === 'qiniu',
     getStatus: getQiniuStatus,
   },
   {
@@ -72,8 +115,20 @@ const serviceDefinitions: ServiceDefinition[] = [
     title: '腾讯云',
     description: '短信验证码服务',
     required: false,
-    enabled: () => true,
+    enabled: isTxMessageEnabled,
     getStatus: getTxServiceStatus,
+  },
+  {
+    type: 'smtp',
+    title: 'SMTP 邮件',
+    description: '验证码、通知与告警邮件',
+    required: false,
+    enabled: isSmtpServiceEnabled,
+    getStatus: async () => ({
+      type: 'smtp',
+      status: isSmtpConfigured(),
+      errMsg: isSmtpConfigured() ? undefined : '请填写 host、user、pass、fromAddress',
+    }),
   },
   {
     type: 'redis',
@@ -90,6 +145,9 @@ export default class UserController {
   @Inject(UserService)
   private userService!: UserService
 
+  @Inject(FileService)
+  private fileService!: FileService
+
   @Inject(UserRepository)
   private userRepository!: UserRepository
 
@@ -102,6 +160,17 @@ export default class UserController {
         type: service.type,
       }).length > 0
       return hasConfig && service.enabled()
+    })
+  }
+
+  getConfiguredServices() {
+    return serviceDefinitions.filter((service) => {
+      const hasConfig = LocalUserDB.findUserConfig({
+        type: service.type,
+      }).length > 0
+      if (service.type === 'redis')
+        return hasConfig && service.enabled()
+      return hasConfig
     })
   }
 
@@ -324,7 +393,7 @@ export default class UserController {
 
   @Get('service/config')
   async getUserConfig() {
-    return this.getActiveServices().map((service) => {
+    return this.getConfiguredServices().map((service) => {
       return {
         type: service.type,
         title: service.title,
@@ -401,6 +470,139 @@ export default class UserController {
     await LocalUserDB.updateLocalEnv()
   }
 
+  @Post('service/mail/test')
+  async testMailConfig(@ReqBody() body: { to?: string, scenes?: string[] }) {
+    const to = String(body?.to || '').trim().toLowerCase()
+    if (!rEmail.test(to)) {
+      return {
+        ok: false,
+        error: '邮箱格式不正确',
+        results: [],
+      }
+    }
+    if (!isSmtpConfigured()) {
+      return {
+        ok: false,
+        error: 'SMTP 配置不完整，请先填写 host、user、pass、fromAddress 并保存',
+        results: [],
+      }
+    }
+    if (!isSmtpServiceEnabled()) {
+      return {
+        ok: false,
+        error: 'SMTP 邮件服务未启用，请先在邮箱配置中开启并保存',
+        results: [],
+      }
+    }
+
+    const requested = new Set(Array.isArray(body?.scenes) ? body.scenes : [])
+    const scenes = mailTestSceneDefinitions.filter(scene => requested.has(scene.key))
+    const picked = scenes.length > 0 ? scenes : mailTestSceneDefinitions
+    const site = LocalUserDB.getSiteConfig()
+    const app = site?.appName || 'EasyPicker'
+    const dailyLimit = typeof site?.emailDailyLimit === 'number' ? site.emailDailyLimit : 0
+    const nowText = new Date().toLocaleString('zh-CN')
+
+    const senders: Record<MailTestSceneKey, () => Promise<{ ok: boolean, error?: string }>> = {
+      'smtp-basic': () => sendMail({
+        to,
+        subject: `[${app}] SMTP 基础连通测试`,
+        text: [
+          '这是一封 SMTP 基础连通测试邮件。',
+          `测试时间：${nowText}`,
+          '如果你收到这封邮件，说明 SMTP 主机、端口、SSL、账号授权与发件人信息至少可完成一次投递。',
+        ].join('\n'),
+      }),
+      'verify-code': () => sendVerifyCodeMail(to, '1234'),
+      'submit-notify': () => sendMail({
+        to,
+        subject: `${app} 新文件提交（测试）`,
+        text: [
+          '这是一封文件提交通知测试邮件，不代表真实任务发生了提交。',
+          '任务：邮箱测试任务',
+          '文件：demo-submit-file.pdf',
+          `时间：${nowText}`,
+        ].join('\n'),
+      }),
+      'service-alert': () => sendMail({
+        to,
+        subject: `[服务告警] ${app} 邮箱测试告警`,
+        text: [
+          '这是一封服务错误告警测试邮件，不代表系统真实发生异常。',
+          '场景：运行时错误 / 依赖服务异常 / 后台任务失败等管理员告警。',
+          `时间：${nowText}`,
+        ].join('\n'),
+      }),
+      'daily-limit': () => sendMail({
+        to,
+        subject: `[${app}] 每日发信上限配置测试`,
+        text: [
+          '这是一封每日发信上限配置说明测试邮件。',
+          `当前每日发信上限：${dailyLimit === 0 ? '不限制' : `${dailyLimit} 封`}`,
+          '注意：每封测试邮件也会计入当日发信数量。',
+          `测试时间：${nowText}`,
+        ].join('\n'),
+      }),
+    }
+
+    const results: Array<{
+      key: MailTestSceneKey
+      label: string
+      ok: boolean
+      error?: string
+    }> = []
+
+    for (const scene of picked) {
+      const result = await senders[scene.key]()
+      results.push({
+        key: scene.key,
+        label: scene.label,
+        ok: result.ok,
+        error: result.ok ? undefined : result.error || '发送失败',
+      })
+    }
+
+    return {
+      ok: results.every(item => item.ok),
+      results,
+    }
+  }
+
+  @Get('service/storage/info')
+  getStorageInfo() {
+    return {
+      cwd: process.cwd(),
+      uploadDir: uploadFileDir,
+    }
+  }
+
+  @Get('service/global/all')
+  async getSystemGlobalConfig(@ReqQuery('type') key = 'site') {
+    const globalConfig = LocalUserDB.findUserConfig({
+      type: 'global',
+      key,
+    })
+    return globalConfig[0].value
+  }
+
+  @Put('service/global')
+  async updateSystemGlobalConfig(@ReqBody() data) {
+    const { key, value } = data
+    const oldValue = key === 'site' ? LocalUserDB.getSiteConfig() : null
+    await LocalUserDB.updateUserConfig(
+      {
+        type: 'global',
+        key,
+      },
+      {
+        value,
+      },
+    )
+    if (this.shouldExpireUserOverviewCache(key, oldValue, value)) {
+      await this.fileService.expireAllUserOverviewCache()
+    }
+  }
+
   @Get('global', { needLogin: false, userPower: null })
   async getGlobalConfig(@ReqQuery('type') key = 'site') {
     const globalConfig = LocalUserDB.findUserConfig({
@@ -410,11 +612,20 @@ export default class UserController {
     const filterKey: (keyof GlobalSiteConfig)[] = [
       'maxInputLength',
       'openPraise',
+      'feedbackEntryEnabled',
       'formLength',
       'compressSizeLimit',
+      'downloadOneExpired',
+      'downloadCompressExpired',
       'needBindPhone',
+      'enableCodeLogin',
+      'enableSmtp',
+      'enableEmailCodeLogin',
+      'needBindEmail',
       'limitSpace',
       'limitWallet',
+      'storageMode',
+      'maxUploadSizeMB',
       'moneyStartDay',
       'appName',
       'filePagePraiseText',
@@ -431,13 +642,23 @@ export default class UserController {
       'filePageSponsorSuffix',
       'filePageSelfHostLinkText',
       'filePageSelfHostLink',
+      'announcementTop',
+      'announcementModal',
     ]
+    const supportCodeLogin = isCodeLoginSupported()
+    const supportEmailCodeLogin = isEmailCodeLoginSupported()
+    const supportPhoneCode = isTxMessageConfigured()
     const result: Partial<GlobalSiteConfig> = {
-      supportCodeLogin: isCodeLoginSupported(),
+      supportPhoneCode,
+      supportCodeLogin,
+      supportEmailCodeLogin,
     }
+    const globalValue = (globalConfig[0]?.value || {}) as Partial<GlobalSiteConfig>
     filterKey.forEach((cur) => {
-      result[cur] = globalConfig[0].value[cur] as never
+      result[cur] = globalValue[cur] as never
     })
+    result.needBindPhone = Boolean(result.needBindPhone && (supportPhoneCode || supportEmailCodeLogin))
+    result.needBindEmail = Boolean(result.needBindEmail && supportEmailCodeLogin)
     return result
   }
 
@@ -453,6 +674,7 @@ export default class UserController {
   @Put('global', { userPower: USER_POWER.SUPER })
   async updateGlobalConfig(@ReqBody() data) {
     const { key, value } = data
+    const oldValue = key === 'site' ? LocalUserDB.getSiteConfig() : null
     await LocalUserDB.updateUserConfig(
       {
         type: 'global',
@@ -462,5 +684,19 @@ export default class UserController {
         value,
       },
     )
+    if (this.shouldExpireUserOverviewCache(key, oldValue, value)) {
+      await this.fileService.expireAllUserOverviewCache()
+    }
+  }
+
+  private shouldExpireUserOverviewCache(
+    key: string,
+    oldValue: Partial<GlobalSiteConfig> | null,
+    value: Partial<GlobalSiteConfig>,
+  ) {
+    if (key !== 'site' || !oldValue || !value) {
+      return false
+    }
+    return billingConfigKeys.some(k => oldValue[k] !== value[k])
   }
 }

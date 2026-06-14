@@ -1,5 +1,6 @@
 import process from 'node:process'
 import { Provide } from 'flash-wolves'
+import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
 import { AppDataSource } from '@/db'
 import { User } from '@/db/entity'
 import { USER_STATUS } from '@/db/model/user'
@@ -53,6 +54,14 @@ export default class TokenService {
     }
   }
 
+  async expiredAllTokens(account: string) {
+    const tokens = await this.getAllTokens(account)
+    for (const token of tokens) {
+      expiredRedisKey(token)
+    }
+    expiredRedisKey(this.onlineTokenKey(account))
+  }
+
   async getUserInfo(token: string): Promise<User> {
     if (!token) {
       return null
@@ -78,16 +87,25 @@ export default class TokenService {
     setRedisValue(this.realToken(token), JSON.stringify(user), timeout)
   }
 
-  setVerifyCode(phone: string, code: string, timeout = 60 * 2) {
-    setRedisValue(`${process.env.TOKEN_PREFIX}-code-${phone}`, code, timeout)
+  private verifyCodeKey(channel: 'phone' | 'email', target: string) {
+    return `${process.env.TOKEN_PREFIX}-code-${channel}-${target}`
   }
 
-  getVerifyCode(phone: string) {
-    return getRedisVal(`${process.env.TOKEN_PREFIX}-code-${phone}`)
+  setVerifyCode(
+    channel: 'phone' | 'email',
+    target: string,
+    code: string,
+    timeout = VERIFY_CODE_EXPIRE_SECONDS,
+  ) {
+    setRedisValue(this.verifyCodeKey(channel, target), code, timeout)
   }
 
-  expiredVerifyCode(phone: string) {
-    return expiredRedisKey(`${process.env.TOKEN_PREFIX}-code-${phone}`)
+  getVerifyCode(channel: 'phone' | 'email', target: string) {
+    return getRedisVal(this.verifyCodeKey(channel, target))
+  }
+
+  expiredVerifyCode(channel: 'phone' | 'email', target: string) {
+    return expiredRedisKey(this.verifyCodeKey(channel, target))
   }
 
   /**

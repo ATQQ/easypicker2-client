@@ -13,7 +13,7 @@ export enum USER_POWER {
   /**
    * 系统账号（只能维护系统后端服务）
    */
-  SYSTEM
+  SYSTEM,
 }
 
 /**
@@ -31,7 +31,7 @@ export enum USER_STATUS {
   /**
    * 封禁
    */
-  BAN
+  BAN,
 }
 
 export interface User {
@@ -60,4 +60,7 @@ export interface User {
    */
   size?: number
   wallet?: number
+  email?: string | null
+  emailVerified?: number
+  notifyOnSubmit?: number
 }
