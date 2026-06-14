@@ -399,7 +399,8 @@ function handleDropdownClick(e: string) {
           ElMessage.error('所选文件均已从服务器上移除')
           batchDownStart.value = false
         })
-      ElMessage.info('开始归档选中的文件,请赖心等待')
+      showHistoryPanel.value = true
+      ElMessage.info('开始归档选中的文件,请耐心等待')
       break
     case 'delete':
       if (selectItem.length === 0) {
@@ -589,7 +590,8 @@ function handleDownloadTask() {
         batchDownStart.value = false
       }, 1000)
     })
-  ElMessage.info('开始归档选中的文件,请赖心等待')
+  showHistoryPanel.value = true
+  ElMessage.info('开始归档选中的文件,请耐心等待')
 }
 
 const viewImageFilename = ref('')
