@@ -1,0 +1,12 @@
+{
+  "projectId": "proj_fbf882a2decd",
+  "outputDir": "./",
+  "files": [
+    ".env",
+    "dist/**/*",
+    "docs/**/*",
+    "package.json"
+  ],
+  "serverUrl": "https://kite.sugarat.top",
+  "postDeploy": "pnpm install --prod && pm2 restart ep-prod"
+}

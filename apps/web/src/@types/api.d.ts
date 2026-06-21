@@ -181,6 +181,12 @@ declare namespace TaskApiTypes {
   }
 
   type getList = ResponseData<{ tasks: TaskItem[] }>
+  type getGrouped = ResponseData<{
+    categories: CateGoryApiTypes.CategoryItem[]
+    taskCounts: Record<string, number>
+    tasksByCategory: Record<string, TaskItem[]>
+    tasks: TaskItem[]
+  }>
   type create = ResponseData
   type deleteOne = ResponseData
   type updateBaseInfo = ResponseData

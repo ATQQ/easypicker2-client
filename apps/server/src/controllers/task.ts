@@ -70,6 +70,14 @@ export default class TaskController {
     })
   }
 
+  @Get('/grouped')
+  async getGroupedTasks(@ReqQuery('recent') recent?: string) {
+    const { id, account } = this.Ctx.req.userInfo
+    return this.taskService.getGroupedTasks(id, account, {
+      recent: recent !== 'false',
+    })
+  }
+
   @Get('/category/:categoryKey')
   async getTasksByCategory(
     @ReqParams('categoryKey') categoryKey: string,

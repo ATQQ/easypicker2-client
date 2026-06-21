@@ -126,6 +126,73 @@ export default class TaskService {
     return { tasks }
   }
 
+  async getGroupedTasks(userId: number, account: string, options: { recent?: boolean } = {}) {
+    const withRecentLog = options.recent !== false
+    const categoryRows = await this.categoryRepository.findMany({ userId })
+    const taskRows = await this.taskRepository.findWithSpecifyColumn(
+      {
+        userId,
+        del: BOOLEAN.FALSE,
+      },
+      ['name', 'categoryKey', 'k'],
+    )
+
+    const categories = categoryRows.map((v) => {
+      const { userId: _u, submitNavTaskKeys, ...rest } = v
+      let submitNavKeys: string[] = []
+      if (submitNavTaskKeys) {
+        try {
+          const parsed = JSON.parse(submitNavTaskKeys) as unknown
+          if (Array.isArray(parsed))
+            submitNavKeys = parsed.map(String)
+        }
+        catch {
+          /* ignore */
+        }
+      }
+      return {
+        ...rest,
+        submitNavTaskKeys,
+        submitNavKeys,
+      }
+    })
+
+    const taskCounts = taskRows.reduce((pre, task) => {
+      const key = task.categoryKey || 'default'
+      pre[key] = (pre[key] || 0) + 1
+      return pre
+    }, {} as Record<string, number>)
+
+    const tasks = taskRows.map((t) => {
+      const category = t.categoryKey || 'default'
+      return {
+        name: t.name,
+        category,
+        key: t.k,
+        recentLog: [] as { filename: string, date: Date }[],
+      }
+    })
+    await this.mapTasksWithRecentLogs(tasks, withRecentLog)
+
+    const tasksByCategory: Record<string, typeof tasks> = {}
+    for (const task of tasks) {
+      if (!tasksByCategory[task.category])
+        tasksByCategory[task.category] = []
+      tasksByCategory[task.category].push(task)
+    }
+
+    this.behaviorService.add('task', `获取分组任务列表 用户:${account}`, {
+      account,
+    })
+
+    return {
+      categories,
+      taskCounts,
+      tasksByCategory,
+      tasks,
+    }
+  }
+
   async getTasksByCategory(userId: number, account: string, category: string, options: { recent?: boolean } = {}) {
     const withRecentLog = options.recent !== false
     const data = await this.taskRepository.findWithSpecifyColumn(

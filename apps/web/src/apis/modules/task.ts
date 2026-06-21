@@ -8,6 +8,14 @@ function getList(options: { recent?: boolean } = {}): TaskApiTypes.getList {
   })
 }
 
+function getGrouped(options: { recent?: boolean } = {}): TaskApiTypes.getGrouped {
+  return ajax.get('task/grouped', {
+    params: {
+      recent: options.recent === false ? 'false' : undefined,
+    },
+  })
+}
+
 function getByCategory(
   categoryKey: string,
   options: { recent?: boolean } = {},
@@ -71,6 +79,7 @@ function delTipImage(key: string, uid: number, name: string) {
 
 export default {
   getList,
+  getGrouped,
   getByCategory,
   create,
   deleteOne,

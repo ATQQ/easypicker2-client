@@ -635,7 +635,6 @@ watch(showImg, () => {
 onMounted(() => {
   loadFiles()
   loadActions()
-  $store.dispatch('category/getCategory')
   loadTaskOptions()
 })
 

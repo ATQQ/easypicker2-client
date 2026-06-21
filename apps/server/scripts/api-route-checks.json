@@ -6,6 +6,7 @@
 
   { "name": "task.create", "method": "POST", "path": "/api/task/create", "body": { "name": "api-check" } },
   { "name": "task.list", "method": "GET", "path": "/api/task" },
+  { "name": "task.grouped", "method": "GET", "path": "/api/task/grouped?recent=false" },
   { "name": "task.category", "method": "GET", "path": "/api/task/category/default" },
   { "name": "task.public-detail", "method": "GET", "path": "/api/task/000000000000000000000000" },
   { "name": "task.delete", "method": "DELETE", "path": "/api/task/000000000000000000000000" },

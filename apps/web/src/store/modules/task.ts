@@ -1,8 +1,12 @@
 import type { Module } from 'vuex'
 import { TaskApi } from '@/apis'
 
+/** 文件页筛选用的虚拟分类，不是真实任务分类 */
+const VIRTUAL_FILE_CATEGORIES = new Set(['all', 'no-task'])
+
 interface State {
   taskList: any[]
+  tasksByCategory: Record<string, TaskApiTypes.TaskItem[]>
 }
 
 const store: Module<State, unknown> = {
@@ -10,45 +14,47 @@ const store: Module<State, unknown> = {
   state() {
     return {
       taskList: [],
+      tasksByCategory: {},
     }
   },
   mutations: {
     updateTask(state, payload) {
       state.taskList = payload
     },
+    updateTasksByCategory(state, payload: Record<string, TaskApiTypes.TaskItem[]>) {
+      state.tasksByCategory = payload
+    },
+    clearTasksByCategoryCache(state) {
+      state.tasksByCategory = {}
+    },
   },
   actions: {
     async getAllTaskOptions(context, payload: { recent?: boolean } = {}) {
-      const rootState = context.rootState as {
-        category?: { categoryList: { k: string }[] }
-      }
-      if (!rootState.category?.categoryList.length) {
-        await context.dispatch('category/getCategory', null, { root: true })
-      }
-      const categoryKeys = [
-        'default',
-        'trash',
-        ...(rootState.category?.categoryList ?? []).map(c => c.k),
-      ]
-      const results = await Promise.all(
-        categoryKeys.map(category =>
-          TaskApi.getByCategory(category, { recent: payload.recent }),
-        ),
-      )
-      const taskMap = new Map<string, TaskApiTypes.TaskItem>()
-      for (const res of results) {
-        for (const task of res.data.tasks) {
-          taskMap.set(task.key, task)
-        }
-      }
-      const tasks = Array.from(taskMap.values())
-      context.commit('updateTask', tasks)
-      return { data: { tasks } }
+      const res = await TaskApi.getGrouped(payload)
+      context.commit('updateTask', res.data.tasks)
+      context.commit('updateTasksByCategory', res.data.tasksByCategory)
+      context.commit('category/updateCategory', res.data.categories, { root: true })
+      context.commit('category/updateTaskCounts', res.data.taskCounts, { root: true })
+      return res
     },
     getTask(context, payload: { recent?: boolean } = {}) {
       return context.dispatch('getAllTaskOptions', payload)
     },
     getTaskByCategory(context, payload: { category: string, recent?: boolean }) {
+      if (VIRTUAL_FILE_CATEGORIES.has(payload.category)) {
+        if (payload.category === 'no-task') {
+          context.commit('updateTask', [])
+          return Promise.resolve({ data: { tasks: [] } })
+        }
+        return context.dispatch('getAllTaskOptions', payload)
+      }
+
+      const cached = context.state.tasksByCategory[payload.category]
+      if (cached) {
+        context.commit('updateTask', cached)
+        return Promise.resolve({ data: { tasks: cached } })
+      }
+
       return TaskApi.getByCategory(payload.category, {
         recent: payload.recent,
       }).then((res) => {
@@ -59,6 +65,7 @@ const store: Module<State, unknown> = {
     createTask(context, payload) {
       const { name, category } = payload
       return TaskApi.create(name, category).then((res) => {
+        context.commit('clearTasksByCategoryCache')
         context.dispatch('getTaskByCategory', { category })
         context.dispatch('category/getCategory', null, { root: true })
         return res
@@ -66,6 +73,7 @@ const store: Module<State, unknown> = {
     },
     deleteTask(context, k) {
       return TaskApi.deleteOne(k).then((res) => {
+        context.commit('clearTasksByCategoryCache')
         const idx = context.state.taskList.findIndex(v => v.key === k)
         const targetTask = context.state.taskList[idx]
         if (targetTask && targetTask.category === 'trash') {
@@ -81,6 +89,7 @@ const store: Module<State, unknown> = {
     updateTask(context, payload) {
       const { key, name, category, listCategory } = payload
       return TaskApi.updateBaseInfo(key, name, category).then((res) => {
+        context.commit('clearTasksByCategoryCache')
         if (listCategory) {
           context.dispatch('getTaskByCategory', { category: listCategory })
         }
