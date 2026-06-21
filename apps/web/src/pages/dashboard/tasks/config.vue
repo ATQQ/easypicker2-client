@@ -90,14 +90,13 @@ async function loadTaskConfig() {
 
   try {
     const [taskRes, infoRes] = await Promise.all([
-      TaskApi.getList(),
+      TaskApi.getTaskInfo(taskKey.value),
       TaskApi.getTaskMoreInfo(taskKey.value),
     ])
-    const task = taskRes.data.tasks.find(v => v.key === taskKey.value)
-    Object.assign(activeTask, task || {
-      category: '',
+    Object.assign(activeTask, {
+      category: taskRes.data.category || '',
       key: taskKey.value,
-      name: activeTask.name || taskKey.value,
+      name: taskRes.data.name || activeTask.name || taskKey.value,
       recentLog: [],
     })
     Object.assign(taskInfo, infoRes.data)
