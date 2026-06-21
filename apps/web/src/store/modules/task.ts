@@ -18,11 +18,35 @@ const store: Module<State, unknown> = {
     },
   },
   actions: {
+    async getAllTaskOptions(context, payload: { recent?: boolean } = {}) {
+      const rootState = context.rootState as {
+        category?: { categoryList: { k: string }[] }
+      }
+      if (!rootState.category?.categoryList.length) {
+        await context.dispatch('category/getCategory', null, { root: true })
+      }
+      const categoryKeys = [
+        'default',
+        'trash',
+        ...(rootState.category?.categoryList ?? []).map(c => c.k),
+      ]
+      const results = await Promise.all(
+        categoryKeys.map(category =>
+          TaskApi.getByCategory(category, { recent: payload.recent }),
+        ),
+      )
+      const taskMap = new Map<string, TaskApiTypes.TaskItem>()
+      for (const res of results) {
+        for (const task of res.data.tasks) {
+          taskMap.set(task.key, task)
+        }
+      }
+      const tasks = Array.from(taskMap.values())
+      context.commit('updateTask', tasks)
+      return { data: { tasks } }
+    },
     getTask(context, payload: { recent?: boolean } = {}) {
-      return TaskApi.getList(payload).then((res) => {
-        context.commit('updateTask', res.data.tasks)
-        return res
-      })
+      return context.dispatch('getAllTaskOptions', payload)
     },
     getTaskByCategory(context, payload: { category: string, recent?: boolean }) {
       return TaskApi.getByCategory(payload.category, {
