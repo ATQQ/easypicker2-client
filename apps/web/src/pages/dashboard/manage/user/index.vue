@@ -137,9 +137,17 @@ async function handleSettleBilling() {
   settlingBilling.value = true
   try {
     const res = await SuperUserApi.settleBilling()
-    ElMessage.success(
-      `批量扣费完成：结算 ${res.data.settledCount} 人，总金额 ${res.data.totalCost}￥`,
-    )
+    const data = (res.data ?? {}) as NonNullable<typeof res.data>
+    if (data.accepted) {
+      ElMessage.success(
+        `已发起批量扣费（共 ${data.total ?? 0} 人），结算在后台进行，请稍后到「行为日志」查看结果`,
+      )
+    }
+    else {
+      ElMessage.success(
+        `批量扣费完成：结算 ${data.settledCount ?? 0} 人，总金额 ${data.totalCost ?? '0.00'}￥`,
+      )
+    }
     await refreshUsers()
   }
   finally {

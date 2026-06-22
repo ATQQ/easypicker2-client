@@ -1,6 +1,7 @@
 import type {
   FWRequest,
 } from 'flash-wolves'
+import type { User as EntityUser } from '@/db/entity/User'
 import type { User } from '@/db/model/user'
 import dayjs from 'dayjs'
 import {
@@ -16,7 +17,7 @@ import {
 import { In } from 'typeorm'
 import { UserError } from '@/constants/errorMsg'
 import { FileRepository, selectFiles } from '@/db/fileDb'
-import { addBehavior } from '@/db/logDb'
+import { addBehavior, addSystemBehavior } from '@/db/logDb'
 import { MessageType } from '@/db/model/message'
 import { USER_POWER, USER_STATUS } from '@/db/model/user'
 import { expiredRedisKey, getRedisVal } from '@/db/redisDb'
@@ -41,7 +42,7 @@ import { sendMail } from '@/utils/mail'
 import { batchDeleteFiles } from '@/utils/qiniuUtil'
 import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { isLocalStorageMode } from '@/utils/storageMode'
-import { encryption } from '@/utils/stringUtil'
+import { encryption, getUniqueKey } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
 const power = {
@@ -460,40 +461,9 @@ export default class SuperUserController {
     const newMoneyStartDay = Date.now()
     const users = await this.userRepository.findMany({})
     const normalUsers = users.filter(user => user.power === USER_POWER.NORMAL)
-    let settledCount = 0
-    let skippedCount = 0
-    let totalCost = 0
-    const details: {
-      id: number
-      account: string
-      oldWallet: string
-      cost: string
-      newWallet: string
-    }[] = []
+    const taskId = getUniqueKey()
 
-    for (const user of normalUsers) {
-      const overview = await this.fileService.getUserOverview(user)
-      const cost = Number(overview.cost || 0)
-      if (!Number.isFinite(cost) || cost <= 0) {
-        skippedCount += 1
-        continue
-      }
-      const nextWallet = Number(user.wallet || 0) - cost
-      const oldWallet = user.wallet || '0.00'
-      user.wallet = nextWallet.toFixed(2)
-      await this.userRepository.update(user)
-      await this.fileService.expireUserOverviewCache(user.id)
-      totalCost += cost
-      settledCount += 1
-      details.push({
-        id: user.id,
-        account: user.account,
-        oldWallet,
-        cost: cost.toFixed(2),
-        newWallet: user.wallet,
-      })
-    }
-
+    // 立即推进结算起点，避免后续业务页面在异步任务执行期间仍按旧周期计费
     const site = LocalUserDB.getSiteConfig()
     await LocalUserDB.updateUserConfig(
       {
@@ -507,27 +477,130 @@ export default class SuperUserController {
         },
       },
     )
-    await this.fileService.expireAllUserOverviewCache()
-    this.behaviorService.add(
-      'super',
-      `批量扣费 操作人:${operator.account} 结算人数:${settledCount} 总金额:${totalCost.toFixed(2)}￥`,
-      {
-        operator: operator.account,
-        settledCount,
-        skippedCount,
-        totalCost: totalCost.toFixed(2),
-        oldMoneyStartDay,
-        newMoneyStartDay,
-        details,
-      },
-    )
+
+    void this.runBatchSettle({
+      taskId,
+      operatorAccount: operator?.account || 'system',
+      users: normalUsers,
+      oldMoneyStartDay,
+      newMoneyStartDay,
+    })
 
     return {
-      settledCount,
-      skippedCount,
-      totalCost: totalCost.toFixed(2),
+      accepted: true,
+      taskId,
+      total: normalUsers.length,
+      // 兼容旧前端解构：异步化后这些字段稍后由汇总日志记录
+      settledCount: 0,
+      skippedCount: 0,
+      totalCost: '0.00',
       oldMoneyStartDay,
       newMoneyStartDay,
     }
+  }
+
+  /**
+   * 后台异步批量结算：逐用户串行处理 + 每个用户之间节流，避免阻塞事件循环
+   * - 无扣费 / 异常跳过，不写日志（避免日志洪水）
+   * - 仅有实际扣费的用户单独写一条 addSystemBehavior 日志
+   * - 任务收尾写一条汇总（仅计数与耗时，不含 details）
+   */
+  private async runBatchSettle(params: {
+    taskId: string
+    operatorAccount: string
+    users: EntityUser[]
+    oldMoneyStartDay: number
+    newMoneyStartDay: number
+  }) {
+    const { taskId, operatorAccount, users: normalUsers, oldMoneyStartDay, newMoneyStartDay } = params
+    const startedAt = Date.now()
+
+    // 每个用户处理完之间的节流间隔（ms），让出事件循环 + 给 DB / 七牛喘息时间
+    const PER_USER_DELAY_MS = 500
+    const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
+
+    let settledCount = 0
+    let skippedCount = 0
+    let errorCount = 0
+    let totalCost = 0
+
+    for (const user of normalUsers) {
+      try {
+        // 1. 仅取当前这个用户的文件，让 getUserOverview 自己按需拉 OSS（命中其内部缓存）
+        const overview = await this.fileService.getUserOverview(user)
+        const cost = Number(overview?.cost || 0)
+
+        // 2. 无扣费直接跳过（不写日志）
+        if (!Number.isFinite(cost) || cost <= 0) {
+          skippedCount += 1
+          continue
+        }
+
+        // 3. 实际扣费
+        const oldWallet = user.wallet || '0.00'
+        const nextWallet = Number(user.wallet || 0) - cost
+        user.wallet = nextWallet.toFixed(2)
+        await this.userRepository.update(user)
+        await this.fileService.expireUserOverviewCache(user.id)
+
+        totalCost += cost
+        settledCount += 1
+
+        // 4. 仅在有扣费时单独记录一条行为日志
+        addSystemBehavior({
+          module: 'super',
+          msg: `批量扣费 用户:${user.account}(${user.id}) 扣费:${cost.toFixed(2)}￥ 原余额:${oldWallet} 新余额:${user.wallet}`,
+          data: {
+            taskId,
+            operator: operatorAccount,
+            userId: user.id,
+            account: user.account,
+            oldWallet,
+            cost: cost.toFixed(2),
+            newWallet: user.wallet,
+          },
+        })
+      }
+      catch (err) {
+        errorCount += 1
+        addSystemBehavior({
+          module: 'super',
+          msg: `批量扣费失败 用户:${user.account}(${user.id}) 错误:${err instanceof Error ? err.message : String(err)}`,
+          data: {
+            taskId,
+            operator: operatorAccount,
+            userId: user.id,
+            account: user.account,
+            error: err instanceof Error ? err.message : String(err),
+          },
+        })
+      }
+
+      // 5. 每个用户处理完之间休眠一会儿（无论是否扣费）
+      await sleep(PER_USER_DELAY_MS)
+    }
+
+    try {
+      await this.fileService.expireAllUserOverviewCache()
+    }
+    catch {}
+
+    // 6. 任务收尾：写一条精简汇总（不含 details，避免日志体积过大）
+    addSystemBehavior({
+      module: 'super',
+      msg: `批量扣费完成 操作人:${operatorAccount} 总人数:${normalUsers.length} 结算:${settledCount} 跳过:${skippedCount} 失败:${errorCount} 总金额:${totalCost.toFixed(2)}￥ 耗时:${Date.now() - startedAt}ms`,
+      data: {
+        taskId,
+        operator: operatorAccount,
+        total: normalUsers.length,
+        settledCount,
+        skippedCount,
+        errorCount,
+        totalCost: totalCost.toFixed(2),
+        oldMoneyStartDay,
+        newMoneyStartDay,
+        durationMs: Date.now() - startedAt,
+      },
+    })
   }
 }

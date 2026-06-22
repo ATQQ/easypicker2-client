@@ -22,6 +22,7 @@ import { addWishData, findWish, updateWish } from '@/db/wishDb'
 import { ReqIp } from '@/decorator'
 import { isSmtpConfigured, isSmtpServiceEnabled, sendMail } from '@/utils/mail'
 import { getObjectIdDate, getUniqueKey } from '@/utils/stringUtil'
+import LocalUserDB from '@/utils/user-local-db'
 
 const adminPower = { needLogin: true, userPower: USER_POWER.SUPER }
 // TODO：mongoDB支持 typeorm
@@ -52,18 +53,39 @@ export default class WishController {
 
   private async notifyAdminWishMail(wish: Wish) {
     try {
+      if (!isSmtpServiceEnabled() || !isSmtpConfigured())
+        return
+
+      // 合并去重两类收件人：1) power=SUPER 且 emailVerified=1 的管理员邮箱；2) 站点 alertEmails（自动告警推送邮箱）
+      // 以小写形式归一去重，避免同邮箱因大小写不同被发送两次
+      const seen = new Set<string>()
+      const emails: string[] = []
+      const pushEmail = (raw: string | undefined | null) => {
+        const email = (raw || '').trim()
+        if (!email)
+          return
+        const key = email.toLowerCase()
+        if (seen.has(key))
+          return
+        seen.add(key)
+        emails.push(email)
+      }
+
       const admins = await this.userRepository.findMany({
         power: USER_POWER.SUPER,
         emailVerified: 1,
       })
-      const emails = Array.from(new Set(
-        admins
-          .map(user => user.email?.trim())
-          .filter((email): email is string => Boolean(email)),
-      ))
+      for (const user of admins)
+        pushEmail(user.email)
+
+      const alertRaw = LocalUserDB.getSiteConfig()?.alertEmails
+      if (typeof alertRaw === 'string' && alertRaw.trim()) {
+        alertRaw
+          .split(/[,;\s]+/)
+          .forEach(pushEmail)
+      }
+
       if (emails.length === 0)
-        return
-      if (!isSmtpServiceEnabled() || !isSmtpConfigured())
         return
 
       const title = String(wish.title || '').trim() || '未填写标题'

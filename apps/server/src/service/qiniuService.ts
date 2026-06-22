@@ -164,9 +164,13 @@ export default class QiniuService {
       })
     }
     const expireTime = Date.now() - startTime
-    this.behaviorService.add('file', `查询OSS文件信息 - ${expireTime}ms`, {
-      time: expireTime,
-    })
+    // 仅在慢调用 (>=1s) 或异常 (拉到空结果) 时落库，避免 getFilesMap 被高频调用时刷大量同质日志
+    if (expireTime >= 1000 || ossFiles.length === 0) {
+      this.behaviorService.add('file', `查询OSS文件信息 - ${expireTime}ms`, {
+        time: expireTime,
+        ossCount: ossFiles.length,
+      })
+    }
 
     return filesMap
   }

@@ -502,6 +502,9 @@ declare namespace SuperUserApiTypes {
     totalCost: string
     oldMoneyStartDay: number
     newMoneyStartDay: number
+    accepted?: boolean
+    taskId?: string
+    total?: number
   }>
 }
 
