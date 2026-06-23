@@ -59,6 +59,8 @@ const showImg = ref(localStorage.getItem('ep-show-images') !== 'false')
 const showPeople = ref(true)
 const showOriginName = ref(false)
 const showHistoryPanel = ref(false)
+const autoDownloadArchive = ref(localStorage.getItem('ep-auto-download-archive') !== 'false')
+const autoDownloadTipText = '勾选后归档完成会自动触发下载；取消后请前往下载历史复制链接手动下载。'
 const historyDownloadRecord = reactive({
   actions: [],
   pageSize: 3,
@@ -94,10 +96,19 @@ function loadActions() {
         // SUCCESS
         //  存在，触发下载，从compressTask移除
         if (action.status === DownloadStatus.SUCCESS && existIndex !== -1) {
-          // 展示弹窗
-          downloadUrl.value = action.url
-          showLinkModel.value = true
-          downLoadByUrl(action.url)
+          if (autoDownloadArchive.value) {
+            // 展示弹窗
+            downloadUrl.value = action.url
+            showLinkModel.value = true
+            downLoadByUrl(action.url)
+          }
+          else {
+            ElMessage.success({
+              message: `归档任务 ${action.tip} 已完成，请到下载历史中复制链接`,
+              duration: 5000,
+            })
+            showHistoryPanel.value = true
+          }
           // ElMessage.success(`自动下载归档任务 ${action.tip}`)
           compressTask.splice(existIndex, 1)
         }
@@ -390,7 +401,9 @@ function handleDropdownClick(e: string) {
           if (res.data?.url) {
             downloadUrl.value = res.data.url
             showLinkModel.value = true
-            downLoadByUrl(res.data.url)
+            if (autoDownloadArchive.value) {
+              downLoadByUrl(res.data.url)
+            }
             return
           }
           loadActions()
@@ -511,6 +524,21 @@ function downloadOne(e: any) {
       ElMessage.error('文件已从服务器上移除')
     })
 }
+function copyOneFileLink(e: any) {
+  if (limitDownload.value) {
+    ElMessage.error('下载功能已被限制，请联系管理员扩容，或自行删除历史无用文件')
+    return
+  }
+  const { id } = e
+  FileApi.getOneFileUrl(id)
+    .then((res) => {
+      const { link } = res.data
+      copyRes(link, '下载链接已复制到剪贴板')
+    })
+    .catch(() => {
+      ElMessage.error('文件已从服务器上移除')
+    })
+}
 function handleDelete(e: any) {
   const idx = files.findIndex(v => v === e)
   ElMessageBox.confirm('确认删除此文件吗？', '数据无价，请谨慎操作')
@@ -577,7 +605,9 @@ function handleDownloadTask() {
       if (res.data?.url) {
         downloadUrl.value = res.data.url
         showLinkModel.value = true
-        downLoadByUrl(res.data.url)
+        if (autoDownloadArchive.value) {
+          downLoadByUrl(res.data.url)
+        }
         return
       }
       loadActions()
@@ -630,6 +660,9 @@ watch(selectCategory, () => {
 watch([pageCurrent, pageSize], loadFiles)
 watch(showImg, () => {
   window.localStorage.setItem('ep-show-images', `${showImg.value}`)
+})
+watch(autoDownloadArchive, () => {
+  window.localStorage.setItem('ep-auto-download-archive', `${autoDownloadArchive.value}`)
 })
 
 onMounted(() => {
@@ -698,6 +731,14 @@ function handleShowDetail() {
         >
           下载任务中的文件
         </el-button>
+        <el-checkbox v-model="autoDownloadArchive" class="auto-download-checkbox" size="default">
+          归档完成后自动下载
+        </el-checkbox>
+        <el-tooltip :content="autoDownloadTipText" placement="top" effect="dark">
+          <el-icon class="export-help-icon">
+            <QuestionFilled />
+          </el-icon>
+        </el-tooltip>
       </div>
       <div class="item search-item">
         <el-input v-model="searchWord" size="default" clearable placeholder="请输入要检索的内容" :prefix-icon="Search" />
@@ -992,7 +1033,7 @@ function handleShowDetail() {
             </template>
           </el-table-column>
         </template>
-        <el-table-column fixed="right" label="操作" width="140">
+        <el-table-column fixed="right" label="操作" width="160">
           <template #default="scope">
             <div class="text-btns">
               <el-button type="primary" text size="small" @click="checkInfo(scope.row)">
@@ -1003,6 +1044,9 @@ function handleShowDetail() {
               </el-button>
               <el-button type="primary" text size="small" @click="downloadOne(scope.row)">
                 下载
+              </el-button>
+              <el-button type="primary" text size="small" @click="copyOneFileLink(scope.row)">
+                复制链接
               </el-button>
               <el-button type="primary" text size="small" @click="handleDelete(scope.row)">
                 删除
@@ -1233,6 +1277,11 @@ function handleShowDetail() {
   display: inline-flex;
   font-size: 16px;
   height: 32px;
+  margin-left: 10px;
+  margin-bottom: 10px;
+}
+
+.auto-download-checkbox {
   margin-left: 10px;
   margin-bottom: 10px;
 }
