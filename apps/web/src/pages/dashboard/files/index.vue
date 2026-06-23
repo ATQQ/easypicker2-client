@@ -73,6 +73,36 @@ const historyDownloadRecord = reactive({
   compressTask: [],
 })
 
+const pendingArchiveActions = ref<any[]>([])
+function pushPendingArchiveAction(tip: string) {
+  const placeholder = {
+    id: `pending_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    type: ActionType.Compress,
+    status: DownloadStatus.ARCHIVE,
+    tip,
+    date: new Date(),
+    size: 0,
+    url: '',
+    pending: true,
+  }
+  pendingArchiveActions.value.push(placeholder)
+  mergePendingActions()
+  showHistoryPanel.value = true
+  return placeholder.id
+}
+function removePendingArchiveAction(id: string) {
+  const idx = pendingArchiveActions.value.findIndex(v => v.id === id)
+  if (idx !== -1) {
+    pendingArchiveActions.value.splice(idx, 1)
+  }
+  mergePendingActions()
+}
+function mergePendingActions(actions: any[] = historyDownloadRecord.actions.filter((v: any) => !v.pending)) {
+  historyDownloadRecord.actions = [
+    ...pendingArchiveActions.value,
+    ...actions,
+  ]
+}
 function loadActions() {
   // 已记录的task
   const compressTask: ActionApiTypes.DownloadActionData[] = JSON.parse(
@@ -131,7 +161,7 @@ function loadActions() {
       setTimeout(loadActions, 1000)
     }
     historyDownloadRecord.pageTotal = sum
-    historyDownloadRecord.actions = actions
+    mergePendingActions(actions)
     historyDownloadRecord.pageCount = Math.ceil(
       sum / historyDownloadRecord.pageSize,
     )
@@ -390,28 +420,31 @@ function handleDropdownClick(e: string) {
         ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
         return
       }
-      FileApi.batchDownload(
-        ids,
-        `批量下载_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}`,
-      )
-        .then((res) => {
-          if (res.data?.message) {
-            ElMessage.info(res.data.message)
-          }
-          if (res.data?.url) {
-            downloadUrl.value = res.data.url
-            showLinkModel.value = true
-            if (autoDownloadArchive.value) {
-              downLoadByUrl(res.data.url)
+      {
+        const zipName = `批量下载_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}`
+        const pendingId = pushPendingArchiveAction(`${zipName}.zip 归档中（${ids.length}个文件）`)
+        FileApi.batchDownload(ids, zipName)
+          .then((res) => {
+            if (res.data?.message) {
+              ElMessage.info(res.data.message)
             }
-            return
-          }
-          loadActions()
-        })
-        .catch(() => {
-          ElMessage.error('所选文件均已从服务器上移除')
-          batchDownStart.value = false
-        })
+            if (res.data?.url) {
+              downloadUrl.value = res.data.url
+              showLinkModel.value = true
+              if (autoDownloadArchive.value) {
+                downLoadByUrl(res.data.url)
+              }
+            }
+            loadActions()
+          })
+          .catch(() => {
+            ElMessage.error('所选文件均已从服务器上移除')
+            batchDownStart.value = false
+          })
+          .finally(() => {
+            removePendingArchiveAction(pendingId)
+          })
+      }
       showHistoryPanel.value = true
       ElMessage.info('开始归档选中的文件,请耐心等待')
       break
@@ -594,6 +627,7 @@ function handleDownloadTask() {
     return
   }
   batchDownStart.value = true
+  const pendingId = pushPendingArchiveAction(`${selectTaskName.value || '任务'}.zip 归档中`)
   FileApi.batchDownloadByQuery({
     taskKey: selectTask.value,
     zipName: selectTaskName.value,
@@ -608,7 +642,6 @@ function handleDownloadTask() {
         if (autoDownloadArchive.value) {
           downLoadByUrl(res.data.url)
         }
-        return
       }
       loadActions()
     })
@@ -616,6 +649,7 @@ function handleDownloadTask() {
       ElMessage.error('所选任务中的文件均已从服务器上移除')
     })
     .finally(() => {
+      removePendingArchiveAction(pendingId)
       setTimeout(() => {
         batchDownStart.value = false
       }, 1000)
