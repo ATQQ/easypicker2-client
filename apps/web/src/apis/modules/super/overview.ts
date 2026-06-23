@@ -16,6 +16,8 @@ function getLogMsg(
   type: string,
   search: string,
   ipSearch = '',
+  startTime?: number,
+  endTime?: number,
 ): OverviewApiTypes.getLogMsg {
   return ajax.post(`${baseUrl}/log`, {
     pageSize,
@@ -23,6 +25,8 @@ function getLogMsg(
     type,
     search,
     ipSearch,
+    startTime,
+    endTime,
   })
 }
 

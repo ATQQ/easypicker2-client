@@ -113,7 +113,7 @@
   { "name": "super-overview.request-business-status-logs", "method": "POST", "path": "/api/super/overview/request-business-status-logs", "body": { "pageSize": 1, "pageIndex": 1, "nonZeroOnly": true } },
   { "name": "super-overview.compress-clear", "method": "DELETE", "path": "/api/super/overview/compress" },
   { "name": "super-overview.log-list", "method": "GET", "path": "/api/super/overview/log" },
-  { "name": "super-overview.log-page", "method": "POST", "path": "/api/super/overview/log", "body": { "type": "", "pageSize": 1, "pageIndex": 1 } },
+  { "name": "super-overview.log-page", "method": "POST", "path": "/api/super/overview/log", "body": { "type": "", "pageSize": 1, "pageIndex": 1, "startTime": 0, "endTime": 0 } },
   { "name": "super-overview.route-disabled", "method": "POST", "path": "/api/super/overview/route/disabled", "body": { "path": "/api-check", "method": "GET", "disabled": false } },
   { "name": "super-overview.route-disabled-list", "method": "GET", "path": "/api/super/overview/route/disabled" },
 

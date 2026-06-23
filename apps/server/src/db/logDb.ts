@@ -434,9 +434,11 @@ export function timeToObjId(d: Date) {
   return getTimeObjectId(d)
 }
 
-export function findLogCount(q: FilterQuery<Log>) {
+export function findLogCount(q: FilterQuery<Log>, maxTimeMS?: number) {
   return mongoDbQuery<number>((db, resolve) => {
-    db.collection<Log>('log').countDocuments(q).then(resolve)
+    db.collection<Log>('log')
+      .countDocuments(q, maxTimeMS ? { maxTimeMS } : undefined)
+      .then(resolve)
   })
 }
 
@@ -481,13 +483,17 @@ export function findRequestMetricLogs(
   options: {
     method?: string
     path?: string
+    minDuration?: number
   } = {},
 ) {
+  const { minDuration = 5, ...queryOptions } = options
   const query: FilterQuery<Log> = {
-    ...createRequestLogQuery(start, end, options),
-    'data.duration': {
-      $gte: 5,
-    },
+    ...createRequestLogQuery(start, end, queryOptions),
+    ...(minDuration > 0 && {
+      'data.duration': {
+        $gte: minDuration,
+      },
+    }),
   }
 
   return mongoDbQuery<RequestMetricLog[]>((db, resolve) => {
@@ -833,15 +839,18 @@ export function findLogWithPageOffset(
   startIdx: number,
   pageSize: number,
   query: FilterQuery<Log>,
+  maxTimeMS?: number,
 ) {
   return mongoDbQuery<Log[]>((db, resolve) => {
-    db.collection<Log>('log')
+    const cursor = db.collection<Log>('log')
       .find(query)
       .sort({ _id: -1 })
       .skip(startIdx)
       .limit(pageSize)
-      .toArray()
-      .then(resolve)
+    if (maxTimeMS) {
+      cursor.maxTimeMS(maxTimeMS)
+    }
+    cursor.toArray().then(resolve)
   })
 }
 export function findLog(query: FilterQuery<Log>) {

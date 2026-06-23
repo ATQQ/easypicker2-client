@@ -116,6 +116,13 @@ const filterLogType = ref('behavior')
 const searchWord = ref('')
 /** 单独按 IP 筛选，与关键词互不干扰 */
 const searchIp = ref('')
+/** 日志查询的时间范围（毫秒），默认最近 7 天，避免全表扫描 */
+const DEFAULT_LOG_RANGE_MS = 1000 * 60 * 60 * 24 * 7
+function getDefaultLogRange(): [number, number] {
+  const end = Date.now()
+  return [end - DEFAULT_LOG_RANGE_MS, end]
+}
+const logRange = ref<[number, number]>(getDefaultLogRange())
 const logTypeList = reactive([
   {
     label: '用户行为',
@@ -156,12 +163,17 @@ const isLoadingLogs = ref(false)
 
 function loadLogs() {
   isLoadingLogs.value = true
+  const [startTime, endTime] = logRange.value && logRange.value.length === 2
+    ? [Number(logRange.value[0]) || undefined, Number(logRange.value[1]) || undefined]
+    : [undefined, undefined]
   SuperOverviewApi.getLogMsg(
     pageSize.value,
     pageCurrent.value,
     filterLogType.value,
     searchWord.value,
     searchIp.value,
+    startTime,
+    endTime,
   )
     .then((res) => {
       logs.splice(0, logs.length)
@@ -207,6 +219,15 @@ watch(searchWord, () => {
 })
 
 watch(searchIp, () => {
+  debouncedSearchRefresh()
+})
+
+watch(logRange, (val) => {
+  // 避免清空时无范围导致默认范围被覆盖：清空时回填默认值
+  if (!val || val.length !== 2) {
+    logRange.value = getDefaultLogRange()
+    return
+  }
   debouncedSearchRefresh()
 })
 
@@ -301,6 +322,18 @@ onMounted(() => {
               :value="item.type"
             />
           </el-select>
+        </span>
+        <span class="item">
+          <el-date-picker
+            v-model="logRange"
+            type="datetimerange"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            range-separator="至"
+            value-format="x"
+            size="default"
+            :clearable="false"
+          />
         </span>
         <span class="item">
           <el-input
