@@ -18,7 +18,7 @@ import { formatDate } from '@/utils/stringUtil'
 
 const $router = useRouter()
 const $store = useStore()
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('auth')
 const supportEmailFeature = computed(() => Boolean(siteConfig.value.supportEmailCodeLogin))
 
 const loading = ref(false)

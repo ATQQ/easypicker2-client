@@ -17,7 +17,7 @@ import { useStore } from 'vuex'
 import { ActionServiceAPI, FileApi } from '@/apis'
 import FloatingContact from '@/components/FloatingContact/index.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
-import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
+import { useAccountConfig, useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
 import { ActionType, DownloadStatus, filenamePattern } from '@/constants'
 import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
 import {
@@ -30,7 +30,8 @@ import {
 } from '@/utils/stringUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('file-page')
+useAccountConfig()
 const isOpenPraise = computed(() => siteConfig.value.openPraise)
 const showStorageLimit = computed(() => siteConfig.value.limitSpace)
 const showWalletLimit = computed(() => siteConfig.value.limitWallet)

@@ -133,6 +133,11 @@
   { "name": "config.service-global-all", "method": "GET", "path": "/api/config/service/global/all" },
   { "name": "config.service-global-update", "method": "PUT", "path": "/api/config/service/global", "body": {} },
   { "name": "config.global", "method": "GET", "path": "/api/config/global" },
+  { "name": "config.global-scope-auth", "method": "GET", "path": "/api/config/global?scope=auth" },
+  { "name": "config.global-scope-shell", "method": "GET", "path": "/api/config/global?scope=shell" },
+  { "name": "config.global-scope-form", "method": "GET", "path": "/api/config/global?scope=form" },
+  { "name": "config.global-scope-file-page", "method": "GET", "path": "/api/config/global?scope=file-page" },
+  { "name": "config.global-account", "method": "GET", "path": "/api/config/global/account" },
   { "name": "config.global-all", "method": "GET", "path": "/api/config/global/all" },
   { "name": "config.global-update", "method": "PUT", "path": "/api/config/global", "body": {} }
 ]

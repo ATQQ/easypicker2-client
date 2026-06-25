@@ -11,7 +11,7 @@ import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
 import { rAccount, rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 
 const bindPhone = ref(false)
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('auth')
 const email = ref('')
 const emailCode = ref('')
 const supportPhoneBind = computed(() => Boolean(siteConfig.value.needBindPhone && siteConfig.value.supportPhoneCode))

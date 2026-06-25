@@ -115,8 +115,12 @@ function addDisabledRoute(route: string, status: boolean) {
   })
 }
 
-function getGlobalConfig(type = 'site'): OverviewApiTypes.getGlobalConfig {
-  return ajax.get(`/config/global`, { params: { type } })
+function getGlobalConfig(type = 'site', scope?: OverviewApiTypes.GlobalConfigScope): OverviewApiTypes.getGlobalConfig {
+  return ajax.get(`/config/global`, { params: { type, ...(scope ? { scope } : {}) } })
+}
+
+function getAccountGlobalConfig(type = 'site'): OverviewApiTypes.getGlobalConfig {
+  return ajax.get(`/config/global/account`, { params: { type } })
 }
 
 function getGlobalAllConfig(type = 'site'): OverviewApiTypes.getGlobalConfig {
@@ -142,6 +146,7 @@ export default {
   checkDisabledRoute,
   addDisabledRoute,
   getGlobalConfig,
+  getAccountGlobalConfig,
   updateGlobalConfig,
   getGlobalAllConfig,
 }

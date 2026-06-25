@@ -63,26 +63,34 @@ export const defaultSiteConfig = {
   },
 }
 
-function mergeSiteConfig(config: Partial<typeof defaultSiteConfig>) {
+function mergeSiteConfig(
+  config: Partial<typeof defaultSiteConfig>,
+  base: typeof defaultSiteConfig = defaultSiteConfig,
+) {
   return Object.keys(defaultSiteConfig).reduce<typeof defaultSiteConfig>((pre, key) => {
     const typedKey = key as keyof typeof defaultSiteConfig
+    const hasField = Object.hasOwn(config, typedKey)
     const value = config[typedKey]
-    const defaultValue = defaultSiteConfig[typedKey]
+    const baseValue = base[typedKey]
+    if (!hasField) {
+      ;(pre as Record<string, unknown>)[key] = baseValue
+      return pre
+    }
     ;(pre as Record<string, unknown>)[key]
       = value && typeof value === 'object' && !Array.isArray(value)
-        ? { ...defaultValue, ...value }
-        : value ?? defaultValue
+        ? { ...baseValue, ...value }
+        : value ?? baseValue
     return pre
-  }, { ...defaultSiteConfig })
+  }, { ...base })
 }
 
-export function useSiteConfig() {
+export function useSiteConfig(scope?: OverviewApiTypes.GlobalConfigScope) {
   const value = useLocalStorage('siteConfig', defaultSiteConfig)
 
   const moneyStartDay = computed(() => formatDate(value.value.moneyStartDay))
   onMounted(() => {
-    SuperOverviewApi.getGlobalConfig('site').then((res) => {
-      value.value = mergeSiteConfig(res.data)
+    SuperOverviewApi.getGlobalConfig('site', scope).then((res) => {
+      value.value = mergeSiteConfig(res.data, value.value)
     })
   })
 
@@ -92,12 +100,26 @@ export function useSiteConfig() {
   }
 }
 
+export function useAccountConfig() {
+  const value = useLocalStorage('siteConfig', defaultSiteConfig)
+
+  onMounted(() => {
+    SuperOverviewApi.getAccountGlobalConfig('site').then((res) => {
+      value.value = mergeSiteConfig(res.data, value.value)
+    })
+  })
+
+  return {
+    value,
+  }
+}
+
 export function useSiteAllConfig() {
   const value = useLocalStorage('siteConfig', defaultSiteConfig)
 
   onMounted(() => {
     SuperOverviewApi.getGlobalAllConfig('site').then((res) => {
-      value.value = mergeSiteConfig(res.data)
+      value.value = mergeSiteConfig(res.data, value.value)
     })
   })
 

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useIsMobile, useSiteConfig } from '@/composables'
 
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('shell')
 const isMobile = useIsMobile()
 const modalVisible = ref(false)
 const topDismissedKey = ref('')

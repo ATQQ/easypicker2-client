@@ -58,7 +58,7 @@ const infoTypeList = reactive<{ label: string, value: InfoItemType }[]>([
 ])
 const selectType = ref<InfoItemType>('input')
 
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('form')
 const maxInputLength = computed(() => siteConfig.value.maxInputLength)
 
 const autoRewrite = ref(false)

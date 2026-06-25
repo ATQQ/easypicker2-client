@@ -23,7 +23,7 @@ import {
 } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
 
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('auth')
 const supportEmailCodeLogin = computed(() => Boolean(siteConfig.value.supportEmailCodeLogin))
 
 const account = ref('')

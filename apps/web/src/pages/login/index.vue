@@ -12,7 +12,7 @@ import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
 
 const supportRegister = useSupportRegister()
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('auth')
 
 const account = ref('')
 const pwd = ref('')

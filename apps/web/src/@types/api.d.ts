@@ -383,6 +383,7 @@ declare namespace OverviewApiTypes {
     pageSize: number
   }>
   type disabledStatus = ResponseData<{ status: boolean }>
+  type GlobalConfigScope = 'auth' | 'shell' | 'form' | 'file-page'
   interface GlobalSiteConfig {
     maxInputLength: number
     openPraise: boolean

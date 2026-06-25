@@ -20,7 +20,7 @@ import TaskInfo from './components/TaskInfo.vue'
 
 const $store = useStore()
 const $router = useRouter()
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('file-page')
 
 const isMobile = useIsMobile()
 // 分类相关

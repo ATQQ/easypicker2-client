@@ -41,7 +41,7 @@ export default defineComponent({
     const copyLink = () => {
       copyRes(shareLink.value)
     }
-    const { value: siteConfig } = useSiteConfig()
+    const { value: siteConfig } = useSiteConfig('shell')
 
     watchEffect(() => {
       shareLink.value = props.link

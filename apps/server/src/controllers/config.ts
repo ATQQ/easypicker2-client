@@ -46,6 +46,65 @@ const billingConfigKeys: (keyof GlobalSiteConfig)[] = [
   'qiniuCompressPrice',
 ]
 
+type GlobalConfigScope = 'auth' | 'shell' | 'form' | 'file-page' | 'site'
+
+const GLOBAL_CONFIG_SCOPES: Record<Exclude<GlobalConfigScope, 'site'>, (keyof GlobalSiteConfig)[]> = {
+  'auth': [
+    'needBindPhone',
+    'needBindEmail',
+    'enableCodeLogin',
+    'enableSmtp',
+    'enableEmailCodeLogin',
+  ],
+  'shell': [
+    'appName',
+    'openPraise',
+    'feedbackEntryEnabled',
+    'announcementTop',
+    'announcementModal',
+  ],
+  'form': [
+    'maxInputLength',
+    'formLength',
+  ],
+  'file-page': [
+    'filePagePraiseText',
+    'filePagePraiseLinkText',
+    'filePagePraiseLink',
+    'filePageContactText',
+    'filePageContactLinkText',
+    'filePageContactLink',
+    'filePageFloatingContactEnabled',
+    'filePageLimitText',
+    'filePageSponsorText',
+    'filePageSponsorLinkText',
+    'filePageSponsorLink',
+    'filePageSponsorSuffix',
+    'filePageSelfHostLinkText',
+    'filePageSelfHostLink',
+  ],
+}
+
+const GLOBAL_CONFIG_SITE_KEYS: (keyof GlobalSiteConfig)[] = Array.from(
+  new Set<keyof GlobalSiteConfig>([
+    ...GLOBAL_CONFIG_SCOPES.auth,
+    ...GLOBAL_CONFIG_SCOPES.shell,
+    ...GLOBAL_CONFIG_SCOPES.form,
+    ...GLOBAL_CONFIG_SCOPES['file-page'],
+  ]),
+)
+
+const GLOBAL_CONFIG_ACCOUNT_KEYS: (keyof GlobalSiteConfig)[] = [
+  'storageMode',
+  'limitSpace',
+  'limitWallet',
+  'moneyStartDay',
+  'maxUploadSizeMB',
+  'compressSizeLimit',
+  'downloadOneExpired',
+  'downloadCompressExpired',
+]
+
 interface ServiceDefinition {
   type: ServiceConfigType
   title: string
@@ -604,47 +663,19 @@ export default class UserController {
   }
 
   @Get('global', { needLogin: false, userPower: null })
-  async getGlobalConfig(@ReqQuery('type') key = 'site') {
+  async getGlobalConfig(
+    @ReqQuery('type') key = 'site',
+    @ReqQuery('scope') scope?: string,
+  ) {
     const globalConfig = LocalUserDB.findUserConfig({
       type: 'global',
       key,
     })
-    const filterKey: (keyof GlobalSiteConfig)[] = [
-      'maxInputLength',
-      'openPraise',
-      'feedbackEntryEnabled',
-      'formLength',
-      'compressSizeLimit',
-      'downloadOneExpired',
-      'downloadCompressExpired',
-      'needBindPhone',
-      'enableCodeLogin',
-      'enableSmtp',
-      'enableEmailCodeLogin',
-      'needBindEmail',
-      'limitSpace',
-      'limitWallet',
-      'storageMode',
-      'maxUploadSizeMB',
-      'moneyStartDay',
-      'appName',
-      'filePagePraiseText',
-      'filePagePraiseLinkText',
-      'filePagePraiseLink',
-      'filePageContactText',
-      'filePageContactLinkText',
-      'filePageContactLink',
-      'filePageFloatingContactEnabled',
-      'filePageLimitText',
-      'filePageSponsorText',
-      'filePageSponsorLinkText',
-      'filePageSponsorLink',
-      'filePageSponsorSuffix',
-      'filePageSelfHostLinkText',
-      'filePageSelfHostLink',
-      'announcementTop',
-      'announcementModal',
-    ]
+    const normalizedScope = (scope || 'site') as GlobalConfigScope
+    const filterKey: (keyof GlobalSiteConfig)[]
+      = normalizedScope === 'site'
+        ? GLOBAL_CONFIG_SITE_KEYS
+        : (GLOBAL_CONFIG_SCOPES[normalizedScope] ?? GLOBAL_CONFIG_SITE_KEYS)
     const supportCodeLogin = isCodeLoginSupported()
     const supportEmailCodeLogin = isEmailCodeLoginSupported()
     const supportPhoneCode = isTxMessageConfigured()
@@ -657,8 +688,26 @@ export default class UserController {
     filterKey.forEach((cur) => {
       result[cur] = globalValue[cur] as never
     })
-    result.needBindPhone = Boolean(result.needBindPhone && (supportPhoneCode || supportEmailCodeLogin))
-    result.needBindEmail = Boolean(result.needBindEmail && supportEmailCodeLogin)
+    if (filterKey.includes('needBindPhone')) {
+      result.needBindPhone = Boolean(result.needBindPhone && (supportPhoneCode || supportEmailCodeLogin))
+    }
+    if (filterKey.includes('needBindEmail')) {
+      result.needBindEmail = Boolean(result.needBindEmail && supportEmailCodeLogin)
+    }
+    return result
+  }
+
+  @Get('global/account', { needLogin: true })
+  async getAccountGlobalConfig(@ReqQuery('type') key = 'site') {
+    const globalConfig = LocalUserDB.findUserConfig({
+      type: 'global',
+      key,
+    })
+    const globalValue = (globalConfig[0]?.value || {}) as Partial<GlobalSiteConfig>
+    const result: Partial<GlobalSiteConfig> = {}
+    GLOBAL_CONFIG_ACCOUNT_KEYS.forEach((cur) => {
+      result[cur] = globalValue[cur] as never
+    })
     return result
   }
 
