@@ -95,14 +95,8 @@ const GLOBAL_CONFIG_SITE_KEYS: (keyof GlobalSiteConfig)[] = Array.from(
 )
 
 const GLOBAL_CONFIG_ACCOUNT_KEYS: (keyof GlobalSiteConfig)[] = [
-  'storageMode',
   'limitSpace',
   'limitWallet',
-  'moneyStartDay',
-  'maxUploadSizeMB',
-  'compressSizeLimit',
-  'downloadOneExpired',
-  'downloadCompressExpired',
 ]
 
 interface ServiceDefinition {
@@ -697,7 +691,7 @@ export default class UserController {
     return result
   }
 
-  @Get('global/account', { needLogin: true })
+  @Get('global/account', { needLogin: true, userPower: null })
   async getAccountGlobalConfig(@ReqQuery('type') key = 'site') {
     const globalConfig = LocalUserDB.findUserConfig({
       type: 'global',

@@ -4,7 +4,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { PublicApi, SuperUserApi } from '@/apis'
-import { useAccountConfig, useIsMobile } from '@/composables'
+import { useIsMobile, useSiteAllConfig } from '@/composables'
 import { USER_STATUS } from '@/constants'
 import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate, formatSize } from '@/utils/stringUtil'
@@ -110,7 +110,7 @@ const sortOrderList = [
     value: 'desc',
   },
 ]
-const { value: siteConfig } = useAccountConfig()
+const { value: siteConfig } = useSiteAllConfig()
 const moneyStartDay = computed(() => siteConfig.value.moneyStartDay)
 const isLocalStorage = computed(() => siteConfig.value.storageMode === 'local')
 

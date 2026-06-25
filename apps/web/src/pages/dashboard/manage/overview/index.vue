@@ -13,13 +13,13 @@ import {
 import { ElMessage } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { SuperOverviewApi } from '@/apis'
-import { useAccountConfig, useIsMobile } from '@/composables'
+import { useIsMobile, useSiteAllConfig } from '@/composables'
 import { tableToExcel } from '@/utils/networkUtil'
 import { debounce } from '@/utils/other'
 import { copyRes, formatDate } from '@/utils/stringUtil'
 
 const isMobile = useIsMobile()
-const { value: siteConfig } = useAccountConfig()
+const { value: siteConfig } = useSiteAllConfig()
 const storageModeText = computed(() => siteConfig.value.storageMode === 'local' ? '本机磁盘' : '七牛云对象存储')
 const storageModeDesc = computed(() => siteConfig.value.storageMode === 'local'
   ? '当前文件上传到服务端本机 upload 目录'
