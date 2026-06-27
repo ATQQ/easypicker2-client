@@ -987,6 +987,27 @@ watch(
       <h1 class="name">
         {{ taskInfo.name }}
       </h1>
+      <!-- 同分类下兄弟任务切换：与密码门并列，无论是否进入密码门都允许切换 -->
+      <div
+        v-if="taskMoreInfoLoaded && submitNavTasks.length > 1"
+        class="task-nav-switch"
+        style="max-width: 400px; margin: 12px auto"
+      >
+        <span style="margin-right: 8px">切换任务</span>
+        <el-select
+          :model-value="k"
+          filterable
+          style="width: 260px"
+          @update:model-value="(key) => $router.replace({ name: 'task', params: { key } })"
+        >
+          <el-option
+            v-for="t in submitNavTasks"
+            :key="t.key"
+            :label="t.name"
+            :value="t.key"
+          />
+        </el-select>
+      </div>
       <!-- 提交密码门：开启了密码且未通过校验时拦截后续渲染 -->
       <div v-if="taskMoreInfoLoaded && passwordGateVisible" class="submit-password-gate">
         <el-divider>提交密码</el-divider>
@@ -1015,26 +1036,6 @@ watch(
         </el-form>
       </div>
       <template v-else-if="taskMoreInfoLoaded && !passwordGateVisible">
-        <div
-          v-if="submitNavTasks.length > 1"
-          class="task-nav-switch"
-          style="max-width: 400px; margin: 12px auto"
-        >
-          <span style="margin-right: 8px">切换任务</span>
-          <el-select
-            :model-value="k"
-            filterable
-            style="width: 260px"
-            @update:model-value="(key) => $router.replace({ name: 'task', params: { key } })"
-          >
-            <el-option
-              v-for="t in submitNavTasks"
-              :key="t.key"
-              :label="t.name"
-              :value="t.key"
-            />
-          </el-select>
-        </div>
         <h2 v-if="disabledUpload" style="color: red">
           任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间
         </h2>
