@@ -1,5 +1,19 @@
 # @sugarat/easypicker2-server
 
+## 2.9.1
+
+### Patch Changes
+
+- feat: 支持设置任务密码（含提交密码门控的边界处理）
+- feat: 新增 task/grouped 聚合接口，修复 no-task 虚拟分类 404
+- feat: 管理后台日志查询支持时间范围筛选
+- feat: 记录批量扣费明细
+- refactor: 重构批量扣费逻辑，改为异步后台执行
+- refactor: 调整全局账户配置项与接口权限
+- fix: 兼容任务批注图片和模板文件跨存储模式访问
+- fix: 本机模式批注图片上传后立即回填预览地址
+- fix: 名单手动添加改为接口批量入库，补齐模板文件和批注图片本机上传链路
+
 ## 2.9.0
 
 ### Minor Changes
