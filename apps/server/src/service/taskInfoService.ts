@@ -91,6 +91,15 @@ export default class TaskInfoService {
     deleteObjByKey(tipImageKey, this.ctx.req, { allowInLocalMode: true })
   }
 
+  /**
+   * 服务端内部使用：跳过密码门控直接读取 TaskInfo 实体。
+   * 仅用于已在上游完成密码/权限校验后，需要拿到原始任务属性进行业务判断的场景，
+   * 不允许在 HTTP 接口直接返回该结果。
+   */
+  async getRawTaskInfoEntity(key: string) {
+    return this.taskInfoRepository.findOne({ taskKey: key })
+  }
+
   async getTaskInfo(key: string, providedPassword?: string, mode?: string) {
     const taskInfo = await this.taskInfoRepository.findOne({
       taskKey: key,
@@ -165,16 +174,28 @@ export default class TaskInfoService {
         loginUser = undefined
       }
     }
+    // 严格化 id 比较：双方都存在且转 Number 后相等才视为 owner，
+    // 避免 undefined 经 String() 转换为字符串 "undefined" 误判通过的情况。
+    const ownerLoginId = loginUser?.id
+    const ownerTaskId = task?.userId
     const isOwner = !!(
-      loginUser
-      && task
-      && String(loginUser.id) === String(task.userId)
+      ownerLoginId != null
+      && ownerTaskId != null
+      && Number(ownerLoginId) === Number(ownerTaskId)
+      && !Number.isNaN(Number(ownerLoginId))
     )
+    // mode 规范化：仅识别预期值，未知值一律退化为 undefined，
+    // 防止笔误（如 'submitt'）让 owner 误绕过密码门。
+    const allowedModes = new Set(['submit', 'config'])
+    const normalizedMode = typeof mode === 'string' && allowedModes.has(mode)
+      ? (mode as 'submit' | 'config')
+      : undefined
+    const isSubmitMode = normalizedMode === 'submit'
     const needSubmitPassword = !!submitPassword
     // 密码门控：未开启密码 / 所有者（非提交模式） / 提供了正确密码 才视为通过
     // 提交页（mode==='submit'）下，任务所有者本人也必须凭密码访问，
     // 否则会出现「自己刷新提交页时密码门不弹出」的体验问题。
-    const ownerBypass = isOwner && mode !== 'submit'
+    const ownerBypass = isOwner && !isSubmitMode
     const passwordValid
       = !needSubmitPassword
         || ownerBypass
@@ -182,7 +203,9 @@ export default class TaskInfoService {
           && providedPassword.length > 0
           && providedPassword === submitPassword)
 
-    // 未通过密码校验时，不下发任何敏感任务配置，避免分享链接被绕过
+    // 未通过密码校验时，不下发任何敏感任务配置，避免分享链接被绕过；
+    // 但「同分类下的提交导航」属于任务的公开导览信息，与密码无关，
+    // 密码门展示阶段仍允许返回，便于用户在被拦截时跳转到无密码兄弟任务。
     if (!passwordValid) {
       return {
         template: undefined,
@@ -194,7 +217,7 @@ export default class TaskInfoService {
         people: undefined,
         tip: undefined,
         bindField: undefined,
-        submitNavTasks: [],
+        submitNavTasks,
         needSubmitPassword,
         passwordValid,
         submitPassword: undefined,
@@ -214,7 +237,7 @@ export default class TaskInfoService {
       submitNavTasks,
       needSubmitPassword,
       passwordValid,
-      submitPassword: isOwner && mode !== 'submit' ? submitPassword || '' : undefined,
+      submitPassword: isOwner && !isSubmitMode ? submitPassword || '' : undefined,
     }
   }
 

@@ -795,6 +795,13 @@ function refreshTaskMoreInfo(hot = false) {
     refreshWaitTime(false)
     isLoadingData.value = false
     taskMoreInfoLoaded.value = true
+  }).catch((err) => {
+    // 兜底：任何网络/服务异常都不能让 loading 与「未加载完成」状态卡死，
+    // 否则首屏只展示 v-loading 转圈，用户无法重试。
+    console.error('[refreshTaskMoreInfo]', err)
+    ElMessage.error('任务信息加载失败，请稍后重试')
+    isLoadingData.value = false
+    taskMoreInfoLoaded.value = true
   })
 }
 

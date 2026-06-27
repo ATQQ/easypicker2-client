@@ -1781,9 +1781,9 @@ export default class FileService {
   async withdrawFile(data) {
     const { taskKey, taskName, filename, hash, peopleName, info, submitPassword } = data
     await this.assertSubmitPassword(taskKey, submitPassword)
-    // 直接读 repository，绕过 taskInfoService.getTaskInfo 的密码门控
-    // （服务端内部已校验密码，只需读取任务属性用于业务判断）
-    const taskInfo = await this.taskInfoRepository.findOne({ taskKey })
+    // 通过 taskInfoService 提供的内部方法读取原始 TaskInfo，
+    // 绕开公开接口上的密码门控（密码已在上一步 assertSubmitPassword 校验）。
+    const taskInfo = await this.taskInfoService.getRawTaskInfoEntity(taskKey)
     const limitPeople = taskInfo?.limitPeople === BOOLEAN.TRUE
 
     // 内容完全一致的提交记录，不包含限制的名字
