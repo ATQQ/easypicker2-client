@@ -179,6 +179,47 @@ function confirmPeopleName() {
   return validModalRef.value.validate((isValid: boolean) => isValid)
 }
 
+// 提交密码（防误提交）
+// 设计：使用页面级密码门 + localStorage 缓存（按 taskKey 分桶）
+// - submitPasswordInput：当前用于提交、撤回、查询接口的密码透传
+// - submitPasswordCache：本机缓存映射 taskKey -> password
+// - passwordGateVisible：是否展示密码输入区块
+// - passwordGateError：密码门错误提示文案
+const submitPasswordInput = ref('')
+const submitPasswordCache = useLocalStorage<Record<string, string>>(
+  'task_submit_pwd_map',
+  {},
+)
+const passwordGateVisible = ref(false)
+const passwordGateError = ref('')
+// 首次（或切换任务后）moreInfo 是否已经从服务端返回
+// 用于在密码门状态确定之前，避免先渲染上传/历史区块导致闪烁
+const taskMoreInfoLoaded = ref(false)
+
+function readCachedSubmitPassword() {
+  if (!k.value)
+    return ''
+  return submitPasswordCache.value?.[k.value] || ''
+}
+
+function saveSubmitPassword(value: string) {
+  if (!k.value)
+    return
+  submitPasswordCache.value = {
+    ...submitPasswordCache.value,
+    [k.value]: value,
+  }
+}
+
+function clearSubmitPassword() {
+  if (!k.value)
+    return
+  submitPasswordInput.value = ''
+  const next = { ...submitPasswordCache.value }
+  delete next[k.value]
+  submitPasswordCache.value = next
+}
+
 type TaskActionLogType = 'submit' | 'query' | 'withdraw'
 interface TaskActionLogInfo {
   text: string
@@ -394,6 +435,7 @@ async function startUpload() {
             storage: uploadTokenRes.storageMode,
             info: JSON.stringify(infos),
             people: validModal.peopleName,
+            submitPassword: submitPasswordInput.value,
           }).then(() => {
             file.status = 'success'
             ElMessage.success(`文件:${file.name}提交成功`)
@@ -439,6 +481,7 @@ async function startUpload() {
             storage: uploadTokenRes.storageMode,
             info: JSON.stringify(infos),
             people: validModal.peopleName,
+            submitPassword: submitPasswordInput.value,
           }).then(() => {
             file.status = 'success'
             ElMessage.success(`文件:${file.name}提交成功`)
@@ -575,6 +618,7 @@ function runWithdraw() {
         hash: file.md5,
         info: JSON.stringify(infos),
         peopleName: validModal.peopleName,
+        submitPassword: submitPasswordInput.value,
       })
         .then(() => {
           ElMessage.success(`文件:${file.name}撤回成功`)
@@ -637,7 +681,7 @@ async function checkSubmitStatus() {
       return
     }
   }
-  FileApi.checkSubmitStatus(k.value, infos, validModal.peopleName).then(
+  FileApi.checkSubmitStatus(k.value, infos, validModal.peopleName, submitPasswordInput.value).then(
     (res) => {
       addTaskActionLog({
         action: 'query',
@@ -650,7 +694,15 @@ async function checkSubmitStatus() {
         ElMessage.warning('还未提交过哟')
       }
     },
-  )
+  ).catch((err) => {
+    if (err?.code === 3002 && taskMoreInfo.needSubmitPassword) {
+      // 密码已被任务所有者修改，回到密码门
+      clearSubmitPassword()
+      passwordGateError.value = '提交密码已变更，请重新输入'
+      passwordGateVisible.value = true
+      ElMessage.error('提交密码已变更，请重新输入')
+    }
+  })
 }
 const isLoadingData = ref(false)
 const readyRefresh = ref(false)
@@ -691,8 +743,48 @@ function isEqualInfos(a: InfoItem[] = [], b: InfoItem[] = []) {
   )
 }
 function refreshTaskMoreInfo(hot = false) {
-  TaskApi.getTaskMoreInfo(k.value).then((res) => {
-    Object.assign(taskMoreInfo, res.data)
+  // 进入密码门时，使用本地缓存（或当前输入）作为请求凭证
+  const cached = readCachedSubmitPassword()
+  if (cached && !submitPasswordInput.value) {
+    submitPasswordInput.value = cached
+  }
+  const passwordForRequest = submitPasswordInput.value || cached
+  TaskApi.getTaskMoreInfo(k.value, passwordForRequest, 'submit').then((res) => {
+    const data = res.data || {}
+    // 密码门拦截：需要密码且未通过，则展示密码输入区
+    if (data.needSubmitPassword && data.passwordValid === false) {
+      // 服务端拒绝缓存密码 -> 说明任务所有者已变更密码
+      if (cached) {
+        clearSubmitPassword()
+        passwordGateError.value = '提交密码已变更，请重新输入'
+      }
+      else {
+        passwordGateError.value = ''
+      }
+      passwordGateVisible.value = true
+      // 清掉本地已渲染过的敏感数据，避免残留泄漏
+      infos.splice(0, infos.length)
+      Object.assign(taskMoreInfo, {
+        template: undefined,
+        rewrite: undefined,
+        format: undefined,
+        info: undefined,
+        share: undefined,
+        ddl: undefined,
+        people: undefined,
+        tip: undefined,
+        bindField: '',
+        needSubmitPassword: true,
+        passwordValid: false,
+      } as Partial<TaskApiTypes.TaskInfo>)
+      isLoadingData.value = false
+      taskMoreInfoLoaded.value = true
+      return
+    }
+    // 通过校验，正常合并
+    passwordGateVisible.value = false
+    passwordGateError.value = ''
+    Object.assign(taskMoreInfo, data)
     if (!isEqualInfos(infos, parseInfo(taskMoreInfo.info))) {
       infos.splice(0, infos.length)
       infos.push(...parseInfo(taskMoreInfo.info))
@@ -702,7 +794,22 @@ function refreshTaskMoreInfo(hot = false) {
     }
     refreshWaitTime(false)
     isLoadingData.value = false
+    taskMoreInfoLoaded.value = true
   })
+}
+
+// 密码门提交
+function submitPasswordGate() {
+  const value = (submitPasswordInput.value || '').trim()
+  if (value.length < 4) {
+    passwordGateError.value = '密码至少 4 位'
+    return
+  }
+  submitPasswordInput.value = value
+  saveSubmitPassword(value)
+  passwordGateError.value = ''
+  isLoadingData.value = true
+  refreshTaskMoreInfo()
 }
 function handleBlur() {
   readyRefresh.value = true
@@ -823,6 +930,11 @@ watch(
       return
     k.value = key
     fileList.value = []
+    // 切换任务时清除上一个任务的密码门残留状态，让新任务重新走密码门流程
+    submitPasswordInput.value = ''
+    passwordGateVisible.value = false
+    passwordGateError.value = ''
+    taskMoreInfoLoaded.value = false
     isLoadingData.value = true
     refreshTaskInfo()
     refreshTaskMoreInfo()
@@ -868,269 +980,298 @@ watch(
       <h1 class="name">
         {{ taskInfo.name }}
       </h1>
-      <div
-        v-if="submitNavTasks.length > 1"
-        class="task-nav-switch"
-        style="max-width: 400px; margin: 12px auto"
-      >
-        <span style="margin-right: 8px">切换任务</span>
-        <el-select
-          :model-value="k"
-          filterable
-          style="width: 260px"
-          @update:model-value="(key) => $router.replace({ name: 'task', params: { key } })"
-        >
-          <el-option
-            v-for="t in submitNavTasks"
-            :key="t.key"
-            :label="t.name"
-            :value="t.key"
-          />
-        </el-select>
+      <!-- 提交密码门：开启了密码且未通过校验时拦截后续渲染 -->
+      <div v-if="taskMoreInfoLoaded && passwordGateVisible" class="submit-password-gate">
+        <el-divider>提交密码</el-divider>
+        <p class="gate-tip">
+          当前任务设置了提交密码，请输入密码后查看内容并提交
+        </p>
+        <el-form @submit.prevent="submitPasswordGate">
+          <el-form-item>
+            <el-input
+              v-model="submitPasswordInput"
+              type="password"
+              show-password
+              maxlength="64"
+              placeholder="请输入提交密码（至少 4 位）"
+              @keyup.enter="submitPasswordGate"
+            />
+          </el-form-item>
+          <el-form-item class="gate-submit-item">
+            <el-button type="success" @click="submitPasswordGate">
+              确定
+            </el-button>
+          </el-form-item>
+          <p v-if="passwordGateError" class="gate-error">
+            {{ passwordGateError }}
+          </p>
+        </el-form>
       </div>
-      <h2 v-if="disabledUpload" style="color: red">
-        任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间
-      </h2>
-      <!-- 提示信息 -->
-      <!-- 时间截止了也不再展示 -->
-      <template v-if="tipData.text && (ddlStr ? !isOver : true)">
-        <el-divider>⚠️ 注意事项 ⚠️</el-divider>
-        <Tip>
-          <div class="tip-wrapper">
-            <p v-for="(t, i) in tipData.text.split('\n')" :key="i">
-              {{ t.replace(/\s/g, '&nbsp;') }}
-            </p>
-          </div>
-        </Tip>
-      </template>
-      <template v-if="imageList.length && (ddlStr ? !isOver : true)">
-        <el-image
-          v-for="(img, idx) in imageList"
-          :key="img.uid"
-          hide-on-click-modal
-          style="width: 100px; height: 100px; margin: 10px"
-          :src="img.url"
-          :zoom-rate="1.2"
-          :preview-src-list="imageList.map((v) => v.preview)"
-          :initial-index="idx"
-          fit="contain"
-        />
-      </template>
-      <!-- 截止时间字符串 -->
-      <template v-if="ddlStr">
-        <el-divider>截止时间</el-divider>
-        <h2 class="ddl">
-          {{ timeInfo }}
+      <template v-else-if="taskMoreInfoLoaded && !passwordGateVisible">
+        <div
+          v-if="submitNavTasks.length > 1"
+          class="task-nav-switch"
+          style="max-width: 400px; margin: 12px auto"
+        >
+          <span style="margin-right: 8px">切换任务</span>
+          <el-select
+            :model-value="k"
+            filterable
+            style="width: 260px"
+            @update:model-value="(key) => $router.replace({ name: 'task', params: { key } })"
+          >
+            <el-option
+              v-for="t in submitNavTasks"
+              :key="t.key"
+              :label="t.name"
+              :value="t.key"
+            />
+          </el-select>
+        </div>
+        <h2 v-if="disabledUpload" style="color: red">
+          任务存储空间容量已达到上限，已经无法进行上传，请联系发起人扩容空间
         </h2>
-        <div v-if="isOver">
-          <el-empty description="已经结束啦！" />
-        </div>
-      </template>
-      <!-- 未设置ddl 或者 设置了还未结束 -->
-      <div v-if="!ddlStr || !isOver">
-        <el-divider>必要信息填写</el-divider>
-        <div class="infos">
-          <div v-show="taskMoreInfo.people">
-            <Tip>“{{ limitBindField }}”在参与名单里才能正常提交</Tip>
-          </div>
-          <div v-if="showValidForm">
-            <div class="infos">
-              <el-form
-                ref="validModalRef"
-                :rules="validModalRules"
-                status-icon
-                :model="validModal"
-                :disabled="disableForm"
-                label-position="top"
-              >
-                <el-form-item prop="peopleName" :label="limitBindField">
-                  <el-input
-                    v-model="validModal.peopleName"
-                    :maxlength="14"
-                    clearable
-                    show-word-limit
-                    :placeholder="`请输入 ${limitBindField}`"
-                  />
-                </el-form-item>
-              </el-form>
-            </div>
-          </div>
-          <InfosForm :infos="infos" :disabled="disableForm" />
-        </div>
-        <el-upload
-          ref="fileUpload"
-          v-model:file-list="fileList"
-          style="max-width: 400px; margin: 0 auto"
-          :drag="!isMobile"
-          action=""
-          :on-change="handleChangeFile"
-          :before-remove="handleRemoveFile"
-          :on-exceed="handleExceed"
-          :auto-upload="false"
-          multiple
-          :limit="limitUploadCount"
-        >
-          <el-button v-if="isMobile" type="primary">
-            选择文件
-          </el-button>
-          <template v-else>
-            <el-icon class="el-icon--upload">
-              <UploadFilled />
-            </el-icon>
-            <div class="el-upload__text">
-              将文件拖于此处 or <em>直接选择文件</em>
-            </div>
-          </template>
-          <template #tip>
-            <div v-show="!!calculateMd5Count" class="p10">
-              <Tip>
-                还有
-                {{ calculateMd5Count }}
-                个文件正在生成校验信息，请稍等(1G通常需要20s)
-              </Tip>
-            </div>
-          </template>
-        </el-upload>
-        <div class="p10">
-          <el-button
-            v-if="isWithdraw"
-            size="default"
-            type="warning"
-            :disabled="!allowWithdraw || !!calculateMd5Count"
-            @click="startWithdraw"
-          >
-            一键撤回
-          </el-button>
-          <el-button
-            v-else-if="!disabledUpload"
-            size="default"
-            type="success"
-            :disabled="!allowUpload || !!calculateMd5Count"
-            @click="submitUpload"
-          >
-            提交文件
-          </el-button>
-          <el-button size="default" @click="checkSubmitStatus">
-            查询提交情况
-          </el-button>
-        </div>
         <!-- 提示信息 -->
-        <div class="p10 option-tips">
-          <Tip v-if="formatData.status && formatData.format.length">
-            限制格式为:
-            <span style="color: red">{{
-              formatData.format.join(', ')
-            }}</span>
-          </Tip>
-          <Tip v-if="formatData.size">
-            限制文件大小不超过:
-            <span style="color: red">{{
-              formatSize(formatData.size)
-            }}</span>
-          </Tip>
-          <template v-if="isWithdraw">
-            <Tip>
-              ① 须保证选择的文件与提交时的文件一致<br>
-              ② 填写表单信息一致 <br>
-              ③
-              完全一模一样的文件的提交记录（内容md5+命名），将会一次性全部撤回
-            </Tip>
-          </template>
-          <template v-else>
-            <Tip>
-              <strong>查询提交情况，需填写和提交时一样的表单信息</strong>
-            </Tip>
-            <Tip>
-              ① 选择完文件，点击 ”提交文件“即可 <br>
-              ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
-              <template v-if="taskMoreInfo.template && !disabledUpload">
-                <br>
-                ③
-                <strong>
-                  <el-button
-                    type="primary"
-                    text
-                    style="color: #85ce61"
-                    size="small"
-                    @click="downloadTemplate"
-                  >右下角可 “查看提交示例”
-                  </el-button>
-                </strong>
-              </template>
-            </Tip>
-          </template>
-        </div>
-        <div class="withdraw">
-          <el-button
-            v-if="taskMoreInfo.template && !disabledUpload"
-            type="primary"
-            text
-            style="color: #85ce61"
-            size="small"
-            @click="downloadTemplate"
-          >
-            查看提交示例
-          </el-button>
-          <el-button
-            v-if="isWithdraw"
-            size="small"
-            type="primary"
-            text
-            @click="isWithdraw = false"
-          >
-            正常提交
-          </el-button>
-          <el-button
-            v-else
-            size="small"
-            type="primary"
-            text
-            @click="isWithdraw = true"
-          >
-            我要撤回
-          </el-button>
-        </div>
-      </div>
-      <section v-if="currentTaskActionLogs.length" class="local-log-section">
-        <div class="local-log-section-head">
-          <div class="local-log-section-title">
-            <strong>最近操作记录</strong>
-            <el-tooltip
-              effect="dark"
-              placement="top"
-              content="记录只保存在当前浏览器 localStorage，用来提示你在这台设备上的提交、查询和撤回操作；换设备、换浏览器或清理数据后不会同步。"
-            >
-              <el-icon class="local-log-help">
-                <QuestionFilled />
-              </el-icon>
-            </el-tooltip>
-          </div>
-          <el-button
-            v-if="currentTaskActionLogs.length"
-            size="small"
-            text
-            @click="showActionLogDrawer = true"
-          >
-            更多
-          </el-button>
-        </div>
-
-        <div class="local-log-compact-list">
-          <article
-            v-for="log in recentTaskActionLogs"
-            :key="log.id"
-            class="local-log-compact-item"
-          >
-            <div class="local-log-compact-main">
-              <el-tag size="small" :type="getActionLogTagType(log)" effect="plain">
-                {{ getActionLogText(log) }}
-              </el-tag>
-              <span class="local-log-compact-title">{{ getActionLogTitle(log) }}</span>
+        <!-- 时间截止了也不再展示 -->
+        <template v-if="tipData.text && (ddlStr ? !isOver : true)">
+          <el-divider>⚠️ 注意事项 ⚠️</el-divider>
+          <Tip>
+            <div class="tip-wrapper">
+              <p v-for="(t, i) in tipData.text.split('\n')" :key="i">
+                {{ t.replace(/\s/g, '&nbsp;') }}
+              </p>
             </div>
-            <time>{{ formatDate(log.createdAt, 'MM-dd hh:mm') }}</time>
-          </article>
+          </Tip>
+        </template>
+        <template v-if="imageList.length && (ddlStr ? !isOver : true)">
+          <el-image
+            v-for="(img, idx) in imageList"
+            :key="img.uid"
+            hide-on-click-modal
+            style="width: 100px; height: 100px; margin: 10px"
+            :src="img.url"
+            :zoom-rate="1.2"
+            :preview-src-list="imageList.map((v) => v.preview)"
+            :initial-index="idx"
+            fit="contain"
+          />
+        </template>
+        <!-- 截止时间字符串 -->
+        <template v-if="ddlStr">
+          <el-divider>截止时间</el-divider>
+          <h2 class="ddl">
+            {{ timeInfo }}
+          </h2>
+          <div v-if="isOver">
+            <el-empty description="已经结束啦！" />
+          </div>
+        </template>
+        <!-- 未设置ddl 或者 设置了还未结束 -->
+        <div v-if="!ddlStr || !isOver">
+          <el-divider>必要信息填写</el-divider>
+          <div class="infos">
+            <div v-show="taskMoreInfo.people">
+              <Tip>“{{ limitBindField }}”在参与名单里才能正常提交</Tip>
+            </div>
+            <div v-if="showValidForm">
+              <div class="infos">
+                <el-form
+                  ref="validModalRef"
+                  :rules="validModalRules"
+                  status-icon
+                  :model="validModal"
+                  :disabled="disableForm"
+                  label-position="top"
+                >
+                  <el-form-item prop="peopleName" :label="limitBindField">
+                    <el-input
+                      v-model="validModal.peopleName"
+                      :maxlength="14"
+                      clearable
+                      show-word-limit
+                      :placeholder="`请输入 ${limitBindField}`"
+                    />
+                  </el-form-item>
+                </el-form>
+              </div>
+            </div>
+            <InfosForm :infos="infos" :disabled="disableForm" />
+          </div>
+          <el-upload
+            ref="fileUpload"
+            v-model:file-list="fileList"
+            style="max-width: 400px; margin: 0 auto"
+            :drag="!isMobile"
+            action=""
+            :on-change="handleChangeFile"
+            :before-remove="handleRemoveFile"
+            :on-exceed="handleExceed"
+            :auto-upload="false"
+            multiple
+            :limit="limitUploadCount"
+          >
+            <el-button v-if="isMobile" type="primary">
+              选择文件
+            </el-button>
+            <template v-else>
+              <el-icon class="el-icon--upload">
+                <UploadFilled />
+              </el-icon>
+              <div class="el-upload__text">
+                将文件拖于此处 or <em>直接选择文件</em>
+              </div>
+            </template>
+            <template #tip>
+              <div v-show="!!calculateMd5Count" class="p10">
+                <Tip>
+                  还有
+                  {{ calculateMd5Count }}
+                  个文件正在生成校验信息，请稍等(1G通常需要20s)
+                </Tip>
+              </div>
+            </template>
+          </el-upload>
+          <div class="p10">
+            <el-button
+              v-if="isWithdraw"
+              size="default"
+              type="warning"
+              :disabled="!allowWithdraw || !!calculateMd5Count"
+              @click="startWithdraw"
+            >
+              一键撤回
+            </el-button>
+            <el-button
+              v-else-if="!disabledUpload"
+              size="default"
+              type="success"
+              :disabled="!allowUpload || !!calculateMd5Count"
+              @click="submitUpload"
+            >
+              提交文件
+            </el-button>
+            <el-button size="default" @click="checkSubmitStatus">
+              查询提交情况
+            </el-button>
+          </div>
+          <!-- 提示信息 -->
+          <div class="p10 option-tips">
+            <Tip v-if="formatData.status && formatData.format.length">
+              限制格式为:
+              <span style="color: red">{{
+                formatData.format.join(', ')
+              }}</span>
+            </Tip>
+            <Tip v-if="formatData.size">
+              限制文件大小不超过:
+              <span style="color: red">{{
+                formatSize(formatData.size)
+              }}</span>
+            </Tip>
+            <template v-if="isWithdraw">
+              <Tip>
+                ① 须保证选择的文件与提交时的文件一致<br>
+                ② 填写表单信息一致 <br>
+                ③
+                完全一模一样的文件的提交记录（内容md5+命名），将会一次性全部撤回
+              </Tip>
+            </template>
+            <template v-else>
+              <Tip>
+                <strong>查询提交情况，需填写和提交时一样的表单信息</strong>
+              </Tip>
+              <Tip>
+                ① 选择完文件，点击 ”提交文件“即可 <br>
+                ② <strong>选择大文件后需要等待一会儿才展示处理</strong>
+                <template v-if="taskMoreInfo.template && !disabledUpload">
+                  <br>
+                  ③
+                  <strong>
+                    <el-button
+                      type="primary"
+                      text
+                      style="color: #85ce61"
+                      size="small"
+                      @click="downloadTemplate"
+                    >右下角可 “查看提交示例”
+                    </el-button>
+                  </strong>
+                </template>
+              </Tip>
+            </template>
+          </div>
+          <div class="withdraw">
+            <el-button
+              v-if="taskMoreInfo.template && !disabledUpload"
+              type="primary"
+              text
+              style="color: #85ce61"
+              size="small"
+              @click="downloadTemplate"
+            >
+              查看提交示例
+            </el-button>
+            <el-button
+              v-if="isWithdraw"
+              size="small"
+              type="primary"
+              text
+              @click="isWithdraw = false"
+            >
+              正常提交
+            </el-button>
+            <el-button
+              v-else
+              size="small"
+              type="primary"
+              text
+              @click="isWithdraw = true"
+            >
+              我要撤回
+            </el-button>
+          </div>
         </div>
-      </section>
+        <section v-if="currentTaskActionLogs.length" class="local-log-section">
+          <div class="local-log-section-head">
+            <div class="local-log-section-title">
+              <strong>最近操作记录</strong>
+              <el-tooltip
+                effect="dark"
+                placement="top"
+                content="记录只保存在当前浏览器 localStorage，用来提示你在这台设备上的提交、查询和撤回操作；换设备、换浏览器或清理数据后不会同步。"
+              >
+                <el-icon class="local-log-help">
+                  <QuestionFilled />
+                </el-icon>
+              </el-tooltip>
+            </div>
+            <el-button
+              v-if="currentTaskActionLogs.length"
+              size="small"
+              text
+              @click="showActionLogDrawer = true"
+            >
+              更多
+            </el-button>
+          </div>
+
+          <div class="local-log-compact-list">
+            <article
+              v-for="log in recentTaskActionLogs"
+              :key="log.id"
+              class="local-log-compact-item"
+            >
+              <div class="local-log-compact-main">
+                <el-tag size="small" :type="getActionLogTagType(log)" effect="plain">
+                  {{ getActionLogText(log) }}
+                </el-tag>
+                <span class="local-log-compact-title">{{ getActionLogTitle(log) }}</span>
+              </div>
+              <time>{{ formatDate(log.createdAt, 'MM-dd hh:mm') }}</time>
+            </article>
+          </div>
+        </section>
+      </template>
     </div>
     <!-- 无效任务 -->
     <div v-else class="panel tc">
@@ -1286,6 +1427,44 @@ watch(
     margin-top: 10px;
     color: #919191;
     font-size: 14px;
+  }
+
+  .submit-password-gate {
+    max-width: 360px;
+    margin: 12px auto 0;
+    text-align: center;
+
+    .gate-tip {
+      color: #606266;
+      margin: 8px 0 16px;
+      font-size: 14px;
+    }
+
+    :deep(.el-form-item) {
+      margin-bottom: 14px;
+    }
+
+    :deep(.el-form-item__content) {
+      justify-content: center;
+    }
+
+    .gate-submit-item {
+      margin-bottom: 0;
+
+      :deep(.el-form-item__content) {
+        justify-content: center;
+      }
+
+      .el-button {
+        min-width: 120px;
+      }
+    }
+
+    .gate-error {
+      color: #f56c6c;
+      margin: 8px 0 0;
+      font-size: 13px;
+    }
   }
 
   .infos {

@@ -5,6 +5,7 @@ import {
   Put,
   ReqBody,
   ReqParams,
+  ReqQuery,
   RouterController,
 } from 'flash-wolves'
 
@@ -45,8 +46,12 @@ export default class TaskInfoController {
   }
 
   @Get('/:key', notLogin)
-  getTaskInfo(@ReqParams('key') key: string) {
-    return this.taskInfoService.getTaskInfo(key)
+  getTaskInfo(
+    @ReqParams('key') key: string,
+    @ReqQuery('password') password?: string,
+    @ReqQuery('mode') mode?: string,
+  ) {
+    return this.taskInfoService.getTaskInfo(key, password, mode)
   }
 
   @Put('/:key')

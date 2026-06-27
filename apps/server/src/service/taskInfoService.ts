@@ -13,6 +13,7 @@ import { localObjectAbsPath } from '@/utils/localFilePath'
 import { deleteObjByKey } from '@/utils/qiniuUtil'
 import { isLocalStorageMode } from '@/utils/storageMode'
 import { getUniqueKey } from '@/utils/stringUtil'
+import { getUserInfo } from '@/utils/userUtil'
 
 @Provide()
 export default class TaskInfoService {
@@ -90,7 +91,7 @@ export default class TaskInfoService {
     deleteObjByKey(tipImageKey, this.ctx.req, { allowInLocalMode: true })
   }
 
-  async getTaskInfo(key: string) {
+  async getTaskInfo(key: string, providedPassword?: string, mode?: string) {
     const taskInfo = await this.taskInfoRepository.findOne({
       taskKey: key,
     })
@@ -103,6 +104,7 @@ export default class TaskInfoService {
       limitPeople: people,
       tip,
       bindField,
+      submitPassword,
     } = taskInfo || {}
     let { ddl } = taskInfo || {}
     if (ddl && ddl?.getTime) {
@@ -150,6 +152,55 @@ export default class TaskInfoService {
       )
     }
 
+    // 仅任务所有者（登录后）才返回提交密码明文；
+    // 公开提交页只返回 needSubmitPassword 布尔，防止链接被分享时密码被直接读出。
+    // 注：当前接口为 noLogin 公开接口，中间件不会自动注入 req.userInfo，
+    // 这里软识别一次登录态，仅用于判断是否任务所有者，避免后台「任务配置」页拿不到密码。
+    let loginUser = this.ctx.req.userInfo as { id?: number | string } | undefined
+    if (!loginUser && this.ctx.req.headers?.token) {
+      try {
+        loginUser = (await getUserInfo(this.ctx.req)) as typeof loginUser
+      }
+      catch {
+        loginUser = undefined
+      }
+    }
+    const isOwner = !!(
+      loginUser
+      && task
+      && String(loginUser.id) === String(task.userId)
+    )
+    const needSubmitPassword = !!submitPassword
+    // 密码门控：未开启密码 / 所有者（非提交模式） / 提供了正确密码 才视为通过
+    // 提交页（mode==='submit'）下，任务所有者本人也必须凭密码访问，
+    // 否则会出现「自己刷新提交页时密码门不弹出」的体验问题。
+    const ownerBypass = isOwner && mode !== 'submit'
+    const passwordValid
+      = !needSubmitPassword
+        || ownerBypass
+        || (typeof providedPassword === 'string'
+          && providedPassword.length > 0
+          && providedPassword === submitPassword)
+
+    // 未通过密码校验时，不下发任何敏感任务配置，避免分享链接被绕过
+    if (!passwordValid) {
+      return {
+        template: undefined,
+        rewrite: undefined,
+        format: undefined,
+        info: undefined,
+        share: undefined,
+        ddl: undefined,
+        people: undefined,
+        tip: undefined,
+        bindField: undefined,
+        submitNavTasks: [],
+        needSubmitPassword,
+        passwordValid,
+        submitPassword: undefined,
+      }
+    }
+
     return {
       template,
       rewrite,
@@ -161,12 +212,24 @@ export default class TaskInfoService {
       tip,
       bindField,
       submitNavTasks,
+      needSubmitPassword,
+      passwordValid,
+      submitPassword: isOwner && mode !== 'submit' ? submitPassword || '' : undefined,
     }
   }
 
   async updateTaskInfo(payload, key: string) {
-    const { template, rewrite, format, info, ddl, people, tip, bindField }
-      = payload
+    const {
+      template,
+      rewrite,
+      format,
+      info,
+      ddl,
+      people,
+      tip,
+      bindField,
+      submitPassword,
+    } = payload
     let { share } = payload
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
 
@@ -195,6 +258,25 @@ export default class TaskInfoService {
         this.qiniuService.deleteFiles(`easypicker2/${key}_template/`)
       }
     }
+
+    // 提交密码字段标准化与校验
+    let normalizedSubmitPassword: string | null | undefined
+    if (submitPassword !== undefined) {
+      if (typeof submitPassword !== 'string') {
+        throw publicError.request.errorParams
+      }
+      const trimmed = submitPassword.trim()
+      if (trimmed === '') {
+        normalizedSubmitPassword = null
+      }
+      else {
+        if (trimmed.length < 4 || trimmed.length > 64) {
+          throw publicError.request.errorParams
+        }
+        normalizedSubmitPassword = trimmed
+      }
+    }
+
     const options = {
       template,
       rewrite,
@@ -205,6 +287,7 @@ export default class TaskInfoService {
       limitPeople: people,
       tip,
       bindField,
+      submitPassword: normalizedSubmitPassword,
     }
     if (bindField === '') {
       options.bindField = undefined
@@ -228,9 +311,14 @@ export default class TaskInfoService {
         limitPeople: '限制提交人员',
         tip: '批注信息',
         bindField: '设置绑定字段',
+        submitPassword: '设置提交密码',
       }
 
       if (task) {
+        const safePayload = { ...payload }
+        if (safePayload.submitPassword) {
+          safePayload.submitPassword = '***'
+        }
         this.behaviorService.add(
           'taskInfo',
           `更新任务属性 ${bType[ks]} 用户:${logAccount} 任务:${task.name} 成功`,
@@ -238,7 +326,7 @@ export default class TaskInfoService {
             key,
             name: task.name,
             account: logAccount,
-            data: payload,
+            data: safePayload,
           },
         )
       }
@@ -254,6 +342,7 @@ export default class TaskInfoService {
       info: ['姓名'],
       shareKey: getUniqueKey(),
       ddl: null,
+      submitPassword: null,
     }
     Object.assign(taskInfo, data)
 

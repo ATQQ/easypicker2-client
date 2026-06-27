@@ -61,4 +61,12 @@ export class TaskInfo {
     comment: '批注信息（含 emoji，须 utf8mb4）',
   })
   tip: string
+
+  @Column('varchar', {
+    name: 'submit_password',
+    length: 64,
+    nullable: true,
+    comment: '提交密码（为空表示未开启）',
+  })
+  submitPassword: string | null
 }

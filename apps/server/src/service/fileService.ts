@@ -24,6 +24,7 @@ import { USER_POWER } from '@/db/model/user'
 import { PeopleRepository } from '@/db/peopleDb'
 import { expiredRedisKey, getRedisVal, setRedisValue } from '@/db/redisDb'
 import { TaskRepository } from '@/db/taskDb'
+import { TaskInfoRepository } from '@/db/taskInfoDb'
 import { UserRepository } from '@/db/userDb'
 import { getLocalImageMimeType, localObjectAbsPath, signLocalFileAccess } from '@/utils/localFilePath'
 import { sendMail } from '@/utils/mail'
@@ -92,6 +93,9 @@ export default class FileService {
 
   @Inject(TaskInfoService)
   private taskInfoService: TaskInfoService
+
+  @Inject(TaskInfoRepository)
+  private taskInfoRepository: TaskInfoRepository
 
   @Inject(PeopleRepository)
   private peopleRepository: PeopleRepository
@@ -1411,7 +1415,8 @@ export default class FileService {
     }
   }
 
-  async addFile(file: Files) {
+  async addFile(file: Files, submitPassword?: string) {
+    await this.assertSubmitPassword(file.taskKey, submitPassword)
     file.name = normalizeFileName(file.name)
     file.storage = file.storage === 'local' ? 'local' : 'qiniu'
     file.date = new Date()
@@ -1419,6 +1424,24 @@ export default class FileService {
     void this.expireUserOverviewCache(file.userId)
     void this.notifyOwnerOnSubmit(file)
     return saved
+  }
+
+  /**
+   * 任务若开启了提交密码，则要求 providedPassword 与库中一致；
+   * 用于提交、撤回、查询是否已提交三处的兜底校验。
+   */
+  private async assertSubmitPassword(taskKey: string, providedPassword?: string) {
+    if (!taskKey) {
+      return
+    }
+    const info = await this.taskInfoRepository.findOne({ taskKey })
+    const required = info?.submitPassword
+    if (!required) {
+      return
+    }
+    if (typeof providedPassword !== 'string' || providedPassword !== required) {
+      throw publicError.request.errorParams
+    }
   }
 
   private async notifyOwnerOnSubmit(file: Files) {
@@ -1756,9 +1779,12 @@ export default class FileService {
   }
 
   async withdrawFile(data) {
-    const { taskKey, taskName, filename, hash, peopleName, info } = data
-    const taskInfo = await this.taskInfoService.getTaskInfo(taskKey)
-    const limitPeople = taskInfo.people === BOOLEAN.TRUE
+    const { taskKey, taskName, filename, hash, peopleName, info, submitPassword } = data
+    await this.assertSubmitPassword(taskKey, submitPassword)
+    // 直接读 repository，绕过 taskInfoService.getTaskInfo 的密码门控
+    // （服务端内部已校验密码，只需读取任务属性用于业务判断）
+    const taskInfo = await this.taskInfoRepository.findOne({ taskKey })
+    const limitPeople = taskInfo?.limitPeople === BOOLEAN.TRUE
 
     // 内容完全一致的提交记录，不包含限制的名字
     let files = await this.fileRepository.findMany({
@@ -1898,7 +1924,8 @@ export default class FileService {
 
   // TODO：利用 cookie 优化
   async checkSubmitInfo(data) {
-    const { taskKey, info, name = '' } = data
+    const { taskKey, info, name = '', submitPassword } = data
+    await this.assertSubmitPassword(taskKey, submitPassword)
 
     let files = await this.fileRepository.findMany({
       del: BOOLEAN.FALSE,
