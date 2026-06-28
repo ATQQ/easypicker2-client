@@ -1,5 +1,14 @@
 # @sugarat/easypicker2-server
 
+## 2.9.2
+
+### Patch Changes
+
+- feat: 清理用户云空间文件接口返回清理数量与总大小，补充详细操作日志
+- feat: 清理 OSS 文件后自动失效相关 Redis 列表缓存
+- feat: 批量扣费支持按旧计费起点结算用户用量
+- fix: 用户概览缓存键升级 schema，活跃用量排除已删除记录
+
 ## 2.9.1
 
 ### Patch Changes

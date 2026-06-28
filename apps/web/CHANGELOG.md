@@ -1,5 +1,12 @@
 # @sugarat/easypicker2-client
 
+## 2.9.2
+
+### Patch Changes
+
+- feat: 管理后台清理文件后展示具体清理数量，并自动刷新用户列表
+- fix: 批量扣费按钮仅在开启钱包限制且非本机存储时显示
+
 ## 2.9.1
 
 ### Patch Changes

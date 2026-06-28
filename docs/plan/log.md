@@ -47,7 +47,13 @@ ep2 deploy server --pm2-name 你的进程名
 
 ::: -->
 
-## v2.9.1 (2026/06/27) <Badge text="最新版" type="tip"/>
+## v2.9.2 (2026/06/28) <Badge text="最新版" type="tip"/>
+
+### Bugfix
+
+- 缓存异常系列问题修复
+
+## v2.9.1 (2026/06/27)
 
 ### Feature
 
