@@ -269,7 +269,8 @@ export default class FileService {
   }
 
   private getUserOverviewCacheKey(userId: number, version = this.userOverviewCacheVersion) {
-    return `file:user-overview:v${version}:${userId}`
+    // schema 段：统计口径调整后递增（s2：活跃用量/月度统计排除 del=1 记录），用于让线上旧缓存立即失效
+    return `file:user-overview:s2:v${version}:${userId}`
   }
 
   private async setDownloadCountCache(userId: number, fileId: number, count: number) {
@@ -1743,8 +1744,9 @@ export default class FileService {
     const fileSize = fileInfo.reduce((pre, v) => {
       const { date } = v
       originFileSize += (+v.size || 0)
-      // 已清理 OSS 的文件不计入活跃用量，保持与 sumActiveSizeByUser 的口径一致
-      if (v.ossDelTime) {
+      // 已删除记录（del=1）或已清理 OSS 的文件不计入活跃用量与月度可清理统计，
+      // 保持与清理接口（selectFiles 仅查 del=0 且 oss_del_time 为空）口径一致
+      if (v.del || v.ossDelTime) {
         return pre
       }
       const ossKey = this.getOssKey(v)
