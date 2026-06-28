@@ -70,6 +70,8 @@ export default class FileService {
 
   private userOverviewCacheVersion = 0
 
+  private userOverviewExpireCounter = new Map<number, number>()
+
   @InjectCtx()
   private ctx: Context
 
@@ -373,13 +375,21 @@ export default class FileService {
     if (!userId) {
       return
     }
+    const numericId = Number(userId)
+    // 单调递增的 expire 计数，refreshUserOverviewCache 写回前会校验，
+    // 若在计算期间该用户的缓存已被 expire，则放弃写入避免覆盖更新的事实
+    this.userOverviewExpireCounter.set(
+      numericId,
+      (this.userOverviewExpireCounter.get(numericId) || 0) + 1,
+    )
     const version = await this.getUserOverviewCacheVersion()
-    await expiredRedisKey(this.getUserOverviewCacheKey(Number(userId), version))
+    await expiredRedisKey(this.getUserOverviewCacheKey(numericId, version))
   }
 
   async expireAllUserOverviewCache() {
     this.userOverviewCacheVersion += 1
     this.refreshingUserOverviewKeys.clear()
+    this.userOverviewExpireCounter.clear()
     await setRedisValue(
       USER_OVERVIEW_CACHE_VERSION_KEY,
       String(this.userOverviewCacheVersion),
@@ -423,8 +433,17 @@ export default class FileService {
       return
     }
     this.refreshingUserOverviewKeys.add(key)
+    // 记录刷新启动时刻的 expire 计数与 version，避免与并发 expire 形成竞态导致旧值覆盖新失效
+    const startedExpireCounter = this.userOverviewExpireCounter.get(user.id) || 0
+    const startedVersion = this.userOverviewCacheVersion
     try {
       const data = await this.getUserOverview(user, options)
+      const currentExpireCounter = this.userOverviewExpireCounter.get(user.id) || 0
+      if (currentExpireCounter !== startedExpireCounter
+        || this.userOverviewCacheVersion !== startedVersion) {
+        // 计算期间有 mutation 触发了 expire / 全量失效，本次结果可能基于过时快照，丢弃
+        return
+      }
       await this.setUserOverviewCache(user.id, data)
     }
     catch (error) {
@@ -447,8 +466,15 @@ export default class FileService {
       return cached.data
     }
 
+    // miss 分支同样需要避免竞态：记录启动时刻 counter/version，写回前校验
+    const startedExpireCounter = this.userOverviewExpireCounter.get(user.id) || 0
+    const startedVersion = this.userOverviewCacheVersion
     const data = await this.getUserOverview(user, options)
-    await this.setUserOverviewCache(user.id, data)
+    const currentExpireCounter = this.userOverviewExpireCounter.get(user.id) || 0
+    if (currentExpireCounter === startedExpireCounter
+      && this.userOverviewCacheVersion === startedVersion) {
+      await this.setUserOverviewCache(user.id, data)
+    }
     return data
   }
 
