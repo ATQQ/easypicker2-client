@@ -1,9 +1,42 @@
-import { getRedisValueJSON } from '@/db/redisDb'
+import { expiredRedisKey, getRedisValueJSON } from '@/db/redisDb'
 import { getFileKeys, getOSSFiles } from '@/utils/qiniuUtil'
 import { isLocalStorageMode } from '@/utils/storageMode'
 import LocalUserDB from '@/utils/user-local-db'
 
 class SuperService {
+  private getSystemUser() {
+    return LocalUserDB.getUserConfigByType('server').USER || 'local'
+  }
+
+  private ossFilesCacheKey(prefix: string) {
+    return `${this.getSystemUser()}-oss-files-${prefix}`
+  }
+
+  private fileKeysCacheKey(prefix: string) {
+    return `${this.getSystemUser()}-file-keys-${prefix}`
+  }
+
+  async expireOssFilesCache(prefix: string) {
+    if (isLocalStorageMode() || !prefix) {
+      return
+    }
+    await expiredRedisKey(this.ossFilesCacheKey(prefix))
+  }
+
+  async expireFileKeysCache(prefix: string) {
+    if (isLocalStorageMode() || !prefix) {
+      return
+    }
+    await expiredRedisKey(this.fileKeysCacheKey(prefix))
+  }
+
+  /** 清理七牛对象后失效常用列表缓存 */
+  async expireDefaultOssListCaches() {
+    await this.expireOssFilesCache('easypicker2/')
+    await this.expireFileKeysCache('easypicker2/temp_package')
+    await this.expireFileKeysCache('1')
+  }
+
   async getOssFiles() {
     if (isLocalStorageMode()) {
       return []

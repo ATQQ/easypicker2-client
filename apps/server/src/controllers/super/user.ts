@@ -38,11 +38,12 @@ import {
 } from '@/service'
 import FileService from '@/service/file'
 import MessageService from '@/service/message'
+import SuperService from '@/service/super'
 import { sendMail } from '@/utils/mail'
 import { batchDeleteFiles } from '@/utils/qiniuUtil'
 import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { isLocalStorageMode } from '@/utils/storageMode'
-import { encryption, getUniqueKey } from '@/utils/stringUtil'
+import { encryption, formatSize, getUniqueKey } from '@/utils/stringUtil'
 import LocalUserDB from '@/utils/user-local-db'
 
 const power = {
@@ -169,11 +170,21 @@ export default class SuperUserController {
     userInfo: User,
   ) {
     if (isLocalStorageMode()) {
-      return
+      this.behaviorService.add('super', `清理用户云空间文件跳过 本机存储模式 操作人:${userInfo.account}`, {
+        operator: userInfo.account,
+        targetUserId: id,
+        type,
+      })
+      return { cleared: 0, reason: 'local_storage' }
     }
     const user = (await selectUserById(id))[0]
     if (!user) {
-      return
+      this.behaviorService.add('super', `清理用户云空间文件失败 用户不存在 id:${id} 操作人:${userInfo.account}`, {
+        operator: userInfo.account,
+        targetUserId: id,
+        type,
+      })
+      return { cleared: 0, reason: 'user_not_found' }
     }
     const months = {
       month: 1,
@@ -181,7 +192,7 @@ export default class SuperUserController {
       half: 6,
     }
     if (!months[type]) {
-      return
+      return { cleared: 0, reason: 'invalid_type' }
     }
     const beforeDate = dayjs().subtract(months[type], 'month')
     const files = (
@@ -189,15 +200,26 @@ export default class SuperUserController {
         {
           userId: id,
         },
-        ['task_key', 'user_id', 'hash', 'name', 'date', 'id', 'oss_del_time'],
+        ['task_key', 'user_id', 'hash', 'name', 'date', 'id', 'oss_del_time', 'size', 'category_key'],
       )
     ).filter((v) => {
       return dayjs(v.date).isBefore(beforeDate) && !v.oss_del_time
     })
     if (files.length === 0) {
-      return
+      this.behaviorService.add(
+        'super',
+        `清理用户云空间文件 无可清理 操作人:${userInfo.account} 目标:${user.account}(${user.id}) 类型:${type}`,
+        {
+          operator: userInfo.account,
+          targetUserId: user.id,
+          account: user.account,
+          type,
+        },
+      )
+      return { cleared: 0 }
     }
     const delKeys = files.map(FileService.getOssKey)
+    const totalSize = files.reduce((sum, f) => sum + (+f.size || 0), 0)
     MessageService.sendMessage(
       userInfo.id,
       user.id,
@@ -214,6 +236,32 @@ export default class SuperUserController {
     }, {
       ossDelTime: new Date(),
     })
+
+    const ossPrefixes = new Set<string>(['easypicker2/'])
+    for (const file of files) {
+      const categoryKey = file.category_key || file.categoryKey
+      if (categoryKey && !categoryKey.startsWith('easypicker2')) {
+        const prefix = `${categoryKey.split('/')[0]}/`
+        ossPrefixes.add(prefix)
+      }
+    }
+    await Promise.all([...ossPrefixes].map(prefix => SuperService.expireOssFilesCache(prefix)))
+    await this.fileService.expireUserOverviewCache(user.id)
+
+    this.behaviorService.add(
+      'super',
+      `清理用户云空间文件 操作人:${userInfo.account} 目标:${user.account}(${user.id}) 类型:${type} 文件数:${files.length} 总大小:${formatSize(totalSize)}`,
+      {
+        operator: userInfo.account,
+        targetUserId: user.id,
+        account: user.account,
+        type,
+        fileCount: files.length,
+        totalSize,
+        keys: delKeys,
+      },
+    )
+    return { cleared: files.length, totalSize }
   }
 
   /**
@@ -527,7 +575,9 @@ export default class SuperUserController {
     for (const user of normalUsers) {
       try {
         // 1. 仅取当前这个用户的文件，让 getUserOverview 自己按需拉 OSS（命中其内部缓存）
-        const overview = await this.fileService.getUserOverview(user)
+        const overview = await this.fileService.getUserOverview(user, {
+          moneyStartDay: oldMoneyStartDay,
+        })
         const cost = Number(overview?.cost || 0)
 
         // 2. 无扣费直接跳过（不写日志）

@@ -1714,10 +1714,12 @@ export default class FileService {
     files: Files[]
     filesMap: Map<string, Qiniu.ItemInfo>
     downloadLog: Log[]
+    /** 覆盖全局计费起点，用于批量扣费按旧周期结算 */
+    moneyStartDay?: number
   }>) {
     let { files, filesMap, downloadLog } = options || {}
     const localMode = isLocalStorageMode()
-    const { moneyStartDay } = LocalUserDB.getSiteConfig()
+    const billingStartDay = options?.moneyStartDay ?? LocalUserDB.getSiteConfig().moneyStartDay
     if (!files) {
       files = await this.fileRepository.findMany({
         userId: user.id,
@@ -1729,7 +1731,7 @@ export default class FileService {
     filesMap = filesMap || new Map<string, Qiniu.ItemInfo>()
     if (!downloadLog) {
       downloadLog = await this.downloadLog(user.account, {
-        startTime: new Date(moneyStartDay),
+        startTime: new Date(billingStartDay),
       })
     }
     const fileInfo = files
@@ -1800,7 +1802,7 @@ export default class FileService {
           compress: compressFile,
           template: templateFile,
         }, this.getOSSFileSizeUntilNow(fileInfo, filesMap, {
-          startTime: new Date(moneyStartDay),
+          startTime: new Date(billingStartDay),
         }))
 
     const balance = +user.wallet - +price.total

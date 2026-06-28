@@ -112,11 +112,10 @@ const sortOrderList = [
 ]
 const { value: siteConfig } = useSiteAllConfig()
 const moneyStartDay = computed(() => siteConfig.value.moneyStartDay)
-const isLocalStorage = computed(() => siteConfig.value.storageMode === 'local')
+const showSettleBilling = computed(() => siteConfig.value.limitWallet && siteConfig.value.storageMode !== 'local')
 
 async function handleSettleBilling() {
-  if (isLocalStorage.value) {
-    ElMessage.info('本机存储模式无费用可结算')
+  if (!showSettleBilling.value) {
     return
   }
   try {
@@ -456,8 +455,15 @@ function handleClearFiles(userId: number, type: 'month' | 'quarter' | 'half') {
     confirmButtonText: `确认删除 ${tipWords[type]}文件`,
   })
     .then(() => {
-      SuperUserApi.clearOssFile(userId, type).then(() => {
-        ElMessage.success('清理成功')
+      SuperUserApi.clearOssFile(userId, type).then((res) => {
+        const cleared = res.data?.cleared ?? 0
+        if (cleared > 0) {
+          ElMessage.success(`清理成功，已移除 ${cleared} 个文件`)
+        }
+        else {
+          ElMessage.info('没有可清理的文件')
+        }
+        refreshUsers()
       })
     })
     .catch(() => {})
@@ -616,11 +622,11 @@ function handleCheckDetail(price) {
         预估费用：{{ sumCost }}￥，
         计费起始时间：{{ formatDate(moneyStartDay) }}
         <el-button
+          v-if="showSettleBilling"
           size="small"
           type="danger"
           plain
           :loading="settlingBilling"
-          :disabled="isLocalStorage"
           @click="handleSettleBilling"
         >
           批量扣费

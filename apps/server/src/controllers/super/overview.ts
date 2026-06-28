@@ -673,6 +673,7 @@ export default class OverviewController {
       .filter(item => this.isExpiredCompressSource(item.putTime / 10000))
       .map(v => v.key)
     await batchDeleteFiles(expiredTxt, req)
+    await SuperService.expireDefaultOssListCaches()
     addBehavior(req, {
       module: 'super',
       msg: `清理无用文件 ${expired.length + expiredTxt.length}个`,
