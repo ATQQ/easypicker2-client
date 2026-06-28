@@ -1476,7 +1476,8 @@ export default class FileService {
     file.storage = file.storage === 'local' ? 'local' : 'qiniu'
     file.date = new Date()
     const saved = await this.fileRepository.insert(file)
-    void this.expireUserOverviewCache(file.userId)
+    // 必须 await：保证客户端拿到响应前缓存已失效，紧接着的 /usage 请求才能拿到最新值
+    await this.expireUserOverviewCache(file.userId)
     void this.notifyOwnerOnSubmit(file)
     return saved
   }
@@ -1698,7 +1699,7 @@ export default class FileService {
     file.del = BOOLEAN.TRUE
     file.delTime = new Date()
     await this.fileRepository.update(file)
-    void this.expireUserOverviewCache(file.userId)
+    await this.expireUserOverviewCache(file.userId)
     this.behaviorService.add('file', `删除文件提交记录成功 用户:${logAccount} 文件:${file.name} ${
       isRepeat ? `还存在${sameRecord.length - 1}个重复文件` : '删除OSS资源'
     }`, {
@@ -1879,7 +1880,7 @@ export default class FileService {
       ossDelTime: new Date(),
       delTime: new Date(),
     })
-    void this.expireUserOverviewCache(passFiles[0]?.userId)
+    await this.expireUserOverviewCache(passFiles[0]?.userId)
     this.behaviorService.add('file', `撤回文件成功 文件:${filename} 删除记录:${
       passFiles.length
     } 删除OSS资源:${isDelOss ? '是' : '否'}`, {
@@ -1972,7 +1973,7 @@ export default class FileService {
       ossDelTime: new Date(),
       delTime: new Date(),
     })
-    void this.expireUserOverviewCache(userId)
+    await this.expireUserOverviewCache(userId)
 
     this.behaviorService.add('file', `批量删除文件成功 用户:${logAccount} 文件记录数量:${files.length} OSS资源数量:${keys.size}`, {
       account: logAccount,
