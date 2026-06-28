@@ -12,7 +12,7 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { ActionServiceAPI, FileApi } from '@/apis'
 import FloatingContact from '@/components/FloatingContact/index.vue'
@@ -40,6 +40,7 @@ const showResourceLimitNotice = computed(
 )
 const $store = useStore()
 const $route = useRoute()
+const $router = useRouter()
 
 const {
   usage,
@@ -176,12 +177,20 @@ function handleHistoryActionPageChange(v) {
 
 // 分类相关
 const categories = computed(() => $store.state.category.categoryList)
-const selectCategory = ref('all')
+const selectCategory = ref(
+  typeof $route.query.category === 'string' && $route.query.category
+    ? $route.query.category
+    : 'all',
+)
 // 任务相关
 const tasks = computed<TaskApiTypes.TaskItem[]>(
   () => $store.state.task.taskList,
 )
-const selectTask = ref('all')
+const selectTask = ref(
+  typeof $route.query.task === 'string' && $route.query.task
+    ? $route.query.task
+    : 'all',
+)
 const filterTasks = computed(() => {
   if (selectCategory.value === 'all') {
     return tasks.value
@@ -692,6 +701,28 @@ watch([selectCategory, selectTask, searchWord], reloadFirstPage)
 watch(selectCategory, () => {
   selectTask.value = 'all'
   loadTaskOptions()
+})
+watch([selectCategory, selectTask], ([category, task]) => {
+  const nextQuery: Record<string, any> = { ...$route.query }
+  if (category && category !== 'all') {
+    nextQuery.category = category
+  }
+  else {
+    delete nextQuery.category
+  }
+  if (task && task !== 'all') {
+    nextQuery.task = task
+  }
+  else {
+    delete nextQuery.task
+  }
+  if (
+    nextQuery.category === $route.query.category
+    && nextQuery.task === $route.query.task
+  ) {
+    return
+  }
+  $router.replace({ query: nextQuery })
 })
 watch([pageCurrent, pageSize], loadFiles)
 watch(showImg, () => {
