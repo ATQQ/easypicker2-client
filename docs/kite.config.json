@@ -1,0 +1,8 @@
+{
+  "projectId": "proj_0cb120a40625",
+  "outputDir": "./.vitepress/dist",
+  "files": [
+    "**/*"
+  ],
+  "serverUrl": "https://kite.sugarat.top"
+}
