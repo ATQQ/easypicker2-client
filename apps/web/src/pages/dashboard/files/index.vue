@@ -48,6 +48,7 @@ const {
   cost,
   percentageValue,
   walletPercentageValue,
+  percentage,
   limitDownload,
   limitSpace,
   limitWallet,
@@ -984,7 +985,7 @@ function handleShowDetail() {
           <span class="stat-label">存储空间</span>
           <strong>{{ formatSize(usage) }} / {{ formatSize(size) }}</strong>
           <el-progress :percentage="storageProgressPercentage" :status="limitSpace ? 'exception' : undefined" />
-          <small>{{ percentageValue.toFixed(2) }}% 已使用</small>
+          <small>{{ percentage }} 已使用</small>
         </div>
         <div v-if="showWalletLimit" class="stat-card" :class="{ warning: limitWallet }">
           <span class="stat-label">钱包消耗</span>
