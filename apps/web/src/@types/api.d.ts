@@ -17,6 +17,7 @@ declare namespace FileApiTypes {
     info: string
     hash: string
     people?: string
+    submitPassword?: string
   }
   interface File {
     id: number
@@ -56,6 +57,7 @@ declare namespace FileApiTypes {
     hash: string
     peopleName: string
     info: string
+    submitPassword?: string
   }
   type getUploadToken = ResponseData<UploadToken>
   type addFile = ResponseData<any>
@@ -178,6 +180,12 @@ declare namespace TaskApiTypes {
     bindField?: string
     /** 同分类下可在提交页切换的关联任务 */
     submitNavTasks?: { key: string, name: string }[]
+    /** 提交密码明文：仅任务所有者可见 */
+    submitPassword?: string | null
+    /** 是否启用了提交密码（公开提交页可见，不下发明文） */
+    needSubmitPassword?: boolean
+    /** 服务端确认本次请求的提交密码是否通过校验 */
+    passwordValid?: boolean
   }
 
   type getList = ResponseData<{ tasks: TaskItem[] }>
@@ -383,6 +391,7 @@ declare namespace OverviewApiTypes {
     pageSize: number
   }>
   type disabledStatus = ResponseData<{ status: boolean }>
+  type GlobalConfigScope = 'auth' | 'shell' | 'form' | 'file-page'
   interface GlobalSiteConfig {
     maxInputLength: number
     openPraise: boolean
@@ -502,6 +511,9 @@ declare namespace SuperUserApiTypes {
     totalCost: string
     oldMoneyStartDay: number
     newMoneyStartDay: number
+    accepted?: boolean
+    taskId?: string
+    total?: number
   }>
 }
 

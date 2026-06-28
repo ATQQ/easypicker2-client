@@ -4,7 +4,7 @@ import { useLocalStorage } from '@vueuse/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { PublicApi, SuperUserApi } from '@/apis'
-import { useIsMobile, useSiteConfig } from '@/composables'
+import { useIsMobile, useSiteAllConfig } from '@/composables'
 import { USER_STATUS } from '@/constants'
 import { rEmail, rMobilePhone, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate, formatSize } from '@/utils/stringUtil'
@@ -110,7 +110,7 @@ const sortOrderList = [
     value: 'desc',
   },
 ]
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteAllConfig()
 const moneyStartDay = computed(() => siteConfig.value.moneyStartDay)
 const isLocalStorage = computed(() => siteConfig.value.storageMode === 'local')
 
@@ -137,9 +137,17 @@ async function handleSettleBilling() {
   settlingBilling.value = true
   try {
     const res = await SuperUserApi.settleBilling()
-    ElMessage.success(
-      `批量扣费完成：结算 ${res.data.settledCount} 人，总金额 ${res.data.totalCost}￥`,
-    )
+    const data = (res.data ?? {}) as NonNullable<typeof res.data>
+    if (data.accepted) {
+      ElMessage.success(
+        `已发起批量扣费（共 ${data.total ?? 0} 人），结算在后台进行，请稍后到「行为日志」查看结果`,
+      )
+    }
+    else {
+      ElMessage.success(
+        `批量扣费完成：结算 ${data.settledCount ?? 0} 人，总金额 ${data.totalCost ?? '0.00'}￥`,
+      )
+    }
     await refreshUsers()
   }
   finally {

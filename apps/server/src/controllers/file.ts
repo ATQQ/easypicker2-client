@@ -404,7 +404,7 @@ export default class FileController {
   }
 
   @Post('/info', noLogin)
-  async submitInfo(@ReqBody() data: Files) {
+  async submitInfo(@ReqBody() data: Files & { submitPassword?: string }) {
     try {
       const task = await this.taskService.getTaskByKey(data.taskKey)
       if (!task) {
@@ -413,15 +413,16 @@ export default class FileController {
       }
 
       const { userId } = task
-      Object.assign<Files, Partial<Files>>(data, {
+      const { submitPassword, ...fileData } = data
+      Object.assign<Files, Partial<Files>>(fileData, {
         userId,
         categoryKey: '',
-        people: data.people || '',
-        originName: data.originName || '',
-        storage: data.storage === 'local' ? 'local' : 'qiniu',
+        people: fileData.people || '',
+        originName: fileData.originName || '',
+        storage: fileData.storage === 'local' ? 'local' : 'qiniu',
       })
-      await this.fileService.addFile(data)
-      this.behaviorService.add('file', `提交文件: 文件名:${data.name} 成功`, data)
+      await this.fileService.addFile(fileData, submitPassword)
+      this.behaviorService.add('file', `提交文件: 文件名:${fileData.name} 成功`, fileData)
     }
     catch (error) {
       return wrapperCatchError(error)
@@ -501,7 +502,12 @@ export default class FileController {
 
   @Post('submit/people', noLogin)
   async checkSubmitInfo(@ReqBody() body) {
-    const result = await this.fileService.checkSubmitInfo(body)
-    return result
+    try {
+      const result = await this.fileService.checkSubmitInfo(body)
+      return result
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
   }
 }

@@ -24,6 +24,7 @@ import { USER_POWER } from '@/db/model/user'
 import { PeopleRepository } from '@/db/peopleDb'
 import { expiredRedisKey, getRedisVal, setRedisValue } from '@/db/redisDb'
 import { TaskRepository } from '@/db/taskDb'
+import { TaskInfoRepository } from '@/db/taskInfoDb'
 import { UserRepository } from '@/db/userDb'
 import { getLocalImageMimeType, localObjectAbsPath, signLocalFileAccess } from '@/utils/localFilePath'
 import { sendMail } from '@/utils/mail'
@@ -69,6 +70,8 @@ export default class FileService {
 
   private userOverviewCacheVersion = 0
 
+  private userOverviewExpireCounter = new Map<number, number>()
+
   @InjectCtx()
   private ctx: Context
 
@@ -92,6 +95,9 @@ export default class FileService {
 
   @Inject(TaskInfoService)
   private taskInfoService: TaskInfoService
+
+  @Inject(TaskInfoRepository)
+  private taskInfoRepository: TaskInfoRepository
 
   @Inject(PeopleRepository)
   private peopleRepository: PeopleRepository
@@ -369,13 +375,21 @@ export default class FileService {
     if (!userId) {
       return
     }
+    const numericId = Number(userId)
+    // 单调递增的 expire 计数，refreshUserOverviewCache 写回前会校验，
+    // 若在计算期间该用户的缓存已被 expire，则放弃写入避免覆盖更新的事实
+    this.userOverviewExpireCounter.set(
+      numericId,
+      (this.userOverviewExpireCounter.get(numericId) || 0) + 1,
+    )
     const version = await this.getUserOverviewCacheVersion()
-    await expiredRedisKey(this.getUserOverviewCacheKey(Number(userId), version))
+    await expiredRedisKey(this.getUserOverviewCacheKey(numericId, version))
   }
 
   async expireAllUserOverviewCache() {
     this.userOverviewCacheVersion += 1
     this.refreshingUserOverviewKeys.clear()
+    this.userOverviewExpireCounter.clear()
     await setRedisValue(
       USER_OVERVIEW_CACHE_VERSION_KEY,
       String(this.userOverviewCacheVersion),
@@ -419,8 +433,17 @@ export default class FileService {
       return
     }
     this.refreshingUserOverviewKeys.add(key)
+    // 记录刷新启动时刻的 expire 计数与 version，避免与并发 expire 形成竞态导致旧值覆盖新失效
+    const startedExpireCounter = this.userOverviewExpireCounter.get(user.id) || 0
+    const startedVersion = this.userOverviewCacheVersion
     try {
       const data = await this.getUserOverview(user, options)
+      const currentExpireCounter = this.userOverviewExpireCounter.get(user.id) || 0
+      if (currentExpireCounter !== startedExpireCounter
+        || this.userOverviewCacheVersion !== startedVersion) {
+        // 计算期间有 mutation 触发了 expire / 全量失效，本次结果可能基于过时快照，丢弃
+        return
+      }
       await this.setUserOverviewCache(user.id, data)
     }
     catch (error) {
@@ -443,8 +466,15 @@ export default class FileService {
       return cached.data
     }
 
+    // miss 分支同样需要避免竞态：记录启动时刻 counter/version，写回前校验
+    const startedExpireCounter = this.userOverviewExpireCounter.get(user.id) || 0
+    const startedVersion = this.userOverviewCacheVersion
     const data = await this.getUserOverview(user, options)
-    await this.setUserOverviewCache(user.id, data)
+    const currentExpireCounter = this.userOverviewExpireCounter.get(user.id) || 0
+    if (currentExpireCounter === startedExpireCounter
+      && this.userOverviewCacheVersion === startedVersion) {
+      await this.setUserOverviewCache(user.id, data)
+    }
     return data
   }
 
@@ -1338,7 +1368,18 @@ export default class FileService {
    */
   limitUploadBySpace(limitSize: number, fileSize: number) {
     const { limitSpace } = LocalUserDB.getSiteConfig()
-    return limitSpace && (limitSize === 0 || limitSize < fileSize)
+    if (!limitSpace) {
+      return false
+    }
+    // 已用空间为 0 时，无论配额如何都不应判定为超限
+    if (!fileSize || fileSize <= 0) {
+      return false
+    }
+    // 配额为 0 视为未配置可用空间，并非真正超限场景
+    if (!limitSize || limitSize <= 0) {
+      return false
+    }
+    return limitSize < fileSize
   }
 
   limitUploadByWallet(balance: number) {
@@ -1350,20 +1391,38 @@ export default class FileService {
   }
 
   async getFastUploadLimit(user: User) {
-    const fileSize = await this.fileRepository.sumActiveSizeByUser(user.id)
+    // 命中 overview 缓存：直接复用，保持与管理员/我的空间页口径一致
+    await this.getUserOverviewCacheVersion()
+    const cached = this.parseUserOverviewCache(
+      await getRedisVal(this.getUserOverviewCacheKey(user.id)),
+    )
+    const isAdmin = user.power === USER_POWER.SUPER
+    if (cached?.data) {
+      // 命中后到期则后台异步刷新（refreshUserOverviewCache 已带单飞节流）
+      if (cached.needRefresh) {
+        void this.refreshUserOverviewCache(user)
+      }
+      const data = cached.data
+      return {
+        maxSize: data.maxSize,
+        usage: data.usage,
+        limitUpload: isAdmin ? false : !!data.limitUpload,
+        limitSpace: !!data.limitSpace,
+        limitWallet: !!data.limitWallet,
+        wallet: data.wallet ?? (user.wallet || 0),
+      }
+    }
+    // 未命中：不阻塞访问，直接放行；异步触发该用户的缓存刷新（单飞）
+    void this.refreshUserOverviewCache(user)
     const limitSize = calculateSize((user.power === USER_POWER.SUPER
       ? Math.max(1024, user?.size)
       : user?.size) ?? 2)
-    const limitSpace = this.limitUploadBySpace(limitSize, fileSize)
-    const isAdmin = user.power === USER_POWER.SUPER
-    const limitWallet = this.limitUploadByWallet(Number(user.wallet || 0))
-
     return {
       maxSize: limitSize,
-      usage: fileSize,
-      limitUpload: isAdmin ? false : (limitSpace || limitWallet),
-      limitSpace,
-      limitWallet,
+      usage: 0,
+      limitUpload: false,
+      limitSpace: false,
+      limitWallet: false,
       wallet: user.wallet || 0,
     }
   }
@@ -1411,14 +1470,34 @@ export default class FileService {
     }
   }
 
-  async addFile(file: Files) {
+  async addFile(file: Files, submitPassword?: string) {
+    await this.assertSubmitPassword(file.taskKey, submitPassword)
     file.name = normalizeFileName(file.name)
     file.storage = file.storage === 'local' ? 'local' : 'qiniu'
     file.date = new Date()
     const saved = await this.fileRepository.insert(file)
-    void this.expireUserOverviewCache(file.userId)
+    // 必须 await：保证客户端拿到响应前缓存已失效，紧接着的 /usage 请求才能拿到最新值
+    await this.expireUserOverviewCache(file.userId)
     void this.notifyOwnerOnSubmit(file)
     return saved
+  }
+
+  /**
+   * 任务若开启了提交密码，则要求 providedPassword 与库中一致；
+   * 用于提交、撤回、查询是否已提交三处的兜底校验。
+   */
+  private async assertSubmitPassword(taskKey: string, providedPassword?: string) {
+    if (!taskKey) {
+      return
+    }
+    const info = await this.taskInfoRepository.findOne({ taskKey })
+    const required = info?.submitPassword
+    if (!required) {
+      return
+    }
+    if (typeof providedPassword !== 'string' || providedPassword !== required) {
+      throw publicError.request.errorParams
+    }
   }
 
   private async notifyOwnerOnSubmit(file: Files) {
@@ -1620,7 +1699,7 @@ export default class FileService {
     file.del = BOOLEAN.TRUE
     file.delTime = new Date()
     await this.fileRepository.update(file)
-    void this.expireUserOverviewCache(file.userId)
+    await this.expireUserOverviewCache(file.userId)
     this.behaviorService.add('file', `删除文件提交记录成功 用户:${logAccount} 文件:${file.name} ${
       isRepeat ? `还存在${sameRecord.length - 1}个重复文件` : '删除OSS资源'
     }`, {
@@ -1662,6 +1741,10 @@ export default class FileService {
     const fileSize = fileInfo.reduce((pre, v) => {
       const { date } = v
       originFileSize += (+v.size || 0)
+      // 已清理 OSS 的文件不计入活跃用量，保持与 sumActiveSizeByUser 的口径一致
+      if (v.ossDelTime) {
+        return pre
+      }
       const ossKey = this.getOssKey(v)
       const local = localMode ? this.getLocalLocation(v) : null
       const fsize = localMode
@@ -1756,9 +1839,12 @@ export default class FileService {
   }
 
   async withdrawFile(data) {
-    const { taskKey, taskName, filename, hash, peopleName, info } = data
-    const taskInfo = await this.taskInfoService.getTaskInfo(taskKey)
-    const limitPeople = taskInfo.people === BOOLEAN.TRUE
+    const { taskKey, taskName, filename, hash, peopleName, info, submitPassword } = data
+    await this.assertSubmitPassword(taskKey, submitPassword)
+    // 通过 taskInfoService 提供的内部方法读取原始 TaskInfo，
+    // 绕开公开接口上的密码门控（密码已在上一步 assertSubmitPassword 校验）。
+    const taskInfo = await this.taskInfoService.getRawTaskInfoEntity(taskKey)
+    const limitPeople = taskInfo?.limitPeople === BOOLEAN.TRUE
 
     // 内容完全一致的提交记录，不包含限制的名字
     let files = await this.fileRepository.findMany({
@@ -1794,7 +1880,7 @@ export default class FileService {
       ossDelTime: new Date(),
       delTime: new Date(),
     })
-    void this.expireUserOverviewCache(passFiles[0]?.userId)
+    await this.expireUserOverviewCache(passFiles[0]?.userId)
     this.behaviorService.add('file', `撤回文件成功 文件:${filename} 删除记录:${
       passFiles.length
     } 删除OSS资源:${isDelOss ? '是' : '否'}`, {
@@ -1887,7 +1973,7 @@ export default class FileService {
       ossDelTime: new Date(),
       delTime: new Date(),
     })
-    void this.expireUserOverviewCache(userId)
+    await this.expireUserOverviewCache(userId)
 
     this.behaviorService.add('file', `批量删除文件成功 用户:${logAccount} 文件记录数量:${files.length} OSS资源数量:${keys.size}`, {
       account: logAccount,
@@ -1898,7 +1984,8 @@ export default class FileService {
 
   // TODO：利用 cookie 优化
   async checkSubmitInfo(data) {
-    const { taskKey, info, name = '' } = data
+    const { taskKey, info, name = '', submitPassword } = data
+    await this.assertSubmitPassword(taskKey, submitPassword)
 
     let files = await this.fileRepository.findMany({
       del: BOOLEAN.FALSE,

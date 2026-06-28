@@ -30,6 +30,10 @@ export default defineComponent({
       type: String,
       default: '',
     },
+    extraShareLine: {
+      type: String,
+      default: '',
+    },
   },
   emits: ['update:value'],
   setup(props, context) {
@@ -41,7 +45,7 @@ export default defineComponent({
     const copyLink = () => {
       copyRes(shareLink.value)
     }
-    const { value: siteConfig } = useSiteConfig()
+    const { value: siteConfig } = useSiteConfig('shell')
 
     watchEffect(() => {
       shareLink.value = props.link
@@ -67,7 +71,8 @@ export default defineComponent({
     }
     const appName = computed(() => siteConfig.value.appName)
     const shareText = computed(() => {
-      return `${appName.value && `【${appName.value}】`}${props.shareTextPrefix} ${shareLink.value}`
+      const base = `${appName.value && `【${appName.value}】`}${props.shareTextPrefix} ${shareLink.value}`
+      return props.extraShareLine ? `${base}\n${props.extraShareLine}` : base
     })
     const copyShareText = () => {
       copyRes(shareText.value)

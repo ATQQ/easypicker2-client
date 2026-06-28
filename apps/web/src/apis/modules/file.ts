@@ -117,11 +117,13 @@ function checkSubmitStatus(
   taskKey: string,
   info: any,
   name = '',
+  submitPassword?: string,
 ): FileApiTypes.checkSubmitStatus {
   return ajax.post('file/submit/people', {
     taskKey,
     info,
     name,
+    submitPassword,
   })
 }
 

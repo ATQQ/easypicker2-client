@@ -1,6 +1,15 @@
-shellEmulator: true
-
 # trustPolicy: no-downgrade
+
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  core-js: true
+  esbuild: true
+  sharp: true
+  simple-git-hooks: true
+  vue-demi: true
+shellEmulator: true
+trustPolicy: no-downgrade
 
 packages:
   - apps/*

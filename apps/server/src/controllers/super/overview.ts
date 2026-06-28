@@ -36,6 +36,7 @@ import {
   findRequestMetricLogs,
   findRequestStatusLogs,
   findRequestStatusMetricLogs,
+  timeToObjId,
 } from '@/db/logDb'
 import { ActionType } from '@/db/model/action'
 import { USER_POWER } from '@/db/model/user'
@@ -486,6 +487,7 @@ export default class OverviewController {
     const logs = await findRequestMetricLogs(start, end, {
       method: method || undefined,
       path: path ? path.trim() : undefined,
+      minDuration: path ? 0 : undefined,
     })
     const { bucketMs, series } = this.getRequestMetricsSeries(logs, start, end)
     const endpointGroups = this.getRequestMetricsGroups(logs, start, end)
@@ -715,9 +717,14 @@ export default class OverviewController {
     @ReqBody('search') search = '',
     /** 单独按 IP 筛选（与 search 可同时使用） */
     @ReqBody('ipSearch') ipSearch = '',
+    /** 起始时间(ms)，限制扫描范围避免全表扫描 */
+    @ReqBody('startTime') startTime?: number,
+    /** 结束时间(ms) */
+    @ReqBody('endTime') endTime?: number,
   ) {
     const term = typeof search === 'string' ? search.trim() : ''
     const ipTerm = typeof ipSearch === 'string' ? ipSearch.trim() : ''
+    const hasKeyword = Boolean(term || ipTerm)
 
     const clauses: FilterQuery<Log>[] = []
 
@@ -768,16 +775,46 @@ export default class OverviewController {
       }
     }
 
+    // 时间范围：关键词/IP 搜索时强制限定范围避免全表扫描；
+    // 未传时，搜索默认最近 7 天，非搜索默认最近 30 天
+    const now = Date.now()
+    const defaultRangeMs = hasKeyword
+      ? 1000 * 60 * 60 * 24 * 7
+      : 1000 * 60 * 60 * 24 * 30
+    const endMs = Number.isFinite(endTime) && endTime ? Number(endTime) : now
+    const startMs = Number.isFinite(startTime) && startTime
+      ? Number(startTime)
+      : endMs - defaultRangeMs
+
+    if (endMs > startMs) {
+      clauses.push({
+        _id: {
+          $gt: new ObjectId(timeToObjId(new Date(startMs))),
+          $lt: new ObjectId(timeToObjId(new Date(endMs))),
+        },
+      })
+    }
+
     const query: FilterQuery<Log>
       = clauses.length > 0
         ? { $and: [{ type }, ...clauses] }
         : { type }
 
-    const logCount = await findLogCount(query)
-    const logs = await findLogWithPageOffset((index - 1) * size, size, query)
+    // 防止慢查询拖垮连接池：搜索分支强制 maxTimeMS，避免连接超时
+    const queryMaxTimeMS = hasKeyword ? 8000 : 15000
+
+    const logCount = await findLogCount(query, queryMaxTimeMS)
+    const logs = await findLogWithPageOffset(
+      (index - 1) * size,
+      size,
+      query,
+      queryMaxTimeMS,
+    )
     return {
       logs: this.filterLog(logs),
       sum: logCount,
+      startTime: startMs,
+      endTime: endMs,
     }
   }
 

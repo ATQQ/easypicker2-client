@@ -8,7 +8,7 @@ defineProps<{
   labelPosition?: 'left' | 'right' | 'top'
 }>()
 
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('form')
 const maxInputLength = computed(() => siteConfig.value.maxInputLength)
 </script>
 

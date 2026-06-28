@@ -19,7 +19,7 @@ const MYSQL_INTROSPECT_TAB = 'mysql-introspect'
 const SERVICE_FEATURES_TAB = 'service-features'
 const CONFIG_ADMIN_USERS_TAB = 'config-admin-users'
 
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('auth')
 
 const mysqlSchema = ref<MysqlSchemaOverview | null>(null)
 const schemaLoading = ref(false)

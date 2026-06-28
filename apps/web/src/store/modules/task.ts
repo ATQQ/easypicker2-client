@@ -32,7 +32,9 @@ const store: Module<State, unknown> = {
     async getAllTaskOptions(context, payload: { recent?: boolean } = {}) {
       const res = await TaskApi.getGrouped(payload)
       context.commit('updateTask', res.data.tasks)
-      context.commit('updateTasksByCategory', res.data.tasksByCategory)
+      if (payload.recent !== false) {
+        context.commit('updateTasksByCategory', res.data.tasksByCategory)
+      }
       context.commit('category/updateCategory', res.data.categories, { root: true })
       context.commit('category/updateTaskCounts', res.data.taskCounts, { root: true })
       return res
@@ -49,16 +51,26 @@ const store: Module<State, unknown> = {
         return context.dispatch('getAllTaskOptions', payload)
       }
 
-      const cached = context.state.tasksByCategory[payload.category]
-      if (cached) {
-        context.commit('updateTask', cached)
-        return Promise.resolve({ data: { tasks: cached } })
+      // 只有带 recent 数据的请求才会读写缓存，避免被精简版列表污染
+      const useCache = payload.recent !== false
+      if (useCache) {
+        const cached = context.state.tasksByCategory[payload.category]
+        if (cached) {
+          context.commit('updateTask', cached)
+          return Promise.resolve({ data: { tasks: cached } })
+        }
       }
 
       return TaskApi.getByCategory(payload.category, {
         recent: payload.recent,
       }).then((res) => {
         context.commit('updateTask', res.data.tasks)
+        if (useCache) {
+          context.commit('updateTasksByCategory', {
+            ...context.state.tasksByCategory,
+            [payload.category]: res.data.tasks,
+          })
+        }
         return res
       })
     },

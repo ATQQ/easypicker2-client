@@ -12,12 +12,12 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { ActionServiceAPI, FileApi } from '@/apis'
 import FloatingContact from '@/components/FloatingContact/index.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
-import { useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
+import { useAccountConfig, useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
 import { ActionType, DownloadStatus, filenamePattern } from '@/constants'
 import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
 import {
@@ -30,7 +30,8 @@ import {
 } from '@/utils/stringUtil'
 import Tip from '../tasks/components/infoPanel/tip.vue'
 
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('file-page')
+useAccountConfig()
 const isOpenPraise = computed(() => siteConfig.value.openPraise)
 const showStorageLimit = computed(() => siteConfig.value.limitSpace)
 const showWalletLimit = computed(() => siteConfig.value.limitWallet)
@@ -39,6 +40,7 @@ const showResourceLimitNotice = computed(
 )
 const $store = useStore()
 const $route = useRoute()
+const $router = useRouter()
 
 const {
   usage,
@@ -47,6 +49,7 @@ const {
   cost,
   percentageValue,
   walletPercentageValue,
+  percentage,
   limitDownload,
   limitSpace,
   limitWallet,
@@ -59,6 +62,8 @@ const showImg = ref(localStorage.getItem('ep-show-images') !== 'false')
 const showPeople = ref(true)
 const showOriginName = ref(false)
 const showHistoryPanel = ref(false)
+const autoDownloadArchive = ref(localStorage.getItem('ep-auto-download-archive') !== 'false')
+const autoDownloadTipText = '勾选后归档完成会自动触发下载；取消后请前往下载历史复制链接手动下载。'
 const historyDownloadRecord = reactive({
   actions: [],
   pageSize: 3,
@@ -71,6 +76,36 @@ const historyDownloadRecord = reactive({
   compressTask: [],
 })
 
+const pendingArchiveActions = ref<any[]>([])
+function pushPendingArchiveAction(tip: string) {
+  const placeholder = {
+    id: `pending_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    type: ActionType.Compress,
+    status: DownloadStatus.ARCHIVE,
+    tip,
+    date: new Date(),
+    size: 0,
+    url: '',
+    pending: true,
+  }
+  pendingArchiveActions.value.push(placeholder)
+  mergePendingActions()
+  showHistoryPanel.value = true
+  return placeholder.id
+}
+function removePendingArchiveAction(id: string) {
+  const idx = pendingArchiveActions.value.findIndex(v => v.id === id)
+  if (idx !== -1) {
+    pendingArchiveActions.value.splice(idx, 1)
+  }
+  mergePendingActions()
+}
+function mergePendingActions(actions: any[] = historyDownloadRecord.actions.filter((v: any) => !v.pending)) {
+  historyDownloadRecord.actions = [
+    ...pendingArchiveActions.value,
+    ...actions,
+  ]
+}
 function loadActions() {
   // 已记录的task
   const compressTask: ActionApiTypes.DownloadActionData[] = JSON.parse(
@@ -94,10 +129,19 @@ function loadActions() {
         // SUCCESS
         //  存在，触发下载，从compressTask移除
         if (action.status === DownloadStatus.SUCCESS && existIndex !== -1) {
-          // 展示弹窗
-          downloadUrl.value = action.url
-          showLinkModel.value = true
-          downLoadByUrl(action.url)
+          if (autoDownloadArchive.value) {
+            // 展示弹窗
+            downloadUrl.value = action.url
+            showLinkModel.value = true
+            downLoadByUrl(action.url)
+          }
+          else {
+            ElMessage.success({
+              message: `归档任务 ${action.tip} 已完成，请到下载历史中复制链接`,
+              duration: 5000,
+            })
+            showHistoryPanel.value = true
+          }
           // ElMessage.success(`自动下载归档任务 ${action.tip}`)
           compressTask.splice(existIndex, 1)
         }
@@ -120,7 +164,7 @@ function loadActions() {
       setTimeout(loadActions, 1000)
     }
     historyDownloadRecord.pageTotal = sum
-    historyDownloadRecord.actions = actions
+    mergePendingActions(actions)
     historyDownloadRecord.pageCount = Math.ceil(
       sum / historyDownloadRecord.pageSize,
     )
@@ -133,12 +177,20 @@ function handleHistoryActionPageChange(v) {
 
 // 分类相关
 const categories = computed(() => $store.state.category.categoryList)
-const selectCategory = ref('all')
+const selectCategory = ref(
+  typeof $route.query.category === 'string' && $route.query.category
+    ? $route.query.category
+    : 'all',
+)
 // 任务相关
 const tasks = computed<TaskApiTypes.TaskItem[]>(
   () => $store.state.task.taskList,
 )
-const selectTask = ref('all')
+const selectTask = ref(
+  typeof $route.query.task === 'string' && $route.query.task
+    ? $route.query.task
+    : 'all',
+)
 const filterTasks = computed(() => {
   if (selectCategory.value === 'all') {
     return tasks.value
@@ -156,6 +208,19 @@ watchEffect(() => {
     && tasks.value.some(v => v.key === $route.query.task)
   ) {
     selectTask.value = `${$route.query.task}`
+  }
+})
+
+watchEffect(() => {
+  if (selectCategory.value === 'all') {
+    return
+  }
+  if (['default', 'no-task', 'trash'].includes(selectCategory.value)) {
+    return
+  }
+  const list = categories.value
+  if (list.length && !list.some((v: any) => v.k === selectCategory.value)) {
+    selectCategory.value = 'all'
   }
 })
 
@@ -379,26 +444,31 @@ function handleDropdownClick(e: string) {
         ElMessage.warning('已经有批量下载任务正在进行,请稍后再试')
         return
       }
-      FileApi.batchDownload(
-        ids,
-        `批量下载_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}`,
-      )
-        .then((res) => {
-          if (res.data?.message) {
-            ElMessage.info(res.data.message)
-          }
-          if (res.data?.url) {
-            downloadUrl.value = res.data.url
-            showLinkModel.value = true
-            downLoadByUrl(res.data.url)
-            return
-          }
-          loadActions()
-        })
-        .catch(() => {
-          ElMessage.error('所选文件均已从服务器上移除')
-          batchDownStart.value = false
-        })
+      {
+        const zipName = `批量下载_${formatDate(new Date(), 'yyyy年MM月dd日hh时mm分ss秒')}`
+        const pendingId = pushPendingArchiveAction(`${zipName}.zip 归档中（${ids.length}个文件）`)
+        FileApi.batchDownload(ids, zipName)
+          .then((res) => {
+            if (res.data?.message) {
+              ElMessage.info(res.data.message)
+            }
+            if (res.data?.url) {
+              downloadUrl.value = res.data.url
+              showLinkModel.value = true
+              if (autoDownloadArchive.value) {
+                downLoadByUrl(res.data.url)
+              }
+            }
+            loadActions()
+          })
+          .catch(() => {
+            ElMessage.error('所选文件均已从服务器上移除')
+            batchDownStart.value = false
+          })
+          .finally(() => {
+            removePendingArchiveAction(pendingId)
+          })
+      }
       showHistoryPanel.value = true
       ElMessage.info('开始归档选中的文件,请耐心等待')
       break
@@ -511,6 +581,21 @@ function downloadOne(e: any) {
       ElMessage.error('文件已从服务器上移除')
     })
 }
+function copyOneFileLink(e: any) {
+  if (limitDownload.value) {
+    ElMessage.error('下载功能已被限制，请联系管理员扩容，或自行删除历史无用文件')
+    return
+  }
+  const { id } = e
+  FileApi.getOneFileUrl(id)
+    .then((res) => {
+      const { link } = res.data
+      copyRes(link, '下载链接已复制到剪贴板')
+    })
+    .catch(() => {
+      ElMessage.error('文件已从服务器上移除')
+    })
+}
 function handleDelete(e: any) {
   const idx = files.findIndex(v => v === e)
   ElMessageBox.confirm('确认删除此文件吗？', '数据无价，请谨慎操作')
@@ -566,6 +651,7 @@ function handleDownloadTask() {
     return
   }
   batchDownStart.value = true
+  const pendingId = pushPendingArchiveAction(`${selectTaskName.value || '任务'}.zip 归档中`)
   FileApi.batchDownloadByQuery({
     taskKey: selectTask.value,
     zipName: selectTaskName.value,
@@ -577,8 +663,9 @@ function handleDownloadTask() {
       if (res.data?.url) {
         downloadUrl.value = res.data.url
         showLinkModel.value = true
-        downLoadByUrl(res.data.url)
-        return
+        if (autoDownloadArchive.value) {
+          downLoadByUrl(res.data.url)
+        }
       }
       loadActions()
     })
@@ -586,6 +673,7 @@ function handleDownloadTask() {
       ElMessage.error('所选任务中的文件均已从服务器上移除')
     })
     .finally(() => {
+      removePendingArchiveAction(pendingId)
       setTimeout(() => {
         batchDownStart.value = false
       }, 1000)
@@ -627,15 +715,41 @@ watch(selectCategory, () => {
   selectTask.value = 'all'
   loadTaskOptions()
 })
+watch([selectCategory, selectTask], ([category, task]) => {
+  const nextQuery: Record<string, any> = { ...$route.query }
+  if (category && category !== 'all') {
+    nextQuery.category = category
+  }
+  else {
+    delete nextQuery.category
+  }
+  if (task && task !== 'all') {
+    nextQuery.task = task
+  }
+  else {
+    delete nextQuery.task
+  }
+  if (
+    nextQuery.category === $route.query.category
+    && nextQuery.task === $route.query.task
+  ) {
+    return
+  }
+  $router.replace({ query: nextQuery })
+})
 watch([pageCurrent, pageSize], loadFiles)
 watch(showImg, () => {
   window.localStorage.setItem('ep-show-images', `${showImg.value}`)
+})
+watch(autoDownloadArchive, () => {
+  window.localStorage.setItem('ep-auto-download-archive', `${autoDownloadArchive.value}`)
 })
 
 onMounted(() => {
   loadFiles()
   loadActions()
   loadTaskOptions()
+  $store.dispatch('category/getCategory')
 })
 
 const isMobile = useIsMobile()
@@ -698,6 +812,14 @@ function handleShowDetail() {
         >
           下载任务中的文件
         </el-button>
+        <el-checkbox v-model="autoDownloadArchive" class="auto-download-checkbox" size="default">
+          归档完成后自动下载
+        </el-checkbox>
+        <el-tooltip :content="autoDownloadTipText" placement="top" effect="dark">
+          <el-icon class="export-help-icon">
+            <QuestionFilled />
+          </el-icon>
+        </el-tooltip>
       </div>
       <div class="item search-item">
         <el-input v-model="searchWord" size="default" clearable placeholder="请输入要检索的内容" :prefix-icon="Search" />
@@ -908,7 +1030,7 @@ function handleShowDetail() {
           <span class="stat-label">存储空间</span>
           <strong>{{ formatSize(usage) }} / {{ formatSize(size) }}</strong>
           <el-progress :percentage="storageProgressPercentage" :status="limitSpace ? 'exception' : undefined" />
-          <small>{{ percentageValue.toFixed(2) }}% 已使用</small>
+          <small>{{ percentage }} 已使用</small>
         </div>
         <div v-if="showWalletLimit" class="stat-card" :class="{ warning: limitWallet }">
           <span class="stat-label">钱包消耗</span>
@@ -992,7 +1114,7 @@ function handleShowDetail() {
             </template>
           </el-table-column>
         </template>
-        <el-table-column fixed="right" label="操作" width="140">
+        <el-table-column fixed="right" label="操作" width="160">
           <template #default="scope">
             <div class="text-btns">
               <el-button type="primary" text size="small" @click="checkInfo(scope.row)">
@@ -1003,6 +1125,9 @@ function handleShowDetail() {
               </el-button>
               <el-button type="primary" text size="small" @click="downloadOne(scope.row)">
                 下载
+              </el-button>
+              <el-button type="primary" text size="small" @click="copyOneFileLink(scope.row)">
+                复制链接
               </el-button>
               <el-button type="primary" text size="small" @click="handleDelete(scope.row)">
                 删除
@@ -1233,6 +1358,11 @@ function handleShowDetail() {
   display: inline-flex;
   font-size: 16px;
   height: 32px;
+  margin-left: 10px;
+  margin-bottom: 10px;
+}
+
+.auto-download-checkbox {
   margin-left: 10px;
   margin-bottom: 10px;
 }

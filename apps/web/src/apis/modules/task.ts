@@ -53,8 +53,19 @@ function getTaskInfo(key: string): TaskApiTypes.getTaskInfo {
   return ajax.get(`task/${key}`)
 }
 
-function getTaskMoreInfo(key: string): TaskApiTypes.getTaskMoreInfo {
-  return ajax.get(`task_info/${key}`)
+function getTaskMoreInfo(
+  key: string,
+  password?: string,
+  mode?: 'submit' | 'config',
+): TaskApiTypes.getTaskMoreInfo {
+  const params: Record<string, string> = {}
+  if (password) {
+    params.password = password
+  }
+  if (mode) {
+    params.mode = mode
+  }
+  return ajax.get(`task_info/${key}`, { params })
 }
 
 function updateTaskMoreInfo(

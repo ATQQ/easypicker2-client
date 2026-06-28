@@ -20,7 +20,7 @@ import TaskInfo from './components/TaskInfo.vue'
 
 const $store = useStore()
 const $router = useRouter()
-const { value: siteConfig } = useSiteConfig()
+const { value: siteConfig } = useSiteConfig('file-page')
 
 const isMobile = useIsMobile()
 // 分类相关
@@ -133,14 +133,24 @@ function handleSaveEditInfo() {
 const shareTaskLink = ref('')
 const showLinkModal = ref(false)
 const shareTaskName = ref('')
-function shareTask(k: string) {
+const shareTaskExtraLine = ref('')
+async function shareTask(k: string) {
   touchRecentTask(k)
   shareTaskLink.value = 'default'
   const { origin } = window.location
   shareTaskLink.value = `${origin}/task/${k}`
   copyRes(shareTaskLink.value, '收集链接已自动复制到粘贴板')
   shareTaskName.value = tasks.value.find(v => v.key === k)?.name
+  shareTaskExtraLine.value = ''
   showLinkModal.value = true
+  try {
+    const res = await TaskApi.getTaskMoreInfo(k)
+    const password = res.data?.submitPassword
+    shareTaskExtraLine.value = password ? `提交密码：${password}` : ''
+  }
+  catch {
+    shareTaskExtraLine.value = ''
+  }
 }
 
 // 附加属性编辑
@@ -385,6 +395,7 @@ function openTaskPage() {
       title="收取链接"
       :link="shareTaskLink"
       :share-text-prefix="shareTaskName"
+      :extra-share-line="shareTaskExtraLine"
     />
     <FloatingContact
       v-if="siteConfig.filePageFloatingContactEnabled && siteConfig.filePageContactLink"

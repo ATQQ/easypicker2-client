@@ -6,6 +6,7 @@ import { TaskApi } from '@/apis'
 import DDlPanel from './components/infoPanel/ddl.vue'
 import FileInfoPanel from './components/infoPanel/file.vue'
 import InfoPanel from './components/infoPanel/info.vue'
+import PasswordPanel from './components/infoPanel/password.vue'
 import PeoplePanel from './components/infoPanel/people.vue'
 import TemplatePanel from './components/infoPanel/template.vue'
 import TipInfoPanel from './components/infoPanel/tipInfo.vue'
@@ -33,6 +34,11 @@ const configSections = [
     name: 'people',
     title: '限制名单',
     description: '限制可提交人员，并支持绑定表单字段校验。',
+  },
+  {
+    name: 'password',
+    title: '提交密码',
+    description: '设置提交时所需的密码，防止误提交。',
   },
   {
     name: 'template',
@@ -76,6 +82,7 @@ function resetTaskInfo() {
     people: undefined,
     rewrite: undefined,
     template: '',
+    submitPassword: '',
   })
 }
 
@@ -228,6 +235,11 @@ watch(activeInfo, (tab) => {
             :k="activeTask.key"
             :field="taskInfo.bindField"
             :info="taskInfo.info"
+          />
+          <PasswordPanel
+            v-show="activeInfo === 'password'"
+            :k="activeTask.key"
+            :password="taskInfo.submitPassword || ''"
           />
           <TemplatePanel
             v-show="activeInfo === 'template'"
