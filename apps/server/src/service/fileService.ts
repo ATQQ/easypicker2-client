@@ -1365,20 +1365,38 @@ export default class FileService {
   }
 
   async getFastUploadLimit(user: User) {
-    const fileSize = await this.fileRepository.sumActiveSizeByUser(user.id)
+    // 命中 overview 缓存：直接复用，保持与管理员/我的空间页口径一致
+    await this.getUserOverviewCacheVersion()
+    const cached = this.parseUserOverviewCache(
+      await getRedisVal(this.getUserOverviewCacheKey(user.id)),
+    )
+    const isAdmin = user.power === USER_POWER.SUPER
+    if (cached?.data) {
+      // 命中后到期则后台异步刷新（refreshUserOverviewCache 已带单飞节流）
+      if (cached.needRefresh) {
+        void this.refreshUserOverviewCache(user)
+      }
+      const data = cached.data
+      return {
+        maxSize: data.maxSize,
+        usage: data.usage,
+        limitUpload: isAdmin ? false : !!data.limitUpload,
+        limitSpace: !!data.limitSpace,
+        limitWallet: !!data.limitWallet,
+        wallet: data.wallet ?? (user.wallet || 0),
+      }
+    }
+    // 未命中：不阻塞访问，直接放行；异步触发该用户的缓存刷新（单飞）
+    void this.refreshUserOverviewCache(user)
     const limitSize = calculateSize((user.power === USER_POWER.SUPER
       ? Math.max(1024, user?.size)
       : user?.size) ?? 2)
-    const limitSpace = this.limitUploadBySpace(limitSize, fileSize)
-    const isAdmin = user.power === USER_POWER.SUPER
-    const limitWallet = this.limitUploadByWallet(Number(user.wallet || 0))
-
     return {
       maxSize: limitSize,
-      usage: fileSize,
-      limitUpload: isAdmin ? false : (limitSpace || limitWallet),
-      limitSpace,
-      limitWallet,
+      usage: 0,
+      limitUpload: false,
+      limitSpace: false,
+      limitWallet: false,
       wallet: user.wallet || 0,
     }
   }
@@ -1696,6 +1714,10 @@ export default class FileService {
     const fileSize = fileInfo.reduce((pre, v) => {
       const { date } = v
       originFileSize += (+v.size || 0)
+      // 已清理 OSS 的文件不计入活跃用量，保持与 sumActiveSizeByUser 的口径一致
+      if (v.ossDelTime) {
+        return pre
+      }
       const ossKey = this.getOssKey(v)
       const local = localMode ? this.getLocalLocation(v) : null
       const fsize = localMode

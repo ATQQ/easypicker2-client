@@ -312,6 +312,7 @@ export class FileRepository extends BaseRepository<Files> {
 
   async sumActiveSizeByUser(userId: number) {
     const row = await this.createFileQueryBuilder(userId)
+      .andWhere('file.ossDelTime IS NULL')
       .select('COALESCE(SUM(file.size), 0)', 'size')
       .getRawOne<{ size: string | number }>()
 
