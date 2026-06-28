@@ -1342,7 +1342,18 @@ export default class FileService {
    */
   limitUploadBySpace(limitSize: number, fileSize: number) {
     const { limitSpace } = LocalUserDB.getSiteConfig()
-    return limitSpace && (limitSize === 0 || limitSize < fileSize)
+    if (!limitSpace) {
+      return false
+    }
+    // 已用空间为 0 时，无论配额如何都不应判定为超限
+    if (!fileSize || fileSize <= 0) {
+      return false
+    }
+    // 配额为 0 视为未配置可用空间，并非真正超限场景
+    if (!limitSize || limitSize <= 0) {
+      return false
+    }
+    return limitSize < fileSize
   }
 
   limitUploadByWallet(balance: number) {
