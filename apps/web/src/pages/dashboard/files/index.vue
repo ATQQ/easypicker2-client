@@ -211,6 +211,19 @@ watchEffect(() => {
   }
 })
 
+watchEffect(() => {
+  if (selectCategory.value === 'all') {
+    return
+  }
+  if (['default', 'no-task', 'trash'].includes(selectCategory.value)) {
+    return
+  }
+  const list = categories.value
+  if (list.length && !list.some((v: any) => v.k === selectCategory.value)) {
+    selectCategory.value = 'all'
+  }
+})
+
 // 记录导出
 function handleExportExcel(files: FileApiTypes.File[], filename?: string) {
   if (files.length === 0) {
@@ -736,6 +749,7 @@ onMounted(() => {
   loadFiles()
   loadActions()
   loadTaskOptions()
+  $store.dispatch('category/getCategory')
 })
 
 const isMobile = useIsMobile()
