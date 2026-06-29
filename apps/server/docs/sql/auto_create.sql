@@ -110,7 +110,12 @@ CREATE TABLE IF NOT EXISTS `task_info` (
   `limit_people` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否限制提交人员',
   `tip` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '批注信息（含 emoji）',
   `bind_field` varchar(255) DEFAULT '姓名' COMMENT '绑定表单字段',
-  `submit_password` varchar(64) DEFAULT NULL COMMENT '提交密码（为空表示未开启）'
+  `submit_password` varchar(64) DEFAULT NULL COMMENT '提交密码（为空表示未开启）',
+  `view_enabled` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否开启实时查看页（只读分享）',
+  `view_password` varchar(64) DEFAULT NULL COMMENT '查看页访问密码（为空表示无需密码）',
+  `view_visible_fields` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '查看页可见字段及脱敏配置 JSON：{fields:[{name,mask}]}',
+  `view_show_unsubmitted` tinyint(4) NOT NULL DEFAULT '1' COMMENT '查看页是否展示未提交人员名单（仅 limit_people=1 时生效）',
+  `view_show_file_names` tinyint(4) NOT NULL DEFAULT '0' COMMENT '查看页是否展示文件名（默认仅显示文件数）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='任务附加属性';
 
 -- --------------------------------------------------------

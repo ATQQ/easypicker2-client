@@ -88,7 +88,12 @@
         { "name": "limit_people", "ddl": "`limit_people` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否限制提交人员'" },
         { "name": "tip", "ddl": "`tip` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '批注信息（含 emoji）'" },
         { "name": "bind_field", "ddl": "`bind_field` varchar(255) DEFAULT '姓名' COMMENT '绑定表单字段'" },
-        { "name": "submit_password", "ddl": "`submit_password` varchar(64) DEFAULT NULL COMMENT '提交密码（为空表示未开启）'" }
+        { "name": "submit_password", "ddl": "`submit_password` varchar(64) DEFAULT NULL COMMENT '提交密码（为空表示未开启）'" },
+        { "name": "view_enabled", "ddl": "`view_enabled` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否开启实时查看页（只读分享）'" },
+        { "name": "view_password", "ddl": "`view_password` varchar(64) DEFAULT NULL COMMENT '查看页访问密码（为空表示无需密码）'" },
+        { "name": "view_visible_fields", "ddl": "`view_visible_fields` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '查看页可见字段及脱敏配置 JSON：{fields:[{name,mask}]}'" },
+        { "name": "view_show_unsubmitted", "ddl": "`view_show_unsubmitted` tinyint(4) NOT NULL DEFAULT '1' COMMENT '查看页是否展示未提交人员名单（仅 limit_people=1 时生效）'" },
+        { "name": "view_show_file_names", "ddl": "`view_show_file_names` tinyint(4) NOT NULL DEFAULT '0' COMMENT '查看页是否展示文件名（默认仅显示文件数）'" }
       ]
     },
     {

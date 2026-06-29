@@ -69,4 +69,43 @@ export class TaskInfo {
     comment: '提交密码（为空表示未开启）',
   })
   submitPassword: string | null
+
+  @Column('tinyint', {
+    name: 'view_enabled',
+    comment: '是否开启实时查看页（只读分享）',
+    default: 0,
+  })
+  viewEnabled: number
+
+  @Column('varchar', {
+    name: 'view_password',
+    length: 64,
+    nullable: true,
+    comment: '查看页访问密码（为空表示无需密码）',
+  })
+  viewPassword: string | null
+
+  @Column({
+    type: 'text',
+    name: 'view_visible_fields',
+    nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+    comment: '查看页可见字段及脱敏配置 JSON：{fields:[{name,mask}]}',
+  })
+  viewVisibleFields: string | null
+
+  @Column('tinyint', {
+    name: 'view_show_unsubmitted',
+    comment: '查看页是否展示未提交人员名单（仅 limit_people=1 时生效）',
+    default: 1,
+  })
+  viewShowUnsubmitted: number
+
+  @Column('tinyint', {
+    name: 'view_show_file_names',
+    comment: '查看页是否展示文件名（默认仅显示文件数）',
+    default: 0,
+  })
+  viewShowFileNames: number
 }

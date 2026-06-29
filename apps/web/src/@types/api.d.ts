@@ -186,6 +186,16 @@ declare namespace TaskApiTypes {
     needSubmitPassword?: boolean
     /** 服务端确认本次请求的提交密码是否通过校验 */
     passwordValid?: boolean
+    /** 分享查看页是否启用 */
+    viewEnabled?: boolean
+    /** 分享查看页访问密码（仅所有者通过 view-config 接口可见） */
+    viewPassword?: string | null
+    /** 分享查看页可见字段配置（JSON 字符串） */
+    viewVisibleFields?: string | null
+    /** 是否在分享查看页显示未提交名单 */
+    viewShowUnsubmitted?: boolean
+    /** 是否在分享查看页显示文件名 */
+    viewShowFileNames?: boolean
   }
 
   type getList = ResponseData<{ tasks: TaskItem[] }>

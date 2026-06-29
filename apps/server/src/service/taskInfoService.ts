@@ -252,6 +252,11 @@ export default class TaskInfoService {
       tip,
       bindField,
       submitPassword,
+      viewEnabled,
+      viewPassword,
+      viewVisibleFields,
+      viewShowUnsubmitted,
+      viewShowFileNames,
     } = payload
     let { share } = payload
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
@@ -300,6 +305,63 @@ export default class TaskInfoService {
       }
     }
 
+    // view 字段标准化
+    let normalizedViewEnabled: number | undefined
+    if (viewEnabled !== undefined) {
+      normalizedViewEnabled = viewEnabled ? BOOLEAN.TRUE : BOOLEAN.FALSE
+    }
+    let normalizedViewPassword: string | null | undefined
+    if (viewPassword !== undefined) {
+      if (viewPassword === null) {
+        normalizedViewPassword = null
+      }
+      else if (typeof viewPassword === 'string') {
+        const t = viewPassword.trim()
+        if (t === '') {
+          normalizedViewPassword = null
+        }
+        else {
+          if (t.length < 4 || t.length > 64) {
+            throw publicError.request.errorParams
+          }
+          normalizedViewPassword = t
+        }
+      }
+      else {
+        throw publicError.request.errorParams
+      }
+    }
+    let normalizedViewVisibleFields: string | null | undefined
+    if (viewVisibleFields !== undefined) {
+      if (viewVisibleFields === null || viewVisibleFields === '') {
+        normalizedViewVisibleFields = null
+      }
+      else if (typeof viewVisibleFields === 'string') {
+        // 客户端已序列化
+        try {
+          JSON.parse(viewVisibleFields)
+          normalizedViewVisibleFields = viewVisibleFields
+        }
+        catch {
+          throw publicError.request.errorParams
+        }
+      }
+      else if (typeof viewVisibleFields === 'object') {
+        normalizedViewVisibleFields = JSON.stringify(viewVisibleFields)
+      }
+      else {
+        throw publicError.request.errorParams
+      }
+    }
+    let normalizedViewShowUnsubmitted: number | undefined
+    if (viewShowUnsubmitted !== undefined) {
+      normalizedViewShowUnsubmitted = viewShowUnsubmitted ? BOOLEAN.TRUE : BOOLEAN.FALSE
+    }
+    let normalizedViewShowFileNames: number | undefined
+    if (viewShowFileNames !== undefined) {
+      normalizedViewShowFileNames = viewShowFileNames ? BOOLEAN.TRUE : BOOLEAN.FALSE
+    }
+
     const options = {
       template,
       rewrite,
@@ -311,6 +373,11 @@ export default class TaskInfoService {
       tip,
       bindField,
       submitPassword: normalizedSubmitPassword,
+      viewEnabled: normalizedViewEnabled,
+      viewPassword: normalizedViewPassword,
+      viewVisibleFields: normalizedViewVisibleFields,
+      viewShowUnsubmitted: normalizedViewShowUnsubmitted,
+      viewShowFileNames: normalizedViewShowFileNames,
     }
     if (bindField === '') {
       options.bindField = undefined
@@ -335,12 +402,20 @@ export default class TaskInfoService {
         tip: '批注信息',
         bindField: '设置绑定字段',
         submitPassword: '设置提交密码',
+        viewEnabled: '切换分享查看开关',
+        viewPassword: '设置查看页密码',
+        viewVisibleFields: '设置查看页可见字段',
+        viewShowUnsubmitted: '切换查看页未提交显示',
+        viewShowFileNames: '切换查看页文件名显示',
       }
 
       if (task) {
         const safePayload = { ...payload }
         if (safePayload.submitPassword) {
           safePayload.submitPassword = '***'
+        }
+        if (safePayload.viewPassword) {
+          safePayload.viewPassword = '***'
         }
         this.behaviorService.add(
           'taskInfo',
@@ -356,6 +431,28 @@ export default class TaskInfoService {
     })
   }
 
+  /** 任务所有者：获取分享查看页配置 */
+  async getViewConfig(key: string) {
+    const userId = this.ctx.req.userInfo?.id
+    const task = await this.taskRepository.findOne({
+      k: key,
+      del: BOOLEAN.FALSE,
+    })
+    if (!task || Number(task.userId) !== Number(userId)) {
+      throw publicError.request.errorParams
+    }
+    const info = await this.taskInfoRepository.findOne({ taskKey: key })
+    return {
+      viewEnabled: Number(info?.viewEnabled) === Number(BOOLEAN.TRUE),
+      viewPassword: info?.viewPassword || '',
+      viewVisibleFields: info?.viewVisibleFields || '',
+      viewShowUnsubmitted: info?.viewShowUnsubmitted === undefined
+        ? true
+        : Number(info.viewShowUnsubmitted) === Number(BOOLEAN.TRUE),
+      viewShowFileNames: Number(info?.viewShowFileNames) === Number(BOOLEAN.TRUE),
+    }
+  }
+
   createTaskInfo(taskInfo: TaskInfo) {
     const data: Partial<TaskInfo> = {
       limitPeople: BOOLEAN.FALSE,
@@ -366,6 +463,11 @@ export default class TaskInfoService {
       shareKey: getUniqueKey(),
       ddl: null,
       submitPassword: null,
+      viewEnabled: BOOLEAN.FALSE,
+      viewPassword: null,
+      viewVisibleFields: null,
+      viewShowUnsubmitted: BOOLEAN.TRUE,
+      viewShowFileNames: BOOLEAN.FALSE,
     }
     Object.assign(taskInfo, data)
 

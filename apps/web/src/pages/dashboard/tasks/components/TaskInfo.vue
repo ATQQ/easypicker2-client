@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Delete, Edit, Menu, Share } from '@element-plus/icons-vue'
+import { Delete, Edit, Menu, Share, View } from '@element-plus/icons-vue'
 
 import { formatDate } from '@/utils/stringUtil'
 
@@ -13,6 +13,10 @@ defineEmits<{
   share: [key: string]
   delete: [key: string, isTrash: boolean]
 }>()
+
+function openTaskView(key: string) {
+  window.open(`/task-view/${key}`)
+}
 </script>
 
 <template>
@@ -41,6 +45,12 @@ defineEmits<{
             :icon="Share"
             title="分享"
             @click="$emit('share', item.key)"
+          />
+          <el-button
+            circle
+            :icon="View"
+            title="查看收集情况"
+            @click="openTaskView(item.key)"
           />
           <el-button
             circle
@@ -91,7 +101,7 @@ defineEmits<{
     flex-wrap: nowrap;
 
     .actions {
-      min-width: 200px;
+      min-width: 240px;
       padding: 3px 0;
       margin-left: 20px;
     }

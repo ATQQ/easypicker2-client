@@ -15,6 +15,7 @@
   { "name": "task-info.template-list", "method": "GET", "path": "/api/task_info/template/000000000000000000000000" },
   { "name": "task-info.tip-image-delete", "method": "DELETE", "path": "/api/task_info/tip/image/000000000000000000000000", "body": { "uid": 1, "name": "api-check.png" } },
   { "name": "task-info.public-detail", "method": "GET", "path": "/api/task_info/000000000000000000000000" },
+  { "name": "task-info.view-config", "method": "GET", "path": "/api/task_info/view-config/000000000000000000000000" },
   { "name": "task-info.update", "method": "PUT", "path": "/api/task_info/000000000000000000000000", "body": { "template": "", "info": ["姓名"] } },
   { "name": "task-info.local-template-upload", "method": "POST", "path": "/api/task_info/template/upload", "storageModes": ["local"], "multipart": { "taskKey": "api-check", "name": "api-check-template.txt", "file": { "name": "api-check-template.txt", "content": "api check" } } },
   { "name": "task-info.local-template-upload-no-prefix", "method": "POST", "path": "/task_info/template/upload", "storageModes": ["local"], "multipart": { "taskKey": "api-check", "name": "api-check-template.txt", "file": { "name": "api-check-template.txt", "content": "api check" } } },
@@ -63,6 +64,9 @@
   { "name": "public.check-phone", "method": "GET", "path": "/api/public/check/phone?phone=13000000000" },
   { "name": "public.tip-image", "method": "POST", "path": "/api/public/tip/image", "body": { "key": "api-check", "data": [] } },
   { "name": "public.local-tip-image", "method": "GET", "path": "/api/public/tip/image/local?path=easypicker2%2Ftip%2Fapi-check%2F1%2Fapi-check.png&type=cover&expires=0&sign=api-check", "storageModes": ["local"] },
+  { "name": "public.task-view-meta", "method": "GET", "path": "/api/public/task-view/000000000000000000000000" },
+  { "name": "public.task-view-verify", "method": "POST", "path": "/api/public/task-view/000000000000000000000000/verify", "body": { "password": "api-check" } },
+  { "name": "public.task-view-progress", "method": "GET", "path": "/api/public/task-view/000000000000000000000000/progress" },
 
   { "name": "user.register", "method": "POST", "path": "/api/user/register", "body": { "account": "api-check", "password": "api-check-password" }, "sideEffects": true },
   { "name": "user.login", "method": "POST", "path": "/api/user/login", "body": { "account": "api-check", "password": "api-check-password" } },

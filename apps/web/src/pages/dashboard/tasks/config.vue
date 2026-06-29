@@ -10,6 +10,7 @@ import PasswordPanel from './components/infoPanel/password.vue'
 import PeoplePanel from './components/infoPanel/people.vue'
 import TemplatePanel from './components/infoPanel/template.vue'
 import TipInfoPanel from './components/infoPanel/tipInfo.vue'
+import ViewPanel from './components/infoPanel/view.vue'
 
 const $route = useRoute()
 const $router = useRouter()
@@ -49,6 +50,11 @@ const configSections = [
     name: 'attr',
     title: '文件属性',
     description: '限制文件类型、数量和单文件大小。',
+  },
+  {
+    name: 'view',
+    title: '分享查看',
+    description: '配置实时收集情况查看页：可见字段、脱敏方式、访问密码等。',
   },
 ]
 
@@ -250,6 +256,11 @@ watch(activeInfo, (tab) => {
             v-show="activeInfo === 'attr'"
             :format="taskInfo.format"
             :k="activeTask.key"
+          />
+          <ViewPanel
+            v-show="activeInfo === 'view'"
+            :k="activeTask.key"
+            :info="taskInfo.info"
           />
         </div>
       </main>

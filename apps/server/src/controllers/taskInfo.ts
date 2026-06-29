@@ -45,6 +45,16 @@ export default class TaskInfoController {
     }
   }
 
+  @Get('/view-config/:key')
+  async getViewConfig(@ReqParams('key') key: string) {
+    try {
+      return await this.taskInfoService.getViewConfig(key)
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
+  }
+
   @Get('/:key', notLogin)
   getTaskInfo(
     @ReqParams('key') key: string,
