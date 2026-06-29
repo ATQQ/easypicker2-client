@@ -12,3 +12,4 @@ cli-plugin-ep
 .pnpm-store
 buckup
 apps/server/upload/easypicker2
+upload
