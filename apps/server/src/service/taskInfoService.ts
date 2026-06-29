@@ -382,12 +382,19 @@ export default class TaskInfoService {
     if (bindField === '') {
       options.bindField = undefined
     }
+    // 过滤掉 undefined 字段，避免 TypeORM 把它们写为 NULL 覆盖其他列
+    const updateFields = Object.fromEntries(
+      Object.entries(options).filter(([, v]) => v !== undefined),
+    )
+    if (Object.keys(updateFields).length === 0) {
+      return null
+    }
     await this.taskInfoRepository.updateSpecifyFields(
       {
         taskKey: key,
         userId,
       },
-      options,
+      updateFields,
     )
 
     // 异步记录日志

@@ -38,8 +38,9 @@ let pollTimer: ReturnType<typeof setInterval> | null = null
 
 async function loadProgress() {
   try {
-    const data = await TaskViewApi.getProgress(key)
-    progress.value = data as unknown as TaskViewProgress
+    const res = await TaskViewApi.getProgress(key)
+    progress.value = ((res as unknown as { data: TaskViewProgress }).data
+      ?? (res as unknown as TaskViewProgress))
     errorTip.value = ''
   }
   catch (e: any) {
@@ -80,9 +81,10 @@ function handleVisibility() {
 async function init() {
   loading.value = true
   try {
-    const data = await TaskViewApi.getMeta(key)
-    meta.value = data as unknown as TaskViewMeta
-    if (!meta.value.enabled) {
+    const res = await TaskViewApi.getMeta(key)
+    meta.value = ((res as unknown as { data: TaskViewMeta }).data
+      ?? (res as unknown as TaskViewMeta))
+    if (!meta.value || !meta.value.enabled) {
       loading.value = false
       return
     }

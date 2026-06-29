@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import type { MaskMode, ViewVisibleField } from '@/apis/modules/taskView'
 import { ElMessage } from 'element-plus'
-import { computed, ref, watch } from 'vue'
-import { TaskViewApi } from '@/apis'
+import { computed, nextTick, ref, watch } from 'vue'
+import { TaskApi, TaskViewApi } from '@/apis'
 import { parseInfo } from '@/utils/stringUtil'
 import { updateTaskInfo } from '../../public'
 
@@ -26,6 +26,7 @@ const MASK_OPTIONS: { label: string, value: MaskMode }[] = [
 
 const loading = ref(false)
 const saving = ref(false)
+const ready = ref(false)
 const enabled = ref(false)
 const needPassword = ref(false)
 const password = ref('')
@@ -37,6 +38,8 @@ const availableFields = computed<string[]>(() => {
   const items = parseInfo(props.info) as InfoItem[]
   return items.map(v => v.text || '').filter(v => !!v)
 })
+
+const viewUrl = computed(() => (props.k ? `${location.origin}/task-view/${props.k}` : ''))
 
 function syncVisibleFields(serverFields: ViewVisibleField[]) {
   const fromServer = new Map<string, MaskMode>()
@@ -72,15 +75,18 @@ async function load() {
   if (!props.k)
     return
   loading.value = true
+  ready.value = false
   try {
-    const data = await TaskViewApi.getViewConfig(props.k)
-    const cfg = data as unknown as {
-      viewEnabled: boolean
-      viewPassword: string
-      viewVisibleFields: string
-      viewShowUnsubmitted: boolean
-      viewShowFileNames: boolean
-    }
+    const res = await TaskViewApi.getViewConfig(props.k)
+    const cfg = (res as unknown as {
+      data: {
+        viewEnabled: boolean
+        viewPassword: string
+        viewVisibleFields: string
+        viewShowUnsubmitted: boolean
+        viewShowFileNames: boolean
+      }
+    }).data || ({} as any)
     enabled.value = !!cfg.viewEnabled
     password.value = cfg.viewPassword || ''
     needPassword.value = !!cfg.viewPassword
@@ -97,6 +103,8 @@ async function load() {
   }
   finally {
     loading.value = false
+    await nextTick()
+    ready.value = true
   }
 }
 
@@ -118,6 +126,30 @@ watch(
     )
   },
 )
+
+// 启用开关：变更即时落库；只下发 viewEnabled 一个字段，避免影响其他正在编辑的字段
+watch(enabled, async (next, prev) => {
+  if (!ready.value)
+    return
+  if (next === prev)
+    return
+  if (!props.k)
+    return
+  try {
+    await TaskApi.updateTaskMoreInfo(props.k, { viewEnabled: next })
+    ElMessage.success({
+      message: next ? '已开启分享查看' : '已关闭分享查看',
+      duration: 1500,
+    })
+  }
+  catch {
+    ElMessage.error('设置失败，已回退')
+    ready.value = false
+    enabled.value = prev
+    await nextTick()
+    ready.value = true
+  }
+})
 
 function buildPayload(): TaskApiTypes.TaskInfo {
   const selected = visibleFields.value.filter(v =>
@@ -178,12 +210,21 @@ function openPreview() {
 <template>
   <div v-loading="loading" class="config-panel view-panel">
     <div class="panel-tip">
-      <div>
+      <div class="panel-tip-content">
         <h4>分享查看页</h4>
         <p>
-          开启后，任何持有任务链接的人可以通过 <code>/task-view/:key</code> 查看实时收集情况。<br>
+          开启后，任何持有以下链接的人可以查看实时收集情况。<br>
           可独立配置可见字段、脱敏方式、是否显示未提交名单与文件名，并可选启用访问密码。
         </p>
+        <div class="panel-tip-link">
+          <el-input :model-value="viewUrl" readonly size="small" class="panel-tip-link-input">
+            <template #append>
+              <el-button @click="handleCopyLink">
+                复制
+              </el-button>
+            </template>
+          </el-input>
+        </div>
       </div>
     </div>
 
@@ -276,9 +317,6 @@ function openPreview() {
     </template>
 
     <div class="action-row">
-      <el-button v-if="enabled" @click="handleCopyLink">
-        复制查看链接
-      </el-button>
       <el-button v-if="enabled" @click="openPreview">
         预览查看页
       </el-button>
@@ -317,12 +355,15 @@ function openPreview() {
     color: #909399;
     line-height: 1.6;
   }
+}
 
-  code {
-    padding: 0 4px;
-    background: #eef2f7;
-    border-radius: 4px;
-  }
+.panel-tip-link {
+  margin-top: 12px;
+}
+
+.panel-tip-link-input :deep(.el-input__inner) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color: #1f2d3d;
 }
 
 .setting-main {
