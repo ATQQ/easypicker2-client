@@ -12,10 +12,26 @@ export interface ViewRosterConfig {
   showUnsubmitted: boolean
 }
 
+export interface ViewFileFieldConfig {
+  visible: boolean
+  mask: MaskMode
+}
+
+export interface ViewFileSizeFieldConfig {
+  visible: boolean
+}
+
+export interface ViewFileFieldsConfig {
+  fileName: ViewFileFieldConfig
+  originName: ViewFileFieldConfig
+  size: ViewFileSizeFieldConfig
+}
+
 export interface ViewConfig {
   password: string
   visibleFields: ViewVisibleField[]
   roster: ViewRosterConfig
+  fileFields: ViewFileFieldsConfig
 }
 
 export const DEFAULT_VIEW_CONFIG: ViewConfig = {
@@ -26,6 +42,11 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
     columns: [],
     nameMask: 'head_tail',
     showUnsubmitted: true,
+  },
+  fileFields: {
+    fileName: { visible: true, mask: 'none' },
+    originName: { visible: true, mask: 'none' },
+    size: { visible: true },
   },
 }
 
@@ -75,25 +96,73 @@ function normalizeRoster(input: unknown): ViewRosterConfig {
   }
 }
 
+function normalizeFileField(input: unknown, fallback: ViewFileFieldConfig): ViewFileFieldConfig {
+  if (!input || typeof input !== 'object') {
+    return { ...fallback }
+  }
+  const r = input as Record<string, unknown>
+  return {
+    visible: r.visible === undefined ? fallback.visible : r.visible === true,
+    mask: normalizeMask(r.mask, fallback.mask),
+  }
+}
+
+function normalizeFileSizeField(input: unknown, fallback: ViewFileSizeFieldConfig): ViewFileSizeFieldConfig {
+  if (!input || typeof input !== 'object') {
+    return { ...fallback }
+  }
+  const r = input as Record<string, unknown>
+  return {
+    visible: r.visible === undefined ? fallback.visible : r.visible === true,
+  }
+}
+
+function normalizeFileFields(input: unknown): ViewFileFieldsConfig {
+  const base = DEFAULT_VIEW_CONFIG.fileFields
+  if (!input || typeof input !== 'object') {
+    return {
+      fileName: { ...base.fileName },
+      originName: { ...base.originName },
+      size: { ...base.size },
+    }
+  }
+  const r = input as Record<string, unknown>
+  return {
+    fileName: normalizeFileField(r.fileName, base.fileName),
+    originName: normalizeFileField(r.originName, base.originName),
+    size: normalizeFileSizeField(r.size, base.size),
+  }
+}
+
 export function parseViewConfig(raw: string | null | undefined): ViewConfig {
+  const baseDefault = (): ViewConfig => ({
+    ...DEFAULT_VIEW_CONFIG,
+    roster: { ...DEFAULT_VIEW_CONFIG.roster },
+    fileFields: {
+      fileName: { ...DEFAULT_VIEW_CONFIG.fileFields.fileName },
+      originName: { ...DEFAULT_VIEW_CONFIG.fileFields.originName },
+      size: { ...DEFAULT_VIEW_CONFIG.fileFields.size },
+    },
+  })
   if (!raw) {
-    return { ...DEFAULT_VIEW_CONFIG, roster: { ...DEFAULT_VIEW_CONFIG.roster } }
+    return baseDefault()
   }
   let parsed: unknown
   try {
     parsed = JSON.parse(raw)
   }
   catch {
-    return { ...DEFAULT_VIEW_CONFIG, roster: { ...DEFAULT_VIEW_CONFIG.roster } }
+    return baseDefault()
   }
   if (!parsed || typeof parsed !== 'object') {
-    return { ...DEFAULT_VIEW_CONFIG, roster: { ...DEFAULT_VIEW_CONFIG.roster } }
+    return baseDefault()
   }
   const obj = parsed as Record<string, unknown>
   return {
     password: typeof obj.password === 'string' ? obj.password : '',
     visibleFields: normalizeVisibleFields(obj.visibleFields),
     roster: normalizeRoster(obj.roster),
+    fileFields: normalizeFileFields(obj.fileFields),
   }
 }
 

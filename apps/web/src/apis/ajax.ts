@@ -37,6 +37,15 @@ instance.interceptors.request.use((config) => {
 })
 
 /**
+ * 公开访问类接口：未登录走自身密码/Cookie 流程，不能被全局拦截器吃掉转登录页
+ */
+function isPublicViewRequest(url?: string) {
+  if (!url)
+    return false
+  return /(?:^|\/)public\/task-view(?:\/|$)/.test(url)
+}
+
+/**
  * 响应拦截
  */
 instance.interceptors.response.use(
@@ -45,7 +54,13 @@ instance.interceptors.response.use(
       if (v.data.code === 0) {
         return v.data
       }
-      if (v.data?.code === 3004 && router.currentRoute.value.name !== 'login') {
+      const requestUrl = v.config?.url || ''
+      const isPublicView = isPublicViewRequest(requestUrl)
+      if (
+        v.data?.code === 3004
+        && !isPublicView
+        && router.currentRoute.value.name !== 'login'
+      ) {
         localStorage.removeItem('token')
         localStorage.removeItem('system')
         ElMessage.error('登录过期,跳转登录')

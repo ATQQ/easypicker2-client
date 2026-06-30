@@ -5,11 +5,12 @@ import type {
   TaskViewSubmittedProgress,
 } from '@/apis/modules/taskView'
 import HomeFooter from '@components/HomeFooter/index.vue'
+import { useLocalStorage } from '@vueuse/core'
 import { ElMessage } from 'element-plus'
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { TaskViewApi } from '@/apis'
-import { formatDate } from '@/utils/stringUtil'
+import { formatDate, formatSize } from '@/utils/stringUtil'
 
 const $route = useRoute()
 const key = String($route.params.key || '')
@@ -18,10 +19,37 @@ const meta = ref<TaskViewMeta | null>(null)
 const loading = ref(true)
 const errorTip = ref('')
 
+// 访问密码：参考任务提交密码的做法，按 key 在 localStorage 分桶存储，
+// 刷新后自动透传，不再依赖服务端 Cookie。
+const passwordCache = useLocalStorage<Record<string, string>>(
+  'task_view_pwd_map',
+  {},
+)
+function readCachedPassword() {
+  if (!key)
+    return ''
+  return passwordCache.value?.[key] || ''
+}
+function saveCachedPassword(value: string) {
+  if (!key)
+    return
+  passwordCache.value = { ...passwordCache.value, [key]: value }
+}
+function clearCachedPassword() {
+  if (!key)
+    return
+  const next = { ...passwordCache.value }
+  delete next[key]
+  passwordCache.value = next
+}
+
+const accessPassword = ref('')
+
 const passwordPanel = reactive({
   visible: false,
   value: '',
   loading: false,
+  errorTip: '',
 })
 
 type TabName = 'submitted' | 'roster'
@@ -34,10 +62,6 @@ const submittedPagination = reactive({
   pageIndex: 1,
   pageSize: 20,
 })
-const rosterPagination = reactive({
-  pageIndex: 1,
-  pageSize: 20,
-})
 
 const ddlText = computed(() => {
   if (!meta.value?.ddl)
@@ -46,8 +70,29 @@ const ddlText = computed(() => {
 })
 
 const rosterEnabled = computed(() => !!meta.value?.roster?.enabled)
-const showUnsubmitted = computed(() => !!meta.value?.roster?.showUnsubmitted)
-const rosterColumns = computed(() => meta.value?.roster?.columns || [])
+const bindFieldLabel = computed(() => meta.value?.bindField || '姓名')
+
+// 文件原生字段可见性（由 meta.fileFields 控制，未配置时默认全展示）
+const showFileName = computed(() => meta.value?.fileFields?.fileName?.visible !== false)
+const showOriginName = computed(() => meta.value?.fileFields?.originName?.visible !== false)
+const showFileSize = computed(() => meta.value?.fileFields?.size?.visible !== false)
+
+// 从当前页 files 中归并出实际存在的 info 字段名作为动态列（后端已按用户配置过滤过）
+const submittedInfoColumns = computed<string[]>(() => {
+  const set = new Set<string>()
+  for (const f of submittedProgress.value?.files || []) {
+    for (const it of f.info || []) {
+      if (it?.text)
+        set.add(it.text)
+    }
+  }
+  return Array.from(set)
+})
+
+function getInfoValue(row: any, name: string): string {
+  const hit = (row?.info || []).find((it: any) => it?.text === name)
+  return hit?.value ?? ''
+}
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -62,14 +107,17 @@ async function loadCurrentTab() {
         tab: 'submitted',
         pageIndex: submittedPagination.pageIndex,
         pageSize: submittedPagination.pageSize,
+        password: accessPassword.value || undefined,
       })
       submittedProgress.value = unwrap<TaskViewSubmittedProgress>(res)
     }
     else {
       const res = await TaskViewApi.getProgress(key, {
         tab: 'roster',
-        pageIndex: rosterPagination.pageIndex,
-        pageSize: rosterPagination.pageSize,
+        // 人员提交记录与 /people/:key 一致：一次性返回全量，无分页
+        pageIndex: 1,
+        pageSize: 1,
+        password: accessPassword.value || undefined,
       })
       rosterProgress.value = unwrap<TaskViewRosterProgress>(res)
     }
@@ -78,6 +126,13 @@ async function loadCurrentTab() {
   catch (e: any) {
     const code = e?.code ?? e?.response?.data?.code
     if (code === 3004) {
+      // 缓存密码失效（被改 / 被清）→ 清缓存并打开密码门
+      if (accessPassword.value) {
+        passwordPanel.errorTip = '访问密码已变更，请重新输入'
+        ElMessage.error('访问密码已变更，请重新输入')
+      }
+      accessPassword.value = ''
+      clearCachedPassword()
       passwordPanel.visible = true
       stopPolling()
     }
@@ -124,7 +179,19 @@ async function init() {
       return
     }
     if (meta.value.needPassword) {
-      passwordPanel.visible = true
+      // 优先尝试用本地缓存的密码自动登录
+      const cached = readCachedPassword()
+      if (cached) {
+        accessPassword.value = cached
+        activeTab.value = 'submitted'
+        await loadCurrentTab()
+        // 若 loadCurrentTab 因 3004 已开了密码门，则不开轮询
+        if (!passwordPanel.visible)
+          startPolling()
+      }
+      else {
+        passwordPanel.visible = true
+      }
       loading.value = false
       return
     }
@@ -149,10 +216,15 @@ async function verify() {
   passwordPanel.loading = true
   try {
     await TaskViewApi.verify(key, passwordPanel.value)
+    // 校验通过：本地缓存 + 后续请求透传
+    accessPassword.value = passwordPanel.value
+    saveCachedPassword(passwordPanel.value)
     passwordPanel.visible = false
     passwordPanel.value = ''
+    passwordPanel.errorTip = ''
     await loadCurrentTab()
-    startPolling()
+    if (!passwordPanel.visible)
+      startPolling()
   }
   catch (e: any) {
     ElMessage.error(e?.msg || '密码错误')
@@ -177,21 +249,6 @@ watch(
       loadCurrentTab()
   },
 )
-watch(
-  () => rosterPagination.pageIndex,
-  () => {
-    if (activeTab.value === 'roster')
-      loadCurrentTab()
-  },
-)
-watch(
-  () => rosterPagination.pageSize,
-  () => {
-    rosterPagination.pageIndex = 1
-    if (activeTab.value === 'roster')
-      loadCurrentTab()
-  },
-)
 
 onMounted(() => {
   init()
@@ -203,13 +260,10 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibility)
 })
 
-// 按 status 分区的名单数据
-const rosterSubmittedItems = computed(
-  () => rosterProgress.value?.items.filter(i => i.status) || [],
-)
-const rosterUnsubmittedItems = computed(
-  () => rosterProgress.value?.items.filter(i => !i.status) || [],
-)
+// 人员提交记录：与 people.vue 一致的状态判断（status 可能是 0/1 或 boolean）
+function isSubmitted(status: unknown): boolean {
+  return !!Number(status)
+}
 </script>
 
 <template>
@@ -241,6 +295,9 @@ const rosterUnsubmittedItems = computed(
           maxlength="64"
           @keyup.enter="verify"
         />
+        <p v-if="passwordPanel.errorTip" class="tv-password-tip">
+          {{ passwordPanel.errorTip }}
+        </p>
         <el-button
           type="primary"
           :loading="passwordPanel.loading"
@@ -261,36 +318,42 @@ const rosterUnsubmittedItems = computed(
 
         <el-tabs v-if="rosterEnabled" v-model="activeTab" @tab-change="handleTabChange">
           <el-tab-pane label="文件提交记录" name="submitted" />
-          <el-tab-pane label="名单" name="roster" />
+          <el-tab-pane label="人员提交记录" name="roster" />
         </el-tabs>
 
         <section v-show="activeTab === 'submitted'" class="tv-section">
-          <el-empty v-if="!submittedProgress || !submittedProgress.items.length" description="暂无提交" />
+          <el-empty v-if="!submittedProgress || !submittedProgress.files.length" description="暂无提交" />
           <template v-else>
-            <el-table :data="submittedProgress.items" stripe>
-              <el-table-column
-                prop="people"
-                :label="submittedProgress.bindField || '姓名'"
-                min-width="120"
-              />
-              <el-table-column label="提交时间" min-width="170">
+            <el-table :data="submittedProgress.files" stripe>
+              <el-table-column label="提交时间" prop="date" min-width="170">
                 <template #default="{ row }">
-                  {{ row.submitDate ? formatDate(new Date(row.submitDate), 'yyyy-MM-dd hh:mm') : '-' }}
+                  {{ row.date ? formatDate(new Date(row.date), 'yyyy-MM-dd hh:mm') : '-' }}
                 </template>
               </el-table-column>
-              <el-table-column label="文件名" min-width="220">
+              <el-table-column label="任务" prop="task_name" min-width="140" />
+              <el-table-column v-if="showFileName" label="文件名" prop="name" min-width="220">
                 <template #default="{ row }">
-                  <span class="tv-filename">{{ row.fileName }}</span>
+                  <span class="tv-filename">{{ row.name || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column v-if="showOriginName" label="原文件名" prop="origin_name" min-width="220">
+                <template #default="{ row }">
+                  <span class="tv-filename">{{ row.origin_name || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column v-if="showFileSize" label="大小" prop="size" min-width="100">
+                <template #default="{ row }">
+                  {{ row.size ? formatSize(row.size) : '未知大小' }}
                 </template>
               </el-table-column>
               <el-table-column
-                v-for="name in submittedProgress.visibleFieldNames"
+                v-for="name in submittedInfoColumns"
                 :key="name"
                 :label="name"
                 min-width="120"
               >
                 <template #default="{ row }">
-                  {{ row.fields[name] || '-' }}
+                  {{ getInfoValue(row, name) || '-' }}
                 </template>
               </el-table-column>
             </el-table>
@@ -309,88 +372,24 @@ const rosterUnsubmittedItems = computed(
         </section>
 
         <section v-show="rosterEnabled && activeTab === 'roster'" class="tv-section">
-          <el-empty v-if="!rosterProgress || !rosterProgress.items.length" description="暂无名单数据" />
-          <template v-else>
-            <template v-if="showUnsubmitted">
-              <h4 class="tv-subtitle">
-                已提交 ({{ rosterSubmittedItems.length }})
-              </h4>
-              <el-table v-if="rosterSubmittedItems.length" :data="rosterSubmittedItems" stripe>
-                <el-table-column prop="name" :label="meta.bindField || '姓名'" min-width="120" />
-                <el-table-column
-                  v-if="rosterColumns.includes('status')"
-                  label="状态"
-                  min-width="100"
-                >
-                  <template #default>
-                    <el-tag type="success" size="small">
-                      已提交
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column
-                  v-if="rosterColumns.includes('submitDate')"
-                  label="提交时间"
-                  min-width="170"
-                >
-                  <template #default="{ row }">
-                    {{ row.submitDate ? formatDate(new Date(row.submitDate), 'yyyy-MM-dd hh:mm') : '-' }}
-                  </template>
-                </el-table-column>
-              </el-table>
-              <h4 class="tv-subtitle tv-subtitle--gap">
-                未提交 ({{ rosterUnsubmittedItems.length }})
-              </h4>
-              <el-table v-if="rosterUnsubmittedItems.length" :data="rosterUnsubmittedItems" stripe>
-                <el-table-column prop="name" :label="meta.bindField || '姓名'" min-width="120" />
-                <el-table-column
-                  v-if="rosterColumns.includes('status')"
-                  label="状态"
-                  min-width="100"
-                >
-                  <template #default>
-                    <el-tag type="info" size="small">
-                      未提交
-                    </el-tag>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </template>
-            <el-table v-else :data="rosterProgress.items" stripe>
-              <el-table-column prop="name" :label="meta.bindField || '姓名'" min-width="120" />
-              <el-table-column
-                v-if="rosterColumns.includes('status')"
-                label="状态"
-                min-width="100"
-              >
-                <template #default="{ row }">
-                  <el-tag :type="row.status ? 'success' : 'info'" size="small">
-                    {{ row.status ? '已提交' : '未提交' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column
-                v-if="rosterColumns.includes('submitDate')"
-                label="提交时间"
-                min-width="170"
-              >
-                <template #default="{ row }">
-                  {{ row.submitDate ? formatDate(new Date(row.submitDate), 'yyyy-MM-dd hh:mm') : '-' }}
-                </template>
-              </el-table-column>
-            </el-table>
-            <div class="tv-pagination">
-              <el-pagination
-                v-model:current-page="rosterPagination.pageIndex"
-                v-model:page-size="rosterPagination.pageSize"
-                :total="rosterProgress.total"
-                :page-sizes="[10, 20, 50, 100]"
-                layout="total, sizes, prev, pager, next, jumper"
-                background
-                small
-              />
-            </div>
-          </template>
+          <el-empty v-if="!rosterProgress || !rosterProgress.people.length" description="暂无名单数据" />
+          <el-table v-else :data="rosterProgress.people" stripe>
+            <el-table-column type="index" label="序号" width="70" />
+            <el-table-column :label="bindFieldLabel" prop="name" min-width="120" />
+            <el-table-column label="提交状态" min-width="100">
+              <template #default="{ row }">
+                <el-tag :type="isSubmitted(row.status) ? 'success' : 'info'" size="small">
+                  {{ isSubmitted(row.status) ? '已提交' : '未提交' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="提交次数" prop="count" min-width="100" />
+            <el-table-column label="最后操作时间" prop="lastDate" min-width="170">
+              <template #default="{ row }">
+                {{ row.lastDate ? formatDate(new Date(row.lastDate), 'yyyy-MM-dd hh:mm:ss') : '暂无记录' }}
+              </template>
+            </el-table-column>
+          </el-table>
         </section>
 
         <p v-if="errorTip" class="tv-error">
@@ -467,6 +466,13 @@ const rosterUnsubmittedItems = computed(
   margin-top: 12px;
 }
 
+.tv-password-tip {
+  color: #f56c6c;
+  font-size: 12px;
+  margin: 8px 0 0;
+  text-align: left;
+}
+
 .tv-task-info {
   background: #fff;
   padding: 20px 24px;
@@ -492,17 +498,6 @@ const rosterUnsubmittedItems = computed(
   padding: 16px 20px;
   border-radius: 8px;
   margin-bottom: 16px;
-}
-
-.tv-subtitle {
-  margin: 0 0 8px;
-  font-size: 14px;
-  color: #303133;
-  font-weight: 600;
-}
-
-.tv-subtitle--gap {
-  margin-top: 18px;
 }
 
 .tv-filename {

@@ -3,6 +3,7 @@ import type {
   MaskMode,
   RosterConfig,
   ViewConfig,
+  ViewFileFieldsConfig,
   ViewVisibleField,
 } from '@/apis/modules/taskView'
 import { ElMessage } from 'element-plus'
@@ -63,6 +64,7 @@ const password = ref('')
 
 const visibleFields = ref<ViewVisibleField[]>([])
 const checkedFieldNames = ref<string[]>([])
+const storedVisibleFields = ref<ViewVisibleField[]>([])
 
 const roster = ref<RosterConfig>({
   enabled: false,
@@ -70,6 +72,15 @@ const roster = ref<RosterConfig>({
   nameMask: 'head_tail',
   showUnsubmitted: true,
 })
+
+function defaultFileFields(): ViewFileFieldsConfig {
+  return {
+    fileName: { visible: true, mask: 'none' },
+    originName: { visible: true, mask: 'none' },
+    size: { visible: true },
+  }
+}
+const fileFields = ref<ViewFileFieldsConfig>(defaultFileFields())
 
 const limitPeopleOn = computed(() => Number(props.people) === 1)
 
@@ -97,6 +108,14 @@ function syncVisibleFields(serverFields: ViewVisibleField[]) {
   }))
 }
 
+function applyStoredVisible() {
+  const stored = storedVisibleFields.value
+  syncVisibleFields(stored)
+  checkedFieldNames.value = stored
+    .map(v => v.name)
+    .filter(name => availableFields.value.includes(name))
+}
+
 async function load() {
   if (!props.k)
     return
@@ -112,11 +131,8 @@ async function load() {
     const cfg = data.viewConfig
     password.value = cfg?.password || ''
     needPassword.value = !!cfg?.password
-    const storedVisible = Array.isArray(cfg?.visibleFields) ? cfg.visibleFields : []
-    syncVisibleFields(storedVisible)
-    checkedFieldNames.value = storedVisible
-      .map(v => v.name)
-      .filter(name => availableFields.value.includes(name))
+    storedVisibleFields.value = Array.isArray(cfg?.visibleFields) ? cfg.visibleFields : []
+    applyStoredVisible()
     roster.value = {
       enabled: !!cfg?.roster?.enabled,
       columns: Array.isArray(cfg?.roster?.columns) && cfg.roster.columns.length
@@ -124,6 +140,20 @@ async function load() {
         : ['status', 'submitDate'],
       nameMask: cfg?.roster?.nameMask || 'head_tail',
       showUnsubmitted: cfg?.roster?.showUnsubmitted !== false,
+    }
+    const ff = cfg?.fileFields
+    fileFields.value = {
+      fileName: {
+        visible: ff?.fileName?.visible !== false,
+        mask: ff?.fileName?.mask || 'none',
+      },
+      originName: {
+        visible: ff?.originName?.visible !== false,
+        mask: ff?.originName?.mask || 'none',
+      },
+      size: {
+        visible: ff?.size?.visible !== false,
+      },
     }
   }
   catch {
@@ -141,18 +171,20 @@ watch(() => props.k, load, { immediate: true })
 watch(
   () => props.info,
   () => {
-    if (!visibleFields.value.length) {
-      syncVisibleFields([])
+    // 用户已经在本地编辑过：仅根据当前表单字段集裁剪，并保留用户已选/已改 mask
+    if (ready.value && visibleFields.value.length) {
+      const existing = new Map(visibleFields.value.map(v => [v.name, v.mask]))
+      visibleFields.value = availableFields.value.map(name => ({
+        name,
+        mask: existing.get(name) ?? defaultMaskFor(name),
+      }))
+      checkedFieldNames.value = checkedFieldNames.value.filter(n =>
+        availableFields.value.includes(n),
+      )
       return
     }
-    const existing = new Map(visibleFields.value.map(v => [v.name, v.mask]))
-    visibleFields.value = availableFields.value.map(name => ({
-      name,
-      mask: existing.get(name) ?? defaultMaskFor(name),
-    }))
-    checkedFieldNames.value = checkedFieldNames.value.filter(n =>
-      availableFields.value.includes(n),
-    )
+    // 首次加载阶段：以服务端保存的 stored 配置为准重新应用（修复刷新后勾选状态丢失）
+    applyStoredVisible()
   },
 )
 
@@ -203,6 +235,19 @@ function buildViewConfigObject(): ViewConfig {
       nameMask: roster.value.nameMask,
       showUnsubmitted: roster.value.showUnsubmitted,
     },
+    fileFields: {
+      fileName: {
+        visible: fileFields.value.fileName.visible,
+        mask: fileFields.value.fileName.mask,
+      },
+      originName: {
+        visible: fileFields.value.originName.visible,
+        mask: fileFields.value.originName.mask,
+      },
+      size: {
+        visible: fileFields.value.size.visible,
+      },
+    },
   }
 }
 
@@ -247,6 +292,18 @@ function handleCopyLink() {
     .catch(() => ElMessage.error('复制失败，请手动复制'))
 }
 
+function handleCopyPassword() {
+  const t = (password.value || '').trim()
+  if (!t) {
+    ElMessage.warning('当前没有可复制的访问密码')
+    return
+  }
+  navigator.clipboard
+    .writeText(t)
+    .then(() => ElMessage.success('已复制访问密码'))
+    .catch(() => ElMessage.error('复制失败，请手动复制'))
+}
+
 function openPreview() {
   window.open(`/task-view/${props.k}`)
 }
@@ -269,6 +326,24 @@ function regeneratePassword() {
           <el-input :model-value="viewUrl" readonly size="small" class="panel-tip-link-input">
             <template #append>
               <el-button @click="handleCopyLink">
+                复制
+              </el-button>
+            </template>
+          </el-input>
+        </div>
+        <div v-if="enabled && needPassword" class="panel-tip-link">
+          <el-input
+            :model-value="password"
+            readonly
+            size="small"
+            class="panel-tip-link-input"
+            placeholder="访问密码"
+          >
+            <template #prepend>
+              密码
+            </template>
+            <template #append>
+              <el-button @click="handleCopyPassword">
                 复制
               </el-button>
             </template>
@@ -299,9 +374,7 @@ function regeneratePassword() {
         <div v-show="needPassword" class="setting-footer">
           <el-input
             v-model="password"
-            type="password"
             placeholder="请输入访问密码"
-            show-password
             maxlength="64"
             show-word-limit
           >
@@ -334,7 +407,6 @@ function regeneratePassword() {
                 :label="field.name"
               >
                 {{ field.name }}
-                <span v-if="field.name === (bindField || '姓名')" class="field-bind-hint">绑定</span>
               </el-checkbox>
               <el-select
                 v-model="field.mask"
@@ -350,6 +422,59 @@ function regeneratePassword() {
                 />
               </el-select>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-main">
+          <div>
+            <h5>文件字段</h5>
+            <p>控制查看页是否展示「文件名 / 原文件名 / 大小」三列，并可对文本字段设置脱敏方式。</p>
+          </div>
+        </div>
+        <div class="setting-footer">
+          <div class="field-row">
+            <el-checkbox v-model="fileFields.fileName.visible">
+              文件名
+            </el-checkbox>
+            <el-select
+              v-model="fileFields.fileName.mask"
+              :disabled="!fileFields.fileName.visible"
+              size="small"
+              style="width: 180px;"
+            >
+              <el-option
+                v-for="opt in MASK_OPTIONS"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+          </div>
+          <div class="field-row">
+            <el-checkbox v-model="fileFields.originName.visible">
+              原文件名
+            </el-checkbox>
+            <el-select
+              v-model="fileFields.originName.mask"
+              :disabled="!fileFields.originName.visible"
+              size="small"
+              style="width: 180px;"
+            >
+              <el-option
+                v-for="opt in MASK_OPTIONS"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+          </div>
+          <div class="field-row">
+            <el-checkbox v-model="fileFields.size.visible">
+              文件大小
+            </el-checkbox>
+            <span class="field-tip">数值字段，仅支持是否展示</span>
           </div>
         </div>
       </div>
@@ -487,13 +612,9 @@ function regeneratePassword() {
   border-radius: 8px;
 }
 
-.field-bind-hint {
-  margin-left: 6px;
+.field-tip {
   font-size: 12px;
-  color: #67c23a;
-  background: rgba(103, 194, 58, 0.1);
-  padding: 1px 6px;
-  border-radius: 4px;
+  color: #909399;
 }
 
 .form-line {
