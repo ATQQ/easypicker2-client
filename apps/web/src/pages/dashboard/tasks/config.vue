@@ -261,6 +261,8 @@ watch(activeInfo, (tab) => {
             v-show="activeInfo === 'view'"
             :k="activeTask.key"
             :info="taskInfo.info"
+            :people="taskInfo.people"
+            :bind-field="taskInfo.bindField"
           />
         </div>
       </main>

@@ -4,6 +4,7 @@ import {
   Post,
   ReqBody,
   ReqParams,
+  ReqQuery,
   RouterController,
 } from 'flash-wolves'
 import { TaskViewService } from '@/service'
@@ -38,9 +39,18 @@ export default class TaskViewController {
   }
 
   @Get('/:key/progress')
-  async getProgress(@ReqParams('key') key: string) {
+  async getProgress(
+    @ReqParams('key') key: string,
+    @ReqQuery('tab') tab: string,
+    @ReqQuery('pageIndex') pageIndex: string,
+    @ReqQuery('pageSize') pageSize: string,
+  ) {
     try {
-      return await this.taskViewService.getProgress(key)
+      return await this.taskViewService.getProgress(key, {
+        tab,
+        pageIndex: pageIndex ? Number(pageIndex) : undefined,
+        pageSize: pageSize ? Number(pageSize) : undefined,
+      })
     }
     catch (error) {
       return wrapperCatchError(error)

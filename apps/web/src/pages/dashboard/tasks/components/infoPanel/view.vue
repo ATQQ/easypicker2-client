@@ -1,5 +1,10 @@
 <script lang="ts" setup>
-import type { MaskMode, ViewVisibleField } from '@/apis/modules/taskView'
+import type {
+  MaskMode,
+  RosterConfig,
+  ViewConfig,
+  ViewVisibleField,
+} from '@/apis/modules/taskView'
 import { ElMessage } from 'element-plus'
 import { computed, nextTick, ref, watch } from 'vue'
 import { TaskApi, TaskViewApi } from '@/apis'
@@ -15,24 +20,58 @@ const props = defineProps({
     type: [String, Array] as unknown as () => string | InfoItem[],
     default: '',
   },
+  people: {
+    type: Number,
+    default: 0,
+  },
+  bindField: {
+    type: String,
+    default: '姓名',
+  },
 })
 
 const MASK_OPTIONS: { label: string, value: MaskMode }[] = [
   { label: '不脱敏', value: 'none' },
   { label: '只显示首位', value: 'head1' },
-  { label: '只显示末四位', value: 'tail4' },
-  { label: '全部 ****', value: 'mask_all' },
+  { label: '首尾可见', value: 'head_tail' },
+  { label: '尾部可见（自适应）', value: 'tail' },
 ]
+
+const ROSTER_COLUMN_OPTIONS = [
+  { label: '状态（已提交/未提交）', value: 'status' },
+  { label: '提交时间', value: 'submitDate' },
+]
+
+const DEFAULT_PASSWORD_LENGTH = 6
+
+function genPassword(len = DEFAULT_PASSWORD_LENGTH) {
+  const chars = 'abcdefghijkmnpqrstuvwxyz23456789'
+  let out = ''
+  for (let i = 0; i < len; i += 1) {
+    out += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return out
+}
 
 const loading = ref(false)
 const saving = ref(false)
 const ready = ref(false)
+
 const enabled = ref(false)
 const needPassword = ref(false)
 const password = ref('')
-const showUnsubmitted = ref(true)
-const showFileNames = ref(false)
+
 const visibleFields = ref<ViewVisibleField[]>([])
+const checkedFieldNames = ref<string[]>([])
+
+const roster = ref<RosterConfig>({
+  enabled: false,
+  columns: ['status', 'submitDate'],
+  nameMask: 'head_tail',
+  showUnsubmitted: true,
+})
+
+const limitPeopleOn = computed(() => Number(props.people) === 1)
 
 const availableFields = computed<string[]>(() => {
   const items = parseInfo(props.info) as InfoItem[]
@@ -41,34 +80,21 @@ const availableFields = computed<string[]>(() => {
 
 const viewUrl = computed(() => (props.k ? `${location.origin}/task-view/${props.k}` : ''))
 
+function defaultMaskFor(name: string): MaskMode {
+  return name === (props.bindField || '姓名') ? 'head_tail' : 'tail'
+}
+
 function syncVisibleFields(serverFields: ViewVisibleField[]) {
   const fromServer = new Map<string, MaskMode>()
   for (const f of serverFields) {
     if (f && f.name) {
-      fromServer.set(f.name, f.mask || 'none')
+      fromServer.set(f.name, f.mask)
     }
   }
   visibleFields.value = availableFields.value.map(name => ({
     name,
-    mask: fromServer.get(name) ?? 'none',
+    mask: fromServer.get(name) ?? defaultMaskFor(name),
   }))
-}
-
-const checkedFieldNames = ref<string[]>([])
-
-function parseStoredVisible(raw: string | null | undefined): ViewVisibleField[] {
-  if (!raw)
-    return []
-  try {
-    const data = JSON.parse(raw)
-    const list = Array.isArray(data?.fields) ? data.fields : []
-    return list
-      .filter((v: any) => v && typeof v.name === 'string')
-      .map((v: any) => ({ name: v.name, mask: (v.mask || 'none') as MaskMode }))
-  }
-  catch {
-    return []
-  }
 }
 
 async function load() {
@@ -78,25 +104,27 @@ async function load() {
   ready.value = false
   try {
     const res = await TaskViewApi.getViewConfig(props.k)
-    const cfg = (res as unknown as {
-      data: {
-        viewEnabled: boolean
-        viewPassword: string
-        viewVisibleFields: string
-        viewShowUnsubmitted: boolean
-        viewShowFileNames: boolean
-      }
-    }).data || ({} as any)
-    enabled.value = !!cfg.viewEnabled
-    password.value = cfg.viewPassword || ''
-    needPassword.value = !!cfg.viewPassword
-    showUnsubmitted.value = cfg.viewShowUnsubmitted !== false
-    showFileNames.value = !!cfg.viewShowFileNames
-    const stored = parseStoredVisible(cfg.viewVisibleFields)
-    syncVisibleFields(stored)
-    checkedFieldNames.value = stored.map(v => v.name).filter(name =>
-      availableFields.value.includes(name),
-    )
+    const data = ((res as any)?.data ?? res) as {
+      viewEnabled: boolean
+      viewConfig: ViewConfig
+    }
+    enabled.value = !!data.viewEnabled
+    const cfg = data.viewConfig
+    password.value = cfg?.password || ''
+    needPassword.value = !!cfg?.password
+    const storedVisible = Array.isArray(cfg?.visibleFields) ? cfg.visibleFields : []
+    syncVisibleFields(storedVisible)
+    checkedFieldNames.value = storedVisible
+      .map(v => v.name)
+      .filter(name => availableFields.value.includes(name))
+    roster.value = {
+      enabled: !!cfg?.roster?.enabled,
+      columns: Array.isArray(cfg?.roster?.columns) && cfg.roster.columns.length
+        ? [...cfg.roster.columns]
+        : ['status', 'submitDate'],
+      nameMask: cfg?.roster?.nameMask || 'head_tail',
+      showUnsubmitted: cfg?.roster?.showUnsubmitted !== false,
+    }
   }
   catch {
     ElMessage.error('查看页配置加载失败')
@@ -109,6 +137,7 @@ async function load() {
 }
 
 watch(() => props.k, load, { immediate: true })
+
 watch(
   () => props.info,
   () => {
@@ -119,7 +148,7 @@ watch(
     const existing = new Map(visibleFields.value.map(v => [v.name, v.mask]))
     visibleFields.value = availableFields.value.map(name => ({
       name,
-      mask: existing.get(name) ?? 'none',
+      mask: existing.get(name) ?? defaultMaskFor(name),
     }))
     checkedFieldNames.value = checkedFieldNames.value.filter(n =>
       availableFields.value.includes(n),
@@ -127,7 +156,7 @@ watch(
   },
 )
 
-// 启用开关：变更即时落库；只下发 viewEnabled 一个字段，避免影响其他正在编辑的字段
+// 启用开关：变更即时落库。如果是从「未启用 → 启用」且尚未设置密码，自动生成 6 位密码。
 watch(enabled, async (next, prev) => {
   if (!ready.value)
     return
@@ -136,7 +165,17 @@ watch(enabled, async (next, prev) => {
   if (!props.k)
     return
   try {
-    await TaskApi.updateTaskMoreInfo(props.k, { viewEnabled: next })
+    if (next && !password.value) {
+      // 默认开启访问密码，自动生成
+      password.value = genPassword()
+      needPassword.value = true
+    }
+    const payload: TaskApiTypes.TaskInfo = { viewEnabled: next }
+    if (next) {
+      // 同步带上当前内存配置，避免首次启用时配置仍为空
+      payload.viewConfig = buildViewConfigObject()
+    }
+    await TaskApi.updateTaskMoreInfo(props.k, payload)
     ElMessage.success({
       message: next ? '已开启分享查看' : '已关闭分享查看',
       duration: 1500,
@@ -151,27 +190,33 @@ watch(enabled, async (next, prev) => {
   }
 })
 
-function buildPayload(): TaskApiTypes.TaskInfo {
-  const selected = visibleFields.value.filter(v =>
+function buildViewConfigObject(): ViewConfig {
+  const selectedFields = visibleFields.value.filter(v =>
     checkedFieldNames.value.includes(v.name),
   )
-  const payload: TaskApiTypes.TaskInfo = {
-    viewEnabled: enabled.value,
-    viewShowUnsubmitted: showUnsubmitted.value,
-    viewShowFileNames: showFileNames.value,
-    viewVisibleFields: JSON.stringify({ fields: selected }),
+  return {
+    password: needPassword.value ? (password.value || '').trim() : '',
+    visibleFields: selectedFields,
+    roster: {
+      enabled: limitPeopleOn.value && roster.value.enabled,
+      columns: [...roster.value.columns],
+      nameMask: roster.value.nameMask,
+      showUnsubmitted: roster.value.showUnsubmitted,
+    },
   }
+}
+
+function buildPayload(): TaskApiTypes.TaskInfo {
   if (needPassword.value) {
-    const value = (password.value || '').trim()
-    if (value.length < 4 || value.length > 64) {
+    const t = (password.value || '').trim()
+    if (t.length < 4 || t.length > 64) {
       throw new Error('查看密码需为 4-64 位')
     }
-    payload.viewPassword = value
   }
-  else {
-    payload.viewPassword = ''
+  return {
+    viewEnabled: enabled.value,
+    viewConfig: buildViewConfigObject(),
   }
-  return payload
 }
 
 async function handleSave() {
@@ -205,6 +250,10 @@ function handleCopyLink() {
 function openPreview() {
   window.open(`/task-view/${props.k}`)
 }
+
+function regeneratePassword() {
+  password.value = genPassword()
+}
 </script>
 
 <template>
@@ -213,8 +262,8 @@ function openPreview() {
       <div class="panel-tip-content">
         <h4>分享查看页</h4>
         <p>
-          开启后，任何持有以下链接的人可以查看实时收集情况。<br>
-          可独立配置可见字段、脱敏方式、是否显示未提交名单与文件名，并可选启用访问密码。
+          开启后，任何持有以下链接的人可访问实时收集情况。<br>
+          未启用名单时默认展示「文件提交记录」；限制名单时可额外开启「名单」Tab，并可单独配置展示列与脱敏方式。
         </p>
         <div class="panel-tip-link">
           <el-input :model-value="viewUrl" readonly size="small" class="panel-tip-link-input">
@@ -232,7 +281,7 @@ function openPreview() {
       <div class="setting-main">
         <div>
           <h5>启用分享查看页</h5>
-          <p>关闭后查看页直接返回「未开启」。</p>
+          <p>关闭后查看页直接返回「未开启」。首次开启会自动生成 6 位访问密码。</p>
         </div>
         <el-switch v-model="enabled" />
       </div>
@@ -255,32 +304,21 @@ function openPreview() {
             show-password
             maxlength="64"
             show-word-limit
-          />
+          >
+            <template #append>
+              <el-button @click="regeneratePassword">
+                随机
+              </el-button>
+            </template>
+          </el-input>
         </div>
       </div>
 
       <div class="setting-card">
         <div class="setting-main">
           <div>
-            <h5>显示选项</h5>
-            <p>控制查看页是否展示未提交人员名单、是否展示文件名。</p>
-          </div>
-        </div>
-        <div class="setting-footer">
-          <el-checkbox v-model="showUnsubmitted">
-            显示未提交名单（仅限制名单模式下生效）
-          </el-checkbox>
-          <el-checkbox v-model="showFileNames">
-            显示已提交文件名
-          </el-checkbox>
-        </div>
-      </div>
-
-      <div class="setting-card">
-        <div class="setting-main">
-          <div>
-            <h5>可见字段与脱敏方式</h5>
-            <p>勾选要在查看页展示的表单字段，并为每个字段选择脱敏方式。</p>
+            <h5>文件提交记录 Tab</h5>
+            <p>勾选要展示的表单字段（按文件平铺），并为每个字段选择脱敏方式。</p>
           </div>
         </div>
         <div class="setting-footer">
@@ -296,12 +334,13 @@ function openPreview() {
                 :label="field.name"
               >
                 {{ field.name }}
+                <span v-if="field.name === (bindField || '姓名')" class="field-bind-hint">绑定</span>
               </el-checkbox>
               <el-select
                 v-model="field.mask"
                 :disabled="!checkedFieldNames.includes(field.name)"
                 size="small"
-                style="width: 160px;"
+                style="width: 180px;"
               >
                 <el-option
                   v-for="opt in MASK_OPTIONS"
@@ -311,6 +350,46 @@ function openPreview() {
                 />
               </el-select>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="limitPeopleOn" class="setting-card">
+        <div class="setting-main">
+          <div>
+            <h5>名单 Tab</h5>
+            <p>启用后查看页将出现独立的「名单」Tab，展示已配置的提交人员名单。</p>
+          </div>
+          <el-switch v-model="roster.enabled" />
+        </div>
+        <div v-show="roster.enabled" class="setting-footer">
+          <div class="form-line">
+            <label class="form-label">展示列</label>
+            <el-checkbox-group v-model="roster.columns">
+              <el-checkbox
+                v-for="opt in ROSTER_COLUMN_OPTIONS"
+                :key="opt.value"
+                :label="opt.value"
+              >
+                {{ opt.label }}
+              </el-checkbox>
+            </el-checkbox-group>
+          </div>
+          <div class="form-line">
+            <label class="form-label">姓名脱敏</label>
+            <el-select v-model="roster.nameMask" size="small" style="width: 200px;">
+              <el-option
+                v-for="opt in MASK_OPTIONS"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+          </div>
+          <div class="form-line">
+            <el-checkbox v-model="roster.showUnsubmitted">
+              展示未提交人员
+            </el-checkbox>
           </div>
         </div>
       </div>
@@ -408,6 +487,28 @@ function openPreview() {
   border-radius: 8px;
 }
 
+.field-bind-hint {
+  margin-left: 6px;
+  font-size: 12px;
+  color: #67c23a;
+  background: rgba(103, 194, 58, 0.1);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.form-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.form-label {
+  width: 80px;
+  color: #606266;
+  font-size: 13px;
+}
+
 .action-row {
   display: flex;
   justify-content: flex-end;
@@ -426,6 +527,10 @@ function openPreview() {
     .el-button {
       flex: 1;
     }
+  }
+
+  .form-label {
+    width: auto;
   }
 }
 </style>

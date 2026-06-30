@@ -1,5 +1,6 @@
 import type { Context } from 'flash-wolves'
 import type { TaskInfo } from '@/db/entity'
+import type { ViewConfig } from '@/utils/viewConfig'
 import fs from 'node:fs'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { In } from 'typeorm'
@@ -14,6 +15,11 @@ import { deleteObjByKey } from '@/utils/qiniuUtil'
 import { isLocalStorageMode } from '@/utils/storageMode'
 import { getUniqueKey } from '@/utils/stringUtil'
 import { getUserInfo } from '@/utils/userUtil'
+import {
+  DEFAULT_VIEW_CONFIG,
+  parseViewConfig,
+  stringifyViewConfig,
+} from '@/utils/viewConfig'
 
 @Provide()
 export default class TaskInfoService {
@@ -253,10 +259,7 @@ export default class TaskInfoService {
       bindField,
       submitPassword,
       viewEnabled,
-      viewPassword,
-      viewVisibleFields,
-      viewShowUnsubmitted,
-      viewShowFileNames,
+      viewConfig,
     } = payload
     let { share } = payload
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
@@ -310,56 +313,32 @@ export default class TaskInfoService {
     if (viewEnabled !== undefined) {
       normalizedViewEnabled = viewEnabled ? BOOLEAN.TRUE : BOOLEAN.FALSE
     }
-    let normalizedViewPassword: string | null | undefined
-    if (viewPassword !== undefined) {
-      if (viewPassword === null) {
-        normalizedViewPassword = null
+    let normalizedViewConfig: string | undefined
+    if (viewConfig !== undefined) {
+      if (viewConfig === null) {
+        normalizedViewConfig = stringifyViewConfig({
+          ...DEFAULT_VIEW_CONFIG,
+          roster: { ...DEFAULT_VIEW_CONFIG.roster },
+        })
       }
-      else if (typeof viewPassword === 'string') {
-        const t = viewPassword.trim()
-        if (t === '') {
-          normalizedViewPassword = null
-        }
-        else {
-          if (t.length < 4 || t.length > 64) {
-            throw publicError.request.errorParams
-          }
-          normalizedViewPassword = t
-        }
+      else if (typeof viewConfig === 'string') {
+        normalizedViewConfig = stringifyViewConfig(parseViewConfig(viewConfig))
+      }
+      else if (typeof viewConfig === 'object') {
+        normalizedViewConfig = stringifyViewConfig(
+          parseViewConfig(JSON.stringify(viewConfig)),
+        )
       }
       else {
         throw publicError.request.errorParams
       }
-    }
-    let normalizedViewVisibleFields: string | null | undefined
-    if (viewVisibleFields !== undefined) {
-      if (viewVisibleFields === null || viewVisibleFields === '') {
-        normalizedViewVisibleFields = null
-      }
-      else if (typeof viewVisibleFields === 'string') {
-        // 客户端已序列化
-        try {
-          JSON.parse(viewVisibleFields)
-          normalizedViewVisibleFields = viewVisibleFields
-        }
-        catch {
+      // 密码长度校验（与提交密码一致）
+      const parsedAfter = parseViewConfig(normalizedViewConfig)
+      if (parsedAfter.password) {
+        if (parsedAfter.password.length < 4 || parsedAfter.password.length > 64) {
           throw publicError.request.errorParams
         }
       }
-      else if (typeof viewVisibleFields === 'object') {
-        normalizedViewVisibleFields = JSON.stringify(viewVisibleFields)
-      }
-      else {
-        throw publicError.request.errorParams
-      }
-    }
-    let normalizedViewShowUnsubmitted: number | undefined
-    if (viewShowUnsubmitted !== undefined) {
-      normalizedViewShowUnsubmitted = viewShowUnsubmitted ? BOOLEAN.TRUE : BOOLEAN.FALSE
-    }
-    let normalizedViewShowFileNames: number | undefined
-    if (viewShowFileNames !== undefined) {
-      normalizedViewShowFileNames = viewShowFileNames ? BOOLEAN.TRUE : BOOLEAN.FALSE
     }
 
     const options = {
@@ -374,10 +353,7 @@ export default class TaskInfoService {
       bindField,
       submitPassword: normalizedSubmitPassword,
       viewEnabled: normalizedViewEnabled,
-      viewPassword: normalizedViewPassword,
-      viewVisibleFields: normalizedViewVisibleFields,
-      viewShowUnsubmitted: normalizedViewShowUnsubmitted,
-      viewShowFileNames: normalizedViewShowFileNames,
+      viewConfig: normalizedViewConfig,
     }
     if (bindField === '') {
       options.bindField = undefined
@@ -410,10 +386,7 @@ export default class TaskInfoService {
         bindField: '设置绑定字段',
         submitPassword: '设置提交密码',
         viewEnabled: '切换分享查看开关',
-        viewPassword: '设置查看页密码',
-        viewVisibleFields: '设置查看页可见字段',
-        viewShowUnsubmitted: '切换查看页未提交显示',
-        viewShowFileNames: '切换查看页文件名显示',
+        viewConfig: '更新查看页配置',
       }
 
       if (task) {
@@ -421,8 +394,11 @@ export default class TaskInfoService {
         if (safePayload.submitPassword) {
           safePayload.submitPassword = '***'
         }
-        if (safePayload.viewPassword) {
-          safePayload.viewPassword = '***'
+        if (safePayload.viewConfig && typeof safePayload.viewConfig === 'object') {
+          const v = safePayload.viewConfig as Record<string, unknown>
+          if (v.password) {
+            safePayload.viewConfig = { ...v, password: '***' }
+          }
         }
         this.behaviorService.add(
           'taskInfo',
@@ -449,14 +425,10 @@ export default class TaskInfoService {
       throw publicError.request.errorParams
     }
     const info = await this.taskInfoRepository.findOne({ taskKey: key })
+    const config: ViewConfig = parseViewConfig(info?.viewConfig)
     return {
       viewEnabled: Number(info?.viewEnabled) === Number(BOOLEAN.TRUE),
-      viewPassword: info?.viewPassword || '',
-      viewVisibleFields: info?.viewVisibleFields || '',
-      viewShowUnsubmitted: info?.viewShowUnsubmitted === undefined
-        ? true
-        : Number(info.viewShowUnsubmitted) === Number(BOOLEAN.TRUE),
-      viewShowFileNames: Number(info?.viewShowFileNames) === Number(BOOLEAN.TRUE),
+      viewConfig: config,
     }
   }
 
@@ -471,10 +443,7 @@ export default class TaskInfoService {
       ddl: null,
       submitPassword: null,
       viewEnabled: BOOLEAN.FALSE,
-      viewPassword: null,
-      viewVisibleFields: null,
-      viewShowUnsubmitted: BOOLEAN.TRUE,
-      viewShowFileNames: BOOLEAN.FALSE,
+      viewConfig: null,
     }
     Object.assign(taskInfo, data)
 

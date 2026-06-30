@@ -188,14 +188,8 @@ declare namespace TaskApiTypes {
     passwordValid?: boolean
     /** 分享查看页是否启用 */
     viewEnabled?: boolean
-    /** 分享查看页访问密码（仅所有者通过 view-config 接口可见） */
-    viewPassword?: string | null
-    /** 分享查看页可见字段配置（JSON 字符串） */
-    viewVisibleFields?: string | null
-    /** 是否在分享查看页显示未提交名单 */
-    viewShowUnsubmitted?: boolean
-    /** 是否在分享查看页显示文件名 */
-    viewShowFileNames?: boolean
+    /** 分享查看页配置（JSON 字符串 or 对象，前端构造时传对象） */
+    viewConfig?: string | Record<string, any> | null
   }
 
   type getList = ResponseData<{ tasks: TaskItem[] }>

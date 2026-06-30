@@ -33,10 +33,7 @@ export function insertTaskInfo(taskInfo: TaskInfo) {
     shareKey: getUniqueKey(),
     ddl: null,
     viewEnabled: BOOLEAN.FALSE,
-    viewPassword: null,
-    viewVisibleFields: null,
-    viewShowUnsubmitted: BOOLEAN.TRUE,
-    viewShowFileNames: BOOLEAN.FALSE,
+    viewConfig: null,
     ...taskInfo,
   }
   const { sql, params } = insertTableByModel('task_info', data)
