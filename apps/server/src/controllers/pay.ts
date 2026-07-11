@@ -10,7 +10,6 @@ import {
   ReqBody,
   ReqParams,
   ReqQuery,
-  ReqUserInfo,
   Response,
   RouterController,
 } from 'flash-wolves'
@@ -18,6 +17,7 @@ import { alipayConfig } from '@/config'
 import { addBehavior } from '@/db/logDb'
 import { PaymentOrderRepository } from '@/db/paymentOrderDb'
 import { UserRepository } from '@/db/userDb'
+import { ReqUserInfo } from '@/decorator'
 import { AlipayService } from '@/service'
 import { getUniqueKey } from '@/utils/stringUtil'
 
@@ -36,6 +36,8 @@ function normalizeAmount(input: unknown): string | null {
 }
 
 function htmlRedirect(res: ServerResponse, url: string) {
+  if (res.headersSent)
+    return
   const safe = String(url).replace(/"/g, '&quot;')
   res.writeHead(302, {
     'Content-Type': 'text/html; charset=utf-8',
@@ -91,13 +93,11 @@ export default class PayController {
     if (alipayConfig.dailyLimit > 0) {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      const todayOrders = await this.paymentOrderRepository.findMany({
-        userId: userInfo.id,
-        channel: 'alipay',
-      } as any)
-      const usedToday = (todayOrders || [])
-        .filter(o => o.createTime && new Date(o.createTime as any) >= today && o.status !== 'closed')
-        .reduce((sum, o) => sum + Number(o.amount || 0), 0)
+      const usedToday = await this.paymentOrderRepository.sumAmountToday(
+        userInfo.id,
+        'alipay',
+        today,
+      )
       if (usedToday + amountNum > alipayConfig.dailyLimit) {
         return Response.fail(400, `当日累计充值超出上限 ${alipayConfig.dailyLimit} 元`)
       }
@@ -187,6 +187,8 @@ export default class PayController {
   async notify(req: FWRequest) {
     const res = this.ctx.res
     const writePlain = (text: string) => {
+      if (res.headersSent)
+        return
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
       res.end(text)
     }
@@ -214,7 +216,8 @@ export default class PayController {
       writePlain('fail')
       return
     }
-    const order = await this.paymentOrderRepository.findOne({ outTradeNo } as any)
+    // 加悲观写锁查询订单，防止并发 notify 重复充值
+    const order = await this.paymentOrderRepository.findOneWithLock({ outTradeNo } as any)
     if (!order) {
       writePlain('fail')
       return
@@ -234,38 +237,71 @@ export default class PayController {
       writePlain('success')
       return
     }
+    // 交易关闭
+    if (tradeStatus === 'TRADE_CLOSED') {
+      await this.paymentOrderRepository.updateSpecifyFields(
+        { id: order.id },
+        { status: 'closed' },
+      )
+      addBehavior(req, {
+        module: 'pay',
+        msg: `支付宝订单关闭 ${outTradeNo}`,
+        data: { outTradeNo, tradeNo },
+      })
+      writePlain('success')
+      return
+    }
     if (tradeStatus === 'TRADE_SUCCESS' || tradeStatus === 'TRADE_FINISHED') {
-      order.status = 'paid'
-      order.tradeNo = tradeNo || order.tradeNo
-      order.paidTime = new Date()
-      try {
-        order.rawNotify = JSON.stringify(params).slice(0, 4000)
-      }
-      catch {
-        order.rawNotify = null
-      }
-      await this.paymentOrderRepository.update(order as PaymentOrderEntity)
+      const rawNotify = (() => {
+        try {
+          return JSON.stringify(params).slice(0, 4000)
+        }
+        catch {
+          return null
+        }
+      })()
+      // 使用 updateSpecifyFields 避免 updateTime 被 TypeORM save() 覆盖
+      await this.paymentOrderRepository.updateSpecifyFields(
+        { id: order.id as any },
+        {
+          status: 'paid',
+          tradeNo: tradeNo || order.tradeNo,
+          paidTime: new Date() as any,
+          rawNotify,
+        },
+      )
 
-      // 给用户钱包充值
+      // 原子增量更新钱包余额，避免并发写覆盖
+      const delta = Number(order.amount || 0)
+      await this.userRepository.updateSpecifyFields(
+        { id: order.userId },
+        { wallet: () => `wallet + ${delta.toFixed(2)}` } as any,
+      )
+
+      // 获取用户信息用于日志
       const user = await this.userRepository.findOne({ id: order.userId } as any)
-      if (user) {
-        const oldWallet = Number(user.wallet || 0)
-        const newWallet = oldWallet + Number(order.amount || 0)
-        user.wallet = newWallet.toFixed(2)
-        await this.userRepository.update(user)
-        addBehavior(req, {
-          module: 'pay',
-          msg: `支付宝充值到账 ${outTradeNo} 用户${user.account} ${oldWallet} => ${newWallet}`,
-          data: { outTradeNo, userId: user.id, delta: order.amount, tradeNo },
-        })
-      }
+      addBehavior(req, {
+        module: 'pay',
+        msg: `支付宝充值到账 ${outTradeNo} 用户${user?.account || ''} 金额 ${order.amount}`,
+        data: { outTradeNo, userId: order.userId, delta: order.amount, tradeNo },
+      })
       writePlain('success')
       return
     }
     // 其他状态：记录 raw、维持 pending
     try {
-      order.rawNotify = JSON.stringify(params).slice(0, 4000)
-      await this.paymentOrderRepository.update(order as PaymentOrderEntity)
+      const rawNotify = (() => {
+        try {
+          return JSON.stringify(params).slice(0, 4000)
+        }
+        catch {
+          return null
+        }
+      })()
+      await this.paymentOrderRepository.updateSpecifyFields(
+        { id: order.id as any },
+        { rawNotify },
+      )
     }
     catch { /* ignore */ }
     writePlain('success')
@@ -278,6 +314,8 @@ export default class PayController {
   @Get('alipay/return', { CORS: true })
   async pageReturn(@ReqQuery() query: any) {
     const res = this.ctx.res
+    if (res.headersSent)
+      return
     const outTradeNo = String(query?.out_trade_no || '')
     const referer = this.ctx.req.headers.referer || ''
     // 默认跳转到 profile 页

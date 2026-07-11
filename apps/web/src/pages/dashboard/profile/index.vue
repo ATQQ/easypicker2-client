@@ -87,6 +87,7 @@ async function pollOrderStatus(outTradeNo: string, maxSeconds = 300) {
       return
     if ((Date.now() - start) / 1000 > maxSeconds) {
       stopPolling()
+      ElMessage.warning('支付确认超时，请手动刷新查看订单状态')
       return
     }
     try {
