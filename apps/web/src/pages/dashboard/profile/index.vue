@@ -3,19 +3,21 @@ import {
   ChatDotSquare,
   Lock,
   Message,
+  Money,
   Refresh,
   User,
 } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { PublicApi, UserApi } from '@/apis'
+import { PayApi, PublicApi, UserApi } from '@/apis'
 import { useSiteConfig } from '@/composables'
 import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
 import { rEmail, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
 
+const $route = useRoute()
 const $router = useRouter()
 const $store = useStore()
 const { value: siteConfig } = useSiteConfig('auth')
@@ -32,6 +34,125 @@ const profile = reactive<UserApiTypes.UserProfile>({
   emailVerified: false,
   notifyOnSubmit: false,
 })
+
+const wallet = ref<string>('0.00')
+
+const alipayStatus = reactive({
+  enabled: false,
+  minAmount: 1,
+  maxAmount: 5000,
+  dailyLimit: 20000,
+  env: 'sandbox' as 'sandbox' | 'production',
+  orderExpireMinutes: 30,
+})
+
+const rechargeAmount = ref<number | null>(null)
+const rechargeSubmitting = ref(false)
+const activeOutTradeNo = ref<string>('')
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+}
+
+async function refreshWallet() {
+  try {
+    const res = await UserApi.usage()
+    if (res?.data) {
+      wallet.value = String(res.data.wallet ?? '0.00')
+    }
+  }
+  catch { /* ignore */ }
+}
+
+async function loadAlipayStatus() {
+  try {
+    const res = await PayApi.getAlipayStatus()
+    if (res?.data) {
+      Object.assign(alipayStatus, res.data)
+    }
+  }
+  catch { /* ignore */ }
+}
+
+async function pollOrderStatus(outTradeNo: string, maxSeconds = 300) {
+  stopPolling()
+  activeOutTradeNo.value = outTradeNo
+  const start = Date.now()
+  pollTimer = setInterval(async () => {
+    if (!activeOutTradeNo.value)
+      return
+    if ((Date.now() - start) / 1000 > maxSeconds) {
+      stopPolling()
+      return
+    }
+    try {
+      const res = await PayApi.getAlipayOrder(outTradeNo)
+      const status = res?.data?.status
+      if (status === 'paid') {
+        stopPolling()
+        ElMessage.success(`充值成功 ￥${res.data.amount}`)
+        await refreshWallet()
+      }
+      else if (status === 'closed') {
+        stopPolling()
+        ElMessage.warning('订单已关闭')
+      }
+    }
+    catch { /* ignore */ }
+  }, 3000)
+}
+
+async function submitRecharge() {
+  if (!alipayStatus.enabled) {
+    ElMessage.warning('支付宝支付未启用')
+    return
+  }
+  const amount = Number(rechargeAmount.value)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    ElMessage.warning('请输入正确的充值金额')
+    return
+  }
+  if (amount < alipayStatus.minAmount) {
+    ElMessage.warning(`单笔充值金额需 ≥ ${alipayStatus.minAmount} 元`)
+    return
+  }
+  if (amount > alipayStatus.maxAmount) {
+    ElMessage.warning(`单笔充值金额需 ≤ ${alipayStatus.maxAmount} 元`)
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确认充值 ￥${amount.toFixed(2)} 到账户余额？下一步将跳转到支付宝完成支付。`,
+      '充值确认',
+      { type: 'info', confirmButtonText: '前往支付', cancelButtonText: '取消' },
+    )
+  }
+  catch {
+    return
+  }
+  rechargeSubmitting.value = true
+  try {
+    const res = await PayApi.createAlipayOrder(amount, 'EasyPicker 钱包充值')
+    if (res?.data?.payUrl) {
+      window.open(res.data.payUrl, '_blank', 'noopener,noreferrer')
+      pollOrderStatus(res.data.outTradeNo)
+      ElMessage.info('已打开支付页面，支付完成后余额会自动更新')
+    }
+    else {
+      ElMessage.error(res?.msg || '创建订单失败')
+    }
+  }
+  catch (err: any) {
+    ElMessage.error(err?.msg || err?.message || '创建订单失败')
+  }
+  finally {
+    rechargeSubmitting.value = false
+  }
+}
 
 const bindForm = reactive({
   email: '',
@@ -53,6 +174,7 @@ function loadProfile() {
     .finally(() => {
       loading.value = false
     })
+  refreshWallet()
 }
 
 function createCountdown(text: typeof bindCodeText, time: typeof bindCodeTime) {
@@ -199,6 +321,16 @@ function saveNotify(val: boolean) {
 
 onMounted(() => {
   loadProfile()
+  loadAlipayStatus()
+  const outTradeNo = String($route.query.outTradeNo || '')
+  const payChannel = String($route.query.pay || '')
+  if (payChannel === 'alipay' && outTradeNo) {
+    pollOrderStatus(outTradeNo)
+  }
+})
+
+onUnmounted(() => {
+  stopPolling()
 })
 </script>
 
@@ -242,8 +374,50 @@ onMounted(() => {
           <span>登录次数</span>
           <strong>{{ profile.loginCount }}</strong>
         </div>
+        <div class="info-item">
+          <el-icon><Money /></el-icon>
+          <span>钱包余额</span>
+          <strong>￥{{ wallet }}</strong>
+        </div>
       </div>
     </div>
+
+    <section v-if="alipayStatus.enabled" class="profile-panel recharge-panel">
+      <div class="section-title">
+        <div>
+          <h3>钱包充值</h3>
+          <p>通过支付宝充值到账户余额，单笔 ￥{{ alipayStatus.minAmount }} ~ ￥{{ alipayStatus.maxAmount }}</p>
+        </div>
+        <el-tag v-if="alipayStatus.env === 'sandbox'" type="warning">
+          沙箱模式
+        </el-tag>
+      </div>
+      <div class="recharge-row">
+        <el-input-number
+          v-model="rechargeAmount"
+          :min="alipayStatus.minAmount"
+          :max="alipayStatus.maxAmount"
+          :precision="2"
+          :step="10"
+          placeholder="请输入充值金额"
+          style="width: 200px"
+        />
+        <el-button
+          type="primary"
+          :loading="rechargeSubmitting"
+          :disabled="!alipayStatus.enabled"
+          @click="submitRecharge"
+        >
+          支付宝支付
+        </el-button>
+        <el-button plain @click="refreshWallet">
+          刷新余额
+        </el-button>
+      </div>
+      <p v-if="activeOutTradeNo" class="recharge-tip">
+        正在等待支付结果，订单号：{{ activeOutTradeNo }}
+      </p>
+    </section>
 
     <div v-if="supportEmailFeature" class="settings-grid">
       <section class="profile-panel">
@@ -513,6 +687,24 @@ onMounted(() => {
   background-color: #f5f7fa;
   color: #606266;
   font-size: 14px;
+}
+
+.recharge-panel {
+  margin-top: 16px;
+}
+
+.recharge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.recharge-tip {
+  margin-top: 12px;
+  color: #909399;
+  font-size: 13px;
 }
 
 @media screen and (max-width: 700px) {

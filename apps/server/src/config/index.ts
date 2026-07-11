@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+
 export const serverConfig = {
   port: +process.env.SERVER_PORT,
   hostname: process.env.SERVER_HOST,
@@ -60,4 +62,43 @@ export const txConfig = {
   templateId: process.env.TENCENT_MESSAGE_TemplateID,
   smsSdkAppid: process.env.TENCENT_MESSAGE_SmsSdkAppid,
   signName: process.env.TENCENT_MESSAGE_SignName,
+}
+
+function readSecret(inline?: string, filePath?: string): string {
+  const raw = (inline || '').trim()
+  if (raw) {
+    return raw.includes('\\n') ? raw.replace(/\\n/g, '\n') : raw
+  }
+  const p = (filePath || '').trim()
+  if (!p)
+    return ''
+  try {
+    return fs.readFileSync(p, 'utf8')
+  }
+  catch {
+    return ''
+  }
+}
+
+// 支付宝支付（纯环境变量驱动，默认关闭）
+export const alipayConfig = {
+  enabled: String(process.env.ALIPAY_ENABLED) === 'true',
+  env: process.env.ALIPAY_ENV === 'production' ? 'production' : 'sandbox',
+  appId: process.env.ALIPAY_APP_ID || '',
+  signType: process.env.ALIPAY_SIGN_TYPE || 'RSA2',
+  appPrivateKey: readSecret(
+    process.env.ALIPAY_APP_PRIVATE_KEY,
+    process.env.ALIPAY_APP_PRIVATE_KEY_PATH,
+  ),
+  alipayPublicKey: readSecret(
+    process.env.ALIPAY_PUBLIC_KEY,
+    process.env.ALIPAY_PUBLIC_KEY_PATH,
+  ),
+  notifyUrl: process.env.ALIPAY_NOTIFY_URL || '',
+  returnUrl: process.env.ALIPAY_RETURN_URL || '',
+  sellerId: process.env.ALIPAY_SELLER_ID || '',
+  minAmount: Number(process.env.ALIPAY_MIN_AMOUNT ?? 1),
+  maxAmount: Number(process.env.ALIPAY_MAX_AMOUNT ?? 5000),
+  dailyLimit: Number(process.env.ALIPAY_DAILY_LIMIT ?? 20000),
+  orderExpireMinutes: Number(process.env.ALIPAY_ORDER_EXPIRE_MINUTES ?? 30),
 }

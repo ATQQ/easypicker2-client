@@ -1,5 +1,6 @@
 import type { Middleware } from 'flash-wolves'
 import type { IncomingMessage } from 'node:http'
+import { Buffer } from 'node:buffer'
 import fs, { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import formidable from 'formidable'
@@ -38,6 +39,31 @@ function isTemplateUploadPath(pathname: string) {
 
 function isTipImageUploadPath(pathname: string) {
   return pathname === '/api/task_info/tip/image/upload' || pathname === '/task_info/tip/image/upload'
+}
+
+function isAlipayNotifyPath(pathname: string) {
+  return pathname === '/api/pay/alipay/notify' || pathname === '/pay/alipay/notify'
+}
+
+function parseUrlencoded(raw: string): Record<string, string> {
+  const params: Record<string, string> = {}
+  if (!raw)
+    return params
+  for (const pair of raw.split('&')) {
+    if (!pair)
+      continue
+    const idx = pair.indexOf('=')
+    const key = idx >= 0 ? pair.slice(0, idx) : pair
+    const val = idx >= 0 ? pair.slice(idx + 1) : ''
+    try {
+      params[decodeURIComponent(key.replace(/\+/g, ' '))]
+        = decodeURIComponent(val.replace(/\+/g, ' '))
+    }
+    catch {
+      params[key] = val
+    }
+  }
+  return params
 }
 
 function pickField(fields: formidable.Fields, key: string) {
@@ -237,6 +263,31 @@ const interceptor: Middleware = async (req, res) => {
       res.end(JSON.stringify({ code: 500, msg }))
     }
     return
+  }
+
+  // 支付宝异步通知：预读 form-urlencoded 报文并挂载到 req 上，避免下游拿不到 body
+  if (method === 'POST' && isAlipayNotifyPath(pathOnly)) {
+    try {
+      const chunks: Buffer[] = []
+      await new Promise<void>((resolve, reject) => {
+        req.on('data', (chunk: Buffer | string) => {
+          chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
+        })
+        req.on('end', () => resolve())
+        req.on('error', reject)
+      })
+      const raw = Buffer.concat(chunks).toString('utf8')
+      Object.defineProperty(req, '_alipayNotifyBody', {
+        value: parseUrlencoded(raw),
+      })
+      Object.defineProperty(req, '_alipayNotifyRaw', {
+        value: raw,
+      })
+    }
+    catch {
+      Object.defineProperty(req, '_alipayNotifyBody', { value: {} })
+      Object.defineProperty(req, '_alipayNotifyRaw', { value: '' })
+    }
   }
 
   // 添加ip，供 @ReqIp 取用

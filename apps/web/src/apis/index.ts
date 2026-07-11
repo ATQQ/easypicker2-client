@@ -1,5 +1,6 @@
 import category from './modules/category'
 import file from './modules/file'
+import pay from './modules/pay'
 import people from './modules/people'
 import p from './modules/public'
 import superOverview from './modules/super/overview'
@@ -17,6 +18,7 @@ export const PeopleApi = people
 export const FileApi = file
 export const SuperOverviewApi = superOverview
 export const SuperUserApi = superUser
+export const PayApi = pay
 export { default as ActionServiceAPI } from './modules/action'
 export { default as ConfigServiceAPI } from './modules/config'
 export { default as WishApi } from './modules/wish'

@@ -2,6 +2,7 @@ import Action from './action'
 import Category from './category'
 import ConfigService from './config'
 import file from './file'
+import Pay from './pay'
 import People from './people'
 import Public from './public'
 import Overview from './super/overview'
@@ -26,4 +27,5 @@ export default [
   Action,
   Task,
   Category,
+  Pay,
 ]
