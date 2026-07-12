@@ -13,13 +13,14 @@ export class PaymentOrderRepository extends BaseRepository<PaymentOrderEntity> {
 
   /** 查询指定用户今日某渠道的已支付/待支付订单金额合计 */
   async sumAmountToday(userId: number, channel: string, today: Date): Promise<number> {
+    const alias = this.entityName
     const result = await this.repository
-      .createQueryBuilder(this.entityName)
-      .select('SUM(amount)', 'total')
-      .where('userId = :userId', { userId })
-      .andWhere('channel = :channel', { channel })
-      .andWhere('createTime >= :today', { today })
-      .andWhere('status NOT IN (:...exclude)', { exclude: ['closed', 'refunded'] })
+      .createQueryBuilder(alias)
+      .select(`SUM(${alias}.amount)`, 'total')
+      .where(`${alias}.userId = :userId`, { userId })
+      .andWhere(`${alias}.channel = :channel`, { channel })
+      .andWhere(`${alias}.createTime >= :today`, { today })
+      .andWhere(`${alias}.status NOT IN (:...exclude)`, { exclude: ['closed', 'refunded'] })
       .getRawOne<{ total: string | null }>()
     return Number(result?.total || 0)
   }
