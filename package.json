@@ -71,5 +71,9 @@
   },
   "lint-staged": {
     "*": "eslint --fix --no-warn-ignored"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

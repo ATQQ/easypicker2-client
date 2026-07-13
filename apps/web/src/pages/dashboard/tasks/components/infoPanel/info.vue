@@ -166,6 +166,79 @@ function handleChangeInfoType(item: InfoItem, type: string) {
   markInfoChanged()
 }
 
+const quickFieldsInput = ref('')
+
+function parseQuickFieldsInput(raw: string, limit: number) {
+  const list: string[] = []
+  const truncated: string[] = []
+  raw
+    .split(/[,，;；、|\s]+/)
+    .map(v => v.trim())
+    .filter(Boolean)
+    .forEach((v) => {
+      if (limit > 0 && v.length > limit) {
+        truncated.push(v)
+        list.push(v.slice(0, limit))
+      }
+      else {
+        list.push(v)
+      }
+    })
+  return { list, truncated }
+}
+
+function handleQuickCreateFields() {
+  const raw = quickFieldsInput.value
+  if (!raw.trim()) {
+    ElMessage.warning('请输入内容')
+    return
+  }
+  const { list, truncated } = parseQuickFieldsInput(raw, maxInputLength.value)
+  if (list.length === 0) {
+    ElMessage.warning('未识别到有效字段')
+    return
+  }
+  const exists = new Set(infos.map(v => v.text.trim()))
+  const capacity = Math.max(0, siteConfig.value.formLength - infos.length)
+  let added = 0
+  let duplicated = 0
+  let overflow = 0
+  const type = selectType.value
+  for (const text of list) {
+    if (exists.has(text)) {
+      duplicated++
+      continue
+    }
+    if (added >= capacity) {
+      overflow++
+      continue
+    }
+    exists.add(text)
+    const item: InfoItem = { text, type, value: '' }
+    if (type === 'radio' || type === 'select')
+      item.children = [{ text: '选项1' }, { text: '选项2' }]
+    infos.push(item)
+    added++
+  }
+  if (added === 0) {
+    if (overflow > 0)
+      ElMessage.warning(`已达字段上限 ${siteConfig.value.formLength}，未添加`)
+    else
+      ElMessage.warning('全部为重复项，未添加新字段')
+    return
+  }
+  quickFieldsInput.value = ''
+  markInfoChanged()
+  const tips: string[] = [`已添加 ${added} 个字段`]
+  if (duplicated)
+    tips.push(`忽略重复 ${duplicated} 项`)
+  if (truncated.length)
+    tips.push(`${truncated.length} 项超长已截断`)
+  if (overflow)
+    tips.push(`${overflow} 项超出字段上限未添加`)
+  ElMessage.success(tips.join('、'))
+}
+
 const importPanelInfo = reactive({ taskList: [], taskValue: '' })
 const showImportPanel = ref(false)
 async function openImportPanel() {
@@ -273,7 +346,7 @@ watchEffect(() => {
 
       <div class="feature-card" :class="{ active: openPreview }">
         <div class="feature-copy">
-          <el-tag :type="openPreview ? 'primary' : 'info'" effect="light">
+          <el-tag :type="openPreview ? 'success' : 'info'" effect="light">
             {{ openPreview ? '预览中' : '编辑中' }}
           </el-tag>
           <h4>编辑 / 预览</h4>
@@ -307,103 +380,131 @@ watchEffect(() => {
 
       <div class="form-wrapper">
         <InfosForm v-if="openPreview" :infos="infos" :disabled="openPreview" />
-        <div v-else class="field-list">
-          <div v-for="(item, idx) in infos" :key="idx" class="field-card">
-            <div class="question-head">
-              <div class="question-title">
-                <span class="field-index">Q{{ idx + 1 }}</span>
-                <strong>{{ item.text || '未命名字段' }}</strong>
+        <template v-else>
+          <div v-if="showAddInfo" class="quick-fields">
+            <div class="quick-fields-header">
+              <div class="quick-fields-title">
+                <strong>快速新建字段</strong>
+                <span>粘贴一段文字，一次性生成多个字段</span>
               </div>
-              <el-select
-                :model-value="item.type"
-                class="question-type"
-                @change="v => handleChangeInfoType(item, v)"
-              >
-                <el-option
-                  v-for="type in infoTypeList"
-                  :key="type.value"
-                  :label="type.label"
-                  :value="type.value"
-                />
-              </el-select>
+              <el-tag size="small" type="info" effect="plain">
+                类型：{{ infoTypeList.find(t => t.value === selectType)?.label }}
+              </el-tag>
             </div>
-
-            <div class="question-body">
-              <label class="field-label">字段标题</label>
-              <el-input
-                v-model="item.text"
-                placeholder="请输入展示给用户的字段标题"
-                :maxlength="maxInputLength"
-                clearable
-                show-word-limit
-                @input="markInfoChanged"
-              />
-
-              <div
-                v-if="item.type === 'radio' || item.type === 'select'"
-                class="option-list"
-              >
-                <div class="option-title">
-                  <span>选项列表</span>
-                  <el-button
-                    size="small"
-                    text
-                    type="primary"
-                    @click="addInfo(item.children, item.type)"
-                  >
-                    添加选项
-                  </el-button>
-                </div>
-                <div
-                  v-for="(v, idx2) in item.children"
-                  :key="idx2"
-                  class="option-item"
-                >
-                  <span>{{ idx2 + 1 }}</span>
-                  <el-input
-                    v-model="v.text"
-                    size="small"
-                    placeholder="输入选项内容"
-                    :maxlength="maxInputLength"
-                    clearable
-                    show-word-limit
-                    @input="markInfoChanged"
-                  />
-                  <el-button
-                    size="small"
-                    text
-                    type="danger"
-                    :disabled="item.children.length <= 2"
-                    @click="deleteInfo(idx2, item.children, 2)"
-                  >
-                    删除
-                  </el-button>
-                </div>
-              </div>
-            </div>
-
-            <div class="field-actions">
+            <el-input
+              v-model="quickFieldsInput"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 6 }"
+              placeholder="用逗号 / 分号 / 空格 / 换行 / 顿号 / 竖线 分隔，如：姓名, 学号; 班级 手机号"
+            />
+            <div class="quick-fields-actions">
               <el-button
-                v-if="idx > 0"
-                size="small"
-                text
                 type="primary"
-                @click="moveInfoUp(idx)"
+                :disabled="!quickFieldsInput.trim()"
+                @click="handleQuickCreateFields"
               >
-                上移
-              </el-button>
-              <el-button
-                size="small"
-                text
-                type="danger"
-                :disabled="infos.length <= 1"
-                @click="deleteInfo(idx)"
-              >
-                删除
+                解析并添加
               </el-button>
             </div>
           </div>
-        </div>
+          <div class="field-list">
+            <div v-for="(item, idx) in infos" :key="idx" class="field-card">
+              <div class="question-head">
+                <div class="question-title">
+                  <span class="field-index">Q{{ idx + 1 }}</span>
+                  <strong>{{ item.text || '未命名字段' }}</strong>
+                </div>
+                <el-select
+                  :model-value="item.type"
+                  class="question-type"
+                  @change="v => handleChangeInfoType(item, v)"
+                >
+                  <el-option
+                    v-for="type in infoTypeList"
+                    :key="type.value"
+                    :label="type.label"
+                    :value="type.value"
+                  />
+                </el-select>
+              </div>
+
+              <div class="question-body">
+                <label class="field-label">字段标题</label>
+                <el-input
+                  v-model="item.text"
+                  placeholder="请输入展示给用户的字段标题"
+                  :maxlength="maxInputLength"
+                  clearable
+                  show-word-limit
+                  @input="markInfoChanged"
+                />
+
+                <div
+                  v-if="item.type === 'radio' || item.type === 'select'"
+                  class="option-list"
+                >
+                  <div class="option-title">
+                    <span>选项列表</span>
+                    <el-button
+                      size="small"
+                      text
+                      type="primary"
+                      @click="addInfo(item.children, item.type)"
+                    >
+                      添加选项
+                    </el-button>
+                  </div>
+                  <div
+                    v-for="(v, idx2) in item.children"
+                    :key="idx2"
+                    class="option-item"
+                  >
+                    <span>{{ idx2 + 1 }}</span>
+                    <el-input
+                      v-model="v.text"
+                      size="small"
+                      placeholder="输入选项内容"
+                      :maxlength="maxInputLength"
+                      clearable
+                      show-word-limit
+                      @input="markInfoChanged"
+                    />
+                    <el-button
+                      size="small"
+                      text
+                      type="danger"
+                      :disabled="item.children.length <= 2"
+                      @click="deleteInfo(idx2, item.children, 2)"
+                    >
+                      删除
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-actions">
+                <el-button
+                  v-if="idx > 0"
+                  size="small"
+                  text
+                  type="primary"
+                  @click="moveInfoUp(idx)"
+                >
+                  上移
+                </el-button>
+                <el-button
+                  size="small"
+                  text
+                  type="danger"
+                  :disabled="infos.length <= 1"
+                  @click="deleteInfo(idx)"
+                >
+                  删除
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
 
       <el-alert
@@ -699,6 +800,46 @@ watchEffect(() => {
   border-radius: 12px;
 }
 
+.quick-fields {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  background-color: #f8fbff;
+  border: 1px dashed #b3d8ff;
+  border-radius: 12px;
+}
+
+.quick-fields-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.quick-fields-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  strong {
+    color: #1f2d3d;
+    font-size: 15px;
+  }
+
+  span {
+    color: #909399;
+    font-size: 12px;
+  }
+}
+
+.quick-fields-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .option-title,
 .option-item {
   display: flex;
@@ -829,6 +970,10 @@ watchEffect(() => {
 
   .add-actions .el-select,
   .save-actions .el-button {
+    width: 100%;
+  }
+
+  .quick-fields-actions .el-button {
     width: 100%;
   }
 }
