@@ -14,7 +14,7 @@ import { useStore } from 'vuex'
 import { PublicApi, UserApi } from '@/apis'
 import WalletOrderHistory from '@/components/WalletOrderHistory/index.vue'
 import WalletRecharge from '@/components/WalletRecharge/index.vue'
-import { useSiteConfig } from '@/composables'
+import { useAccountConfig, useSiteConfig } from '@/composables'
 import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
 import { rEmail, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
@@ -22,7 +22,9 @@ import { formatDate } from '@/utils/stringUtil'
 const $router = useRouter()
 const $store = useStore()
 const { value: siteConfig } = useSiteConfig('auth')
+useAccountConfig()
 const supportEmailFeature = computed(() => Boolean(siteConfig.value.supportEmailCodeLogin))
+const showWallet = computed(() => Boolean(siteConfig.value.limitWallet))
 
 const loading = ref(false)
 const profile = reactive<UserApiTypes.UserProfile>({
@@ -77,7 +79,8 @@ function loadProfile() {
     .finally(() => {
       loading.value = false
     })
-  refreshWallet()
+  if (showWallet.value)
+    refreshWallet()
 }
 
 function createCountdown(text: typeof bindCodeText, time: typeof bindCodeTime) {
@@ -267,7 +270,7 @@ onMounted(() => {
           <span>登录次数</span>
           <strong>{{ profile.loginCount }}</strong>
         </div>
-        <div class="info-item wallet-item">
+        <div v-if="showWallet" class="info-item wallet-item">
           <div class="wallet-header">
             <div class="wallet-header__left">
               <el-icon><Money /></el-icon>
@@ -293,7 +296,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <WalletOrderHistory ref="walletOrderHistoryRef" />
+    <WalletOrderHistory v-if="showWallet" ref="walletOrderHistoryRef" />
 
     <div v-if="supportEmailFeature" class="settings-grid">
       <section class="profile-panel">
