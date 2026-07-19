@@ -30,6 +30,11 @@ instance.interceptors.request.use((config) => {
     })
   }
 
+  // 分享查看页依赖 HttpOnly Cookie；同域 /api 会自动携带，跨域时显式开启
+  if (isPublicViewRequest(config.url)) {
+    config.withCredentials = true
+  }
+
   return {
     ...config,
     headers,

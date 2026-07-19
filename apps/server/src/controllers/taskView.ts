@@ -44,14 +44,12 @@ export default class TaskViewController {
     @ReqQuery('tab') tab: string,
     @ReqQuery('pageIndex') pageIndex: string,
     @ReqQuery('pageSize') pageSize: string,
-    @ReqQuery('password') password: string,
   ) {
     try {
       return await this.taskViewService.getProgress(key, {
         tab,
         pageIndex: pageIndex ? Number(pageIndex) : undefined,
         pageSize: pageSize ? Number(pageSize) : undefined,
-        password: password || undefined,
       })
     }
     catch (error) {

@@ -39,21 +39,32 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
   visibleFields: [],
   roster: {
     enabled: false,
-    columns: [],
+    columns: ['status', 'submitDate'],
     nameMask: 'head_tail',
     showUnsubmitted: true,
   },
   fileFields: {
-    fileName: { visible: true, mask: 'none' },
-    originName: { visible: true, mask: 'none' },
+    // 默认展示文件名但强制脱敏，避免重命名规则中的姓名明文泄露
+    fileName: { visible: true, mask: 'head_tail' },
+    originName: { visible: false, mask: 'none' },
     size: { visible: true },
   },
 }
 
-const VALID_MASKS: MaskMode[] = ['none', 'head1', 'head_tail', 'tail']
+const VALID_MASKS: MaskMode[] = ['none', 'head1', 'head_tail', 'tail', 'mask_all']
 
 function normalizeMask(mask: unknown, fallback: MaskMode): MaskMode {
-  if (typeof mask === 'string' && (VALID_MASKS as string[]).includes(mask)) {
+  if (typeof mask !== 'string') {
+    return fallback
+  }
+  // 旧枚举迁移，避免非法值 fallback 成 none 导致明文
+  if (mask === 'tail4') {
+    return 'tail'
+  }
+  if (mask === 'mask_all') {
+    return 'mask_all'
+  }
+  if ((VALID_MASKS as string[]).includes(mask)) {
     return mask as MaskMode
   }
   return fallback
@@ -86,11 +97,12 @@ function normalizeRoster(input: unknown): ViewRosterConfig {
     return base
   }
   const r = input as Record<string, unknown>
+  const columns = Array.isArray(r.columns)
+    ? r.columns.filter((c): c is string => typeof c === 'string')
+    : []
   return {
     enabled: r.enabled === true,
-    columns: Array.isArray(r.columns)
-      ? r.columns.filter((c): c is string => typeof c === 'string')
-      : [],
+    columns: columns.length ? columns : [...base.columns],
     nameMask: normalizeMask(r.nameMask, 'head_tail'),
     showUnsubmitted: r.showUnsubmitted === undefined ? true : r.showUnsubmitted === true,
   }

@@ -301,7 +301,7 @@ export default class TaskInfoService {
         normalizedSubmitPassword = null
       }
       else {
-        if (trimmed.length < 4 || trimmed.length > 64) {
+        if (trimmed.length < 6 || trimmed.length > 64) {
           throw publicError.request.errorParams
         }
         normalizedSubmitPassword = trimmed
@@ -332,10 +332,10 @@ export default class TaskInfoService {
       else {
         throw publicError.request.errorParams
       }
-      // 密码长度校验（与提交密码一致）
+      // 查看页密码：最短 6 位，降低爆破面（提交密码仍为 4-64）
       const parsedAfter = parseViewConfig(normalizedViewConfig)
       if (parsedAfter.password) {
-        if (parsedAfter.password.length < 4 || parsedAfter.password.length > 64) {
+        if (parsedAfter.password.length < 6 || parsedAfter.password.length > 64) {
           throw publicError.request.errorParams
         }
       }

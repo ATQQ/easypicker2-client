@@ -1,6 +1,6 @@
 import ajax from '../ajax'
 
-export type MaskMode = 'none' | 'head1' | 'head_tail' | 'tail'
+export type MaskMode = 'none' | 'head1' | 'head_tail' | 'tail' | 'mask_all'
 
 export interface ViewVisibleField {
   name: string
@@ -50,18 +50,12 @@ export interface TaskViewMeta {
   fileFields?: ViewFileFieldsConfig
 }
 
-// 文件提交记录单行：结构对齐 POST /file/page 的 File 类型（脱敏后的 info 仍为数组）
-// 注意：name / origin_name / size 由用户配置决定是否下发，前端需做存在性判断
+/** 公开页提交记录：仅白名单字段（不含 hash / storage / user_id 等） */
 export interface TaskViewSubmittedFile {
   id: number
-  task_key: string
   task_name: string
-  category_key: string
-  user_id: number
   name?: string
-  storage: string
   info: Array<{ text: string, value: string }>
-  hash: string
   date: string | Date
   size?: number
   people: string
@@ -77,18 +71,22 @@ export interface TaskViewSubmittedProgress {
   files: TaskViewSubmittedFile[]
 }
 
-// 人员提交情况单行：结构对齐 GET /people/:key 返回的 People 类型（不含慢查询字段）
 export interface TaskViewRosterPeople {
   id: number
   name: string
-  status: 0 | 1 | boolean
-  lastDate: string | Date | null
-  count: number
+  status?: 0 | 1 | boolean
+  lastDate?: string | Date | null
+  count?: number
 }
 
 export interface TaskViewRosterProgress {
   tab: 'roster'
+  pageIndex: number
+  pageSize: number
+  total: number
+  pageCount: number
   people: TaskViewRosterPeople[]
+  columns: string[]
 }
 
 export type TaskViewProgress = TaskViewSubmittedProgress | TaskViewRosterProgress
@@ -115,19 +113,17 @@ function getProgress(
     tab: 'submitted' | 'roster'
     pageIndex: number
     pageSize: number
-    password?: string
   },
 ) {
-  const params: Record<string, string | number> = {
-    tab: options.tab,
-    pageIndex: options.pageIndex,
-    pageSize: options.pageSize,
-  }
-  if (options.password)
-    params.password = options.password
   return ajax.get<unknown, TaskViewProgress>(
     `public/task-view/${key}/progress`,
-    { params },
+    {
+      params: {
+        tab: options.tab,
+        pageIndex: options.pageIndex,
+        pageSize: options.pageSize,
+      },
+    },
   )
 }
 

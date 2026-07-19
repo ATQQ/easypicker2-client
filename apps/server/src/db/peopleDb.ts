@@ -48,4 +48,31 @@ export class PeopleRepository extends BaseRepository<PeopleEntity> {
   }
 
   protected entityName = PeopleEntity.name
+
+  /** 公开查看页名单分页：仅返回当前页，避免一次拉全表 */
+  async findPageForTask(options: {
+    userId: number
+    taskKey: string
+    pageIndex: number
+    pageSize: number
+    onlySubmitted?: boolean
+  }) {
+    const { userId, taskKey, pageIndex, pageSize, onlySubmitted } = options
+    const qb = this.repository
+      .createQueryBuilder('people')
+      .where('people.userId = :userId', { userId })
+      .andWhere('people.taskKey = :taskKey', { taskKey })
+
+    if (onlySubmitted) {
+      qb.andWhere('people.status = :status', { status: 1 })
+    }
+
+    const [people, total] = await qb
+      .orderBy('people.id', 'ASC')
+      .skip((pageIndex - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+
+    return { people, total }
+  }
 }

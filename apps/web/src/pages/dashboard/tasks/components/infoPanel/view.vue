@@ -36,6 +36,7 @@ const MASK_OPTIONS: { label: string, value: MaskMode }[] = [
   { label: '只显示首位', value: 'head1' },
   { label: '首尾可见', value: 'head_tail' },
   { label: '尾部可见（自适应）', value: 'tail' },
+  { label: '全部脱敏', value: 'mask_all' },
 ]
 
 const ROSTER_COLUMN_OPTIONS = [
@@ -75,8 +76,8 @@ const roster = ref<RosterConfig>({
 
 function defaultFileFields(): ViewFileFieldsConfig {
   return {
-    fileName: { visible: true, mask: 'none' },
-    originName: { visible: true, mask: 'none' },
+    fileName: { visible: true, mask: 'head_tail' },
+    originName: { visible: false, mask: 'none' },
     size: { visible: true },
   }
 }
@@ -145,10 +146,10 @@ async function load() {
     fileFields.value = {
       fileName: {
         visible: ff?.fileName?.visible !== false,
-        mask: ff?.fileName?.mask || 'none',
+        mask: ff?.fileName?.mask || 'head_tail',
       },
       originName: {
-        visible: ff?.originName?.visible !== false,
+        visible: ff?.originName?.visible === true,
         mask: ff?.originName?.mask || 'none',
       },
       size: {
@@ -254,8 +255,8 @@ function buildViewConfigObject(): ViewConfig {
 function buildPayload(): TaskApiTypes.TaskInfo {
   if (needPassword.value) {
     const t = (password.value || '').trim()
-    if (t.length < 4 || t.length > 64) {
-      throw new Error('查看密码需为 4-64 位')
+    if (t.length < 6 || t.length > 64) {
+      throw new Error('查看密码需为 6-64 位')
     }
   }
   return {
@@ -367,7 +368,7 @@ function regeneratePassword() {
         <div class="setting-main">
           <div>
             <h5>访问密码</h5>
-            <p>开启后访问查看页需要先输入密码，4-64 位。</p>
+            <p>开启后访问查看页需要先输入密码，6-64 位。</p>
           </div>
           <el-switch v-model="needPassword" />
         </div>

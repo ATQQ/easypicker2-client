@@ -1,6 +1,17 @@
-export type MaskMode = 'none' | 'head1' | 'head_tail' | 'tail'
+export type MaskMode = 'none' | 'head1' | 'head_tail' | 'tail' | 'mask_all'
 
-const ALLOWED_MASK: MaskMode[] = ['none', 'head1', 'head_tail', 'tail']
+const ALLOWED_MASK: MaskMode[] = ['none', 'head1', 'head_tail', 'tail', 'mask_all']
+
+/** 旧枚举兼容：tail4 → tail；非法值返回 null（由调用方决定 fallback） */
+export function normalizeLegacyMask(mask: unknown): MaskMode | null {
+  if (typeof mask !== 'string')
+    return null
+  if (mask === 'tail4')
+    return 'tail'
+  if ((ALLOWED_MASK as string[]).includes(mask))
+    return mask as MaskMode
+  return null
+}
 
 export function isValidMask(mask: unknown): mask is MaskMode {
   return typeof mask === 'string' && (ALLOWED_MASK as string[]).includes(mask)
@@ -14,7 +25,14 @@ export function applyMask(value: unknown, mask: MaskMode | string | undefined | 
   if (str.length === 0) {
     return ''
   }
-  const m: MaskMode = isValidMask(mask) ? mask : 'none'
+  // 未迁移的旧配置直接命中时仍按旧语义处理，避免变明文
+  if (mask === 'tail4') {
+    if (str.length <= 4)
+      return str
+    return '*'.repeat(str.length - 4) + str.slice(-4)
+  }
+  const resolved = normalizeLegacyMask(mask)
+  const m: MaskMode = resolved ?? 'none'
   switch (m) {
     case 'none':
       return str
@@ -45,6 +63,8 @@ export function applyMask(value: unknown, mask: MaskMode | string | undefined | 
       const tailPart = keep === 0 ? '' : str.slice(-keep)
       return '*'.repeat(n - keep) + tailPart
     }
+    case 'mask_all':
+      return '*'.repeat(str.length)
     default:
       return str
   }

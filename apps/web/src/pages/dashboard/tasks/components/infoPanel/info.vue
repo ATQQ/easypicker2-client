@@ -172,7 +172,8 @@ function parseQuickFieldsInput(raw: string, limit: number) {
   const list: string[] = []
   const truncated: string[] = []
   raw
-    .split(/[,，;；、|\s]+/)
+    // 仅逗号/分号/顿号/竖线/换行作分隔，避免英文空格标题被误切
+    .split(/[,，;；、|\r\n]+/)
     .map(v => v.trim())
     .filter(Boolean)
     .forEach((v) => {
@@ -203,6 +204,7 @@ function handleQuickCreateFields() {
   let added = 0
   let duplicated = 0
   let overflow = 0
+  const overflowItems: string[] = []
   const type = selectType.value
   for (const text of list) {
     if (exists.has(text)) {
@@ -211,6 +213,7 @@ function handleQuickCreateFields() {
     }
     if (added >= capacity) {
       overflow++
+      overflowItems.push(text)
       continue
     }
     exists.add(text)
@@ -227,9 +230,10 @@ function handleQuickCreateFields() {
       ElMessage.warning('全部为重复项，未添加新字段')
     return
   }
-  quickFieldsInput.value = ''
+  // 有超限未加入项时保留输入，便于继续处理
+  quickFieldsInput.value = overflowItems.length ? overflowItems.join('\n') : ''
   markInfoChanged()
-  const tips: string[] = [`已添加 ${added} 个字段`]
+  const tips: string[] = [`已加入待保存列表 ${added} 个字段，请点击保存表单`]
   if (duplicated)
     tips.push(`忽略重复 ${duplicated} 项`)
   if (truncated.length)
@@ -395,7 +399,7 @@ watchEffect(() => {
               v-model="quickFieldsInput"
               type="textarea"
               :autosize="{ minRows: 2, maxRows: 6 }"
-              placeholder="用逗号 / 分号 / 空格 / 换行 / 顿号 / 竖线 分隔，如：姓名, 学号; 班级 手机号"
+              placeholder="用逗号 / 分号 / 顿号 / 竖线 / 换行分隔，如：姓名, 学号; 班级"
             />
             <div class="quick-fields-actions">
               <el-button

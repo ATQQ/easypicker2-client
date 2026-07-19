@@ -4,8 +4,9 @@ import * as crypto from 'node:crypto'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { publicError, taskError } from '@/constants/errorMsg'
 import { FileRepository } from '@/db/fileDb'
+import { getClientIp } from '@/db/logDb'
 import { BOOLEAN } from '@/db/model/public'
-import { selectPeople } from '@/db/peopleDb'
+import { PeopleRepository } from '@/db/peopleDb'
 import { TaskRepository } from '@/db/taskDb'
 import { TaskInfoRepository } from '@/db/taskInfoDb'
 import { BehaviorService } from '@/service'
@@ -14,6 +15,11 @@ import { parseViewConfig } from '@/utils/viewConfig'
 
 const VIEW_COOKIE_PREFIX = 'tv_'
 const VIEW_COOKIE_MAX_AGE_SEC = 30 * 60
+/** verify：同一 IP + 任务，60s 内最多尝试次数 */
+const VERIFY_RATE_WINDOW_MS = 60 * 1000
+const VERIFY_RATE_MAX = 20
+
+const verifyRateMap = new Map<string, { count: number, resetAt: number }>()
 
 function passwordFingerprint(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex').slice(0, 8)
@@ -51,6 +57,27 @@ function clampPage(n: unknown, fallback: number, min: number, max: number): numb
   return Math.floor(v)
 }
 
+function assertVerifyRateLimit(ip: string, key: string) {
+  const id = `${ip || 'unknown'}:${key}`
+  const now = Date.now()
+  let entry = verifyRateMap.get(id)
+  if (!entry || entry.resetAt <= now) {
+    entry = { count: 0, resetAt: now + VERIFY_RATE_WINDOW_MS }
+    verifyRateMap.set(id, entry)
+  }
+  entry.count += 1
+  if (entry.count > VERIFY_RATE_MAX) {
+    throw publicError.request.errorParams
+  }
+  // 偶发清理，避免 Map 无限增长
+  if (verifyRateMap.size > 5000) {
+    for (const [k, v] of verifyRateMap) {
+      if (v.resetAt <= now)
+        verifyRateMap.delete(k)
+    }
+  }
+}
+
 @Provide()
 export default class TaskViewService {
   @InjectCtx()
@@ -65,11 +92,29 @@ export default class TaskViewService {
   @Inject(FileRepository)
   private fileRepository: FileRepository
 
+  @Inject(PeopleRepository)
+  private peopleRepository: PeopleRepository
+
   @Inject(BehaviorService)
   private behaviorService: BehaviorService
 
   private cookieName(key: string) {
     return `${VIEW_COOKIE_PREFIX}${key}`
+  }
+
+  private setViewCookie(key: string, viewPassword: string) {
+    const fp = passwordFingerprint(viewPassword)
+    const cookieParts = [
+      `${this.cookieName(key)}=${fp}`,
+      'Path=/',
+      `Max-Age=${VIEW_COOKIE_MAX_AGE_SEC}`,
+      'HttpOnly',
+      'SameSite=Lax',
+    ]
+    if (isProtocolHttps(this.ctx.req)) {
+      cookieParts.push('Secure')
+    }
+    this.ctx.res.setHeader('Set-Cookie', cookieParts.join('; '))
   }
 
   private async loadEnabledTaskOrThrow(key: string) {
@@ -142,6 +187,9 @@ export default class TaskViewService {
 
   /** 校验密码并下发 cookie */
   async verify(key: string, password: string) {
+    const ip = getClientIp(this.ctx.req)
+    assertVerifyRateLimit(ip, key)
+
     const { task, viewConfig } = await this.loadEnabledTaskOrThrow(key)
     if (!viewConfig.password) {
       return { ok: true, taskName: task.name }
@@ -156,18 +204,7 @@ export default class TaskViewService {
       })
       throw publicError.request.errorParams
     }
-    const fp = passwordFingerprint(viewConfig.password)
-    const cookieParts = [
-      `${this.cookieName(key)}=${fp}`,
-      'Path=/',
-      `Max-Age=${VIEW_COOKIE_MAX_AGE_SEC}`,
-      'HttpOnly',
-      'SameSite=Lax',
-    ]
-    if (isProtocolHttps(this.ctx.req)) {
-      cookieParts.push('Secure')
-    }
-    this.ctx.res.setHeader('Set-Cookie', cookieParts.join('; '))
+    this.setViewCookie(key, viewConfig.password)
     this.behaviorService.add('taskInfo', `查看页密码校验成功 任务:${task.name}`, {
       key,
     })
@@ -176,26 +213,21 @@ export default class TaskViewService {
 
   /**
    * 进度查询：
-   * - tab='submitted'：返回与「文件管理 POST /file/page」同型的 files 列表（不做字段重命名），
-   *   仅按 viewConfig.visibleFields 在原字段上做脱敏：
-   *     · info 数组：保留勾选字段，对其 value 应用各自 mask；未勾选字段移除
-   *     · people：bindField 勾选时按其 mask 脱敏，否则清空
-   *     · 其他列（name / origin_name / size / date / hash / task_* 等）原样返回
-   * - tab='roster'：返回与「GET /people/:key」同型的 people 列表，仅对 name 应用 roster.nameMask
-   * 密码校验：优先校验 options.password；未传则回退 Cookie（兼容旧逻辑）。
+   * - tab='submitted'：分页文件列表（轻量查询，无用量 SUM）
+   * - tab='roster'：名单分页，按 roster.columns 决定返回字段
+   * 密码校验：仅 Cookie（禁止 query 明文密码）
    */
   async getProgress(
     key: string,
-    options?: { tab?: string, pageIndex?: number, pageSize?: number, password?: string },
+    options?: { tab?: string, pageIndex?: number, pageSize?: number },
   ) {
     const { task, info, viewConfig } = await this.loadEnabledTaskOrThrow(key)
     if (viewConfig.password) {
-      const passed
-        = (typeof options?.password === 'string' && options.password === viewConfig.password)
-          || this.hasValidCookie(key, viewConfig.password)
-      if (!passed) {
+      if (!this.hasValidCookie(key, viewConfig.password)) {
         throw publicError.request.notLogin
       }
+      // 滑动续期，避免挂着页面 30 分钟后轮询失败
+      this.setViewCookie(key, viewConfig.password)
     }
     const tab = options?.tab === 'roster' ? 'roster' : 'submitted'
     const limitPeople = Number(info.limitPeople) === Number(BOOLEAN.TRUE)
@@ -203,71 +235,79 @@ export default class TaskViewService {
 
     if (tab === 'roster') {
       if (!limitPeople || !viewConfig.roster.enabled) {
-        // 名单 Tab 未启用 → 返回空（结构对齐 /people/:key）
         return {
           tab: 'roster' as const,
+          pageIndex: 1,
+          pageSize: 20,
+          total: 0,
+          pageCount: 0,
           people: [] as Array<Record<string, unknown>>,
+          columns: viewConfig.roster.columns,
         }
       }
+      const pageIndex = clampPage(options?.pageIndex, 1, 1, 100000)
+      const pageSize = clampPage(options?.pageSize, 20, 1, 100)
       const nameMask = viewConfig.roster.nameMask
-      const peopleList = await selectPeople(
-        {
-          userId: task.userId,
-          taskKey: key,
-        },
-        [],
-      )
-      // 与 /people/:key 一致：id/name/status/lastDate/count（公开页不做慢查询，fileCount/submitCount 不返回）
-      // 按用户配置过滤：未提交是否展示
-      const filtered = viewConfig.roster.showUnsubmitted
-        ? peopleList
-        : peopleList.filter(p => !!p.status)
-      const items = filtered.map((p: any) => ({
-        id: p.id,
-        name: applyMask(p.name, nameMask),
-        status: p.status,
-        lastDate: p.submit_date ?? null,
-        count: p.submit_count ?? 0,
-      }))
+      const columns = viewConfig.roster.columns
+      const { people, total } = await this.peopleRepository.findPageForTask({
+        userId: task.userId,
+        taskKey: key,
+        pageIndex,
+        pageSize,
+        onlySubmitted: !viewConfig.roster.showUnsubmitted,
+      })
+      const showStatus = columns.includes('status')
+      const showSubmitDate = columns.includes('submitDate')
+      const items = people.map((p) => {
+        const row: Record<string, unknown> = {
+          id: p.id,
+          name: applyMask(p.name || '', nameMask),
+        }
+        if (showStatus) {
+          row.status = p.status
+        }
+        if (showSubmitDate) {
+          row.lastDate = p.submitDate ?? null
+          row.count = p.submitCount ?? 0
+        }
+        return row
+      })
       return {
         tab: 'roster' as const,
+        pageIndex,
+        pageSize,
+        total,
+        pageCount: Math.ceil(total / pageSize) || 0,
         people: items,
+        columns,
       }
     }
 
-    // tab === 'submitted'：返回与 /file/page 同型的 files 列表（分页）
+    // tab === 'submitted'：轻量分页，不做全用户 SUM
     const pageIndex = clampPage(options?.pageIndex, 1, 1, 100000)
     const pageSize = clampPage(options?.pageSize, 20, 1, 200)
-    const { files, total } = await this.fileRepository.findPage({
+    const { files, total } = await this.fileRepository.findPageLite({
       userId: task.userId,
       taskKey: key,
       pageIndex,
       pageSize,
     })
 
-    // 字段配置：可见字段集合 + 每字段脱敏方式
     const visibleFieldMap = new Map<string, MaskMode>()
     for (const f of viewConfig.visibleFields) {
       visibleFieldMap.set(f.name, f.mask)
     }
     const showBindField = visibleFieldMap.has(bindField)
     const bindMask: MaskMode = showBindField ? visibleFieldMap.get(bindField)! : 'none'
-
-    // 文件原生字段配置（文件名 / 原文件名 / 大小）：未勾选则不下发，勾选则按 mask 处理
     const fileFields = viewConfig.fileFields
 
     const maskedFiles = files.map((f) => {
-      // info 仍保持「数组」原型（与 /file/page 一致），仅过滤未勾选项并对 value 脱敏
       const maskedInfo = this.maskFileInfo((f as any).info, visibleFieldMap)
+      // 白名单字段：不下发 hash / storage / user_id / category_key 等内部信息
       const row: Record<string, unknown> = {
         id: f.id,
-        task_key: f.taskKey,
         task_name: f.taskName,
-        category_key: f.categoryKey,
-        user_id: f.userId,
-        storage: f.storage,
         info: maskedInfo,
-        hash: f.hash,
         date: f.date,
         people: showBindField ? applyMask(f.people || '', bindMask) : '',
       }
@@ -288,7 +328,7 @@ export default class TaskViewService {
       pageIndex,
       pageSize,
       total,
-      pageCount: Math.ceil(total / pageSize),
+      pageCount: Math.ceil(total / pageSize) || 0,
       files: maskedFiles,
     }
   }

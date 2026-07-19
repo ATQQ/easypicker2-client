@@ -19,8 +19,7 @@ const meta = ref<TaskViewMeta | null>(null)
 const loading = ref(true)
 const errorTip = ref('')
 
-// 访问密码：参考任务提交密码的做法，按 key 在 localStorage 分桶存储，
-// 刷新后自动透传，不再依赖服务端 Cookie。
+// 本地仅缓存密码以便刷新后自动 verify 换 Cookie，不再把密码塞进 progress URL
 const passwordCache = useLocalStorage<Record<string, string>>(
   'task_view_pwd_map',
   {},
@@ -43,8 +42,6 @@ function clearCachedPassword() {
   passwordCache.value = next
 }
 
-const accessPassword = ref('')
-
 const passwordPanel = reactive({
   visible: false,
   value: '',
@@ -63,6 +60,11 @@ const submittedPagination = reactive({
   pageSize: 20,
 })
 
+const rosterPagination = reactive({
+  pageIndex: 1,
+  pageSize: 20,
+})
+
 const ddlText = computed(() => {
   if (!meta.value?.ddl)
     return ''
@@ -72,12 +74,18 @@ const ddlText = computed(() => {
 const rosterEnabled = computed(() => !!meta.value?.roster?.enabled)
 const bindFieldLabel = computed(() => meta.value?.bindField || '姓名')
 
-// 文件原生字段可见性（由 meta.fileFields 控制，未配置时默认全展示）
+const rosterColumns = computed(() => {
+  const cols = rosterProgress.value?.columns ?? meta.value?.roster?.columns ?? ['status', 'submitDate']
+  return {
+    status: cols.includes('status'),
+    submitDate: cols.includes('submitDate'),
+  }
+})
+
 const showFileName = computed(() => meta.value?.fileFields?.fileName?.visible !== false)
-const showOriginName = computed(() => meta.value?.fileFields?.originName?.visible !== false)
+const showOriginName = computed(() => meta.value?.fileFields?.originName?.visible === true)
 const showFileSize = computed(() => meta.value?.fileFields?.size?.visible !== false)
 
-// 从当前页 files 中归并出实际存在的 info 字段名作为动态列（后端已按用户配置过滤过）
 const submittedInfoColumns = computed<string[]>(() => {
   const set = new Set<string>()
   for (const f of submittedProgress.value?.files || []) {
@@ -95,9 +103,15 @@ function getInfoValue(row: any, name: string): string {
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
+let reVerifyInFlight = false
 
 function unwrap<T>(res: unknown): T {
   return ((res as any)?.data ?? res) as T
+}
+
+async function ensureViewSession(password: string) {
+  await TaskViewApi.verify(key, password)
+  saveCachedPassword(password)
 }
 
 async function loadCurrentTab() {
@@ -107,17 +121,14 @@ async function loadCurrentTab() {
         tab: 'submitted',
         pageIndex: submittedPagination.pageIndex,
         pageSize: submittedPagination.pageSize,
-        password: accessPassword.value || undefined,
       })
       submittedProgress.value = unwrap<TaskViewSubmittedProgress>(res)
     }
     else {
       const res = await TaskViewApi.getProgress(key, {
         tab: 'roster',
-        // 人员提交记录与 /people/:key 一致：一次性返回全量，无分页
-        pageIndex: 1,
-        pageSize: 1,
-        password: accessPassword.value || undefined,
+        pageIndex: rosterPagination.pageIndex,
+        pageSize: rosterPagination.pageSize,
       })
       rosterProgress.value = unwrap<TaskViewRosterProgress>(res)
     }
@@ -126,12 +137,24 @@ async function loadCurrentTab() {
   catch (e: any) {
     const code = e?.code ?? e?.response?.data?.code
     if (code === 3004) {
-      // 缓存密码失效（被改 / 被清）→ 清缓存并打开密码门
-      if (accessPassword.value) {
-        passwordPanel.errorTip = '访问密码已变更，请重新输入'
-        ElMessage.error('访问密码已变更，请重新输入')
+      const cached = readCachedPassword()
+      if (cached && !reVerifyInFlight) {
+        reVerifyInFlight = true
+        try {
+          await ensureViewSession(cached)
+          await loadCurrentTab()
+          return
+        }
+        catch {
+          // fall through to password panel
+        }
+        finally {
+          reVerifyInFlight = false
+        }
       }
-      accessPassword.value = ''
+      passwordPanel.errorTip = cached ? '访问密码已变更，请重新输入' : '请输入访问密码'
+      if (cached)
+        ElMessage.error('访问密码已变更，请重新输入')
       clearCachedPassword()
       passwordPanel.visible = true
       stopPolling()
@@ -142,13 +165,18 @@ async function loadCurrentTab() {
   }
 }
 
+function pollIntervalMs() {
+  // 名单查询相对更重，降低刷新频率
+  return activeTab.value === 'roster' ? 30 * 1000 : 10 * 1000
+}
+
 function startPolling() {
   stopPolling()
   pollTimer = setInterval(() => {
     if (document.visibilityState === 'visible') {
       loadCurrentTab()
     }
-  }, 10 * 1000)
+  }, pollIntervalMs())
 }
 
 function stopPolling() {
@@ -159,7 +187,7 @@ function stopPolling() {
 }
 
 function handleVisibility() {
-  if (document.visibilityState === 'visible' && meta.value?.enabled) {
+  if (document.visibilityState === 'visible' && meta.value?.enabled && !passwordPanel.visible) {
     loadCurrentTab()
   }
 }
@@ -167,6 +195,8 @@ function handleVisibility() {
 function handleTabChange(name: string | number) {
   activeTab.value = (name as TabName) || 'submitted'
   loadCurrentTab()
+  if (!passwordPanel.visible)
+    startPolling()
 }
 
 async function init() {
@@ -179,15 +209,19 @@ async function init() {
       return
     }
     if (meta.value.needPassword) {
-      // 优先尝试用本地缓存的密码自动登录
       const cached = readCachedPassword()
       if (cached) {
-        accessPassword.value = cached
-        activeTab.value = 'submitted'
-        await loadCurrentTab()
-        // 若 loadCurrentTab 因 3004 已开了密码门，则不开轮询
-        if (!passwordPanel.visible)
-          startPolling()
+        try {
+          await ensureViewSession(cached)
+          activeTab.value = 'submitted'
+          await loadCurrentTab()
+          if (!passwordPanel.visible)
+            startPolling()
+        }
+        catch {
+          clearCachedPassword()
+          passwordPanel.visible = true
+        }
       }
       else {
         passwordPanel.visible = true
@@ -195,7 +229,6 @@ async function init() {
       loading.value = false
       return
     }
-    // 默认 Tab：限制名单且启用名单 Tab 时仍以「文件提交记录」为默认（更直观）
     activeTab.value = 'submitted'
     await loadCurrentTab()
     startPolling()
@@ -215,10 +248,7 @@ async function verify() {
   }
   passwordPanel.loading = true
   try {
-    await TaskViewApi.verify(key, passwordPanel.value)
-    // 校验通过：本地缓存 + 后续请求透传
-    accessPassword.value = passwordPanel.value
-    saveCachedPassword(passwordPanel.value)
+    await ensureViewSession(passwordPanel.value)
     passwordPanel.visible = false
     passwordPanel.value = ''
     passwordPanel.errorTip = ''
@@ -249,6 +279,21 @@ watch(
       loadCurrentTab()
   },
 )
+watch(
+  () => rosterPagination.pageIndex,
+  () => {
+    if (activeTab.value === 'roster')
+      loadCurrentTab()
+  },
+)
+watch(
+  () => rosterPagination.pageSize,
+  () => {
+    rosterPagination.pageIndex = 1
+    if (activeTab.value === 'roster')
+      loadCurrentTab()
+  },
+)
 
 onMounted(() => {
   init()
@@ -260,7 +305,6 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', handleVisibility)
 })
 
-// 人员提交记录：与 people.vue 一致的状态判断（status 可能是 0/1 或 boolean）
 function isSubmitted(status: unknown): boolean {
   return !!Number(status)
 }
@@ -373,23 +417,36 @@ function isSubmitted(status: unknown): boolean {
 
         <section v-show="rosterEnabled && activeTab === 'roster'" class="tv-section">
           <el-empty v-if="!rosterProgress || !rosterProgress.people.length" description="暂无名单数据" />
-          <el-table v-else :data="rosterProgress.people" stripe>
-            <el-table-column type="index" label="序号" width="70" />
-            <el-table-column :label="bindFieldLabel" prop="name" min-width="120" />
-            <el-table-column label="提交状态" min-width="100">
-              <template #default="{ row }">
-                <el-tag :type="isSubmitted(row.status) ? 'success' : 'info'" size="small">
-                  {{ isSubmitted(row.status) ? '已提交' : '未提交' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="提交次数" prop="count" min-width="100" />
-            <el-table-column label="最后操作时间" prop="lastDate" min-width="170">
-              <template #default="{ row }">
-                {{ row.lastDate ? formatDate(new Date(row.lastDate), 'yyyy-MM-dd hh:mm:ss') : '暂无记录' }}
-              </template>
-            </el-table-column>
-          </el-table>
+          <template v-else>
+            <el-table :data="rosterProgress.people" stripe>
+              <el-table-column type="index" label="序号" width="70" />
+              <el-table-column :label="bindFieldLabel" prop="name" min-width="120" />
+              <el-table-column v-if="rosterColumns.status" label="提交状态" min-width="100">
+                <template #default="{ row }">
+                  <el-tag :type="isSubmitted(row.status) ? 'success' : 'info'" size="small">
+                    {{ isSubmitted(row.status) ? '已提交' : '未提交' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column v-if="rosterColumns.submitDate" label="提交次数" prop="count" min-width="100" />
+              <el-table-column v-if="rosterColumns.submitDate" label="最后操作时间" prop="lastDate" min-width="170">
+                <template #default="{ row }">
+                  {{ row.lastDate ? formatDate(new Date(row.lastDate), 'yyyy-MM-dd hh:mm:ss') : '暂无记录' }}
+                </template>
+              </el-table-column>
+            </el-table>
+            <div class="tv-pagination">
+              <el-pagination
+                v-model:current-page="rosterPagination.pageIndex"
+                v-model:page-size="rosterPagination.pageSize"
+                :total="rosterProgress.total"
+                :page-sizes="[10, 20, 50, 100]"
+                layout="total, sizes, prev, pager, next, jumper"
+                background
+                small
+              />
+            </div>
+          </template>
         </section>
 
         <p v-if="errorTip" class="tv-error">
