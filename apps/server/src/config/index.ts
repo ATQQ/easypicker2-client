@@ -1,5 +1,3 @@
-import fs from 'node:fs'
-
 export const serverConfig = {
   port: +process.env.SERVER_PORT,
   hostname: process.env.SERVER_HOST,
@@ -73,6 +71,8 @@ function readSecret(inline?: string, filePath?: string): string {
   if (!p)
     return ''
   try {
+    // eslint-disable-next-line ts/no-require-imports
+    const fs = require('node:fs')
     return fs.readFileSync(p, 'utf8')
   }
   catch {
@@ -80,25 +80,25 @@ function readSecret(inline?: string, filePath?: string): string {
   }
 }
 
-// 支付宝支付（纯环境变量驱动，默认关闭）
+// 支付宝支付（通过 alipay-service 中转平台完成收款）
+// 业务侧仅保留总开关、金额限额与订单参数；真正的支付宝密钥由中转平台持有。
 export const alipayConfig = {
   enabled: String(process.env.ALIPAY_ENABLED) === 'true',
-  env: process.env.ALIPAY_ENV === 'production' ? 'production' : 'sandbox',
-  appId: process.env.ALIPAY_APP_ID || '',
-  signType: process.env.ALIPAY_SIGN_TYPE || 'RSA2',
-  appPrivateKey: readSecret(
-    process.env.ALIPAY_APP_PRIVATE_KEY,
-    process.env.ALIPAY_APP_PRIVATE_KEY_PATH,
-  ),
-  alipayPublicKey: readSecret(
-    process.env.ALIPAY_PUBLIC_KEY,
-    process.env.ALIPAY_PUBLIC_KEY_PATH,
-  ),
-  notifyUrl: process.env.ALIPAY_NOTIFY_URL || '',
-  returnUrl: process.env.ALIPAY_RETURN_URL || '',
-  sellerId: process.env.ALIPAY_SELLER_ID || '',
   minAmount: Number(process.env.ALIPAY_MIN_AMOUNT ?? 1),
   maxAmount: Number(process.env.ALIPAY_MAX_AMOUNT ?? 5000),
   dailyLimit: Number(process.env.ALIPAY_DAILY_LIMIT ?? 20000),
   orderExpireMinutes: Number(process.env.ALIPAY_ORDER_EXPIRE_MINUTES ?? 30),
+}
+
+// 支付宝中转平台（alipay-service）连接配置
+export const alipayRelayConfig = {
+  enabled: String(process.env.ALIPAY_RELAY_ENABLED) === 'true',
+  baseUrl: (process.env.ALIPAY_RELAY_BASE_URL || '').replace(/\/+$/, ''),
+  appId: process.env.ALIPAY_RELAY_APP_ID || '',
+  appSecret: readSecret(
+    process.env.ALIPAY_RELAY_APP_SECRET,
+    process.env.ALIPAY_RELAY_APP_SECRET_PATH,
+  ),
+  notifyPath: process.env.ALIPAY_RELAY_NOTIFY_PATH || '/api/pay/alipay/notify',
+  timeoutMs: Number(process.env.ALIPAY_RELAY_TIMEOUT_MS ?? 10000),
 }

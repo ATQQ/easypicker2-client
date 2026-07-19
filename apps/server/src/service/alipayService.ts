@@ -1,59 +1,39 @@
 import { Provide } from 'flash-wolves'
-import { alipayConfig } from '@/config'
+import { alipayConfig, alipayRelayConfig } from '@/config'
+import { buildSignedHeaders, verifyIncoming } from '@/utils/openRelaySign'
 
-// alipay-sdk v4 采用命名导出，v3 兼容默认导出。这里通过 require 兼容两种情况。
-// 该模块仅在支付功能开启后才会真实被调用；未安装依赖 / 未配置齐全时全部走「未启用」分支。
-
-type AlipaySdkCtor = new (opts: Record<string, any>) => AlipaySdkInstance
-
-interface AlipaySdkInstance {
-  pageExecute: (
-    method: string,
-    httpMethod: 'GET' | 'POST',
-    params: Record<string, any>,
-  ) => string
-  checkNotifySign?: (postData: Record<string, any>) => boolean
-  checkNotifySignV2?: (postData: Record<string, any>) => boolean
-  exec?: (method: string, params: Record<string, any>) => Promise<any>
-  curl?: (
-    httpMethod: string,
-    path: string,
-    options?: Record<string, any>,
-  ) => Promise<any>
+export interface CreateOrderInput {
+  outTradeNo: string
+  amount: string
+  subject: string
+  body?: string
+  payMethod?: 'page' | 'wap' | 'precreate'
+  extra?: Record<string, any>
 }
 
-let sdkInstance: AlipaySdkInstance | null = null
-let sdkInitFailed = false
-
-function loadSdkCtor(): AlipaySdkCtor | null {
-  try {
-    // eslint-disable-next-line ts/no-require-imports
-    const mod = require('alipay-sdk')
-    // v4: { AlipaySdk }; v3: default export
-    return (mod?.AlipaySdk || mod?.default || mod) as AlipaySdkCtor
-  }
-  catch {
-    return null
-  }
+export interface CreateOrderResult {
+  qrCode: string | null
+  payUrl: string | null
+  remoteOutTradeNo: string | null
+  expireAt: string | null
 }
 
 export function isAlipayReady(): boolean {
   if (!alipayConfig.enabled)
     return false
-  const required = [
-    alipayConfig.appId,
-    alipayConfig.appPrivateKey,
-    alipayConfig.alipayPublicKey,
-    alipayConfig.notifyUrl,
-    alipayConfig.returnUrl,
-  ]
-  return required.every(v => typeof v === 'string' && v.trim().length > 0)
+  if (!alipayRelayConfig.enabled)
+    return false
+  return !!(
+    alipayRelayConfig.baseUrl
+    && alipayRelayConfig.appId
+    && alipayRelayConfig.appSecret
+  )
 }
 
 export function getAlipayStatus() {
   return {
     enabled: isAlipayReady(),
-    env: alipayConfig.env,
+    env: 'relay',
     minAmount: alipayConfig.minAmount,
     maxAmount: alipayConfig.maxAmount,
     dailyLimit: alipayConfig.dailyLimit,
@@ -61,53 +41,62 @@ export function getAlipayStatus() {
   }
 }
 
-function getGateway(): string {
-  return alipayConfig.env === 'production'
-    ? 'https://openapi.alipay.com/gateway.do'
-    : 'https://openapi.alipaydev.com/gateway.do'
+interface RelayRequestOptions {
+  method: 'GET' | 'POST'
+  path: string
+  bodyRaw?: string
+  timeoutMs?: number
 }
 
-function ensureSdk(): AlipaySdkInstance | null {
-  if (sdkInstance)
-    return sdkInstance
-  if (sdkInitFailed)
-    return null
+async function callRelay<T = any>(opts: RelayRequestOptions): Promise<{ ok: boolean, data?: T, message?: string, status?: number }> {
   if (!isAlipayReady())
-    return null
-  const Ctor = loadSdkCtor()
-  if (!Ctor) {
-    sdkInitFailed = true
-    return null
-  }
+    return { ok: false, message: 'alipay relay not ready' }
+  const url = `${alipayRelayConfig.baseUrl}${opts.path}`
+  const bodyRaw = opts.bodyRaw ?? ''
+  const headers = buildSignedHeaders(
+    { method: opts.method, path: opts.path, bodyRaw },
+    { appId: alipayRelayConfig.appId, appSecret: alipayRelayConfig.appSecret },
+  )
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), Math.max(1000, opts.timeoutMs ?? alipayRelayConfig.timeoutMs))
   try {
-    sdkInstance = new Ctor({
-      appId: alipayConfig.appId,
-      privateKey: alipayConfig.appPrivateKey,
-      alipayPublicKey: alipayConfig.alipayPublicKey,
-      signType: alipayConfig.signType as 'RSA2',
-      gateway: getGateway(),
-      endpoint:
-        alipayConfig.env === 'production'
-          ? 'https://openapi.alipay.com'
-          : 'https://openapi-sandbox.dl.alipaydev.com',
-      keyType: 'PKCS8',
-      timeout: 10 * 1000,
-      camelcase: true,
+    const res = await fetch(url, {
+      method: opts.method,
+      headers: {
+        ...headers,
+        ...(opts.method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: opts.method === 'POST' ? bodyRaw : undefined,
+      signal: controller.signal,
     })
-    return sdkInstance
+    const text = await res.text()
+    let json: any = null
+    try {
+      json = text ? JSON.parse(text) : null
+    }
+    catch {
+      json = null
+    }
+    if (!res.ok) {
+      return {
+        ok: false,
+        status: res.status,
+        message: json?.message || text || `http ${res.status}`,
+      }
+    }
+    if (json && typeof json === 'object' && 'ok' in json) {
+      if (json.ok)
+        return { ok: true, data: json.data as T, status: res.status }
+      return { ok: false, message: json.message || 'relay returned ok=false', status: res.status }
+    }
+    return { ok: true, data: (json ?? text) as T, status: res.status }
   }
-  catch (err) {
-    sdkInitFailed = true
-    console.warn('[alipay] SDK 初始化失败:', err instanceof Error ? err.message : err)
-    return null
+  catch (err: any) {
+    return { ok: false, message: err?.message || 'network error' }
   }
-}
-
-export interface CreatePagePayInput {
-  outTradeNo: string
-  amount: string
-  subject: string
-  body?: string
+  finally {
+    clearTimeout(timeout)
+  }
 }
 
 @Provide()
@@ -120,62 +109,66 @@ export default class AlipayService {
     return getAlipayStatus()
   }
 
-  /** 生成支付宝电脑网站支付跳转 URL */
-  createPagePayUrl(input: CreatePagePayInput): string | null {
-    const sdk = ensureSdk()
-    if (!sdk)
+  /**
+   * 通过中转平台创建订单，默认使用当面付（precreate），返回二维码文本
+   */
+  async createOrder(input: CreateOrderInput): Promise<CreateOrderResult | null> {
+    if (!isAlipayReady())
       return null
-    const expireMinutes = Math.max(1, Number(alipayConfig.orderExpireMinutes) || 30)
-    try {
-      const url = sdk.pageExecute('alipay.trade.page.pay', 'GET', {
-        notifyUrl: alipayConfig.notifyUrl,
-        returnUrl: alipayConfig.returnUrl,
-        bizContent: {
-          out_trade_no: input.outTradeNo,
-          product_code: 'FAST_INSTANT_TRADE_PAY',
-          total_amount: input.amount,
-          subject: input.subject,
-          body: input.body || input.subject,
-          timeout_express: `${expireMinutes}m`,
-        },
-      })
-      return url
+    const payload = {
+      bizOutTradeNo: input.outTradeNo,
+      amount: input.amount,
+      subject: input.subject,
+      body: input.body || input.subject,
+      payMethod: input.payMethod || 'precreate',
+      extra: input.extra,
     }
-    catch (err) {
-      console.warn('[alipay] pageExecute 失败:', err instanceof Error ? err.message : err)
+    const bodyRaw = JSON.stringify(payload)
+    const resp = await callRelay<any>({
+      method: 'POST',
+      path: '/api/open/order/create',
+      bodyRaw,
+    })
+    if (!resp.ok) {
+      console.warn('[alipay-relay] createOrder failed:', resp.status || '', resp.message || '')
       return null
+    }
+    const data = resp.data || {}
+    return {
+      qrCode: data.qrCode || null,
+      payUrl: data.payUrl || null,
+      remoteOutTradeNo: data.outTradeNo || null,
+      expireAt: data.expireAt || null,
     }
   }
 
   /**
-   * 校验支付宝 notify：签名 + app_id + seller_id（可选） + trade_status
-   * 不校验金额（金额需与本地订单比对，由调用方处理）
+   * 兼容旧签名：仅返回二维码字符串，供 PayController 直接使用
    */
-  verifyNotify(params: Record<string, any>): { ok: boolean, reason?: string } {
-    const sdk = ensureSdk()
-    if (!sdk)
-      return { ok: false, reason: 'sdk not ready' }
-    if (!params || typeof params !== 'object')
-      return { ok: false, reason: 'empty params' }
-    // 签名校验
-    let signed = false
-    try {
-      if (typeof sdk.checkNotifySignV2 === 'function') {
-        signed = !!sdk.checkNotifySignV2(params)
-      }
-      else if (typeof sdk.checkNotifySign === 'function') {
-        signed = !!sdk.checkNotifySign(params)
-      }
-    }
-    catch {
-      signed = false
-    }
-    if (!signed)
-      return { ok: false, reason: 'sign invalid' }
-    if (params.app_id && String(params.app_id) !== String(alipayConfig.appId))
-      return { ok: false, reason: 'app_id mismatch' }
-    if (alipayConfig.sellerId && params.seller_id && String(params.seller_id) !== String(alipayConfig.sellerId))
-      return { ok: false, reason: 'seller_id mismatch' }
-    return { ok: true }
+  async createPrecreateQrCode(input: { outTradeNo: string, amount: string, subject: string, body?: string }): Promise<string | null> {
+    const r = await this.createOrder({
+      outTradeNo: input.outTradeNo,
+      amount: input.amount,
+      subject: input.subject,
+      body: input.body,
+      payMethod: 'precreate',
+    })
+    return r?.qrCode || null
+  }
+
+  /**
+   * 验签 alipay-service 透传过来的回调请求
+   * @param headers 原始请求头（大小写不敏感）
+   * @param bodyRaw 原始请求体字符串
+   */
+  verifyIncomingNotify(headers: Record<string, any>, bodyRaw: string): { ok: boolean, reason?: string } {
+    if (!isAlipayReady())
+      return { ok: false, reason: 'relay not ready' }
+    return verifyIncoming(headers, bodyRaw, {
+      appId: alipayRelayConfig.appId,
+      appSecret: alipayRelayConfig.appSecret,
+      path: alipayRelayConfig.notifyPath,
+      method: 'POST',
+    })
   }
 }

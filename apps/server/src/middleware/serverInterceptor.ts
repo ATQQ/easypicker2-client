@@ -1,6 +1,5 @@
 import type { Middleware } from 'flash-wolves'
 import type { IncomingMessage } from 'node:http'
-import { Buffer } from 'node:buffer'
 import fs, { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import formidable from 'formidable'
@@ -43,27 +42,6 @@ function isTipImageUploadPath(pathname: string) {
 
 function isAlipayNotifyPath(pathname: string) {
   return pathname === '/api/pay/alipay/notify' || pathname === '/pay/alipay/notify'
-}
-
-function parseUrlencoded(raw: string): Record<string, string> {
-  const params: Record<string, string> = {}
-  if (!raw)
-    return params
-  for (const pair of raw.split('&')) {
-    if (!pair)
-      continue
-    const idx = pair.indexOf('=')
-    const key = idx >= 0 ? pair.slice(0, idx) : pair
-    const val = idx >= 0 ? pair.slice(idx + 1) : ''
-    try {
-      params[decodeURIComponent(key.replace(/\+/g, ' '))]
-        = decodeURIComponent(val.replace(/\+/g, ' '))
-    }
-    catch {
-      params[key] = val
-    }
-  }
-  return params
 }
 
 function pickField(fields: formidable.Fields, key: string) {
@@ -265,29 +243,18 @@ const interceptor: Middleware = async (req, res) => {
     return
   }
 
-  // 支付宝异步通知：预读 form-urlencoded 报文并挂载到 req 上，避免下游拿不到 body
+  // 支付宝异步通知：只打到达日志，不要预读 body。
+  // flash-wolves 后续 body parser 会再等 data/end；中间件先消费流会导致永久挂起。
+  // 原始报文由框架写入 req.buffer，供 handler HMAC 验签使用。
   if (method === 'POST' && isAlipayNotifyPath(pathOnly)) {
-    try {
-      const chunks: Buffer[] = []
-      await new Promise<void>((resolve, reject) => {
-        req.on('data', (chunk: Buffer | string) => {
-          chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk)
-        })
-        req.on('end', () => resolve())
-        req.on('error', reject)
-      })
-      const raw = Buffer.concat(chunks).toString('utf8')
-      Object.defineProperty(req, '_alipayNotifyBody', {
-        value: parseUrlencoded(raw),
-      })
-      Object.defineProperty(req, '_alipayNotifyRaw', {
-        value: raw,
-      })
-    }
-    catch {
-      Object.defineProperty(req, '_alipayNotifyBody', { value: {} })
-      Object.defineProperty(req, '_alipayNotifyRaw', { value: '' })
-    }
+    const arrivedAt = new Date().toISOString()
+    const remoteIp = getClientIp(req)
+    const ua = String(req.headers['user-agent'] || '')
+    const contentType = String(req.headers['content-type'] || '')
+    const contentLengthHeader = String(req.headers['content-length'] || '0')
+    console.log(
+      `[alipay:notify] ${arrivedAt} 收到 notify 请求 ip=${remoteIp} ua="${ua}" ct=${contentType} len=${contentLengthHeader} path=${pathOnly}`,
+    )
   }
 
   // 添加ip，供 @ReqIp 取用

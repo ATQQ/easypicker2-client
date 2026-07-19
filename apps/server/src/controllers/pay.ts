@@ -1,7 +1,7 @@
 import type { Context, FWRequest } from 'flash-wolves'
-import type { ServerResponse } from 'node:http'
 import type { PaymentOrder as PaymentOrderEntity } from '@/db/entity/PaymentOrder'
 import type { User as EntityUser } from '@/db/entity/User'
+import { Buffer } from 'node:buffer'
 import {
   Get,
   Inject,
@@ -9,16 +9,14 @@ import {
   Post,
   ReqBody,
   ReqParams,
-  ReqQuery,
   Response,
   RouterController,
 } from 'flash-wolves'
 import { alipayConfig } from '@/config'
 import { addBehavior } from '@/db/logDb'
 import { PaymentOrderRepository } from '@/db/paymentOrderDb'
-import { UserRepository } from '@/db/userDb'
 import { ReqUserInfo } from '@/decorator'
-import { AlipayService } from '@/service'
+import { AlipayService, FileService } from '@/service'
 import { getUniqueKey } from '@/utils/stringUtil'
 
 interface CreatePayInput {
@@ -35,17 +33,6 @@ function normalizeAmount(input: unknown): string | null {
   return n.toFixed(2)
 }
 
-function htmlRedirect(res: ServerResponse, url: string) {
-  if (res.headersSent)
-    return
-  const safe = String(url).replace(/"/g, '&quot;')
-  res.writeHead(302, {
-    'Content-Type': 'text/html; charset=utf-8',
-    'Location': safe,
-  })
-  res.end(`<html><head><meta http-equiv="refresh" content="0;url=${safe}"/></head><body>redirecting...</body></html>`)
-}
-
 @RouterController('pay')
 export default class PayController {
   @InjectCtx()
@@ -57,8 +44,8 @@ export default class PayController {
   @Inject(PaymentOrderRepository)
   private paymentOrderRepository: PaymentOrderRepository
 
-  @Inject(UserRepository)
-  private userRepository: UserRepository
+  @Inject(FileService)
+  private fileService: FileService
 
   /** 公开：返回支付宝支付启用与金额范围（前端渲染入口用） */
   @Get('alipay/status', { CORS: true })
@@ -66,7 +53,7 @@ export default class PayController {
     return this.alipayService.getStatus()
   }
 
-  /** 已登录：创建支付宝网站支付订单，返回跳转 URL */
+  /** 已登录：创建支付宝当面付订单，返回收款二维码字符串 */
   @Post('alipay/create', { needLogin: true })
   async createAlipayOrder(
     @ReqBody() body: CreatePayInput,
@@ -115,23 +102,23 @@ export default class PayController {
     }
     await this.paymentOrderRepository.insert(order as PaymentOrderEntity)
 
-    const payUrl = this.alipayService.createPagePayUrl({
+    const qrCode = await this.alipayService.createPrecreateQrCode({
       outTradeNo,
       amount,
       subject,
     })
-    if (!payUrl) {
-      return Response.fail(500, '生成支付链接失败')
+    if (!qrCode) {
+      return Response.fail(500, '生成收款二维码失败')
     }
     addBehavior(req, {
       module: 'pay',
-      msg: `创建支付宝订单 ${outTradeNo} 金额 ${amount}`,
+      msg: `创建支付宝当面付订单 ${outTradeNo} 金额 ${amount}`,
       data: { outTradeNo, amount, userId: userInfo.id },
     })
     return {
       outTradeNo,
       amount,
-      payUrl,
+      qrCode,
     }
   }
 
@@ -182,145 +169,187 @@ export default class PayController {
     }
   }
 
-  /** 支付宝异步通知（免登录、form-urlencoded）：body 由 serverInterceptor 预解析 */
+  /** alipay-service 中转平台 JSON 回调（免登录、application/json） */
   @Post('alipay/notify', { CORS: false })
   async notify(req: FWRequest) {
     const res = this.ctx.res
-    const writePlain = (text: string) => {
+    const writePlain = (text: string, code = 200) => {
       if (res.headersSent)
         return
-      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' })
+      res.writeHead(code, { 'Content-Type': 'text/plain; charset=utf-8' })
       res.end(text)
     }
+
+    // rawBody 用 flash-wolves body parser 写入的 req.buffer（原始字节），不能 JSON.stringify(req.body)
+    const rawBuf = (req as any).buffer
+    const rawBody = Buffer.isBuffer(rawBuf)
+      ? rawBuf.toString('utf8')
+      : (typeof rawBuf === 'string' ? rawBuf : '')
+    let payload: Record<string, any> = {}
+    if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+      payload = req.body as Record<string, any>
+    }
+    else if (rawBody) {
+      try {
+        payload = JSON.parse(rawBody)
+      }
+      catch (err) {
+        console.warn('[alipay:notify] parse json failed:', err instanceof Error ? err.message : err)
+        writePlain('fail')
+        return
+      }
+    }
+
+    const eventType = String(payload?.eventType || '')
+    const bizOutTradeNo = String(payload?.bizOutTradeNo || '')
+    const remoteOutTradeNo = String(payload?.outTradeNo || '')
+    const tradeNo = String(payload?.tradeNo || '')
+    const amount = String(payload?.amount ?? '')
+
+    console.warn(
+      `[alipay:notify] handler start event=${eventType} bizOutTradeNo=${bizOutTradeNo} remoteOutTradeNo=${remoteOutTradeNo} tradeNo=${tradeNo} amount=${amount}`,
+    )
+    addBehavior(req, {
+      module: 'pay',
+      msg: `支付宝 notify 到达 ${bizOutTradeNo}`,
+      data: {
+        eventType,
+        bizOutTradeNo,
+        remoteOutTradeNo,
+        tradeNo,
+        amount,
+        raw: (() => {
+          try {
+            return rawBody.slice(0, 4000)
+          }
+          catch {
+            return ''
+          }
+        })(),
+      },
+    })
+
     if (!this.alipayService.isReady()) {
+      console.warn('[alipay:notify] service not ready, reply fail')
       writePlain('fail')
       return
     }
-    const params: Record<string, string>
-      = (req as any)._alipayNotifyBody || {}
-    const verify = this.alipayService.verifyNotify(params)
+
+    // HMAC 验签
+    const verify = this.alipayService.verifyIncomingNotify(req.headers as any, rawBody)
     if (!verify.ok) {
+      console.warn(`[alipay:notify] verify failed reason=${verify.reason} bizOutTradeNo=${bizOutTradeNo}`)
       addBehavior(req, {
         module: 'pay',
         msg: `支付宝 notify 验签失败: ${verify.reason}`,
-        data: { outTradeNo: params.out_trade_no || '', reason: verify.reason },
+        data: { bizOutTradeNo, reason: verify.reason },
       })
-      writePlain('fail')
+      writePlain('fail', 401)
       return
     }
-    const outTradeNo = String(params.out_trade_no || '')
-    const tradeStatus = String(params.trade_status || '')
-    const totalAmount = String(params.total_amount || '')
-    const tradeNo = String(params.trade_no || '')
-    if (!outTradeNo) {
-      writePlain('fail')
-      return
-    }
-    // 加悲观写锁查询订单，防止并发 notify 重复充值
-    const order = await this.paymentOrderRepository.findOneWithLock({ outTradeNo } as any)
-    if (!order) {
-      writePlain('fail')
-      return
-    }
-    // 金额比对
-    if (Number(order.amount) !== Number(totalAmount)) {
-      addBehavior(req, {
-        module: 'pay',
-        msg: `支付宝 notify 金额不一致 ${outTradeNo}`,
-        data: { local: order.amount, remote: totalAmount },
-      })
-      writePlain('fail')
-      return
-    }
-    // 已处理（幂等）
-    if (order.status === 'paid') {
-      writePlain('success')
-      return
-    }
-    // 交易关闭
-    if (tradeStatus === 'TRADE_CLOSED') {
-      await this.paymentOrderRepository.updateSpecifyFields(
-        { id: order.id },
-        { status: 'closed' },
-      )
-      addBehavior(req, {
-        module: 'pay',
-        msg: `支付宝订单关闭 ${outTradeNo}`,
-        data: { outTradeNo, tradeNo },
-      })
-      writePlain('success')
-      return
-    }
-    if (tradeStatus === 'TRADE_SUCCESS' || tradeStatus === 'TRADE_FINISHED') {
-      const rawNotify = (() => {
-        try {
-          return JSON.stringify(params).slice(0, 4000)
-        }
-        catch {
-          return null
-        }
-      })()
-      // 使用 updateSpecifyFields 避免 updateTime 被 TypeORM save() 覆盖
-      await this.paymentOrderRepository.updateSpecifyFields(
-        { id: order.id as any },
-        {
-          status: 'paid',
-          tradeNo: tradeNo || order.tradeNo,
-          paidTime: new Date() as any,
-          rawNotify,
-        },
-      )
 
-      // 原子增量更新钱包余额，避免并发写覆盖
-      const delta = Number(order.amount || 0)
-      await this.userRepository.updateSpecifyFields(
-        { id: order.userId },
-        { wallet: () => `wallet + ${delta.toFixed(2)}` } as any,
-      )
-
-      // 获取用户信息用于日志
-      const user = await this.userRepository.findOne({ id: order.userId } as any)
-      addBehavior(req, {
-        module: 'pay',
-        msg: `支付宝充值到账 ${outTradeNo} 用户${user?.account || ''} 金额 ${order.amount}`,
-        data: { outTradeNo, userId: order.userId, delta: order.amount, tradeNo },
-      })
-      writePlain('success')
+    if (!bizOutTradeNo) {
+      console.warn('[alipay:notify] missing bizOutTradeNo, reply fail')
+      writePlain('fail')
       return
     }
-    // 其他状态：记录 raw、维持 pending
+
+    const outTradeNo = bizOutTradeNo
+    const rawNotify = (() => {
+      try {
+        return rawBody.slice(0, 4000)
+      }
+      catch {
+        return null
+      }
+    })()
+
     try {
-      const rawNotify = (() => {
-        try {
-          return JSON.stringify(params).slice(0, 4000)
-        }
-        catch {
-          return null
-        }
-      })()
-      await this.paymentOrderRepository.updateSpecifyFields(
-        { id: order.id as any },
-        { rawNotify },
-      )
-    }
-    catch { /* ignore */ }
-    writePlain('success')
-  }
+      const result = await this.paymentOrderRepository.processNotifyInTransaction({
+        outTradeNo,
+        amount,
+        tradeNo,
+        eventType,
+        rawNotify,
+      })
 
-  /**
-   * 支付宝同步跳转：从 return_url 转到前端页面
-   * 前端页面可通过 outTradeNo 轮询订单状态。
-   */
-  @Get('alipay/return', { CORS: true })
-  async pageReturn(@ReqQuery() query: any) {
-    const res = this.ctx.res
-    if (res.headersSent)
-      return
-    const outTradeNo = String(query?.out_trade_no || '')
-    const referer = this.ctx.req.headers.referer || ''
-    // 默认跳转到 profile 页
-    const origin = referer ? new URL(referer).origin : ''
-    const target = `${origin || ''}/dashboard/profile?pay=alipay&outTradeNo=${encodeURIComponent(outTradeNo)}`
-    htmlRedirect(res, target)
+      if (result.kind === 'not_found') {
+        console.warn(`[alipay:notify] order not found ${outTradeNo}`)
+        addBehavior(req, {
+          module: 'pay',
+          msg: `支付宝 notify 订单不存在 ${outTradeNo}`,
+          data: { outTradeNo, tradeNo, eventType, amount },
+        })
+        writePlain('fail')
+        return
+      }
+
+      if (result.kind === 'amount_mismatch') {
+        console.warn(`[alipay:notify] amount mismatch ${outTradeNo} local=${result.local} remote=${result.remote}`)
+        addBehavior(req, {
+          module: 'pay',
+          msg: `支付宝 notify 金额不一致 ${outTradeNo}`,
+          data: { local: result.local, remote: result.remote },
+        })
+        writePlain('fail')
+        return
+      }
+
+      if (result.kind === 'already_paid') {
+        console.warn(`[alipay:notify] order already paid, idempotent ${outTradeNo}`)
+        writePlain('success')
+        return
+      }
+
+      if (result.kind === 'closed') {
+        console.warn(`[alipay:notify] trade closed ${outTradeNo} trade_no=${tradeNo}`)
+        addBehavior(req, {
+          module: 'pay',
+          msg: `支付宝订单关闭 ${outTradeNo}`,
+          data: { outTradeNo, tradeNo },
+        })
+        writePlain('success')
+        return
+      }
+
+      if (result.kind === 'paid') {
+        // 入账后立刻失效 overview 缓存，避免 usage 接口长时间返回旧 wallet
+        await this.fileService.expireUserOverviewCache(result.userId)
+        console.warn(`[alipay:notify] trade success ${outTradeNo} user=${result.account} userId=${result.userId} delta=${result.amount} trade_no=${tradeNo}`)
+        addBehavior(req, {
+          module: 'pay',
+          msg: `支付宝充值到账 ${outTradeNo} 用户${result.account} 金额 ${result.amount}`,
+          data: { outTradeNo, userId: result.userId, delta: result.amount, tradeNo },
+        })
+        writePlain('success')
+        return
+      }
+
+      // ignored：其他事件类型，记录但不改状态
+      console.warn(`[alipay:notify] unhandled eventType=${eventType} ${outTradeNo}, keep pending`)
+      addBehavior(req, {
+        module: 'pay',
+        msg: `支付宝 notify 未处理事件 ${eventType} ${outTradeNo}`,
+        data: { outTradeNo, tradeNo, eventType, amount },
+      })
+      writePlain('success')
+    }
+    catch (err) {
+      console.warn(
+        `[alipay:notify] process failed ${outTradeNo}:`,
+        err instanceof Error ? err.message : err,
+      )
+      addBehavior(req, {
+        module: 'pay',
+        msg: `支付宝 notify 处理异常 ${outTradeNo}`,
+        data: {
+          outTradeNo,
+          tradeNo,
+          eventType,
+          error: err instanceof Error ? err.message : String(err),
+        },
+      })
+      writePlain('fail')
+    }
   }
 }

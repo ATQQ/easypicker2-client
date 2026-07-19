@@ -12,7 +12,7 @@ export interface AlipayStatus {
 export interface CreateAlipayOrderResult {
   outTradeNo: string
   amount: string
-  payUrl: string
+  qrCode: string
 }
 
 export interface AlipayOrder {

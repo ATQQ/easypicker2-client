@@ -149,6 +149,5 @@
   { "name": "pay.alipay-create", "method": "POST", "path": "/api/pay/alipay/create", "body": { "amount": 1, "subject": "api-check" } },
   { "name": "pay.alipay-order", "method": "GET", "path": "/api/pay/alipay/order/api-check-order" },
   { "name": "pay.alipay-orders", "method": "GET", "path": "/api/pay/alipay/orders" },
-  { "name": "pay.alipay-return", "method": "GET", "path": "/api/pay/alipay/return?out_trade_no=api-check" },
   { "name": "pay.alipay-notify", "method": "POST", "path": "/api/pay/alipay/notify", "body": {} }
 ]

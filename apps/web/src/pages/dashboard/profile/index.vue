@@ -7,17 +7,18 @@ import {
   Refresh,
   User,
 } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
-import { PayApi, PublicApi, UserApi } from '@/apis'
+import { PublicApi, UserApi } from '@/apis'
+import WalletOrderHistory from '@/components/WalletOrderHistory/index.vue'
+import WalletRecharge from '@/components/WalletRecharge/index.vue'
 import { useSiteConfig } from '@/composables'
 import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
 import { rEmail, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
 
-const $route = useRoute()
 const $router = useRouter()
 const $store = useStore()
 const { value: siteConfig } = useSiteConfig('auth')
@@ -36,151 +37,24 @@ const profile = reactive<UserApiTypes.UserProfile>({
 })
 
 const wallet = ref<string>('0.00')
-
-const alipayStatus = reactive({
-  enabled: false,
-  minAmount: 1,
-  maxAmount: 5000,
-  dailyLimit: 20000,
-  env: 'sandbox' as 'sandbox' | 'production',
-  orderExpireMinutes: 30,
-})
-
-const rechargeAmount = ref<number | null>(null)
-const rechargeSubmitting = ref(false)
-const activeOutTradeNo = ref<string>('')
-let pollTimer: ReturnType<typeof setInterval> | null = null
-
-const rechargeDialogVisible = ref(false)
-const RECHARGE_PRESETS = [5, 10, 50, 100]
-const rechargePreset = ref<number | 'custom'>(5)
-const rechargeCustomAmount = ref<number | null>(null)
-
-function openRechargeDialog() {
-  if (!alipayStatus.enabled) {
-    ElMessage.warning('支付宝支付未启用')
-    return
-  }
-  rechargePreset.value = 5
-  rechargeCustomAmount.value = null
-  rechargeDialogVisible.value = true
-}
-
-async function confirmRecharge() {
-  const amount
-    = rechargePreset.value === 'custom'
-      ? Number(rechargeCustomAmount.value)
-      : Number(rechargePreset.value)
-  rechargeAmount.value = amount
-  const ok = await submitRecharge()
-  if (ok) {
-    rechargeDialogVisible.value = false
-  }
-}
-
-function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
-}
+const walletOrderHistoryRef = ref<InstanceType<typeof WalletOrderHistory> | null>(null)
+const alipayEnabled = ref(false)
 
 async function refreshWallet() {
   try {
     const res = await UserApi.usage()
-    if (res?.data) {
+    if (res?.data)
       wallet.value = String(res.data.wallet ?? '0.00')
-    }
   }
   catch { /* ignore */ }
 }
 
-async function loadAlipayStatus() {
-  try {
-    const res = await PayApi.getAlipayStatus()
-    if (res?.data) {
-      Object.assign(alipayStatus, res.data)
-    }
-  }
-  catch { /* ignore */ }
+function onRechargeSuccess(payload: { wallet: string }) {
+  wallet.value = payload.wallet
 }
 
-async function pollOrderStatus(outTradeNo: string, maxSeconds = 300) {
-  stopPolling()
-  activeOutTradeNo.value = outTradeNo
-  const start = Date.now()
-  pollTimer = setInterval(async () => {
-    if (!activeOutTradeNo.value)
-      return
-    if ((Date.now() - start) / 1000 > maxSeconds) {
-      stopPolling()
-      ElMessage.warning('支付确认超时，请手动刷新查看订单状态')
-      return
-    }
-    try {
-      const res = await PayApi.getAlipayOrder(outTradeNo)
-      const status = res?.data?.status
-      if (status === 'paid') {
-        stopPolling()
-        ElMessage.success(`充值成功 ￥${res.data.amount}`)
-        await refreshWallet()
-      }
-      else if (status === 'closed') {
-        stopPolling()
-        ElMessage.warning('订单已关闭')
-      }
-    }
-    catch { /* ignore */ }
-  }, 3000)
-}
-
-async function submitRecharge(): Promise<boolean> {
-  if (!alipayStatus.enabled) {
-    ElMessage.warning('支付宝支付未启用')
-    return false
-  }
-  const amount = Number(rechargeAmount.value)
-  if (!Number.isFinite(amount) || amount <= 0) {
-    ElMessage.warning('请输入正确的充值金额')
-    return false
-  }
-  if (amount < alipayStatus.minAmount) {
-    ElMessage.warning(`单笔充值金额需 ≥ ${alipayStatus.minAmount} 元`)
-    return false
-  }
-  if (amount > alipayStatus.maxAmount) {
-    ElMessage.warning(`单笔充值金额需 ≤ ${alipayStatus.maxAmount} 元`)
-    return false
-  }
-  try {
-    await ElMessageBox.confirm(
-      `确认充值 ￥${amount.toFixed(2)} 到账户余额？下一步将跳转到支付宝完成支付。`,
-      '充值确认',
-      { type: 'info', confirmButtonText: '前往支付', cancelButtonText: '取消' },
-    )
-  }
-  catch {
-    return false
-  }
-  rechargeSubmitting.value = true
-  try {
-    const res = await PayApi.createAlipayOrder(amount, 'EasyPicker 钱包充值')
-    if (res?.data?.payUrl) {
-      window.open(res.data.payUrl, '_blank', 'noopener,noreferrer')
-      pollOrderStatus(res.data.outTradeNo)
-      ElMessage.info('已打开支付页面，支付完成后余额会自动更新')
-      return true
-    }
-    ElMessage.error(res?.msg || '创建订单失败')
-    return false
-  }
-  catch (err: any) {
-    ElMessage.error(err?.msg || err?.message || '创建订单失败')
-    return false
-  }
-  finally {
-    rechargeSubmitting.value = false
-  }
+function openOrderHistory() {
+  walletOrderHistoryRef.value?.open()
 }
 
 const bindForm = reactive({
@@ -350,16 +224,6 @@ function saveNotify(val: boolean) {
 
 onMounted(() => {
   loadProfile()
-  loadAlipayStatus()
-  const outTradeNo = String($route.query.outTradeNo || '')
-  const payChannel = String($route.query.pay || '')
-  if (payChannel === 'alipay' && outTradeNo) {
-    pollOrderStatus(outTradeNo)
-  }
-})
-
-onUnmounted(() => {
-  stopPolling()
 })
 </script>
 
@@ -405,97 +269,31 @@ onUnmounted(() => {
         </div>
         <div class="info-item wallet-item">
           <div class="wallet-header">
-            <el-icon><Money /></el-icon>
-            <span>钱包余额</span>
+            <div class="wallet-header__left">
+              <el-icon><Money /></el-icon>
+              <span>钱包余额</span>
+            </div>
+            <el-button
+              v-if="alipayEnabled"
+              link
+              type="primary"
+              @click="openOrderHistory"
+            >
+              历史订单
+            </el-button>
           </div>
           <div class="wallet-body">
             <strong>￥{{ wallet }}</strong>
-            <el-button
-              v-if="alipayStatus.enabled"
-              type="primary"
-              size="small"
-              @click="openRechargeDialog"
-            >
-              充值
-            </el-button>
+            <WalletRecharge
+              @update:enabled="alipayEnabled = $event"
+              @success="onRechargeSuccess"
+            />
           </div>
         </div>
       </div>
     </div>
 
-    <section
-      v-if="alipayStatus.enabled && activeOutTradeNo"
-      class="profile-panel recharge-panel"
-    >
-      <div class="section-title">
-        <div>
-          <h3>等待支付结果</h3>
-          <p>订单号：{{ activeOutTradeNo }}，支付成功后余额会自动更新</p>
-        </div>
-        <el-tag v-if="alipayStatus.env === 'sandbox'" type="warning">
-          沙箱模式
-        </el-tag>
-      </div>
-      <div class="recharge-row">
-        <el-button plain @click="refreshWallet">
-          刷新余额
-        </el-button>
-      </div>
-    </section>
-
-    <el-dialog
-      v-model="rechargeDialogVisible"
-      title="钱包充值"
-      width="440px"
-      align-center
-      destroy-on-close
-    >
-      <div class="recharge-dialog">
-        <p class="recharge-dialog__tip">
-          通过支付宝充值到账户余额，单笔 ￥{{ alipayStatus.minAmount }} ~ ￥{{ alipayStatus.maxAmount }}
-        </p>
-        <div class="recharge-presets">
-          <div
-            v-for="value in RECHARGE_PRESETS"
-            :key="value"
-            class="recharge-preset"
-            :class="{ active: rechargePreset === value }"
-            @click="rechargePreset = value"
-          >
-            ￥{{ value }}
-          </div>
-          <div
-            class="recharge-preset"
-            :class="{ active: rechargePreset === 'custom' }"
-            @click="rechargePreset = 'custom'"
-          >
-            自定义
-          </div>
-        </div>
-        <el-input-number
-          v-if="rechargePreset === 'custom'"
-          v-model="rechargeCustomAmount"
-          :min="alipayStatus.minAmount"
-          :max="alipayStatus.maxAmount"
-          :precision="2"
-          :step="10"
-          placeholder="请输入充值金额"
-          style="width: 100%; margin-top: 12px;"
-        />
-      </div>
-      <template #footer>
-        <el-button @click="rechargeDialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="rechargeSubmitting"
-          @click="confirmRecharge"
-        >
-          支付宝支付
-        </el-button>
-      </template>
-    </el-dialog>
+    <WalletOrderHistory ref="walletOrderHistoryRef" />
 
     <div v-if="supportEmailFeature" class="settings-grid">
       <section class="profile-panel">
@@ -767,29 +565,19 @@ onUnmounted(() => {
   font-size: 14px;
 }
 
-.recharge-panel {
-  margin-top: 16px;
-}
-
-.recharge-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 16px;
-  flex-wrap: wrap;
-}
-
-.recharge-tip {
-  margin-top: 12px;
-  color: #909399;
-  font-size: 13px;
-}
-
 .wallet-item {
   .wallet-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 6px;
+    width: 100%;
+
+    &__left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
   }
 
   .wallet-body {
@@ -797,46 +585,6 @@ onUnmounted(() => {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-  }
-}
-
-.recharge-dialog {
-  &__tip {
-    margin: 0 0 12px;
-    color: #909399;
-    font-size: 13px;
-  }
-}
-
-.recharge-presets {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.recharge-preset {
-  padding: 12px 0;
-  text-align: center;
-  border: 1px solid #dcdfe6;
-  border-radius: 6px;
-  color: #303133;
-  font-size: 15px;
-  cursor: pointer;
-  user-select: none;
-  transition:
-    border-color 0.2s,
-    color 0.2s,
-    background-color 0.2s;
-
-  &:hover {
-    border-color: #409eff;
-    color: #409eff;
-  }
-
-  &.active {
-    border-color: #409eff;
-    color: #409eff;
-    background-color: #ecf5ff;
   }
 }
 
