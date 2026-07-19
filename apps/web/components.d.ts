@@ -67,6 +67,8 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SiteAnnouncement: typeof import('./src/components/SiteAnnouncement/index.vue')['default']
+    WalletOrderHistory: typeof import('./src/components/WalletOrderHistory/index.vue')['default']
+    WalletRecharge: typeof import('./src/components/WalletRecharge/index.vue')['default']
   }
   export interface GlobalDirectives {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']
