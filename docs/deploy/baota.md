@@ -50,6 +50,10 @@ outline: [2, 3]
 参考 https://www.bt.cn/bbs/thread-134959-1-1.html 解决
 :::
 
+:::tip MongoDB 安装后必做加固
+新机器装完 MongoDB 后，请按 **[宝塔 MongoDB 配置 SOP](./mongodb-baota-sop.md)** 完成加固：限制 `cacheSizeGB`、纳入 systemd，并配置含 `PIDFile` + `RemainAfterExit=no` + `Restart=always` 的 drop-in。只写 `Restart=always` 不够，OOM/`kill -9` 后仍可能不自动恢复。
+:::
+
 ### 1.3. 安装 Node
 
 使用 Node 管理面板安装`Node`

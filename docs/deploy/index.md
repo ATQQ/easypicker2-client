@@ -13,6 +13,7 @@
 ### 其它
 
 - [七牛云 OSS 配置](./qiniu.md)
+- [宝塔 MongoDB 配置 SOP](./mongodb-baota-sop.md)
 - [常见问题](./faq.md)
 - [本地启动](./local.md)
 
