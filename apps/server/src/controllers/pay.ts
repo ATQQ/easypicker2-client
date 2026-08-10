@@ -313,13 +313,13 @@ export default class PayController {
       }
 
       if (result.kind === 'paid') {
-        // 入账后立刻失效 overview 缓存，避免 usage 接口长时间返回旧 wallet
+        // 入账后立刻失效 overview 缓存，避免 usage 接口长时间返回旧 wallet 与 size
         await this.fileService.expireUserOverviewCache(result.userId)
-        console.warn(`[alipay:notify] trade success ${outTradeNo} user=${result.account} userId=${result.userId} delta=${result.amount} trade_no=${tradeNo}`)
+        console.warn(`[alipay:notify] trade success ${outTradeNo} user=${result.account} userId=${result.userId} delta=${result.amount} sizeDelta=${result.sizeDelta}GB trade_no=${tradeNo}`)
         addBehavior(req, {
           module: 'pay',
-          msg: `支付宝充值到账 ${outTradeNo} 用户${result.account} 金额 ${result.amount}`,
-          data: { outTradeNo, userId: result.userId, delta: result.amount, tradeNo },
+          msg: `支付宝充值到账 ${outTradeNo} 用户${result.account} 金额 ${result.amount} 追加空间 ${result.sizeDelta}GB`,
+          data: { outTradeNo, userId: result.userId, delta: result.amount, sizeDelta: result.sizeDelta, tradeNo },
         })
         writePlain('success')
         return

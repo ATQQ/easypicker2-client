@@ -8,8 +8,15 @@ export type NotifyProcessResult
     | { kind: 'amount_mismatch', local: string, remote: string }
     | { kind: 'already_paid' }
     | { kind: 'closed' }
-    | { kind: 'paid', userId: number, amount: string, account: string }
+    | { kind: 'paid', userId: number, amount: string, account: string, sizeDelta: number }
     | { kind: 'ignored' }
+
+/** 0.2 元 = 1GB 存储空间，向下取整，不足 0.2 元不增长空间 */
+export function calcStorageDelta(amountYuan: number): number {
+  if (!Number.isFinite(amountYuan) || amountYuan < 0.2)
+    return 0
+  return Math.floor(amountYuan / 0.2)
+}
 
 @Provide()
 export class PaymentOrderRepository extends BaseRepository<PaymentOrderEntity> {
@@ -83,10 +90,15 @@ export class PaymentOrderRepository extends BaseRepository<PaymentOrderEntity> {
           },
         )
         const delta = Number(order.amount || 0)
+        const sizeDelta = calcStorageDelta(delta)
+        const walletUpdate: any = { wallet: () => `wallet + ${delta.toFixed(2)}` }
+        if (sizeDelta > 0) {
+          walletUpdate.size = () => `size + ${sizeDelta}`
+        }
         await manager
           .createQueryBuilder()
           .update(UserEntity)
-          .set({ wallet: () => `wallet + ${delta.toFixed(2)}` } as any)
+          .set(walletUpdate)
           .where('id = :id', { id: order.userId })
           .execute()
         const user = await manager.findOne(UserEntity, { where: { id: order.userId } })
@@ -95,6 +107,7 @@ export class PaymentOrderRepository extends BaseRepository<PaymentOrderEntity> {
           userId: order.userId,
           amount: String(order.amount),
           account: user?.account || '',
+          sizeDelta,
         }
       }
 
