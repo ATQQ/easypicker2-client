@@ -1,12 +1,13 @@
 import type { Context } from 'flash-wolves'
-import type { Task } from '@/db/entity'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { In } from 'typeorm'
 import { taskError } from '@/constants/errorMsg'
 import { CategoryRepository } from '@/db/categoryDb'
-import { TaskInfo } from '@/db/entity'
+import { People, Task, TaskInfo } from '@/db/entity'
 import { BOOLEAN } from '@/db/model/public'
+import { PeopleRepository } from '@/db/peopleDb'
 import { TaskRepository } from '@/db/taskDb'
+import { TaskInfoRepository } from '@/db/taskInfoDb'
 import { BehaviorService, TaskInfoService } from '@/service'
 import { getUniqueKey } from '@/utils/stringUtil'
 import FileService from './fileService'
@@ -25,6 +26,12 @@ export default class TaskService {
   @Inject(TaskInfoService)
   private taskInfoService: TaskInfoService
 
+  @Inject(TaskInfoRepository)
+  private taskInfoRepository: TaskInfoRepository
+
+  @Inject(PeopleRepository)
+  private peopleRepository: PeopleRepository
+
   @Inject(BehaviorService)
   private behaviorService: BehaviorService
 
@@ -39,6 +46,124 @@ export default class TaskService {
     taskInfo.userId = task.userId
     await this.taskInfoService.createTaskInfo(taskInfo)
     await this.taskRepository.insert(task)
+  }
+
+  /**
+   * 复制创建任务：任务名 / 分类由用户确认，其它任务附加属性沿用原任务；
+   * shareKey 强制重新生成，people 名单复制但重置提交状态。
+   */
+  async copyTask(
+    originKey: string,
+    payload: { name: string, category?: string },
+  ) {
+    const { id: userId, account: logAccount } = this.Ctx.req.userInfo
+
+    const name = payload.name?.trim()
+    if (!name) {
+      throw taskError.noExist
+    }
+
+    // 1. 原任务必须存在且属于当前用户
+    const originTask = await this.taskRepository.findOne({
+      k: originKey,
+      userId,
+      del: BOOLEAN.FALSE,
+    })
+    if (!originTask) {
+      this.behaviorService.add('task', '复制任务失败, 原任务不存在', {
+        key: originKey,
+      })
+      throw taskError.noExist
+    }
+
+    // 2. 分类：优先请求参数；未提供则沿用原任务分类，trash 回落到 default
+    let categoryKey = payload.category
+    categoryKey ??= originTask.categoryKey === 'trash' ? '' : originTask.categoryKey
+    if (categoryKey === 'trash') {
+      categoryKey = ''
+    }
+
+    // 3. 新 Task
+    const newKey = getUniqueKey()
+    const newTask = new Task()
+    newTask.name = name
+    newTask.categoryKey = categoryKey || ''
+    newTask.userId = userId
+    newTask.k = newKey
+
+    // 4. 新 TaskInfo：优先复制原 TaskInfo；无则按默认初始化
+    const originInfo = await this.taskInfoRepository.findOne({
+      taskKey: originKey,
+    })
+    const newInfo = new TaskInfo()
+    newInfo.taskKey = newKey
+    newInfo.userId = userId
+    if (originInfo) {
+      newInfo.template = originInfo.template ?? ''
+      newInfo.rewrite = originInfo.rewrite ?? BOOLEAN.FALSE
+      newInfo.format = originInfo.format ?? ''
+      newInfo.info = originInfo.info ?? ['姓名']
+      newInfo.ddl = originInfo.ddl ?? null
+      newInfo.shareKey = getUniqueKey()
+      newInfo.limitPeople = originInfo.limitPeople ?? BOOLEAN.FALSE
+      newInfo.bindField = originInfo.bindField ?? '姓名'
+      newInfo.tip = originInfo.tip ?? null
+      newInfo.submitPassword = originInfo.submitPassword ?? null
+      newInfo.viewEnabled = originInfo.viewEnabled ?? BOOLEAN.FALSE
+      newInfo.viewConfig = originInfo.viewConfig ?? null
+    }
+    else {
+      newInfo.template = ''
+      newInfo.rewrite = BOOLEAN.FALSE
+      newInfo.format = ''
+      newInfo.info = ['姓名']
+      newInfo.ddl = null
+      newInfo.shareKey = getUniqueKey()
+      newInfo.limitPeople = BOOLEAN.FALSE
+      newInfo.bindField = '姓名'
+      newInfo.submitPassword = null
+      newInfo.viewEnabled = BOOLEAN.FALSE
+      newInfo.viewConfig = null
+    }
+
+    // 5. 落库：Task + TaskInfo
+    await this.taskRepository.insert(newTask)
+    await this.taskInfoRepository.insert(newInfo)
+
+    // 6. 复制 people 名单，重置提交状态
+    const originPeople = await this.peopleRepository.findMany({
+      userId,
+      taskKey: originKey,
+    })
+    if (originPeople.length > 0) {
+      const now = new Date()
+      const copies: People[] = originPeople.map((p) => {
+        const item = new People()
+        item.userId = userId
+        item.taskKey = newKey
+        item.name = p.name ?? null
+        item.status = 0
+        item.submitCount = 0
+        item.submitDate = now
+        return item
+      })
+      await this.peopleRepository.insertMany(copies)
+    }
+
+    // 7. 行为日志
+    this.behaviorService.add(
+      'task',
+      `复制任务 用户:${logAccount} 原任务:${originTask.name} 新任务:${name} 成功`,
+      {
+        account: logAccount,
+        originKey,
+        originName: originTask.name,
+        newKey,
+        newName: name,
+      },
+    )
+
+    return { key: newKey }
   }
 
   private async resolveSubmitNavTasks(task: Task) {

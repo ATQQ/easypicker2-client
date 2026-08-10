@@ -202,7 +202,7 @@ export default class TaskViewService {
       this.behaviorService.add('taskInfo', `查看页密码校验失败 任务:${task.name}`, {
         key,
       })
-      throw publicError.request.errorParams
+      throw publicError.request.wrongPassword
     }
     this.setViewCookie(key, viewConfig.password)
     this.behaviorService.add('taskInfo', `查看页密码校验成功 任务:${task.name}`, {

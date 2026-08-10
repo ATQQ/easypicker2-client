@@ -293,7 +293,7 @@ watchEffect(() => {
     <el-alert
       v-if="needSave"
       class="save-alert-banner"
-      type="error"
+      type="warning"
       effect="dark"
       show-icon
       :closable="false"
@@ -896,8 +896,8 @@ watchEffect(() => {
 .save-alert-banner {
   margin-bottom: 16px;
   font-size: 15px;
-  border: 2px solid var(--el-color-error);
-  box-shadow: 0 4px 14px rgba(245, 108, 108, 0.35);
+  border: 2px solid var(--el-color-warning);
+  box-shadow: 0 4px 14px rgba(230, 162, 60, 0.35);
 }
 
 .save-alert-banner-title {

@@ -11,6 +11,7 @@
   { "name": "task.public-detail", "method": "GET", "path": "/api/task/000000000000000000000000" },
   { "name": "task.delete", "method": "DELETE", "path": "/api/task/000000000000000000000000" },
   { "name": "task.update", "method": "PUT", "path": "/api/task/000000000000000000000000", "body": { "name": "api-check" } },
+  { "name": "task.copy", "method": "POST", "path": "/api/task/000000000000000000000000/copy", "body": { "name": "api-check" } },
 
   { "name": "task-info.template-list", "method": "GET", "path": "/api/task_info/template/000000000000000000000000" },
   { "name": "task-info.tip-image-delete", "method": "DELETE", "path": "/api/task_info/tip/image/000000000000000000000000", "body": { "uid": 1, "name": "api-check.png" } },

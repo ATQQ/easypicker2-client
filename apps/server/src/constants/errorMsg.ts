@@ -45,6 +45,7 @@ export const publicError = {
   request: {
     errorParams: codeMsg(3002, 'error request params'),
     notLogin: codeMsg(3004, 'user not login'),
+    wrongPassword: codeMsg(3005, '密码错误'),
   },
 }
 
