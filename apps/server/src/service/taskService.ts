@@ -9,7 +9,8 @@ import { PeopleRepository } from '@/db/peopleDb'
 import { TaskRepository } from '@/db/taskDb'
 import { TaskInfoRepository } from '@/db/taskInfoDb'
 import { BehaviorService, TaskInfoService } from '@/service'
-import { getUniqueKey } from '@/utils/stringUtil'
+import { genRandomPassword, getUniqueKey } from '@/utils/stringUtil'
+import { parseViewConfig, stringifyViewConfig } from '@/utils/viewConfig'
 import FileService from './fileService'
 
 @Provide()
@@ -99,7 +100,8 @@ export default class TaskService {
     newInfo.taskKey = newKey
     newInfo.userId = userId
     if (originInfo) {
-      newInfo.template = originInfo.template ?? ''
+      // 模板文件、批注配图与原任务 key 强绑定，文件本体不拷贝，置空避免引用失效
+      newInfo.template = ''
       newInfo.rewrite = originInfo.rewrite ?? BOOLEAN.FALSE
       newInfo.format = originInfo.format ?? ''
       newInfo.info = originInfo.info ?? ['姓名']
@@ -107,10 +109,23 @@ export default class TaskService {
       newInfo.shareKey = getUniqueKey()
       newInfo.limitPeople = originInfo.limitPeople ?? BOOLEAN.FALSE
       newInfo.bindField = originInfo.bindField ?? '姓名'
-      newInfo.tip = originInfo.tip ?? null
-      newInfo.submitPassword = originInfo.submitPassword ?? null
+      newInfo.tip = null
+      // 密码不沿用原值：原任务有密码则重新生成随机密码，原无密码则保持 null
+      newInfo.submitPassword = originInfo.submitPassword
+        ? genRandomPassword()
+        : null
       newInfo.viewEnabled = originInfo.viewEnabled ?? BOOLEAN.FALSE
-      newInfo.viewConfig = originInfo.viewConfig ?? null
+      // 查看页配置：脱敏规则沿用，仅 password 重新生成（原无密码则不凭空生成）
+      if (originInfo.viewConfig) {
+        const parsedView = parseViewConfig(originInfo.viewConfig)
+        if (parsedView.password) {
+          parsedView.password = genRandomPassword()
+        }
+        newInfo.viewConfig = stringifyViewConfig(parsedView)
+      }
+      else {
+        newInfo.viewConfig = null
+      }
     }
     else {
       newInfo.template = ''
