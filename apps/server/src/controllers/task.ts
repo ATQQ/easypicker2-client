@@ -60,6 +60,7 @@ export default class TaskController {
         name,
       },
     )
+    return { key: task.k }
   }
 
   @Get('')

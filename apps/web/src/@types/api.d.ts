@@ -199,7 +199,7 @@ declare namespace TaskApiTypes {
     tasksByCategory: Record<string, TaskItem[]>
     tasks: TaskItem[]
   }>
-  type create = ResponseData
+  type create = ResponseData<{ key: string }>
   type deleteOne = ResponseData
   type updateBaseInfo = ResponseData
   type copy = ResponseData<{ key: string }>

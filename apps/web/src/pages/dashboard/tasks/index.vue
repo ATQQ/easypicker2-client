@@ -153,13 +153,16 @@ async function handleConfirmCopy() {
     return
   }
   try {
-    await $store.dispatch('task/copyTask', {
+    const res: any = await $store.dispatch('task/copyTask', {
       key: copyForm.key,
       name,
       category: copyForm.category,
     })
     showCopyDialog.value = false
     ElMessage.success('复制成功')
+    const newKey = res?.data?.key
+    if (newKey)
+      touchRecentTask(newKey)
   }
   catch (error: any) {
     ElMessage.error(error?.message || '复制失败')
@@ -364,7 +367,7 @@ function openTaskPage() {
     <!-- 任务管理 -->
     <div class="panel task-panel">
       <!-- 创建任务 -->
-      <CreateTask :active-category-key="selectCategory" />
+      <CreateTask :active-category-key="selectCategory" @created="touchRecentTask" />
       <el-button
         v-if="isCustomCategorySelected"
         class="category-config-btn"
