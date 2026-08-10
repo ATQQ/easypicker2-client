@@ -83,6 +83,15 @@ const store: Module<State, unknown> = {
         return res
       })
     },
+    copyTask(context, payload: { key: string, name: string, category?: string }) {
+      const { key, name, category } = payload
+      return TaskApi.copy(key, name, category).then((res) => {
+        context.commit('clearTasksByCategoryCache')
+        context.dispatch('getTaskByCategory', { category: category || 'default' })
+        context.dispatch('category/getCategory', null, { root: true })
+        return res
+      })
+    },
     deleteTask(context, k) {
       return TaskApi.deleteOne(k).then((res) => {
         context.commit('clearTasksByCategoryCache')

@@ -202,6 +202,7 @@ declare namespace TaskApiTypes {
   type create = ResponseData
   type deleteOne = ResponseData
   type updateBaseInfo = ResponseData
+  type copy = ResponseData<{ key: string }>
   type getTaskInfo = ResponseData<TaskInfo & { limitUpload: boolean }>
   type getTaskMoreInfo = ResponseData<TaskInfo>
   type updateTaskMoreInfo = ResponseData

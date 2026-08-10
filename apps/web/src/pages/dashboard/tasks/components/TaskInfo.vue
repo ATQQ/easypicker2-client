@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Delete, Edit, Menu, Share } from '@element-plus/icons-vue'
+import { CopyDocument, Delete, Edit, Menu, More, Share } from '@element-plus/icons-vue'
 
 import { formatDate } from '@/utils/stringUtil'
 
@@ -10,6 +10,7 @@ defineProps<{
 defineEmits<{
   more: [item: TaskApiTypes.TaskItem]
   edit: [item: TaskApiTypes.TaskItem]
+  copy: [item: TaskApiTypes.TaskItem]
   share: [key: string]
   delete: [key: string, isTrash: boolean]
 }>()
@@ -31,24 +32,30 @@ defineEmits<{
           <el-button
             circle
             type="success"
-            :icon="Edit"
-            title="编辑基本信息"
-            @click="$emit('edit', item)"
-          />
-          <el-button
-            circle
-            type="primary"
             :icon="Share"
             title="分享"
             @click="$emit('share', item.key)"
           />
-          <el-button
-            circle
-            type="danger"
-            :icon="Delete"
-            title="删除"
-            @click="$emit('delete', item.key, item.category === 'trash')"
-          />
+          <el-dropdown trigger="click" placement="bottom-end">
+            <el-button circle :icon="More" title="更多操作" />
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item :icon="Edit" @click="$emit('edit', item)">
+                  编辑基本信息
+                </el-dropdown-item>
+                <el-dropdown-item :icon="CopyDocument" @click="$emit('copy', item)">
+                  复制任务
+                </el-dropdown-item>
+                <el-dropdown-item
+                  :icon="Delete"
+                  divided
+                  @click="$emit('delete', item.key, item.category === 'trash')"
+                >
+                  删除任务
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </div>
     </template>
@@ -91,7 +98,10 @@ defineEmits<{
     flex-wrap: nowrap;
 
     .actions {
-      min-width: 200px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
       padding: 3px 0;
       margin-left: 20px;
     }

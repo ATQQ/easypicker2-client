@@ -455,7 +455,7 @@ function isSubmitted(status: unknown): boolean {
       </div>
     </main>
 
-    <HomeFooter />
+    <HomeFooter type="task" />
   </div>
 </template>
 
