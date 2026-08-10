@@ -172,8 +172,7 @@ function parseQuickFieldsInput(raw: string, limit: number) {
   const list: string[] = []
   const truncated: string[] = []
   raw
-    // 仅逗号/分号/顿号/竖线/换行作分隔，避免英文空格标题被误切
-    .split(/[,，;；、|\r\n]+/)
+    .split(/[,，;；、|\s]+/)
     .map(v => v.trim())
     .filter(Boolean)
     .forEach((v) => {
@@ -399,7 +398,7 @@ watchEffect(() => {
               v-model="quickFieldsInput"
               type="textarea"
               :autosize="{ minRows: 2, maxRows: 6 }"
-              placeholder="用逗号 / 分号 / 顿号 / 竖线 / 换行分隔，如：姓名, 学号; 班级"
+              placeholder="用逗号 / 分号 / 顿号 / 竖线 / 空格 / 换行分隔，如：姓名 学号 班级"
             />
             <div class="quick-fields-actions">
               <el-button
