@@ -88,7 +88,9 @@
         { "name": "limit_people", "ddl": "`limit_people` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否限制提交人员'" },
         { "name": "tip", "ddl": "`tip` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '批注信息（含 emoji）'" },
         { "name": "bind_field", "ddl": "`bind_field` varchar(255) DEFAULT '姓名' COMMENT '绑定表单字段'" },
-        { "name": "submit_password", "ddl": "`submit_password` varchar(64) DEFAULT NULL COMMENT '提交密码（为空表示未开启）'" }
+        { "name": "submit_password", "ddl": "`submit_password` varchar(64) DEFAULT NULL COMMENT '提交密码（为空表示未开启）'" },
+        { "name": "view_enabled", "ddl": "`view_enabled` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否开启实时查看页（只读分享）'" },
+        { "name": "view_config", "ddl": "`view_config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '查看页配置 JSON：{password,visibleFields,roster:{enabled,columns,nameMask,showUnsubmitted}}'" }
       ]
     },
     {
@@ -111,6 +113,24 @@
         { "name": "email_verified", "ddl": "`email_verified` tinyint(4) NOT NULL DEFAULT '0' COMMENT '邮箱已验证'" },
         { "name": "notify_on_submit", "ddl": "`notify_on_submit` tinyint(4) NOT NULL DEFAULT '0' COMMENT '新提交时邮件通知任务属主'" }
       ]
+    },
+    {
+      "name": "payment_order",
+      "createOptions": "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付订单'",
+      "columns": [
+        { "name": "id", "ddl": "`id` bigint(20) unsigned NOT NULL COMMENT '主键自增'" },
+        { "name": "out_trade_no", "ddl": "`out_trade_no` varchar(64) NOT NULL COMMENT '本地订单号'" },
+        { "name": "user_id", "ddl": "`user_id` int(11) NOT NULL COMMENT '所属用户id'" },
+        { "name": "channel", "ddl": "`channel` varchar(16) NOT NULL DEFAULT 'alipay' COMMENT '支付渠道'" },
+        { "name": "amount", "ddl": "`amount` decimal(10,2) NOT NULL COMMENT '订单金额(元)'" },
+        { "name": "status", "ddl": "`status` varchar(16) NOT NULL DEFAULT 'pending' COMMENT '订单状态: pending/paid/closed/refunded'" },
+        { "name": "trade_no", "ddl": "`trade_no` varchar(64) DEFAULT NULL COMMENT '支付宝交易号'" },
+        { "name": "subject", "ddl": "`subject` varchar(128) DEFAULT NULL COMMENT '订单标题'" },
+        { "name": "raw_notify", "ddl": "`raw_notify` text DEFAULT NULL COMMENT '最近一次 notify 原始报文(JSON)'" },
+        { "name": "paid_time", "ddl": "`paid_time` timestamp NULL DEFAULT NULL COMMENT '支付成功时间'" },
+        { "name": "create_time", "ddl": "`create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'" },
+        { "name": "update_time", "ddl": "`update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'" }
+      ]
     }
   ],
   "postStatements": [
@@ -123,12 +143,16 @@
     "ALTER TABLE `user` ADD UNIQUE KEY `user_account_uindex` (`account`);",
     "ALTER TABLE `user` ADD UNIQUE KEY `user_phone_uindex` (`phone`);",
     "ALTER TABLE `user` ADD UNIQUE KEY `user_email_uindex` (`email`);",
+    "ALTER TABLE `payment_order` ADD PRIMARY KEY (`id`);",
+    "ALTER TABLE `payment_order` ADD UNIQUE KEY `payment_order_out_trade_no_uindex` (`out_trade_no`);",
+    "ALTER TABLE `payment_order` ADD KEY `payment_order_user_id_idx` (`user_id`);",
     "",
     "ALTER TABLE `category` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键自增';",
     "ALTER TABLE `files` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;",
     "ALTER TABLE `people` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键';",
     "ALTER TABLE `task` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键';",
     "ALTER TABLE `task_info` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;",
-    "ALTER TABLE `user` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '唯一标识';"
+    "ALTER TABLE `user` MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '唯一标识';",
+    "ALTER TABLE `payment_order` MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键自增';"
   ]
 }

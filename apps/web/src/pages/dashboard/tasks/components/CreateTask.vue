@@ -11,6 +11,9 @@ const props = defineProps({
     default: 'default',
   },
 })
+const emit = defineEmits<{
+  created: [key: string]
+}>()
 const $store = useStore()
 // 任务相关
 const isShowCreateTask = ref(false)
@@ -25,9 +28,13 @@ function createTask() {
       name: taskName.value,
       category: props.activeCategoryKey,
     })
-    .then(() => {
+    .then((res: any) => {
       ElMessage.success('创建成功')
+      const key = res?.data?.key
+      if (key)
+        emit('created', key)
     })
+    .catch(() => {})
   taskName.value = ''
 }
 </script>

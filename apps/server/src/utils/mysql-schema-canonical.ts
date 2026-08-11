@@ -268,10 +268,42 @@ export async function applyMysqlCanonicalSchemaAdds(): Promise<string[]> {
   const applied: string[] = []
 
   for (const table of schema.tables ?? []) {
-    if (!table?.name || !(await mysqlTableExists(table.name)))
+    if (!table?.name)
       continue
 
     const tblEsc = escapeMysqlIdent(table.name)
+
+    if (!(await mysqlTableExists(table.name))) {
+      if (!table.createOptions?.trim() || !table.columns?.length)
+        continue
+      const createStmt
+        = `CREATE TABLE IF NOT EXISTS ${tblEsc} (\n`
+          + `${table.columns.map(c => `  ${c.ddl}`).join(',\n')}\n`
+          + `) ${table.createOptions};`
+      await query(createStmt)
+      applied.push(`${table.name} (create)`)
+
+      const tableRefRegex = new RegExp(
+        `^\\s*ALTER\\s+TABLE\\s+\`?${table.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\`?\\b`,
+        'i',
+      )
+      for (const raw of schema.postStatements ?? []) {
+        const stmt = String(raw ?? '').trim()
+        if (!stmt || !tableRefRegex.test(stmt))
+          continue
+        try {
+          await query(stmt.replace(/;\s*$/, ''))
+          applied.push(`${table.name} (post)`)
+        }
+        catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err)
+          if (!/Duplicate key name|Multiple primary key defined/i.test(msg))
+            throw err
+        }
+      }
+      continue
+    }
+
     for (const col of table.columns ?? []) {
       if (!col?.ddl || !col.name)
         continue

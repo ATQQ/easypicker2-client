@@ -46,10 +46,17 @@ export function useSpaceUsage() {
     return `存储 ${usageData.price.storage}￥ + 下载 ${usageData.price.download}￥`
   })
 
+  async function refresh() {
+    try {
+      const res = await UserApi.usage()
+      if (res?.data)
+        Object.assign(usageData, res.data)
+    }
+    catch { /* ignore */ }
+  }
+
   onMounted(() => {
-    UserApi.usage().then((res) => {
-      Object.assign(usageData, res.data)
-    })
+    void refresh()
   })
   return {
     usage,
@@ -66,5 +73,6 @@ export function useSpaceUsage() {
     spaceUsageText,
     moneyUsageText,
     priceText,
+    refresh,
   }
 }

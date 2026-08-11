@@ -129,6 +129,46 @@ function handleSaveEditInfo() {
   })
 }
 
+// 复制任务
+const showCopyDialog = ref(false)
+const copyForm = reactive({
+  key: '',
+  originName: '',
+  name: '',
+  category: 'default',
+})
+function copyTask(task: any) {
+  touchRecentTask(task.key)
+  copyForm.key = task.key
+  copyForm.originName = task.name
+  copyForm.name = `${task.name} 的副本`
+  // trash 不可作为新任务分类，回落到 default
+  copyForm.category = task.category === 'trash' ? 'default' : task.category || 'default'
+  showCopyDialog.value = true
+}
+async function handleConfirmCopy() {
+  const name = copyForm.name.trim()
+  if (!name) {
+    ElMessage.warning('不能为空')
+    return
+  }
+  try {
+    const res: any = await $store.dispatch('task/copyTask', {
+      key: copyForm.key,
+      name,
+      category: copyForm.category,
+    })
+    showCopyDialog.value = false
+    ElMessage.success('复制成功')
+    const newKey = res?.data?.key
+    if (newKey)
+      touchRecentTask(newKey)
+  }
+  catch (error: any) {
+    ElMessage.error(error?.message || '复制失败')
+  }
+}
+
 // 生成分享链接
 const shareTaskLink = ref('')
 const showLinkModal = ref(false)
@@ -327,7 +367,7 @@ function openTaskPage() {
     <!-- 任务管理 -->
     <div class="panel task-panel">
       <!-- 创建任务 -->
-      <CreateTask :active-category-key="selectCategory" />
+      <CreateTask :active-category-key="selectCategory" @created="touchRecentTask" />
       <el-button
         v-if="isCustomCategorySelected"
         class="category-config-btn"
@@ -346,6 +386,7 @@ function openTaskPage() {
           :key="item.key"
           :item="item"
           @edit="editBaseInfo"
+          @copy="copyTask"
           @delete="deleteTask"
           @share="shareTask"
           @more="editMore"
@@ -384,6 +425,37 @@ function openTaskPage() {
         <span class="dialog-footer">
           <el-button @click="showBaseInfoDialog = false">取 消</el-button>
           <el-button type="primary" @click="handleSaveEditInfo">确 定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 复制任务弹窗 -->
+    <el-dialog
+      v-model="showCopyDialog"
+      draggable
+      :fullscreen="isMobile"
+      title="复制任务"
+    >
+      <el-form :model="copyForm">
+        <el-form-item label="任务名称" label-width="100px">
+          <el-input v-model="copyForm.name" autocomplete="off" placeholder="请输入新任务名称" />
+        </el-form-item>
+        <el-form-item label="目标分类" label-width="100px">
+          <el-select v-model="copyForm.category" placeholder="请选择分类">
+            <el-option label="默认" value="default" />
+            <el-option
+              v-for="c in categorys"
+              :key="c.k"
+              :label="c.name"
+              :value="c.k"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showCopyDialog = false">取 消</el-button>
+          <el-button type="primary" @click="handleConfirmCopy">确 定</el-button>
         </span>
       </template>
     </el-dialog>

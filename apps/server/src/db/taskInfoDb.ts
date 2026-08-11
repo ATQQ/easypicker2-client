@@ -32,6 +32,8 @@ export function insertTaskInfo(taskInfo: TaskInfo) {
     info: JSON.stringify(['姓名']),
     shareKey: getUniqueKey(),
     ddl: null,
+    viewEnabled: BOOLEAN.FALSE,
+    viewConfig: null,
     ...taskInfo,
   }
   const { sql, params } = insertTableByModel('task_info', data)

@@ -22,6 +22,7 @@ const Metrics = () => import('@/pages/dashboard/manage/metrics/index.vue')
 const User = () => import('@/pages/dashboard/manage/user/index.vue')
 const Wish = () => import('@/pages/dashboard/manage/wish/index.vue')
 const Task = () => import('@/pages/task/index.vue')
+const TaskView = () => import('@/pages/task-view/index.vue')
 const Disabled = () => import('@/pages/disabled/index.vue')
 function DashboardConfig() {
   return import('@/pages/dashboard/manage/config/index.vue')
@@ -115,6 +116,15 @@ const routes: RouteRecordRaw[] = [
     component: Task,
     meta: {
       title: '文件提交',
+    },
+  },
+  {
+    path: '/task-view/:key',
+    name: 'task-view',
+    component: TaskView,
+    meta: {
+      title: '收集情况',
+      allowDisabled: true,
     },
   },
   {

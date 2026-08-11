@@ -69,4 +69,21 @@ export class TaskInfo {
     comment: '提交密码（为空表示未开启）',
   })
   submitPassword: string | null
+
+  @Column('tinyint', {
+    name: 'view_enabled',
+    comment: '是否开启实时查看页（只读分享）',
+    default: 0,
+  })
+  viewEnabled: number
+
+  @Column({
+    type: 'text',
+    name: 'view_config',
+    nullable: true,
+    charset: 'utf8mb4',
+    collation: 'utf8mb4_unicode_ci',
+    comment: '查看页配置 JSON：{password,visibleFields,roster:{enabled,columns,nameMask,showUnsubmitted}}',
+  })
+  viewConfig: string | null
 }

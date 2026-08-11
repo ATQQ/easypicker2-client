@@ -1,20 +1,24 @@
 import category from './modules/category'
 import file from './modules/file'
+import pay from './modules/pay'
 import people from './modules/people'
 import p from './modules/public'
 import superOverview from './modules/super/overview'
 import superUser from './modules/super/user'
 import task from './modules/task'
+import taskView from './modules/taskView'
 import user from './modules/user'
 
 export const PublicApi = p
 export const UserApi = user
 export const CategoryApi = category
 export const TaskApi = task
+export const TaskViewApi = taskView
 export const PeopleApi = people
 export const FileApi = file
 export const SuperOverviewApi = superOverview
 export const SuperUserApi = superUser
+export const PayApi = pay
 export { default as ActionServiceAPI } from './modules/action'
 export { default as ConfigServiceAPI } from './modules/config'
 export { default as WishApi } from './modules/wish'

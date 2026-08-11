@@ -17,6 +17,7 @@ import { useStore } from 'vuex'
 import { ActionServiceAPI, FileApi } from '@/apis'
 import FloatingContact from '@/components/FloatingContact/index.vue'
 import InfosForm from '@/components/InfosForm/index.vue'
+import WalletRecharge from '@/components/WalletRecharge/index.vue'
 import { useAccountConfig, useIsMobile, useSiteConfig, useSpaceUsage } from '@/composables'
 import { ActionType, DownloadStatus, filenamePattern } from '@/constants'
 import { downLoadByUrl, tableToExcel } from '@/utils/networkUtil'
@@ -54,7 +55,12 @@ const {
   limitSpace,
   limitWallet,
   priceText,
+  refresh: refreshUsage,
 } = useSpaceUsage()
+
+function onWalletRechargeSuccess() {
+  void refreshUsage()
+}
 
 const showLinkModel = ref(false)
 const downloadUrl = ref('')
@@ -1037,9 +1043,15 @@ function handleShowDetail() {
           <strong>{{ cost }} / {{ wallet }}￥</strong>
           <el-progress :percentage="walletProgressPercentage" :status="limitWallet ? 'exception' : undefined" />
           <small>统计时间：{{ formatDate(siteConfig.moneyStartDay, 'yyyy-MM-dd') }} - 至今</small>
-          <button class="stat-link" type="button" @click="handleShowDetail">
-            查看费用明细
-          </button>
+          <div class="stat-card-actions">
+            <button class="stat-link" type="button" @click="handleShowDetail">
+              查看费用明细
+            </button>
+            <WalletRecharge
+              variant="link"
+              @success="onWalletRechargeSuccess"
+            />
+          </div>
         </div>
       </div>
       <Tip v-if="limitDownload">
@@ -1344,11 +1356,19 @@ function handleShowDetail() {
   align-self: flex-start;
   padding: 0;
   border: 0;
-  margin-top: 8px;
+  margin-top: 0;
   background: transparent;
   color: #409eff;
   cursor: pointer;
   font-size: 13px;
+}
+
+.stat-card-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
 }
 
 .export-help-icon {

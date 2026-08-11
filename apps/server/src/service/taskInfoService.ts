@@ -1,5 +1,6 @@
 import type { Context } from 'flash-wolves'
 import type { TaskInfo } from '@/db/entity'
+import type { ViewConfig } from '@/utils/viewConfig'
 import fs from 'node:fs'
 import { Inject, InjectCtx, Provide } from 'flash-wolves'
 import { In } from 'typeorm'
@@ -14,6 +15,11 @@ import { deleteObjByKey } from '@/utils/qiniuUtil'
 import { isLocalStorageMode } from '@/utils/storageMode'
 import { getUniqueKey } from '@/utils/stringUtil'
 import { getUserInfo } from '@/utils/userUtil'
+import {
+  DEFAULT_VIEW_CONFIG,
+  parseViewConfig,
+  stringifyViewConfig,
+} from '@/utils/viewConfig'
 
 @Provide()
 export default class TaskInfoService {
@@ -252,6 +258,8 @@ export default class TaskInfoService {
       tip,
       bindField,
       submitPassword,
+      viewEnabled,
+      viewConfig,
     } = payload
     let { share } = payload
     const { id: userId, account: logAccount } = this.ctx.req.userInfo
@@ -293,10 +301,43 @@ export default class TaskInfoService {
         normalizedSubmitPassword = null
       }
       else {
-        if (trimmed.length < 4 || trimmed.length > 64) {
+        if (trimmed.length < 6 || trimmed.length > 64) {
           throw publicError.request.errorParams
         }
         normalizedSubmitPassword = trimmed
+      }
+    }
+
+    // view 字段标准化
+    let normalizedViewEnabled: number | undefined
+    if (viewEnabled !== undefined) {
+      normalizedViewEnabled = viewEnabled ? BOOLEAN.TRUE : BOOLEAN.FALSE
+    }
+    let normalizedViewConfig: string | undefined
+    if (viewConfig !== undefined) {
+      if (viewConfig === null) {
+        normalizedViewConfig = stringifyViewConfig({
+          ...DEFAULT_VIEW_CONFIG,
+          roster: { ...DEFAULT_VIEW_CONFIG.roster },
+        })
+      }
+      else if (typeof viewConfig === 'string') {
+        normalizedViewConfig = stringifyViewConfig(parseViewConfig(viewConfig))
+      }
+      else if (typeof viewConfig === 'object') {
+        normalizedViewConfig = stringifyViewConfig(
+          parseViewConfig(JSON.stringify(viewConfig)),
+        )
+      }
+      else {
+        throw publicError.request.errorParams
+      }
+      // 查看页密码：最短 6 位，降低爆破面（提交密码仍为 4-64）
+      const parsedAfter = parseViewConfig(normalizedViewConfig)
+      if (parsedAfter.password) {
+        if (parsedAfter.password.length < 6 || parsedAfter.password.length > 64) {
+          throw publicError.request.errorParams
+        }
       }
     }
 
@@ -311,16 +352,25 @@ export default class TaskInfoService {
       tip,
       bindField,
       submitPassword: normalizedSubmitPassword,
+      viewEnabled: normalizedViewEnabled,
+      viewConfig: normalizedViewConfig,
     }
     if (bindField === '') {
       options.bindField = undefined
+    }
+    // 过滤掉 undefined 字段，避免 TypeORM 把它们写为 NULL 覆盖其他列
+    const updateFields = Object.fromEntries(
+      Object.entries(options).filter(([, v]) => v !== undefined),
+    )
+    if (Object.keys(updateFields).length === 0) {
+      return null
     }
     await this.taskInfoRepository.updateSpecifyFields(
       {
         taskKey: key,
         userId,
       },
-      options,
+      updateFields,
     )
 
     // 异步记录日志
@@ -335,12 +385,20 @@ export default class TaskInfoService {
         tip: '批注信息',
         bindField: '设置绑定字段',
         submitPassword: '设置提交密码',
+        viewEnabled: '切换分享查看开关',
+        viewConfig: '更新查看页配置',
       }
 
       if (task) {
         const safePayload = { ...payload }
         if (safePayload.submitPassword) {
           safePayload.submitPassword = '***'
+        }
+        if (safePayload.viewConfig && typeof safePayload.viewConfig === 'object') {
+          const v = safePayload.viewConfig as Record<string, unknown>
+          if (v.password) {
+            safePayload.viewConfig = { ...v, password: '***' }
+          }
         }
         this.behaviorService.add(
           'taskInfo',
@@ -356,6 +414,24 @@ export default class TaskInfoService {
     })
   }
 
+  /** 任务所有者：获取分享查看页配置 */
+  async getViewConfig(key: string) {
+    const userId = this.ctx.req.userInfo?.id
+    const task = await this.taskRepository.findOne({
+      k: key,
+      del: BOOLEAN.FALSE,
+    })
+    if (!task || Number(task.userId) !== Number(userId)) {
+      throw publicError.request.errorParams
+    }
+    const info = await this.taskInfoRepository.findOne({ taskKey: key })
+    const config: ViewConfig = parseViewConfig(info?.viewConfig)
+    return {
+      viewEnabled: Number(info?.viewEnabled) === Number(BOOLEAN.TRUE),
+      viewConfig: config,
+    }
+  }
+
   createTaskInfo(taskInfo: TaskInfo) {
     const data: Partial<TaskInfo> = {
       limitPeople: BOOLEAN.FALSE,
@@ -366,6 +442,8 @@ export default class TaskInfoService {
       shareKey: getUniqueKey(),
       ddl: null,
       submitPassword: null,
+      viewEnabled: BOOLEAN.FALSE,
+      viewConfig: null,
     }
     Object.assign(taskInfo, data)
 

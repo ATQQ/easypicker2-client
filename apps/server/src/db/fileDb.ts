@@ -222,6 +222,26 @@ export class FileRepository extends BaseRepository<Files> {
     }
   }
 
+  /** 公开查看页等只需分页列表：不做全用户/筛选集 SUM，避免轮询放大 DB 压力 */
+  async findPageLite(options: {
+    userId: number
+    pageIndex: number
+    pageSize: number
+    taskKey: string
+  }) {
+    const { userId, pageIndex, pageSize, taskKey } = options
+    const qb = this.createFileQueryBuilder(userId)
+    this.applyFileFilters(qb, { taskKey })
+
+    const [files, total] = await qb
+      .orderBy('file.id', 'DESC')
+      .skip((pageIndex - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount()
+
+    return { files, total }
+  }
+
   async findIds(options: {
     userId: number
     taskKey?: string

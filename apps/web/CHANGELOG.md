@@ -1,5 +1,14 @@
 # @sugarat/easypicker2-client
 
+## 2.10.0
+
+### Minor Changes
+
+- feat: 新增任务分享查看页，支持访问密码、表单/文件字段脱敏与名单展示配置
+- feat: 个人中心钱包支持支付宝充值与订单历史
+- feat: 任务编辑面板支持快速批量新建字段
+- chore: 新增钱包相关全局组件类型声明
+
 ## 2.9.2
 
 ### Patch Changes

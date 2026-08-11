@@ -3,6 +3,7 @@ import {
   ChatDotSquare,
   Lock,
   Message,
+  Money,
   Refresh,
   User,
 } from '@element-plus/icons-vue'
@@ -11,7 +12,9 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import { PublicApi, UserApi } from '@/apis'
-import { useSiteConfig } from '@/composables'
+import WalletOrderHistory from '@/components/WalletOrderHistory/index.vue'
+import WalletRecharge from '@/components/WalletRecharge/index.vue'
+import { useAccountConfig, useSiteConfig } from '@/composables'
 import { VERIFY_CODE_EXPIRE_SECONDS } from '@/constants'
 import { rEmail, rPassword, rVerCode } from '@/utils/regExp'
 import { formatDate } from '@/utils/stringUtil'
@@ -19,7 +22,9 @@ import { formatDate } from '@/utils/stringUtil'
 const $router = useRouter()
 const $store = useStore()
 const { value: siteConfig } = useSiteConfig('auth')
+useAccountConfig()
 const supportEmailFeature = computed(() => Boolean(siteConfig.value.supportEmailCodeLogin))
+const showWallet = computed(() => Boolean(siteConfig.value.limitWallet))
 
 const loading = ref(false)
 const profile = reactive<UserApiTypes.UserProfile>({
@@ -32,6 +37,27 @@ const profile = reactive<UserApiTypes.UserProfile>({
   emailVerified: false,
   notifyOnSubmit: false,
 })
+
+const wallet = ref<string>('0.00')
+const walletOrderHistoryRef = ref<InstanceType<typeof WalletOrderHistory> | null>(null)
+const alipayEnabled = ref(false)
+
+async function refreshWallet() {
+  try {
+    const res = await UserApi.usage()
+    if (res?.data)
+      wallet.value = String(res.data.wallet ?? '0.00')
+  }
+  catch { /* ignore */ }
+}
+
+function onRechargeSuccess(payload: { wallet: string }) {
+  wallet.value = payload.wallet
+}
+
+function openOrderHistory() {
+  walletOrderHistoryRef.value?.open()
+}
 
 const bindForm = reactive({
   email: '',
@@ -53,6 +79,8 @@ function loadProfile() {
     .finally(() => {
       loading.value = false
     })
+  if (showWallet.value)
+    refreshWallet()
 }
 
 function createCountdown(text: typeof bindCodeText, time: typeof bindCodeTime) {
@@ -242,8 +270,33 @@ onMounted(() => {
           <span>登录次数</span>
           <strong>{{ profile.loginCount }}</strong>
         </div>
+        <div v-if="showWallet" class="info-item wallet-item">
+          <div class="wallet-header">
+            <div class="wallet-header__left">
+              <el-icon><Money /></el-icon>
+              <span>钱包余额</span>
+            </div>
+            <el-button
+              v-if="alipayEnabled"
+              link
+              type="primary"
+              @click="openOrderHistory"
+            >
+              历史订单
+            </el-button>
+          </div>
+          <div class="wallet-body">
+            <strong>￥{{ wallet }}</strong>
+            <WalletRecharge
+              @update:enabled="alipayEnabled = $event"
+              @success="onRechargeSuccess"
+            />
+          </div>
+        </div>
       </div>
     </div>
+
+    <WalletOrderHistory v-if="showWallet" ref="walletOrderHistoryRef" />
 
     <div v-if="supportEmailFeature" class="settings-grid">
       <section class="profile-panel">
@@ -513,6 +566,29 @@ onMounted(() => {
   background-color: #f5f7fa;
   color: #606266;
   font-size: 14px;
+}
+
+.wallet-item {
+  .wallet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+
+    &__left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  .wallet-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
 }
 
 @media screen and (max-width: 700px) {

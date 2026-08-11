@@ -110,7 +110,9 @@ CREATE TABLE IF NOT EXISTS `task_info` (
   `limit_people` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否限制提交人员',
   `tip` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '批注信息（含 emoji）',
   `bind_field` varchar(255) DEFAULT '姓名' COMMENT '绑定表单字段',
-  `submit_password` varchar(64) DEFAULT NULL COMMENT '提交密码（为空表示未开启）'
+  `submit_password` varchar(64) DEFAULT NULL COMMENT '提交密码（为空表示未开启）',
+  `view_enabled` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否开启实时查看页（只读分享）',
+  `view_config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '查看页配置 JSON：{password,visibleFields,roster:{enabled,columns,nameMask,showUnsubmitted}}'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='任务附加属性';
 
 -- --------------------------------------------------------
@@ -136,6 +138,27 @@ CREATE TABLE IF NOT EXISTS `user` (
   `email_verified` tinyint(4) NOT NULL DEFAULT '0' COMMENT '邮箱已验证',
   `notify_on_submit` tinyint(4) NOT NULL DEFAULT '0' COMMENT '新提交时邮件通知任务属主'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户表';
+
+-- --------------------------------------------------------
+
+--
+-- 表的结构 `payment_order`
+--
+
+CREATE TABLE IF NOT EXISTS `payment_order` (
+  `id` bigint(20) unsigned NOT NULL COMMENT '主键自增',
+  `out_trade_no` varchar(64) NOT NULL COMMENT '本地订单号',
+  `user_id` int(11) NOT NULL COMMENT '所属用户id',
+  `channel` varchar(16) NOT NULL DEFAULT 'alipay' COMMENT '支付渠道',
+  `amount` decimal(10,2) NOT NULL COMMENT '订单金额(元)',
+  `status` varchar(16) NOT NULL DEFAULT 'pending' COMMENT '订单状态: pending/paid/closed/refunded',
+  `trade_no` varchar(64) DEFAULT NULL COMMENT '支付宝交易号',
+  `subject` varchar(128) DEFAULT NULL COMMENT '订单标题',
+  `raw_notify` text DEFAULT NULL COMMENT '最近一次 notify 原始报文(JSON)',
+  `paid_time` timestamp NULL DEFAULT NULL COMMENT '支付成功时间',
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付订单';
 
 --
 -- Indexes for dumped tables
@@ -181,6 +204,14 @@ ALTER TABLE `user`
   ADD UNIQUE KEY `user_email_uindex` (`email`);
 
 --
+-- Indexes for table `payment_order`
+--
+ALTER TABLE `payment_order`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `payment_order_out_trade_no_uindex` (`out_trade_no`),
+  ADD KEY `payment_order_user_id_idx` (`user_id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -214,6 +245,11 @@ ALTER TABLE `task_info`
 --
 ALTER TABLE `user`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '唯一标识';
+--
+-- AUTO_INCREMENT for table `payment_order`
+--
+ALTER TABLE `payment_order`
+  MODIFY `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键自增';
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

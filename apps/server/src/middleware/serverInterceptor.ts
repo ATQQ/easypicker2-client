@@ -40,6 +40,10 @@ function isTipImageUploadPath(pathname: string) {
   return pathname === '/api/task_info/tip/image/upload' || pathname === '/task_info/tip/image/upload'
 }
 
+function isAlipayNotifyPath(pathname: string) {
+  return pathname === '/api/pay/alipay/notify' || pathname === '/pay/alipay/notify'
+}
+
 function pickField(fields: formidable.Fields, key: string) {
   const v = fields[key]
   if (Array.isArray(v))
@@ -237,6 +241,20 @@ const interceptor: Middleware = async (req, res) => {
       res.end(JSON.stringify({ code: 500, msg }))
     }
     return
+  }
+
+  // 支付宝异步通知：只打到达日志，不要预读 body。
+  // flash-wolves 后续 body parser 会再等 data/end；中间件先消费流会导致永久挂起。
+  // 原始报文由框架写入 req.buffer，供 handler HMAC 验签使用。
+  if (method === 'POST' && isAlipayNotifyPath(pathOnly)) {
+    const arrivedAt = new Date().toISOString()
+    const remoteIp = getClientIp(req)
+    const ua = String(req.headers['user-agent'] || '')
+    const contentType = String(req.headers['content-type'] || '')
+    const contentLengthHeader = String(req.headers['content-length'] || '0')
+    console.log(
+      `[alipay:notify] ${arrivedAt} 收到 notify 请求 ip=${remoteIp} ua="${ua}" ct=${contentType} len=${contentLengthHeader} path=${pathOnly}`,
+    )
   }
 
   // 添加ip，供 @ReqIp 取用

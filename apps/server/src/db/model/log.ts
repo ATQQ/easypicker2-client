@@ -50,6 +50,7 @@ export declare namespace LogBehaviorData {
       | 'interceptor'
       | 'wish'
       | 'mail'
+      | 'pay'
   interface Info {
     /**
      * 一句话描述

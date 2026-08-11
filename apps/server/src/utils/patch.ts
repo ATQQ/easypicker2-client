@@ -45,11 +45,11 @@ export async function patchTable(options?: {
   const modified = applyMods ? await applyMysqlCanonicalSchemaModifies() : []
 
   if (!added.length && !modified.length) {
-    console.log('[mysql:migrate] mysql-schema.json 与当前库一致（无 ADD COLUMN / MODIFY COLUMN）')
+    console.log('[mysql:migrate] mysql-schema.json 与当前库一致（无 CREATE TABLE / ADD COLUMN / MODIFY COLUMN）')
   }
   else {
     if (added.length)
-      console.log(`[mysql:migrate] 已变更：ADD COLUMN → ${added.join(', ')}`)
+      console.log(`[mysql:migrate] 已变更：CREATE TABLE / ADD COLUMN → ${added.join(', ')}`)
     if (modified.length)
       console.log(`[mysql:migrate] 已变更：MODIFY COLUMN → ${modified.join(', ')}`)
   }

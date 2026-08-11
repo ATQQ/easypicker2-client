@@ -186,6 +186,10 @@ declare namespace TaskApiTypes {
     needSubmitPassword?: boolean
     /** 服务端确认本次请求的提交密码是否通过校验 */
     passwordValid?: boolean
+    /** 分享查看页是否启用 */
+    viewEnabled?: boolean
+    /** 分享查看页配置（JSON 字符串 or 对象，前端构造时传对象） */
+    viewConfig?: string | Record<string, any> | null
   }
 
   type getList = ResponseData<{ tasks: TaskItem[] }>
@@ -195,9 +199,10 @@ declare namespace TaskApiTypes {
     tasksByCategory: Record<string, TaskItem[]>
     tasks: TaskItem[]
   }>
-  type create = ResponseData
+  type create = ResponseData<{ key: string }>
   type deleteOne = ResponseData
   type updateBaseInfo = ResponseData
+  type copy = ResponseData<{ key: string }>
   type getTaskInfo = ResponseData<TaskInfo & { limitUpload: boolean }>
   type getTaskMoreInfo = ResponseData<TaskInfo>
   type updateTaskMoreInfo = ResponseData

@@ -25,6 +25,20 @@ export function getUniqueKey() {
   return new ObjectId().toHexString()
 }
 
+/**
+ * 生成随机密码（默认 8 位，易读字符集排除 0/O/1/l/I 等易混淆字符）
+ * 满足提交密码 6-64、查看页密码 6-64 的长度限制
+ */
+export function genRandomPassword(len = 8): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  const bytes = crypto.randomBytes(len)
+  let out = ''
+  for (let i = 0; i < len; i++) {
+    out += chars[bytes[i] % chars.length]
+  }
+  return out
+}
+
 /** 将用户输入转义后用于 MongoDB `$regex`，避免特殊字符导致全表扫描或 ReDoS */
 export function escapeRegexForMongo(str: string) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

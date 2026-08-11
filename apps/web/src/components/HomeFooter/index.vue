@@ -54,7 +54,7 @@ const fontColor = computed(() => {
   const colors = {
     home: '#fff',
     dashboard: '#7f7f7f',
-    task: '#a4a4a4',
+    task: '#606266',
   }
   return colors[props.type || 'home']
 })
@@ -63,7 +63,7 @@ const shadowColor = computed(() => {
   const colors = {
     home: '#ddd',
     dashboard: '#9b9b9b',
-    task: '#d5d5d5',
+    task: '#909399',
   }
   return colors[props.type || 'home']
 })

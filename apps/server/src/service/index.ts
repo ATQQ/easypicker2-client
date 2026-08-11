@@ -1,3 +1,4 @@
+import AlipayService from './alipayService'
 import BehaviorService from './behaviorService'
 import CategoryService from './categoryService'
 import FileService from './fileService'
@@ -7,11 +8,13 @@ import QiniuService from './qiniuService'
 import SuperUserService from './superUserService'
 import TaskInfoService from './taskInfoService'
 import TaskService from './taskService'
+import TaskViewService from './taskViewService'
 import TokenService from './tokenService'
 import UserService from './userService'
 
 // TODO: 编译问题
 export {
+  AlipayService,
   BehaviorService,
   CategoryService,
   FileService,
@@ -21,6 +24,7 @@ export {
   SuperUserService,
   TaskInfoService,
   TaskService,
+  TaskViewService,
   TokenService,
   UserService,
 }

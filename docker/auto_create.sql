@@ -104,7 +104,9 @@ CREATE TABLE IF NOT EXISTS `task_info` (
   `share_key` varchar(128) NOT NULL COMMENT '任务对外分享短链 key（与 task.k 不同；公开分享页等使用）',
   `limit_people` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否限制提交人员',
   `tip` text COMMENT '批注信息',
-  `bind_field` varchar(255) DEFAULT '姓名' COMMENT '绑定表单字段'
+  `bind_field` varchar(255) DEFAULT '姓名' COMMENT '绑定表单字段',
+  `view_enabled` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否开启实时查看页（只读分享）',
+  `view_config` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '查看页配置 JSON：{password,visibleFields,roster:{enabled,columns,nameMask,showUnsubmitted}}'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='任务附加属性';
 
 -- --------------------------------------------------------

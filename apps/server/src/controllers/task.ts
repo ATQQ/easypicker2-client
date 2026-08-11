@@ -60,6 +60,7 @@ export default class TaskController {
         name,
       },
     )
+    return { key: task.k }
   }
 
   @Get('')
@@ -128,5 +129,22 @@ export default class TaskController {
   @Put('/:key')
   updateTask(@ReqParams('key') key: string, @ReqBody() payload) {
     return this.taskService.updateTask(key, payload)
+  }
+
+  /**
+   * 复制创建任务：复用原任务的附加属性（模板/必填项/截止时间/批注/名单/密码 等），
+   * 用户仅需在弹窗中确认任务名与分类。
+   */
+  @Post('/:key/copy')
+  async copyTask(
+    @ReqParams('key') key: string,
+    @ReqBody() payload: { name: string, category?: string },
+  ) {
+    try {
+      return await this.taskService.copyTask(key, payload || { name: '' })
+    }
+    catch (error) {
+      return wrapperCatchError(error)
+    }
   }
 }

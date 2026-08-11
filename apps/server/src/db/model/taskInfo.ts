@@ -18,4 +18,10 @@ export interface TaskInfo {
   bind_field?: string
   bindField?: string
   tip?: string
+  submit_password?: string | null
+  submitPassword?: string | null
+  view_enabled?: BOOLEAN
+  viewEnabled?: BOOLEAN
+  view_config?: string | null
+  viewConfig?: string | null
 }

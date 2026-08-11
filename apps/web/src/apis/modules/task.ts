@@ -49,6 +49,17 @@ function updateBaseInfo(
   })
 }
 
+function copy(
+  key: string,
+  name: string,
+  category?: string,
+): TaskApiTypes.copy {
+  return ajax.post(`task/${key}/copy`, {
+    name,
+    category,
+  })
+}
+
 function getTaskInfo(key: string): TaskApiTypes.getTaskInfo {
   return ajax.get(`task/${key}`)
 }
@@ -95,6 +106,7 @@ export default {
   create,
   deleteOne,
   updateBaseInfo,
+  copy,
   getTaskInfo,
   getTaskMoreInfo,
   updateTaskMoreInfo,

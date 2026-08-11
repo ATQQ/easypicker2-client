@@ -1,5 +1,13 @@
 # @sugarat/easypicker2-server
 
+## 2.10.0
+
+### Minor Changes
+
+- feat: 新增任务分享查看页接口与 viewConfig 配置（密码认证、字段/文件脱敏、名单展示）
+- feat: 新增支付宝钱包充值（支付订单、中转平台签名、回调入账）
+- feat: 支付渠道支持与支付流程重构
+
 ## 2.9.2
 
 ### Patch Changes
