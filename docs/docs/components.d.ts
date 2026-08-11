@@ -22,6 +22,8 @@ declare module 'vue' {
     Home: typeof import('./../src/components/Home.vue')['default']
     Picture: typeof import('./../src/components/Picture.vue')['default']
     Praise: typeof import('./../src/components/Praise.vue')['default']
+    RouterLink: typeof import('vue-router')['RouterLink']
+    RouterView: typeof import('vue-router')['RouterView']
     WishBtn: typeof import('./../src/components/WishBtn.vue')['default']
     WishPanel: typeof import('./../src/components/WishPanel.vue')['default']
   }
