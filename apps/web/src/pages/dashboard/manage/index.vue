@@ -89,7 +89,6 @@ onMounted(() => {
 
 @media screen and (max-width: 700px) {
   .monitor {
-    margin-top: 70px;
     padding: 10px 0 0;
     width: 100%;
     display: block;

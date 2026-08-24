@@ -1,0 +1,47 @@
+# 依赖与缓存
+**/node_modules
+.pnpm-store
+**/.pnpm-store
+**/.cache
+**/.turbo
+**/.parcel-cache
+
+# 构建产物（镜像内重新构建）
+**/dist
+**/.nuxt
+**/.output
+
+# 版本控制与 IDE
+.git
+.gitignore
+.gitattributes
+.github
+.vscode
+.cursor
+.claude
+.trae
+.changeset
+
+# 本地数据与日志（避免打入镜像）
+**/upload
+**/data
+**/logs
+**/*.log
+.env.local
+.env.*.local
+**/user-config.json
+
+# Docker 运行时数据与备份
+docker/data
+docker/ep_backup
+
+# 根目录文档站（vitepress，构建不需要）
+docs
+
+# 杂项
+.DS_Store
+**/.DS_Store
+.temp_deploy
+.traces
+claude-session
+tools

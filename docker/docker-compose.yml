@@ -1,0 +1,36 @@
+# EasyPicker2 一体化部署
+# 使用：
+#   cd docker && docker compose up -d --build
+# 数据持久化目录：./data（更新镜像不丢数据）
+# 更新：docker compose pull && docker compose up -d
+services:
+  easypicker2:
+    image: sugarjl/easypicker2:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: easypicker2
+    ports:
+      # 宿主机端口:容器端口（80 为 Nginx）。可在 .env.docker 中用 EP_PORT 覆盖
+      - '${EP_PORT:-6478}:80'
+    volumes:
+      # ===== 数据库数据（可挂载到指定磁盘目录）=====
+      - ./data/mysql:/var/lib/mysql
+      - ./data/mongo:/var/lib/mongo
+      # ===== 应用数据：本地存储文件、KV 缓存、用户配置 =====
+      - ./data/upload:/usr/share/easypicker/server/upload
+      - ./data/kv:/usr/share/easypicker/server/data/kv
+      - ./data/config:/usr/share/easypicker/server/config
+      # 注：日志不挂载（避免 MariaDB/MongoDB 以非 root 用户写入宿主目录的权限问题）
+      # 应用日志通过 `docker logs easypicker2` 查看
+    env_file:
+      # 可选：存在则覆盖镜像默认环境变量，不存在则使用 Dockerfile 内置默认值
+      - path: .env.docker
+        required: false
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, 'curl -fsS http://localhost/ -o /dev/null || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s

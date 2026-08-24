@@ -1230,10 +1230,6 @@ function handleShowDetail() {
 }
 
 @media screen and (max-width: 700px) {
-  .files {
-    margin-top: 70px;
-  }
-
   .text-btns {
     display: flex;
     flex-direction: column;
